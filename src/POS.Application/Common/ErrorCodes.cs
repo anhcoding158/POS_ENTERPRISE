@@ -70,6 +70,9 @@ public static class ErrorCodes
         public const string CategoryNotFound =
             "PRODUCT.CATEGORY_NOT_FOUND";
 
+        public const string CategoryInactive =
+            "PRODUCT.CATEGORY_INACTIVE";
+
         public const string Inactive =
             "PRODUCT.INACTIVE";
 
