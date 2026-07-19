@@ -1,9 +1,43 @@
 ﻿<Project>
-  <PropertyGroup>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <LangVersion>latest</LangVersion>
-    <Deterministic>true</Deterministic>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-  </PropertyGroup>
+
+	<PropertyGroup>
+
+		<!-- Bật kiểm tra null cho toàn bộ solution -->
+		<Nullable>enable</Nullable>
+
+		<!-- Tự động import các namespace thông dụng -->
+		<ImplicitUsings>enable</ImplicitUsings>
+
+		<!-- .NET 10 sử dụng C# 14 -->
+		<LangVersion>14.0</LangVersion>
+
+		<!-- Build cùng mã nguồn phải tạo kết quả ổn định -->
+		<Deterministic>true</Deterministic>
+
+		<!-- Bật bộ phân tích code tích hợp của .NET -->
+		<EnableNETAnalyzers>true</EnableNETAnalyzers>
+
+		<!-- Sử dụng nhóm quy tắc được Microsoft khuyến nghị -->
+		<AnalysisLevel>latest-recommended</AnalysisLevel>
+
+		<!-- Cho phép báo cảnh báo về quy tắc code khi build -->
+		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+		<!-- Giai đoạn đầu chưa biến tất cả warning thành error -->
+		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+
+		<!-- File debug dùng được trên nhiều môi trường -->
+		<DebugType>portable</DebugType>
+
+		<!-- Chưa tạo XML documentation cho toàn bộ project -->
+		<GenerateDocumentationFile>false</GenerateDocumentationFile>
+
+		<!-- Chỉ bật chế độ build CI khi chạy trên máy CI -->
+		<ContinuousIntegrationBuild
+		  Condition="'$(CI)' == 'true'">
+			true
+		</ContinuousIntegrationBuild>
+
+	</PropertyGroup>
+
 </Project>
