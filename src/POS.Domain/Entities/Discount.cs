@@ -416,9 +416,24 @@ public sealed class Discount : AuditableEntity
     }
 
     private void SetValidityPeriod(
-        DateTimeOffset startsAtUtc,
-        DateTimeOffset? endsAtUtc)
+    DateTimeOffset startsAtUtc,
+    DateTimeOffset? endsAtUtc)
     {
+        if (startsAtUtc == default)
+        {
+            throw new DomainException(
+                "DISCOUNT.START_TIME_REQUIRED",
+                "Thời điểm bắt đầu khuyến mãi không được để trống.");
+        }
+
+        if (endsAtUtc.HasValue &&
+            endsAtUtc.Value == default)
+        {
+            throw new DomainException(
+                "DISCOUNT.INVALID_END_TIME",
+                "Thời điểm kết thúc khuyến mãi không hợp lệ.");
+        }
+
         var normalizedStart =
             startsAtUtc.ToUniversalTime();
 
