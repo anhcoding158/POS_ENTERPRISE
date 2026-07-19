@@ -1,0 +1,9 @@
+﻿<Window x:Class="POS.Wpf.Views.ShellWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="POS Enterprise"
+        Width="1400"
+        Height="900"
+        WindowStartupLocation="CenterScreen">
+    <Grid />
+</Window>
