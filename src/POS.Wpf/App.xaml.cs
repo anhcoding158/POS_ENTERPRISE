@@ -1,7 +1,8 @@
-﻿using System.Windows;
+﻿namespace POS.Wpf;
 
-namespace POS.Wpf;
-
-public partial class App : Application
+/// <summary>
+/// Điểm khởi động của ứng dụng WPF.
+/// </summary>
+public partial class App : global::System.Windows.Application
 {
 }
