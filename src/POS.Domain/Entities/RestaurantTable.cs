@@ -76,9 +76,7 @@ public sealed class RestaurantTable : AuditableEntity
         TableStatus newStatus,
         DateTimeOffset utcNow)
     {
-        if (!Enum.IsDefined(
-                typeof(TableStatus),
-                newStatus))
+        if (!Enum.IsDefined(newStatus))
         {
             throw new DomainException(
                 "TABLE.INVALID_STATUS",

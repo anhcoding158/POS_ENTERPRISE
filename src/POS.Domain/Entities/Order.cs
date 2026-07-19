@@ -382,9 +382,7 @@ public sealed class Order : AuditableEntity
                 "Đơn hàng chưa ở trạng thái chờ thanh toán.");
         }
 
-        if (!Enum.IsDefined(
-                typeof(PaymentMethodType),
-                paymentMethod))
+        if (!Enum.IsDefined(paymentMethod))
         {
             throw new DomainException(
                 "ORDER.INVALID_PAYMENT_METHOD",

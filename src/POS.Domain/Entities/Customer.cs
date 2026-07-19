@@ -209,7 +209,7 @@ public sealed class Customer : AuditableEntity
         CustomerTier tier,
         DateTimeOffset utcNow)
     {
-        if (!Enum.IsDefined(typeof(CustomerTier), tier))
+        if (!Enum.IsDefined(tier))
         {
             throw new DomainException(
                 "CUSTOMER.INVALID_TIER",

@@ -357,9 +357,7 @@ public sealed class Discount : AuditableEntity
         long minimumOrderAmount,
         long? maximumDiscountAmount)
     {
-        if (!Enum.IsDefined(
-                typeof(DiscountType),
-                type))
+        if (!Enum.IsDefined(type))
         {
             throw new DomainException(
                 "DISCOUNT.INVALID_TYPE",

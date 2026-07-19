@@ -246,7 +246,7 @@ public sealed class User : AuditableEntity
 
     private static Role ValidateRole(Role role)
     {
-        if (!Enum.IsDefined(typeof(Role), role))
+        if (!Enum.IsDefined(role))
         {
             throw new DomainException(
                 "USER.INVALID_ROLE",
