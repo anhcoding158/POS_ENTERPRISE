@@ -5,17 +5,19 @@ using POS.Application.Abstractions.Services;
 using POS.Application.Services;
 using POS.Infrastructure;
 using POS.Infrastructure.Persistence;
+using POS.Wpf.ViewModels;
 using POS.Wpf.Views;
 
 namespace POS.Wpf;
 
 /// <summary>
-/// Composition root của ứng dụng WPF.
+/// Composition root và vòng đời của ứng dụng WPF.
 /// </summary>
 public partial class App :
     global::System.Windows.Application
 {
     private IHost? _host;
+    private IServiceScope? _windowScope;
 
     protected override async void OnStartup(
         global::System.Windows.StartupEventArgs e)
@@ -44,7 +46,8 @@ public partial class App :
                 IProductService,
                 ProductService>();
 
-            builder.Services.AddTransient<LoginWindow>();
+            builder.Services.AddScoped<ShellViewModel>();
+            builder.Services.AddScoped<ShellWindow>();
 
             _host = builder.Build();
 
@@ -53,19 +56,32 @@ public partial class App :
             await InitializeDatabaseAsync(
                 _host.Services);
 
-            var loginWindow =
-                _host.Services.GetRequiredService<
-                    LoginWindow>();
+            /*
+             * Giữ một scope sống cùng ShellWindow.
+             *
+             * ProductService, repositories và PosDbContext
+             * đều là scoped service, nên không resolve trực tiếp
+             * chúng từ root service provider.
+             */
+            _windowScope =
+                _host.Services.CreateScope();
 
-            MainWindow = loginWindow;
+            var shellWindow =
+                _windowScope.ServiceProvider
+                    .GetRequiredService<ShellWindow>();
 
-            loginWindow.Show();
+            MainWindow = shellWindow;
+
+            shellWindow.Show();
         }
         catch (Exception exception)
         {
+            var rootException =
+                exception.GetBaseException();
+
             global::System.Windows.MessageBox.Show(
                 $"Ứng dụng không thể khởi động.\n\n" +
-                $"{exception.Message}",
+                $"{rootException.Message}",
                 "POS Enterprise",
                 global::System.Windows.MessageBoxButton.OK,
                 global::System.Windows.MessageBoxImage.Error);
@@ -77,6 +93,9 @@ public partial class App :
     protected override async void OnExit(
         global::System.Windows.ExitEventArgs e)
     {
+        _windowScope?.Dispose();
+        _windowScope = null;
+
         var host = _host;
 
         _host = null;
