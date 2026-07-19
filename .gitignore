@@ -3,8 +3,12 @@ bin/
 obj/
 *.user
 *.suo
+
+# SQLite runtime files
 *.db
 *.db-shm
 *.db-wal
+*.db-journal
+
 logs/
 src/POS.Wpf/AppData/
