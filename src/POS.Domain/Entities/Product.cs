@@ -403,10 +403,10 @@ public sealed class Product : AuditableEntity
     }
 
     private void ConfigureInventoryInternal(
-        int stockQuantity,
-        int minimumStock,
-        bool trackInventory,
-        bool allowNegativeStock)
+    int stockQuantity,
+    int minimumStock,
+    bool trackInventory,
+    bool allowNegativeStock)
     {
         if (minimumStock < 0 ||
             minimumStock >
@@ -417,13 +417,24 @@ public sealed class Product : AuditableEntity
                 "Mức tồn kho tối thiểu không hợp lệ.");
         }
 
+        /*
+         * Sản phẩm không theo dõi kho thì không được phép
+         * mang trạng thái cho phép tồn kho âm.
+         *
+         * Việc chuẩn hóa trước khi validation giúp Domain
+         * và ràng buộc database luôn thống nhất.
+         */
+        var normalizedAllowNegativeStock =
+            trackInventory && allowNegativeStock;
+
         ValidateStockQuantity(
             stockQuantity,
-            allowNegativeStock);
+            normalizedAllowNegativeStock);
 
         TrackInventory = trackInventory;
+
         AllowNegativeStock =
-            trackInventory && allowNegativeStock;
+            normalizedAllowNegativeStock;
 
         MinimumStock = trackInventory
             ? minimumStock
