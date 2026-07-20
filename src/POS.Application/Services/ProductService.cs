@@ -200,8 +200,15 @@ public sealed class ProductService : IProductService
             product,
             cancellationToken);
 
-        await _unitOfWork.SaveChangesAsync(
-            cancellationToken);
+        var saveResult =
+            await SaveChangesSafelyAsync(
+                cancellationToken);
+
+        if (saveResult.IsFailure)
+        {
+            return Result.Failure<ProductDetailsDto>(
+                saveResult.Error);
+        }
 
         return Result.Success(
             MapToDetails(
@@ -344,8 +351,15 @@ public sealed class ProductService : IProductService
                 exception);
         }
 
-        await _unitOfWork.SaveChangesAsync(
-            cancellationToken);
+        var saveResult =
+            await SaveChangesSafelyAsync(
+                cancellationToken);
+
+        if (saveResult.IsFailure)
+        {
+            return Result.Failure<ProductDetailsDto>(
+                saveResult.Error);
+        }
 
         return Result.Success(
             MapToDetails(
@@ -408,10 +422,8 @@ public sealed class ProductService : IProductService
             product.Deactivate(utcNow);
         }
 
-        await _unitOfWork.SaveChangesAsync(
-            cancellationToken);
-
-        return Result.Success();
+        return await SaveChangesSafelyAsync(
+              cancellationToken);
     }
 
     private async Task<Result<Category>> GetActiveCategoryAsync(
@@ -513,6 +525,68 @@ public sealed class ProductService : IProductService
 
         return category?.Name ??
                UnknownCategoryName;
+    }
+
+    private async Task<Result> SaveChangesSafelyAsync(
+    CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(
+                cancellationToken);
+
+            return Result.Success();
+        }
+        catch (
+            PersistenceConflictException exception)
+        {
+            return Result.Failure(
+                MapPersistenceConflict(
+                    exception));
+        }
+    }
+
+    private static Error MapPersistenceConflict(
+        PersistenceConflictException exception)
+    {
+        if (exception.Kind ==
+                PersistenceConflictKind.UniqueConstraint &&
+            string.Equals(
+                exception.Target,
+                PersistenceConflictTargets.ProductCode,
+                StringComparison.Ordinal))
+        {
+            return new Error(
+                ErrorCodes.Products.CodeAlreadyExists,
+                "Mã sản phẩm đã tồn tại. " +
+                "Vui lòng sử dụng mã khác.");
+        }
+
+        if (exception.Kind ==
+                PersistenceConflictKind.UniqueConstraint &&
+            string.Equals(
+                exception.Target,
+                PersistenceConflictTargets.ProductBarcode,
+                StringComparison.Ordinal))
+        {
+            return new Error(
+                ErrorCodes.Products.BarcodeAlreadyExists,
+                "Mã vạch đã được sử dụng bởi sản phẩm khác.");
+        }
+
+        if (exception.Kind ==
+            PersistenceConflictKind.Concurrency)
+        {
+            return new Error(
+                ErrorCodes.Products.ConcurrencyConflict,
+                "Sản phẩm đã được người dùng hoặc cửa sổ khác " +
+                "thay đổi. Hãy tải lại dữ liệu rồi thực hiện lại.");
+        }
+
+        return new Error(
+            ErrorCodes.Products.PersistenceConflict,
+            "Không thể lưu sản phẩm do dữ liệu đang xung đột. " +
+            "Hãy tải lại và thử lại.");
     }
 
     private static ProductListItemDto MapToListItem(

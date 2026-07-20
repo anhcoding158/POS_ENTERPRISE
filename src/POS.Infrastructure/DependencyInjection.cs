@@ -47,6 +47,8 @@ public static class DependencyInjection
 
         services.AddSingleton<DatabasePathResolver>();
 
+        services.AddSingleton<AuditableEntityInterceptor>();
+
         services.AddSingleton<IClock, SystemClock>();
 
         services.AddDbContext<PosDbContext>(
@@ -67,6 +69,11 @@ public static class DependencyInjection
                     pathResolver.CreateConnectionString(
                         infrastructureOptions);
 
+                var auditableEntityInterceptor =
+                    serviceProvider
+                        .GetRequiredService<
+                            AuditableEntityInterceptor>();
+
                 optionsBuilder.UseSqlite(
                     connectionString,
                     sqliteOptions =>
@@ -75,6 +82,8 @@ public static class DependencyInjection
                             infrastructureOptions
                                 .DatabaseTimeoutSeconds);
                     });
+                optionsBuilder.AddInterceptors(
+                    auditableEntityInterceptor);
 
                 optionsBuilder.EnableDetailedErrors();
             });

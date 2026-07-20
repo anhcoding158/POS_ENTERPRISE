@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using POS.Domain.Common;
+using POS.Infrastructure.Persistence;
 
 namespace POS.Infrastructure.Persistence.Configurations;
 
@@ -12,10 +13,10 @@ namespace POS.Infrastructure.Persistence.Configurations;
 internal static class AuditableEntityConfigurationExtensions
 {
     /*
-     * SQLite không hỗ trợ tự nhiên đầy đủ DateTimeOffset.
+     * SQLite không hỗ trợ đầy đủ việc so sánh và sắp xếp
+     * DateTimeOffset.
      *
-     * Ta lưu thời gian UTC thành Unix milliseconds dạng INTEGER
-     * để có thể lọc, sắp xếp và tạo index chính xác.
+     * Thời gian UTC được lưu thành Unix milliseconds INTEGER.
      */
     private static readonly ValueConverter<DateTimeOffset, long>
         DateTimeOffsetToUnixMillisecondsConverter =
@@ -35,22 +36,48 @@ internal static class AuditableEntityConfigurationExtensions
     {
         ArgumentNullException.ThrowIfNull(builder);
 
-        builder.HasKey(entity => entity.Id);
+        builder.HasKey(
+            entity =>
+                entity.Id);
 
-        builder.Property(entity => entity.Id)
+        builder.Property(
+                entity =>
+                    entity.Id)
             .ValueGeneratedOnAdd();
 
-        builder.Property(entity => entity.CreatedAtUtc)
+        builder.Property(
+                entity =>
+                    entity.CreatedAtUtc)
             .HasConversion(
                 DateTimeOffsetToUnixMillisecondsConverter)
             .HasColumnType("INTEGER")
             .IsRequired();
 
-        builder.Property(entity => entity.UpdatedAtUtc)
+        /*
+         * UpdatedAtUtc chỉ còn là dữ liệu audit.
+         * Không dùng timestamp millisecond làm concurrency token nữa.
+         */
+        builder.Property(
+                entity =>
+                    entity.UpdatedAtUtc)
             .HasConversion(
                 DateTimeOffsetToUnixMillisecondsConverter)
             .HasColumnType("INTEGER")
+            .IsRequired();
+
+        /*
+         * GUID do AuditableEntityInterceptor sinh ra.
+         *
+         * Đây là shadow property:
+         * tồn tại trong EF model/database nhưng không nằm
+         * trong Domain entity.
+         */
+        builder.Property<Guid>(
+                AuditableEntityInterceptor
+                    .ConcurrencyTokenPropertyName)
+            .HasColumnType("TEXT")
             .IsRequired()
+            .ValueGeneratedNever()
             .IsConcurrencyToken();
     }
 }

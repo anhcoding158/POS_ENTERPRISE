@@ -67,6 +67,12 @@ public static class ErrorCodes
         public const string BarcodeAlreadyExists =
             "PRODUCT.BARCODE_ALREADY_EXISTS";
 
+        public const string ConcurrencyConflict =
+            "PRODUCT.CONCURRENCY_CONFLICT";
+
+        public const string PersistenceConflict =
+            "PRODUCT.PERSISTENCE_CONFLICT";
+
         public const string CategoryNotFound =
             "PRODUCT.CATEGORY_NOT_FOUND";
 
