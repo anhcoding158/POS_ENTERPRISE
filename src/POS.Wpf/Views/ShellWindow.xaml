@@ -3,47 +3,40 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Title="POS Enterprise"
-    Width="1440"
-    Height="860"
-    MinWidth="1180"
-    MinHeight="700"
+    Width="1480"
+    Height="880"
+    MinWidth="1240"
+    MinHeight="720"
     WindowStartupLocation="CenterScreen"
     Background="{StaticResource AppBackgroundBrush}"
     FontFamily="Segoe UI">
 
     <Grid Background="{StaticResource AppBackgroundBrush}">
-
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="250" />
+            <ColumnDefinition Width="270" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
         <!-- Sidebar -->
-
-        <Border
-            Grid.Column="0"
-            Background="{StaticResource SidebarBrush}">
-
-            <Grid Margin="20,26">
-
+        <Border Grid.Column="0" Background="{StaticResource SidebarBrush}">
+            <Grid Margin="20,24">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
+                <!-- Brand -->
                 <StackPanel Orientation="Horizontal">
-
                     <Border
-                        Width="46"
-                        Height="46"
+                        Width="50"
+                        Height="50"
                         Background="{StaticResource AccentBrush}"
-                        CornerRadius="14">
-
+                        CornerRadius="16">
                         <TextBlock
                             Text="P"
                             Foreground="White"
-                            FontSize="22"
+                            FontSize="24"
                             FontWeight="Bold"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center" />
@@ -52,43 +45,38 @@
                     <StackPanel
                         Margin="12,2,0,0"
                         VerticalAlignment="Center">
-
                         <TextBlock
                             Text="POS Enterprise"
                             Foreground="{StaticResource SidebarTextBrush}"
-                            FontSize="17"
+                            FontSize="18"
                             FontWeight="SemiBold" />
-
                         <TextBlock
-                            Text="Retail Management"
+                            Text="Retail  &amp; Café Platform"
                             Foreground="{StaticResource SidebarMutedBrush}"
                             FontSize="11"
-                            Margin="0,2,0,0" />
+                            Margin="0,3,0,0" />
                     </StackPanel>
                 </StackPanel>
 
-                <StackPanel
-                    Grid.Row="1"
-                    Margin="0,42,0,0">
-
+                <!-- Navigation -->
+                <StackPanel Grid.Row="1" Margin="0,42,0,0">
                     <TextBlock
                         Text="KHÔNG GIAN LÀM VIỆC"
                         Foreground="{StaticResource SidebarMutedBrush}"
                         FontSize="10"
                         FontWeight="SemiBold"
-                        Margin="12,0,0,10" />
+                        Margin="14,0,0,12" />
 
                     <Button
                         Style="{StaticResource NavigationButtonStyle}"
-                        IsEnabled="False">
-
+                        IsEnabled="False"
+                        Margin="0,0,0,8">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock
                                 Text="&#xE80F;"
                                 FontFamily="Segoe MDL2 Assets"
                                 FontSize="17"
-                                Width="30" />
-
+                                Width="28" />
                             <TextBlock
                                 Text="Tổng quan"
                                 VerticalAlignment="Center" />
@@ -96,15 +84,14 @@
                     </Button>
 
                     <Button
-                        Style="{StaticResource SelectedNavigationButtonStyle}">
-
+                        Style="{StaticResource SelectedNavigationButtonStyle}"
+                        Margin="0,0,0,8">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock
                                 Text="&#xE719;"
                                 FontFamily="Segoe MDL2 Assets"
                                 FontSize="17"
-                                Width="30" />
-
+                                Width="28" />
                             <TextBlock
                                 Text="Sản phẩm"
                                 VerticalAlignment="Center" />
@@ -113,15 +100,14 @@
 
                     <Button
                         Style="{StaticResource NavigationButtonStyle}"
-                        IsEnabled="False">
-
+                        IsEnabled="False"
+                        Margin="0,0,0,8">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock
                                 Text="&#xE8D4;"
                                 FontFamily="Segoe MDL2 Assets"
                                 FontSize="17"
-                                Width="30" />
-
+                                Width="28" />
                             <TextBlock
                                 Text="Khách hàng"
                                 VerticalAlignment="Center" />
@@ -130,15 +116,14 @@
 
                     <Button
                         Style="{StaticResource NavigationButtonStyle}"
-                        IsEnabled="False">
-
+                        IsEnabled="False"
+                        Margin="0,0,0,8">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock
                                 Text="&#xE8A1;"
                                 FontFamily="Segoe MDL2 Assets"
                                 FontSize="17"
-                                Width="30" />
-
+                                Width="28" />
                             <TextBlock
                                 Text="Bán hàng"
                                 VerticalAlignment="Center" />
@@ -148,14 +133,12 @@
                     <Button
                         Style="{StaticResource NavigationButtonStyle}"
                         IsEnabled="False">
-
                         <StackPanel Orientation="Horizontal">
                             <TextBlock
                                 Text="&#xE9D2;"
                                 FontFamily="Segoe MDL2 Assets"
                                 FontSize="17"
-                                Width="30" />
-
+                                Width="28" />
                             <TextBlock
                                 Text="Báo cáo"
                                 VerticalAlignment="Center" />
@@ -163,30 +146,25 @@
                     </Button>
                 </StackPanel>
 
+                <!-- Footer info -->
                 <Border
                     Grid.Row="2"
-                    Background="#172033"
-                    CornerRadius="12"
-                    Padding="14">
-
+                    Background="#173524"
+                    CornerRadius="16"
+                    Padding="16">
                     <StackPanel>
-
                         <TextBlock
                             Text="LOCAL DATABASE"
                             Foreground="{StaticResource SidebarMutedBrush}"
                             FontSize="10"
                             FontWeight="SemiBold" />
 
-                        <StackPanel
-                            Orientation="Horizontal"
-                            Margin="0,8,0,0">
-
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                             <Ellipse
                                 Width="8"
                                 Height="8"
                                 Fill="{StaticResource SuccessBrush}"
                                 Margin="0,0,8,0" />
-
                             <TextBlock
                                 Text="SQLite đã kết nối"
                                 Foreground="{StaticResource SidebarTextBrush}"
@@ -197,18 +175,14 @@
                             Text=".NET 10 • Clean Architecture"
                             Foreground="{StaticResource SidebarMutedBrush}"
                             FontSize="10"
-                            Margin="0,8,0,0" />
+                            Margin="0,10,0,0" />
                     </StackPanel>
                 </Border>
             </Grid>
         </Border>
 
-        <!-- Main content -->
-
-        <Grid
-            Grid.Column="1"
-            Margin="30,26,30,24">
-
+        <!-- Main -->
+        <Grid Grid.Column="1" Margin="28,24,28,24">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -216,20 +190,16 @@
             </Grid.RowDefinitions>
 
             <!-- Header -->
-
             <Grid>
-
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
                 <StackPanel>
-
                     <TextBlock
                         Text="Danh mục sản phẩm"
                         Style="{StaticResource PageTitleTextStyle}" />
-
                     <TextBlock
                         Text="Quản lý sản phẩm, giá bán và trạng thái tồn kho."
                         Style="{StaticResource SecondaryTextStyle}"
@@ -238,20 +208,14 @@
 
                 <Border
                     Grid.Column="1"
-                    Background="{StaticResource SurfaceBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
-                    BorderThickness="1"
-                    CornerRadius="14"
-                    Padding="12,8">
-
+                    Style="{StaticResource CardStyle}"
+                    Padding="12,10">
                     <StackPanel Orientation="Horizontal">
-
                         <Border
-                            Width="36"
-                            Height="36"
+                            Width="38"
+                            Height="38"
                             Background="{StaticResource AccentSoftBrush}"
-                            CornerRadius="11">
-
+                            CornerRadius="12">
                             <TextBlock
                                 Text="A"
                                 Foreground="{StaticResource AccentBrush}"
@@ -261,16 +225,12 @@
                                 VerticalAlignment="Center" />
                         </Border>
 
-                        <StackPanel
-                            Margin="10,0,4,0"
-                            VerticalAlignment="Center">
-
+                        <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
                             <TextBlock
                                 Text="Quản trị viên"
                                 FontSize="13"
                                 FontWeight="SemiBold"
                                 Foreground="{StaticResource TextPrimaryBrush}" />
-
                             <TextBlock
                                 Text="{Binding LastUpdatedText}"
                                 FontSize="10"
@@ -280,117 +240,82 @@
                 </Border>
             </Grid>
 
-            <!-- Statistics -->
-
-            <UniformGrid
-                Grid.Row="1"
-                Columns="4"
-                Margin="0,24,0,18">
-
-                <Border
-                    Style="{StaticResource CardStyle}"
-                    Margin="0,0,12,0">
-
+            <!-- Stats -->
+            <UniformGrid Grid.Row="1" Columns="4" Margin="0,22,0,18">
+                <Border Style="{StaticResource CardStyle}" Margin="0,0,12,0">
                     <StackPanel>
-
                         <TextBlock
                             Text="TỔNG SẢN PHẨM"
                             Style="{StaticResource CaptionTextStyle}"
                             FontWeight="SemiBold" />
-
                         <TextBlock
                             Text="{Binding TotalProductsText}"
                             Style="{StaticResource CardValueTextStyle}"
-                            Margin="0,8,0,0" />
-
+                            Margin="0,10,0,0" />
                         <TextBlock
                             Text="Toàn bộ kết quả tìm kiếm"
                             Style="{StaticResource CaptionTextStyle}"
-                            Margin="0,4,0,0" />
+                            Margin="0,6,0,0" />
                     </StackPanel>
                 </Border>
 
-                <Border
-                    Style="{StaticResource CardStyle}"
-                    Margin="4,0,8,0">
-
+                <Border Style="{StaticResource CardStyle}" Margin="4,0,8,0">
                     <StackPanel>
-
                         <TextBlock
                             Text="ĐANG BÁN TRÊN TRANG"
                             Style="{StaticResource CaptionTextStyle}"
                             FontWeight="SemiBold" />
-
                         <TextBlock
                             Text="{Binding ActiveProductsOnPageText}"
                             Style="{StaticResource CardValueTextStyle}"
-                            Margin="0,8,0,0" />
-
+                            Margin="0,10,0,0" />
                         <TextBlock
                             Text="Sản phẩm đang hoạt động"
                             Style="{StaticResource CaptionTextStyle}"
-                            Margin="0,4,0,0" />
+                            Margin="0,6,0,0" />
                     </StackPanel>
                 </Border>
 
-                <Border
-                    Style="{StaticResource CardStyle}"
-                    Margin="8,0,4,0">
-
+                <Border Style="{StaticResource CardStyle}" Margin="8,0,4,0">
                     <StackPanel>
-
                         <TextBlock
                             Text="SẮP HẾT TRÊN TRANG"
                             Style="{StaticResource CaptionTextStyle}"
                             FontWeight="SemiBold" />
-
                         <TextBlock
                             Text="{Binding LowStockProductsOnPageText}"
                             Style="{StaticResource CardValueTextStyle}"
-                            Margin="0,8,0,0" />
-
+                            Margin="0,10,0,0" />
                         <TextBlock
                             Text="Cần kiểm tra nhập hàng"
                             Style="{StaticResource CaptionTextStyle}"
-                            Margin="0,4,0,0" />
+                            Margin="0,6,0,0" />
                     </StackPanel>
                 </Border>
 
-                <Border
-                    Style="{StaticResource CardStyle}"
-                    Margin="12,0,0,0">
-
+                <Border Style="{StaticResource CardStyle}" Margin="12,0,0,0">
                     <StackPanel>
-
                         <TextBlock
                             Text="GIÁ TRỊ VỐN TRÊN TRANG"
                             Style="{StaticResource CaptionTextStyle}"
                             FontWeight="SemiBold" />
-
                         <TextBlock
                             Text="{Binding InventoryValueOnPageText}"
-                            FontSize="20"
+                            FontSize="22"
                             FontWeight="Bold"
                             Foreground="{StaticResource TextPrimaryBrush}"
                             Margin="0,10,0,0" />
-
                         <TextBlock
                             Text="Tồn kho × giá vốn"
                             Style="{StaticResource CaptionTextStyle}"
-                            Margin="0,4,0,0" />
+                            Margin="0,6,0,0" />
                     </StackPanel>
                 </Border>
             </UniformGrid>
 
-            <!-- Product card -->
-
-            <Border
-                Grid.Row="2"
-                Style="{StaticResource CardStyle}"
-                Padding="0">
-
+            <!-- Main product panel -->
+            <Border Grid.Row="2" Style="{StaticResource CardStyle}" Padding="0">
                 <Grid>
-
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
@@ -398,75 +323,63 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <!-- Toolbar -->
-
-                    <Grid Margin="20,18">
-
+                    <!-- top actions -->
+                    <Grid Margin="20,18,20,16">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
                         <StackPanel>
-
                             <TextBlock
                                 Text="Sản phẩm"
                                 Style="{StaticResource SectionTitleTextStyle}" />
-
                             <TextBlock
                                 Text="{Binding SelectedProductHint}"
                                 Style="{StaticResource CaptionTextStyle}"
                                 Margin="0,4,0,0" />
                         </StackPanel>
 
-                        <StackPanel
-                            Grid.Column="1"
-                            Orientation="Horizontal">
-
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
                             <Button
                                 Content="+ Thêm sản phẩm"
                                 Command="{Binding AddProductCommand}"
                                 Style="{StaticResource PrimaryButtonStyle}"
-                                MinWidth="140" />
+                                MinWidth="148" />
 
                             <Button
                                 Content="Sửa"
                                 Command="{Binding EditProductCommand}"
                                 Style="{StaticResource SecondaryButtonStyle}"
-                                MinWidth="82"
+                                MinWidth="84"
                                 Margin="8,0,0,0" />
 
                             <Button
                                 Content="{Binding ToggleProductButtonText}"
                                 Command="{Binding ToggleProductActiveCommand}"
                                 Style="{StaticResource SecondaryButtonStyle}"
-                                MinWidth="105"
+                                MinWidth="110"
                                 Margin="8,0,0,0" />
                         </StackPanel>
                     </Grid>
 
-                    <!-- Search -->
-
+                    <!-- search zone -->
                     <Border
                         Grid.Row="1"
                         Background="{StaticResource SurfaceMutedBrush}"
                         BorderBrush="{StaticResource BorderBrush}"
                         BorderThickness="0,1,0,1"
-                        Padding="20,13">
-
+                        Padding="20,14">
                         <Grid>
-
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
-                            <Grid MaxWidth="440">
-
+                            <Grid MaxWidth="460" HorizontalAlignment="Left">
                                 <TextBox
                                     x:Name="SearchBox"
-                                    Text="{Binding SearchTerm,
-                                        UpdateSourceTrigger=PropertyChanged}"
+                                    Text="{Binding SearchTerm, UpdateSourceTrigger=PropertyChanged}"
                                     Style="{StaticResource SearchTextBoxStyle}" />
 
                                 <TextBlock
@@ -476,35 +389,16 @@
                                     Margin="14,0"
                                     IsHitTestVisible="False"
                                     VerticalAlignment="Center">
-
                                     <TextBlock.Style>
                                         <Style TargetType="{x:Type TextBlock}">
-
-                                            <Setter
-                                                Property="Visibility"
-                                                Value="Collapsed" />
-
+                                            <Setter Property="Visibility" Value="Collapsed" />
                                             <Style.Triggers>
-
                                                 <MultiDataTrigger>
-
                                                     <MultiDataTrigger.Conditions>
-
-                                                        <Condition
-                                                            Binding="{Binding Text.Length,
-                                                                ElementName=SearchBox}"
-                                                            Value="0" />
-
-                                                        <Condition
-                                                            Binding="{Binding IsKeyboardFocusWithin,
-                                                                ElementName=SearchBox}"
-                                                            Value="False" />
-
+                                                        <Condition Binding="{Binding Text.Length, ElementName=SearchBox}" Value="0" />
+                                                        <Condition Binding="{Binding IsKeyboardFocusWithin, ElementName=SearchBox}" Value="False" />
                                                     </MultiDataTrigger.Conditions>
-
-                                                    <Setter
-                                                        Property="Visibility"
-                                                        Value="Visible" />
+                                                    <Setter Property="Visibility" Value="Visible" />
                                                 </MultiDataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -512,17 +406,13 @@
                                 </TextBlock>
                             </Grid>
 
-                            <StackPanel
-                                Grid.Column="1"
-                                Orientation="Horizontal">
-
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
                                 <Button
                                     Content="Tìm kiếm"
                                     Command="{Binding SearchCommand}"
                                     Style="{StaticResource PrimaryButtonStyle}"
-                                    IsDefault="True"
-                                    MinWidth="100" />
-
+                                    MinWidth="98"
+                                    IsDefault="True" />
                                 <Button
                                     Content="Tải lại"
                                     Command="{Binding RefreshCommand}"
@@ -533,55 +423,38 @@
                         </Grid>
                     </Border>
 
-                    <!-- Grid -->
-
+                    <!-- table -->
                     <Grid Grid.Row="2">
-
                         <DataGrid
                             ItemsSource="{Binding Products}"
-                            SelectedItem="{Binding SelectedProduct,
-                                Mode=TwoWay}"
+                            SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
                             Style="{StaticResource ModernDataGridStyle}"
                             EnableRowVirtualization="True"
                             EnableColumnVirtualization="True"
                             VirtualizingPanel.IsVirtualizing="True"
                             VirtualizingPanel.VirtualizationMode="Recycling"
-                            ScrollViewer.CanContentScroll="True"
-                            ScrollViewer.IsDeferredScrollingEnabled="True">
+                            ScrollViewer.CanContentScroll="True">
 
                             <DataGrid.Columns>
-
-                                <DataGridTemplateColumn
-                                    Header="SẢN PHẨM"
-                                    Width="2*">
-
+                                <DataGridTemplateColumn Header="SẢN PHẨM" Width="2.4*">
                                     <DataGridTemplateColumn.CellTemplate>
-
                                         <DataTemplate>
-
                                             <StackPanel VerticalAlignment="Center">
-
                                                 <TextBlock
                                                     Text="{Binding Name}"
                                                     Foreground="{StaticResource TextPrimaryBrush}"
                                                     FontSize="14"
                                                     FontWeight="SemiBold" />
-
-                                                <StackPanel
-                                                    Orientation="Horizontal"
-                                                    Margin="0,4,0,0">
-
+                                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                                                     <TextBlock
                                                         Text="{Binding Code}"
                                                         Foreground="{StaticResource AccentBrush}"
                                                         FontSize="11"
                                                         FontWeight="SemiBold" />
-
                                                     <TextBlock
                                                         Text="  •  "
                                                         Foreground="{StaticResource TextMutedBrush}"
                                                         FontSize="11" />
-
                                                     <TextBlock
                                                         Text="{Binding UnitName}"
                                                         Foreground="{StaticResource TextSecondaryBrush}"
@@ -595,23 +468,17 @@
                                 <DataGridTextColumn
                                     Header="DANH MỤC"
                                     Binding="{Binding CategoryName}"
-                                    Width="1.2*" />
+                                    Width="1.3*" />
 
                                 <DataGridTextColumn
                                     Header="GIÁ BÁN"
                                     Binding="{Binding SalePriceText}"
                                     Width="1*" />
 
-                                <DataGridTemplateColumn
-                                    Header="TỒN KHO"
-                                    Width="1.3*">
-
+                                <DataGridTemplateColumn Header="TỒN KHO" Width="1.4*">
                                     <DataGridTemplateColumn.CellTemplate>
-
                                         <DataTemplate>
-
                                             <StackPanel VerticalAlignment="Center">
-
                                                 <TextBlock
                                                     Text="{Binding StockDisplay}"
                                                     Foreground="{StaticResource TextPrimaryBrush}"
@@ -624,43 +491,19 @@
                                                     Padding="8,3"
                                                     CornerRadius="8"
                                                     Margin="0,5,0,0">
-
                                                     <Border.Style>
                                                         <Style TargetType="{x:Type Border}">
-
-                                                            <Setter
-                                                                Property="Background"
-                                                                Value="{StaticResource SuccessSoftBrush}" />
-
+                                                            <Setter Property="Background" Value="{StaticResource SuccessSoftBrush}" />
                                                             <Style.Triggers>
-
-                                                                <DataTrigger
-                                                                    Binding="{Binding TrackInventory}"
-                                                                    Value="False">
-
-                                                                    <Setter
-                                                                        Property="Background"
-                                                                        Value="{StaticResource SurfaceMutedBrush}" />
+                                                                <DataTrigger Binding="{Binding TrackInventory}" Value="False">
+                                                                    <Setter Property="Background" Value="{StaticResource SurfaceMutedBrush}" />
                                                                 </DataTrigger>
-
-                                                                <DataTrigger
-                                                                    Binding="{Binding IsLowStock}"
-                                                                    Value="True">
-
-                                                                    <Setter
-                                                                        Property="Background"
-                                                                        Value="{StaticResource WarningSoftBrush}" />
+                                                                <DataTrigger Binding="{Binding IsLowStock}" Value="True">
+                                                                    <Setter Property="Background" Value="{StaticResource WarningSoftBrush}" />
                                                                 </DataTrigger>
-
-                                                                <DataTrigger
-                                                                    Binding="{Binding IsOutOfStock}"
-                                                                    Value="True">
-
-                                                                    <Setter
-                                                                        Property="Background"
-                                                                        Value="{StaticResource DangerSoftBrush}" />
+                                                                <DataTrigger Binding="{Binding IsOutOfStock}" Value="True">
+                                                                    <Setter Property="Background" Value="{StaticResource DangerSoftBrush}" />
                                                                 </DataTrigger>
-
                                                             </Style.Triggers>
                                                         </Style>
                                                     </Border.Style>
@@ -675,38 +518,21 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTemplateColumn
-                                    Header="TRẠNG THÁI"
-                                    Width="1*">
-
+                                <DataGridTemplateColumn Header="TRẠNG THÁI" Width="1*">
                                     <DataGridTemplateColumn.CellTemplate>
-
                                         <DataTemplate>
-
                                             <Border
                                                 HorizontalAlignment="Left"
                                                 VerticalAlignment="Center"
                                                 Padding="10,5"
                                                 CornerRadius="9">
-
                                                 <Border.Style>
                                                     <Style TargetType="{x:Type Border}">
-
-                                                        <Setter
-                                                            Property="Background"
-                                                            Value="{StaticResource SurfaceMutedBrush}" />
-
+                                                        <Setter Property="Background" Value="{StaticResource SurfaceMutedBrush}" />
                                                         <Style.Triggers>
-
-                                                            <DataTrigger
-                                                                Binding="{Binding IsActive}"
-                                                                Value="True">
-
-                                                                <Setter
-                                                                    Property="Background"
-                                                                    Value="{StaticResource SuccessSoftBrush}" />
+                                                            <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                                <Setter Property="Background" Value="{StaticResource SuccessSoftBrush}" />
                                                             </DataTrigger>
-
                                                         </Style.Triggers>
                                                     </Style>
                                                 </Border.Style>
@@ -715,25 +541,13 @@
                                                     Text="{Binding StatusText}"
                                                     FontSize="11"
                                                     FontWeight="SemiBold">
-
                                                     <TextBlock.Style>
                                                         <Style TargetType="{x:Type TextBlock}">
-
-                                                            <Setter
-                                                                Property="Foreground"
-                                                                Value="{StaticResource TextSecondaryBrush}" />
-
+                                                            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
                                                             <Style.Triggers>
-
-                                                                <DataTrigger
-                                                                    Binding="{Binding IsActive}"
-                                                                    Value="True">
-
-                                                                    <Setter
-                                                                        Property="Foreground"
-                                                                        Value="{StaticResource SuccessBrush}" />
+                                                                <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                                    <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
                                                                 </DataTrigger>
-
                                                             </Style.Triggers>
                                                         </Style>
                                                     </TextBlock.Style>
@@ -745,37 +559,18 @@
                             </DataGrid.Columns>
                         </DataGrid>
 
-                        <!-- Empty state -->
-
-                        <Border
-                            Background="{StaticResource SurfaceBrush}">
-
+                        <!-- empty -->
+                        <Border Background="{StaticResource SurfaceBrush}">
                             <Border.Style>
                                 <Style TargetType="{x:Type Border}">
-
-                                    <Setter
-                                        Property="Visibility"
-                                        Value="Collapsed" />
-
+                                    <Setter Property="Visibility" Value="Collapsed" />
                                     <Style.Triggers>
-
                                         <MultiDataTrigger>
-
                                             <MultiDataTrigger.Conditions>
-
-                                                <Condition
-                                                    Binding="{Binding Products.Count}"
-                                                    Value="0" />
-
-                                                <Condition
-                                                    Binding="{Binding IsLoading}"
-                                                    Value="False" />
-
+                                                <Condition Binding="{Binding Products.Count}" Value="0" />
+                                                <Condition Binding="{Binding IsLoading}" Value="False" />
                                             </MultiDataTrigger.Conditions>
-
-                                            <Setter
-                                                Property="Visibility"
-                                                Value="Visible" />
+                                            <Setter Property="Visibility" Value="Visible" />
                                         </MultiDataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -784,17 +579,15 @@
                             <StackPanel
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center">
-
                                 <Border
-                                    Width="64"
-                                    Height="64"
+                                    Width="68"
+                                    Height="68"
                                     Background="{StaticResource AccentSoftBrush}"
-                                    CornerRadius="20">
-
+                                    CornerRadius="22">
                                     <TextBlock
                                         Text="&#xE719;"
                                         FontFamily="Segoe MDL2 Assets"
-                                        FontSize="28"
+                                        FontSize="30"
                                         Foreground="{StaticResource AccentBrush}"
                                         HorizontalAlignment="Center"
                                         VerticalAlignment="Center" />
@@ -814,23 +607,18 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- Loading -->
-
+                        <!-- loading -->
                         <Border
                             Background="#D9FFFFFF"
-                            Visibility="{Binding IsLoading,
-                                Converter={StaticResource BooleanToVisibilityConverter}}">
-
+                            Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <StackPanel
-                                Width="260"
+                                Width="270"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center">
-
                                 <ProgressBar
                                     Height="5"
                                     IsIndeterminate="True"
                                     Foreground="{StaticResource AccentBrush}" />
-
                                 <TextBlock
                                     Text="Đang đồng bộ dữ liệu sản phẩm..."
                                     Foreground="{StaticResource TextSecondaryBrush}"
@@ -841,12 +629,8 @@
                         </Border>
                     </Grid>
 
-                    <!-- Footer -->
-
-                    <Grid
-                        Grid.Row="3"
-                        Margin="20,14">
-
+                    <!-- footer -->
+                    <Grid Grid.Row="3" Margin="20,14">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -857,10 +641,7 @@
                             Style="{StaticResource CaptionTextStyle}"
                             VerticalAlignment="Center" />
 
-                        <StackPanel
-                            Grid.Column="1"
-                            Orientation="Horizontal">
-
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
                             <Button
                                 Content="Trước"
                                 Command="{Binding PreviousPageCommand}"
