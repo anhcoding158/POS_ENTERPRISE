@@ -3,40 +3,54 @@
 /// <summary>
 /// Dữ liệu tạo sản phẩm mới.
 ///
-/// Request chỉ chuẩn hóa chuỗi.
-/// ProductService và Domain chịu trách nhiệm kiểm tra nghiệp vụ.
+/// DTO chỉ chuẩn hóa dữ liệu văn bản.
+/// Các quy tắc nghiệp vụ chính thức vẫn được kiểm tra
+/// trong Product Domain và ProductService.
 /// </summary>
 public sealed class CreateProductRequest
 {
     public CreateProductRequest(
         int categoryId,
         string? code,
-        string? barcode,
         string? name,
-        string? description,
         string? unitName,
-        string? imagePath,
         long costPrice,
         long salePrice,
         int initialStockQuantity,
         int minimumStock,
         bool trackInventory,
-        bool allowNegativeStock)
+        bool allowNegativeStock,
+        string? barcode = null,
+        string? description = null,
+        string? imagePath = null)
     {
         CategoryId = categoryId;
-        Code = NormalizeRequiredText(code);
-        Barcode = NormalizeOptionalText(barcode);
+
+        Code =
+            NormalizeRequiredText(code)
+                .ToUpperInvariant();
+
         Name = NormalizeRequiredText(name);
-        Description = NormalizeOptionalText(description);
+
         UnitName = NormalizeRequiredText(unitName);
-        ImagePath = NormalizeOptionalText(imagePath);
 
         CostPrice = costPrice;
         SalePrice = salePrice;
-        InitialStockQuantity = initialStockQuantity;
+
+        InitialStockQuantity =
+            initialStockQuantity;
+
         MinimumStock = minimumStock;
+
         TrackInventory = trackInventory;
-        AllowNegativeStock = allowNegativeStock;
+
+        AllowNegativeStock =
+            trackInventory &&
+            allowNegativeStock;
+
+        Barcode = NormalizeOptionalText(barcode);
+        Description = NormalizeOptionalText(description);
+        ImagePath = NormalizeOptionalText(imagePath);
     }
 
     public int CategoryId { get; }

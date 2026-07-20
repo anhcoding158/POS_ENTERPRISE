@@ -5,12 +5,15 @@ using Microsoft.Extensions.Logging;
 using POS.Application.Abstractions.Services;
 using POS.Application.DTOs.Products;
 using POS.Wpf.Commands;
+using POS.Wpf.Services;
+
 namespace POS.Wpf.ViewModels;
 
 /// <summary>
 /// Điều khiển màn hình danh mục sản phẩm.
 /// </summary>
-public sealed class ShellViewModel : ViewModelBase
+public sealed class ShellViewModel :
+    ViewModelBase
 {
     private const int DefaultPageSize = 20;
 
@@ -18,12 +21,21 @@ public sealed class ShellViewModel : ViewModelBase
         VietnameseCulture =
             CultureInfo.GetCultureInfo("vi-VN");
 
-    private readonly IServiceScopeFactory _scopeFactory;
-    private readonly ILogger<ShellViewModel> _logger;
+    private readonly IServiceScopeFactory
+        _scopeFactory;
+
+    private readonly IProductDialogService
+        _productDialogService;
+
+    private readonly ILogger<ShellViewModel>
+        _logger;
 
     private string? _searchTerm;
     private bool _isLoading;
     private bool _isInitialized;
+
+    private ProductRowViewModel?
+        _selectedProduct;
 
     private int _pageNumber = 1;
     private int _totalPages = 1;
@@ -41,12 +53,18 @@ public sealed class ShellViewModel : ViewModelBase
 
     public ShellViewModel(
         IServiceScopeFactory scopeFactory,
-    ILogger<ShellViewModel> logger)
+        IProductDialogService productDialogService,
+        ILogger<ShellViewModel> logger)
     {
         _scopeFactory =
             scopeFactory ??
             throw new ArgumentNullException(
                 nameof(scopeFactory));
+
+        _productDialogService =
+            productDialogService ??
+            throw new ArgumentNullException(
+                nameof(productDialogService));
 
         _logger =
             logger ??
@@ -76,9 +94,28 @@ public sealed class ShellViewModel : ViewModelBase
                 NextPageAsync,
                 CanGoToNextPage,
                 HandleCommandException);
+
+        AddProductCommand =
+            new AsyncRelayCommand(
+                AddProductAsync,
+                CanLoadProducts,
+                HandleCommandException);
+
+        EditProductCommand =
+            new AsyncRelayCommand(
+                EditProductAsync,
+                CanEditSelectedProduct,
+                HandleCommandException);
+
+        ToggleProductActiveCommand =
+            new AsyncRelayCommand(
+                ToggleProductActiveAsync,
+                CanEditSelectedProduct,
+                HandleCommandException);
     }
 
-    public ObservableCollection<ProductRowViewModel>
+    public ObservableCollection<
+        ProductRowViewModel>
         Products
     { get; } = [];
 
@@ -90,6 +127,14 @@ public sealed class ShellViewModel : ViewModelBase
 
     public AsyncRelayCommand NextPageCommand { get; }
 
+    public AsyncRelayCommand AddProductCommand { get; }
+
+    public AsyncRelayCommand EditProductCommand { get; }
+
+    public AsyncRelayCommand
+        ToggleProductActiveCommand
+    { get; }
+
     public string? SearchTerm
     {
         get => _searchTerm;
@@ -98,6 +143,42 @@ public sealed class ShellViewModel : ViewModelBase
             ref _searchTerm,
             value);
     }
+
+    public ProductRowViewModel?
+        SelectedProduct
+    {
+        get => _selectedProduct;
+
+        set
+        {
+            if (!SetProperty(
+                    ref _selectedProduct,
+                    value))
+            {
+                return;
+            }
+
+            OnPropertyChanged(
+                nameof(
+                    ToggleProductButtonText));
+
+            OnPropertyChanged(
+                nameof(
+                    SelectedProductHint));
+
+            NotifyCommandStates();
+        }
+    }
+
+    public string ToggleProductButtonText =>
+        SelectedProduct?.IsActive == true
+            ? "Ngừng bán"
+            : "Bật bán";
+
+    public string SelectedProductHint =>
+        SelectedProduct is null
+            ? "Chọn một sản phẩm để sửa hoặc thay đổi trạng thái."
+            : $"Đã chọn: {SelectedProduct.Name}";
 
     public bool IsLoading
     {
@@ -165,7 +246,8 @@ public sealed class ShellViewModel : ViewModelBase
                 return;
             }
 
-            OnPropertyChanged(nameof(TotalProductsText));
+            OnPropertyChanged(
+                nameof(TotalProductsText));
         }
     }
 
@@ -183,7 +265,8 @@ public sealed class ShellViewModel : ViewModelBase
             }
 
             OnPropertyChanged(
-                nameof(ActiveProductsOnPageText));
+                nameof(
+                    ActiveProductsOnPageText));
         }
     }
 
@@ -201,7 +284,8 @@ public sealed class ShellViewModel : ViewModelBase
             }
 
             OnPropertyChanged(
-                nameof(LowStockProductsOnPageText));
+                nameof(
+                    LowStockProductsOnPageText));
         }
     }
 
@@ -219,7 +303,8 @@ public sealed class ShellViewModel : ViewModelBase
             }
 
             OnPropertyChanged(
-                nameof(InventoryValueOnPageText));
+                nameof(
+                    InventoryValueOnPageText));
         }
     }
 
@@ -288,6 +373,102 @@ public sealed class ShellViewModel : ViewModelBase
         return LoadProductsAsync();
     }
 
+    private async Task AddProductAsync()
+    {
+        var saved =
+            await _productDialogService
+                .ShowCreateAsync();
+
+        if (!saved)
+        {
+            return;
+        }
+
+        PageNumber = 1;
+
+        StatusMessage =
+            "Sản phẩm mới đã được tạo.";
+
+        await LoadProductsAsync();
+    }
+
+    private async Task EditProductAsync()
+    {
+        var selectedProduct =
+            SelectedProduct;
+
+        if (selectedProduct is null)
+        {
+            return;
+        }
+
+        var saved =
+            await _productDialogService
+                .ShowEditAsync(
+                    selectedProduct.Id);
+
+        if (!saved)
+        {
+            return;
+        }
+
+        await LoadProductsAsync(
+            selectedProduct.Id);
+    }
+
+    private async Task ToggleProductActiveAsync()
+    {
+        var selectedProduct =
+            SelectedProduct;
+
+        if (selectedProduct is null)
+        {
+            return;
+        }
+
+        IsLoading = true;
+
+        try
+        {
+            await using var scope =
+                _scopeFactory.CreateAsyncScope();
+
+            var productService =
+                scope.ServiceProvider
+                    .GetRequiredService<
+                        IProductService>();
+
+            var targetState =
+                !selectedProduct.IsActive;
+
+            var result =
+                await productService
+                    .SetActiveStateAsync(
+                        selectedProduct.Id,
+                        targetState);
+
+            if (result.IsFailure)
+            {
+                StatusMessage =
+                    result.Error.Message;
+
+                return;
+            }
+
+            StatusMessage =
+                targetState
+                    ? "Sản phẩm đã được bật bán."
+                    : "Sản phẩm đã được ngừng bán.";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+
+        await LoadProductsAsync(
+            selectedProduct.Id);
+    }
+
     private async Task PreviousPageAsync()
     {
         if (!CanGoToPreviousPage())
@@ -295,7 +476,8 @@ public sealed class ShellViewModel : ViewModelBase
             return;
         }
 
-        var previousPage = PageNumber;
+        var previousPage =
+            PageNumber;
 
         PageNumber--;
 
@@ -315,7 +497,8 @@ public sealed class ShellViewModel : ViewModelBase
             return;
         }
 
-        var previousPage = PageNumber;
+        var previousPage =
+            PageNumber;
 
         PageNumber++;
 
@@ -328,12 +511,17 @@ public sealed class ShellViewModel : ViewModelBase
         }
     }
 
-    private async Task<bool> LoadProductsAsync()
+    private async Task<bool> LoadProductsAsync(
+        int? productIdToSelect = null)
     {
         if (IsLoading)
         {
             return false;
         }
+
+        var selectedProductId =
+            productIdToSelect ??
+            SelectedProduct?.Id;
 
         IsLoading = true;
 
@@ -351,18 +539,13 @@ public sealed class ShellViewModel : ViewModelBase
                     pageNumber: PageNumber,
                     pageSize: DefaultPageSize);
 
-            /*
- * Mỗi thao tác tạo một DI scope riêng.
- *
- * ProductService, repository và PosDbContext sẽ được
- * giải phóng ngay khi thao tác kết thúc.
- */
             await using var operationScope =
                 _scopeFactory.CreateAsyncScope();
 
             var productService =
                 operationScope.ServiceProvider
-                    .GetRequiredService<IProductService>();
+                    .GetRequiredService<
+                        IProductService>();
 
             var result =
                 await productService.SearchAsync(
@@ -374,7 +557,8 @@ public sealed class ShellViewModel : ViewModelBase
                     result.Error.Message;
 
                 _logger.LogWarning(
-                    "Tải sản phẩm thất bại: {ErrorCode} - {ErrorMessage}",
+                    "Tải sản phẩm thất bại: " +
+                    "{ErrorCode} - {ErrorMessage}",
                     result.Error.Code,
                     result.Error.Message);
 
@@ -383,12 +567,13 @@ public sealed class ShellViewModel : ViewModelBase
 
             var page = result.Value;
 
-            var rows = page.Items
-                .Select(
-                    product =>
-                        new ProductRowViewModel(
-                            product))
-                .ToArray();
+            var rows =
+                page.Items
+                    .Select(
+                        product =>
+                            new ProductRowViewModel(
+                                product))
+                    .ToArray();
 
             Products.Clear();
 
@@ -406,7 +591,8 @@ public sealed class ShellViewModel : ViewModelBase
                         page.TotalCount /
                         (double)page.PageSize));
 
-            TotalProducts = page.TotalCount;
+            TotalProducts =
+                page.TotalCount;
 
             ActiveProductsOnPage =
                 rows.Count(
@@ -427,8 +613,17 @@ public sealed class ShellViewModel : ViewModelBase
                             product.StockQuantity > 0)
                     .Sum(
                         product =>
-                            (decimal)product.CostPrice *
+                            (decimal)
+                            product.CostPrice *
                             product.StockQuantity);
+
+            SelectedProduct =
+                selectedProductId.HasValue
+                    ? Products.FirstOrDefault(
+                        product =>
+                            product.Id ==
+                            selectedProductId.Value)
+                    : null;
 
             StatusMessage =
                 rows.Length == 0
@@ -464,6 +659,12 @@ public sealed class ShellViewModel : ViewModelBase
         return !IsLoading;
     }
 
+    private bool CanEditSelectedProduct()
+    {
+        return !IsLoading &&
+               SelectedProduct is not null;
+    }
+
     private bool CanGoToPreviousPage()
     {
         return !IsLoading &&
@@ -492,7 +693,20 @@ public sealed class ShellViewModel : ViewModelBase
     {
         SearchCommand.NotifyCanExecuteChanged();
         RefreshCommand.NotifyCanExecuteChanged();
-        PreviousPageCommand.NotifyCanExecuteChanged();
-        NextPageCommand.NotifyCanExecuteChanged();
+
+        PreviousPageCommand
+            .NotifyCanExecuteChanged();
+
+        NextPageCommand
+            .NotifyCanExecuteChanged();
+
+        AddProductCommand
+            .NotifyCanExecuteChanged();
+
+        EditProductCommand
+            .NotifyCanExecuteChanged();
+
+        ToggleProductActiveCommand
+            .NotifyCanExecuteChanged();
     }
 }

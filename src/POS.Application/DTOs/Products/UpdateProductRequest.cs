@@ -1,11 +1,11 @@
 ﻿namespace POS.Application.DTOs.Products;
 
 /// <summary>
-/// Dữ liệu cập nhật sản phẩm.
+/// Dữ liệu cập nhật thông tin sản phẩm.
 ///
-/// Việc thay đổi tồn kho thực tế không nằm trong request này.
-/// Tồn kho phải được điều chỉnh bằng nghiệp vụ nhập, xuất
-/// hoặc kiểm kê riêng để có thể lưu lịch sử.
+/// Tồn kho thực tế không được chỉnh qua request này.
+/// Sau này tồn kho sẽ được điều chỉnh qua nghiệp vụ
+/// nhập kho, xuất kho hoặc kiểm kê.
 /// </summary>
 public sealed class UpdateProductRequest
 {
@@ -13,34 +13,45 @@ public sealed class UpdateProductRequest
         int productId,
         int categoryId,
         string? code,
-        string? barcode,
         string? name,
-        string? description,
         string? unitName,
-        string? imagePath,
         long costPrice,
         long salePrice,
         int minimumStock,
         bool trackInventory,
         bool allowNegativeStock,
-        bool isActive)
+        bool isActive,
+        string? barcode = null,
+        string? description = null,
+        string? imagePath = null)
     {
         ProductId = productId;
         CategoryId = categoryId;
 
-        Code = NormalizeRequiredText(code);
-        Barcode = NormalizeOptionalText(barcode);
+        Code =
+            NormalizeRequiredText(code)
+                .ToUpperInvariant();
+
         Name = NormalizeRequiredText(name);
-        Description = NormalizeOptionalText(description);
+
         UnitName = NormalizeRequiredText(unitName);
-        ImagePath = NormalizeOptionalText(imagePath);
 
         CostPrice = costPrice;
         SalePrice = salePrice;
+
         MinimumStock = minimumStock;
+
         TrackInventory = trackInventory;
-        AllowNegativeStock = allowNegativeStock;
+
+        AllowNegativeStock =
+            trackInventory &&
+            allowNegativeStock;
+
         IsActive = isActive;
+
+        Barcode = NormalizeOptionalText(barcode);
+        Description = NormalizeOptionalText(description);
+        ImagePath = NormalizeOptionalText(imagePath);
     }
 
     public int ProductId { get; }

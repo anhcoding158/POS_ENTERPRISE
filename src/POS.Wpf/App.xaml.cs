@@ -5,6 +5,7 @@ using POS.Application.Abstractions.Services;
 using POS.Application.Services;
 using POS.Infrastructure;
 using POS.Infrastructure.Persistence;
+using POS.Wpf.Services;
 using POS.Wpf.ViewModels;
 using POS.Wpf.Views;
 
@@ -33,10 +34,6 @@ public partial class App :
                             AppContext.BaseDirectory
                     });
 
-            /*
-             * Nạp cấu hình nền trước, sau đó cho phép
-             * appsettings.<Environment>.json ghi đè.
-             */
             builder.Configuration
                 .AddJsonFile(
                     "appsettings.json",
@@ -51,16 +48,33 @@ public partial class App :
             builder.Services.AddInfrastructure(
                 builder.Configuration);
 
+            /*
+             * Application services chỉ được resolve
+             * trong scope của từng thao tác.
+             */
             builder.Services.AddScoped<
                 IProductService,
                 ProductService>();
 
+            builder.Services.AddScoped<
+                ICategoryService,
+                CategoryService>();
+
             /*
-             * ShellWindow và ShellViewModel không giữ trực tiếp
-             * repository hoặc DbContext scoped.
+             * Dialog service và ViewModel không giữ DbContext.
              */
-            builder.Services.AddTransient<ShellViewModel>();
-            builder.Services.AddTransient<ShellWindow>();
+            builder.Services.AddSingleton<
+                IProductDialogService,
+                ProductDialogService>();
+
+            builder.Services.AddTransient<
+                ProductEditorViewModel>();
+
+            builder.Services.AddTransient<
+                ShellViewModel>();
+
+            builder.Services.AddTransient<
+                ShellWindow>();
 
             _host = builder.Build();
 
@@ -71,7 +85,8 @@ public partial class App :
 
             var shellWindow =
                 _host.Services
-                    .GetRequiredService<ShellWindow>();
+                    .GetRequiredService<
+                        ShellWindow>();
 
             MainWindow = shellWindow;
 
