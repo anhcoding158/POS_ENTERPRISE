@@ -1,41 +1,85 @@
 ﻿<Project>
+
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
 
   <ItemGroup>
-      <PackageVersion Include="BCrypt.Net-Next" Version="4.0.3" />
-	  <PackageVersion Include="Microsoft.EntityFrameworkCore"
-				   Version="10.0.10" />
 
-	  <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite"
-					  Version="10.0.10" />
+    <!-- Security and authentication -->
 
-	  <PackageVersion Include="Microsoft.EntityFrameworkCore.Design"
-					  Version="10.0.10" />
+    <PackageVersion
+      Include="BCrypt.Net-Next"
+      Version="4.0.3" />
 
-	  <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions"
-					  Version="10.0.10" />
+    <!-- Entity Framework Core -->
 
-	  <PackageVersion Include="Microsoft.Extensions.Configuration.Json"
-					  Version="10.0.10" />
+    <PackageVersion
+      Include="Microsoft.EntityFrameworkCore"
+      Version="10.0.10" />
 
-	  <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions"
-					  Version="10.0.10" />
+    <PackageVersion
+      Include="Microsoft.EntityFrameworkCore.Sqlite"
+      Version="10.0.10" />
 
-	  <PackageVersion Include="Microsoft.Extensions.Hosting"
-					  Version="10.0.10" />
+    <PackageVersion
+      Include="Microsoft.EntityFrameworkCore.Design"
+      Version="10.0.10" />
 
-	  <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions"
-					  Version="10.0.10" />
+    <PackageVersion
+      Include="SQLitePCLRaw.bundle_e_sqlite3"
+      Version="2.1.12" />
 
-	  <PackageVersion Include="Microsoft.Extensions.Logging.Debug"
-					  Version="10.0.10" />
+    <!-- Microsoft Extensions -->
 
-	  <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions"
-					  Version="10.0.10" />
-      <PackageVersion Include="QRCoder" Version="1.7.0" />
-	  <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3"
-                Version="2.1.12" />
+    <PackageVersion
+      Include="Microsoft.Extensions.Configuration.Abstractions"
+      Version="10.0.10" />
+
+    <PackageVersion
+      Include="Microsoft.Extensions.Configuration.Json"
+      Version="10.0.10" />
+
+    <PackageVersion
+      Include="Microsoft.Extensions.DependencyInjection.Abstractions"
+      Version="10.0.10" />
+
+    <PackageVersion
+      Include="Microsoft.Extensions.Hosting"
+      Version="10.0.10" />
+
+    <PackageVersion
+      Include="Microsoft.Extensions.Logging.Abstractions"
+      Version="10.0.10" />
+
+    <PackageVersion
+      Include="Microsoft.Extensions.Logging.Debug"
+      Version="10.0.10" />
+
+    <PackageVersion
+      Include="Microsoft.Extensions.Options.ConfigurationExtensions"
+      Version="10.0.10" />
+
+    <!-- Payments -->
+
+    <PackageVersion
+      Include="QRCoder"
+      Version="1.7.0" />
+
+    <!-- Automated testing -->
+
+    <PackageVersion
+      Include="Microsoft.NET.Test.Sdk"
+      Version="18.8.1" />
+
+    <PackageVersion
+      Include="xunit.v3"
+      Version="3.2.2" />
+
+    <PackageVersion
+      Include="xunit.runner.visualstudio"
+      Version="3.1.5" />
+
   </ItemGroup>
+
 </Project>

@@ -8,122 +8,131 @@
 
     <SolidColorBrush
         x:Key="AppBackgroundBrush"
-        Color="#F3F7F4" />
+        Color="#F7F3EC" />
 
     <SolidColorBrush
         x:Key="SurfaceBrush"
-        Color="#FFFFFF" />
+        Color="#FFFEFB" />
 
     <SolidColorBrush
         x:Key="SurfaceMutedBrush"
-        Color="#F8FAF8" />
+        Color="#FBF8F2" />
 
     <SolidColorBrush
         x:Key="SurfaceRaisedBrush"
-        Color="#FCFEFC" />
+        Color="#FFFFFF" />
 
     <SolidColorBrush
         x:Key="BorderBrush"
-        Color="#E1E9E3" />
+        Color="#E9E0D4" />
 
     <SolidColorBrush
         x:Key="BorderStrongBrush"
-        Color="#CEDBD1" />
+        Color="#D9CDBD" />
 
     <!-- =====================================================
-         BRAND
+         CHARCOAL SIDEBAR
+         ===================================================== -->
+
+    <SolidColorBrush
+        x:Key="SidebarBrush"
+        Color="#1B1816" />
+
+    <SolidColorBrush
+        x:Key="SidebarSurfaceBrush"
+        Color="#27221F" />
+
+    <SolidColorBrush
+        x:Key="SidebarTextBrush"
+        Color="#FFF9F0" />
+
+    <SolidColorBrush
+        x:Key="SidebarMutedBrush"
+        Color="#BBAFA2" />
+
+    <SolidColorBrush
+        x:Key="SidebarHoverBrush"
+        Color="#302A26" />
+
+    <SolidColorBrush
+        x:Key="SidebarSelectedBrush"
+        Color="#741318" />
+
+    <SolidColorBrush
+        x:Key="SidebarSelectedHoverBrush"
+        Color="#8B171D" />
+
+    <!-- =====================================================
+         BURGUNDY ACCENT
          ===================================================== -->
 
     <SolidColorBrush
         x:Key="AccentBrush"
-        Color="#169447" />
+        Color="#88151B" />
 
     <SolidColorBrush
         x:Key="AccentHoverBrush"
-        Color="#117A3A" />
+        Color="#A01B22" />
 
     <SolidColorBrush
         x:Key="AccentPressedBrush"
-        Color="#0C6430" />
+        Color="#681015" />
 
     <SolidColorBrush
         x:Key="AccentSoftBrush"
-        Color="#E8F6ED" />
+        Color="#F7E9E9" />
 
     <SolidColorBrush
         x:Key="AccentBorderBrush"
-        Color="#BFE6CC" />
+        Color="#E6C1C3" />
 
     <LinearGradientBrush
-        x:Key="BrandGradientBrush"
+        x:Key="AccentGradientBrush"
         StartPoint="0,0"
         EndPoint="1,1">
 
         <GradientStop
-            Color="#1DAA55"
+            Color="#A51D24"
             Offset="0" />
 
         <GradientStop
-            Color="#08783A"
+            Color="#711015"
             Offset="1" />
     </LinearGradientBrush>
 
     <!-- =====================================================
-         LIGHT NAVIGATION
+         GOLD
          ===================================================== -->
 
     <SolidColorBrush
-        x:Key="NavigationSurfaceBrush"
-        Color="#FFFFFF" />
+        x:Key="GoldBrush"
+        Color="#C7973E" />
 
     <SolidColorBrush
-        x:Key="NavigationBorderBrush"
-        Color="#E3EBE5" />
+        x:Key="GoldHoverBrush"
+        Color="#D6AA55" />
 
     <SolidColorBrush
-        x:Key="NavigationTextBrush"
-        Color="#314238" />
+        x:Key="GoldSoftBrush"
+        Color="#F8EFDE" />
 
     <SolidColorBrush
-        x:Key="NavigationMutedBrush"
-        Color="#839087" />
+        x:Key="GoldBorderBrush"
+        Color="#E7D2AA" />
 
-    <SolidColorBrush
-        x:Key="NavigationHoverBrush"
-        Color="#F0F7F2" />
+    <LinearGradientBrush
+        x:Key="GoldGradientBrush"
+        StartPoint="0,0"
+        EndPoint="1,1">
 
-    <SolidColorBrush
-        x:Key="NavigationSelectedBrush"
-        Color="#E6F5EB" />
+        <GradientStop
+            Color="#E1BB69"
+            Offset="0" />
 
-    <SolidColorBrush
-        x:Key="NavigationSelectedTextBrush"
-        Color="#08783A" />
-
-    <!--
-    Giữ các resource Sidebar để ProductEditorWindow
-    vẫn có header xanh riêng, không ảnh hưởng navigation mới.
-    -->
-
-    <SolidColorBrush
-        x:Key="SidebarBrush"
-        Color="#0B4D2B" />
-
-    <SolidColorBrush
-        x:Key="SidebarTextBrush"
-        Color="#FFFFFF" />
-
-    <SolidColorBrush
-        x:Key="SidebarMutedBrush"
-        Color="#CBE3D3" />
-
-    <SolidColorBrush
-        x:Key="SidebarHoverBrush"
-        Color="#14613A" />
-
-    <SolidColorBrush
-        x:Key="SidebarSelectedBrush"
-        Color="#1A7043" />
+        <GradientStop
+            Color="#A97522"
+            Offset="1" />
+    </LinearGradientBrush>
 
     <!-- =====================================================
          TEXT
@@ -131,15 +140,15 @@
 
     <SolidColorBrush
         x:Key="TextPrimaryBrush"
-        Color="#1D2B22" />
+        Color="#2C221D" />
 
     <SolidColorBrush
         x:Key="TextSecondaryBrush"
-        Color="#5F7065" />
+        Color="#71655E" />
 
     <SolidColorBrush
         x:Key="TextMutedBrush"
-        Color="#89978E" />
+        Color="#9A8E85" />
 
     <!-- =====================================================
          STATUS
@@ -147,54 +156,34 @@
 
     <SolidColorBrush
         x:Key="SuccessBrush"
-        Color="#168847" />
+        Color="#34774B" />
 
     <SolidColorBrush
         x:Key="SuccessSoftBrush"
-        Color="#E8F7EE" />
+        Color="#EAF5EC" />
 
     <SolidColorBrush
         x:Key="WarningBrush"
-        Color="#B96E0A" />
+        Color="#A86C13" />
 
     <SolidColorBrush
         x:Key="WarningSoftBrush"
-        Color="#FFF5E3" />
+        Color="#FAF1DE" />
 
     <SolidColorBrush
         x:Key="DangerBrush"
-        Color="#D04444" />
+        Color="#C33E43" />
 
     <SolidColorBrush
         x:Key="DangerSoftBrush"
-        Color="#FDECEC" />
+        Color="#FBE9EA" />
 
     <SolidColorBrush
         x:Key="InfoBrush"
-        Color="#2478C5" />
+        Color="#39718E" />
 
     <SolidColorBrush
         x:Key="InfoSoftBrush"
-        Color="#EAF4FE" />
-
-    <!-- =====================================================
-         KPI ICON SURFACES
-         ===================================================== -->
-
-    <SolidColorBrush
-        x:Key="PurpleSoftBrush"
-        Color="#F0ECFF" />
-
-    <SolidColorBrush
-        x:Key="PurpleBrush"
-        Color="#7057D9" />
-
-    <SolidColorBrush
-        x:Key="BlueSoftBrush"
-        Color="#EAF4FE" />
-
-    <SolidColorBrush
-        x:Key="BlueBrush"
-        Color="#2F80C9" />
+        Color="#EBF3F7" />
 
 </ResourceDictionary>

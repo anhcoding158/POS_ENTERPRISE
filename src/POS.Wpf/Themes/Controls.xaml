@@ -24,7 +24,7 @@
 
         <Setter
             Property="CornerRadius"
-            Value="16" />
+            Value="15" />
 
         <Setter
             Property="Padding"
@@ -32,9 +32,10 @@
 
         <Setter Property="Effect">
             <Setter.Value>
+
                 <DropShadowEffect
-                    Color="#15301F"
-                    BlurRadius="18"
+                    Color="#4B3327"
+                    BlurRadius="16"
                     ShadowDepth="2"
                     Direction="270"
                     Opacity="0.08" />
@@ -52,7 +53,7 @@
 
         <Setter
             Property="Background"
-            Value="{StaticResource AccentBrush}" />
+            Value="{StaticResource AccentGradientBrush}" />
 
         <Setter
             Property="Foreground"
@@ -68,7 +69,7 @@
 
         <Setter
             Property="Padding"
-            Value="17,0" />
+            Value="18,0" />
 
         <Setter
             Property="Height"
@@ -101,7 +102,7 @@
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="{TemplateBinding BorderThickness}"
-                        CornerRadius="10"
+                        CornerRadius="9"
                         Padding="{TemplateBinding Padding}"
                         SnapsToDevicePixels="True">
 
@@ -136,11 +137,6 @@
                                 TargetName="ButtonBorder"
                                 Property="Background"
                                 Value="{StaticResource AccentPressedBrush}" />
-
-                            <Setter
-                                TargetName="ButtonBorder"
-                                Property="BorderBrush"
-                                Value="{StaticResource AccentPressedBrush}" />
                         </Trigger>
 
                         <Trigger
@@ -150,9 +146,8 @@
                             <Setter
                                 TargetName="ButtonBorder"
                                 Property="Opacity"
-                                Value="0.45" />
+                                Value="0.42" />
                         </Trigger>
-
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
@@ -218,7 +213,7 @@
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="{TemplateBinding BorderThickness}"
-                        CornerRadius="10"
+                        CornerRadius="9"
                         Padding="{TemplateBinding Padding}">
 
                         <ContentPresenter
@@ -235,16 +230,12 @@
                             <Setter
                                 TargetName="ButtonBorder"
                                 Property="Background"
-                                Value="{StaticResource AccentSoftBrush}" />
+                                Value="{StaticResource GoldSoftBrush}" />
 
                             <Setter
                                 TargetName="ButtonBorder"
                                 Property="BorderBrush"
-                                Value="{StaticResource AccentBorderBrush}" />
-
-                            <Setter
-                                Property="Foreground"
-                                Value="{StaticResource AccentHoverBrush}" />
+                                Value="{StaticResource GoldBorderBrush}" />
                         </Trigger>
 
                         <Trigger
@@ -254,7 +245,7 @@
                             <Setter
                                 TargetName="ButtonBorder"
                                 Property="Opacity"
-                                Value="0.82" />
+                                Value="0.80" />
                         </Trigger>
 
                         <Trigger
@@ -264,9 +255,8 @@
                             <Setter
                                 TargetName="ButtonBorder"
                                 Property="Opacity"
-                                Value="0.42" />
+                                Value="0.40" />
                         </Trigger>
-
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
@@ -274,7 +264,7 @@
     </Style>
 
     <!-- =====================================================
-         LIGHT NAVIGATION BUTTON
+         SIDEBAR NAVIGATION
          ===================================================== -->
 
     <Style
@@ -287,23 +277,23 @@
 
         <Setter
             Property="Foreground"
-            Value="{StaticResource NavigationTextBrush}" />
+            Value="{StaticResource SidebarTextBrush}" />
 
         <Setter
             Property="BorderThickness"
             Value="0" />
 
         <Setter
-            Property="Padding"
-            Value="15,0" />
-
-        <Setter
             Property="Height"
-            Value="46" />
+            Value="47" />
 
         <Setter
             Property="Margin"
-            Value="0,2" />
+            Value="0,3" />
+
+        <Setter
+            Property="Padding"
+            Value="15,0" />
 
         <Setter
             Property="HorizontalContentAlignment"
@@ -334,11 +324,11 @@
                     <Border
                         x:Name="NavigationBorder"
                         Background="{TemplateBinding Background}"
-                        CornerRadius="11"
+                        CornerRadius="10"
                         Padding="{TemplateBinding Padding}">
 
                         <ContentPresenter
-                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            HorizontalAlignment="Left"
                             VerticalAlignment="Center" />
                     </Border>
 
@@ -351,11 +341,7 @@
                             <Setter
                                 TargetName="NavigationBorder"
                                 Property="Background"
-                                Value="{StaticResource NavigationHoverBrush}" />
-
-                            <Setter
-                                Property="Foreground"
-                                Value="{StaticResource NavigationSelectedTextBrush}" />
+                                Value="{StaticResource SidebarHoverBrush}" />
                         </Trigger>
 
                         <Trigger
@@ -364,18 +350,13 @@
 
                             <Setter
                                 Property="Opacity"
-                                Value="0.46" />
+                                Value="0.65" />
                         </Trigger>
-
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
-
-    <!-- =====================================================
-         SELECTED NAVIGATION BUTTON
-         ===================================================== -->
 
     <Style
         x:Key="SelectedNavigationButtonStyle"
@@ -383,23 +364,31 @@
 
         <Setter
             Property="Background"
-            Value="{StaticResource NavigationSelectedBrush}" />
+            Value="{StaticResource SidebarSelectedBrush}" />
 
         <Setter
             Property="Foreground"
-            Value="{StaticResource NavigationSelectedTextBrush}" />
+            Value="White" />
+
+        <Setter
+            Property="BorderBrush"
+            Value="#A73539" />
 
         <Setter
             Property="BorderThickness"
-            Value="0" />
+            Value="1" />
 
         <Setter
             Property="Height"
-            Value="46" />
+            Value="52" />
 
         <Setter
             Property="Margin"
-            Value="0,2" />
+            Value="0,3" />
+
+        <Setter
+            Property="Padding"
+            Value="15,0" />
 
         <Setter
             Property="HorizontalContentAlignment"
@@ -427,26 +416,18 @@
                 <ControlTemplate
                     TargetType="{x:Type Button}">
 
-                    <Grid>
-
-                        <Border
-                            Background="{TemplateBinding Background}"
-                            CornerRadius="11" />
-
-                        <Border
-                            Width="4"
-                            Height="24"
-                            Margin="5,0,0,0"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center"
-                            Background="{StaticResource AccentBrush}"
-                            CornerRadius="2" />
+                    <Border
+                        x:Name="NavigationBorder"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="10"
+                        Padding="{TemplateBinding Padding}">
 
                         <ContentPresenter
-                            Margin="17,0,12,0"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center" />
-                    </Grid>
+                    </Border>
 
                     <ControlTemplate.Triggers>
 
@@ -455,10 +436,10 @@
                             Value="True">
 
                             <Setter
+                                TargetName="NavigationBorder"
                                 Property="Background"
-                                Value="#DCF0E3" />
+                                Value="{StaticResource SidebarSelectedHoverBrush}" />
                         </Trigger>
-
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
@@ -466,7 +447,7 @@
     </Style>
 
     <!-- =====================================================
-         SEARCH TEXTBOX
+         GENERIC TEXTBOX
          ===================================================== -->
 
     <Style
@@ -490,20 +471,20 @@
             Value="1" />
 
         <Setter
+            Property="Height"
+            Value="42" />
+
+        <Setter
+            Property="Padding"
+            Value="14,0" />
+
+        <Setter
             Property="FontFamily"
             Value="Segoe UI" />
 
         <Setter
             Property="FontSize"
             Value="13" />
-
-        <Setter
-            Property="Height"
-            Value="42" />
-
-        <Setter
-            Property="Padding"
-            Value="42,0,14,0" />
 
         <Setter
             Property="VerticalContentAlignment"
@@ -524,7 +505,7 @@
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="{TemplateBinding BorderThickness}"
-                        CornerRadius="11">
+                        CornerRadius="9">
 
                         <ScrollViewer
                             x:Name="PART_ContentHost"
@@ -540,7 +521,7 @@
                             <Setter
                                 TargetName="TextBoxBorder"
                                 Property="BorderBrush"
-                                Value="{StaticResource AccentBrush}" />
+                                Value="{StaticResource GoldBrush}" />
 
                             <Setter
                                 TargetName="TextBoxBorder"
@@ -557,11 +538,20 @@
                                 Property="Opacity"
                                 Value="0.55" />
                         </Trigger>
-
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <Style
+        x:Key="SearchBoxWithIconStyle"
+        TargetType="{x:Type TextBox}"
+        BasedOn="{StaticResource SearchTextBoxStyle}">
+
+        <Setter
+            Property="Padding"
+            Value="42,0,14,0" />
     </Style>
 
     <!-- =====================================================
@@ -590,10 +580,6 @@
 
         <Setter
             Property="CanUserResizeRows"
-            Value="False" />
-
-        <Setter
-            Property="CanUserSortColumns"
             Value="False" />
 
         <Setter
@@ -640,7 +626,7 @@
 
                     <Setter
                         Property="Foreground"
-                        Value="{StaticResource TextMutedBrush}" />
+                        Value="{StaticResource TextSecondaryBrush}" />
 
                     <Setter
                         Property="BorderBrush"
@@ -653,6 +639,10 @@
                     <Setter
                         Property="Padding"
                         Value="16,13" />
+
+                    <Setter
+                        Property="FontFamily"
+                        Value="Segoe UI" />
 
                     <Setter
                         Property="FontSize"
@@ -677,7 +667,7 @@
 
                     <Setter
                         Property="Padding"
-                        Value="15,7" />
+                        Value="15,6" />
 
                     <Setter
                         Property="VerticalContentAlignment"
@@ -705,7 +695,6 @@
                                 Property="Foreground"
                                 Value="{StaticResource TextPrimaryBrush}" />
                         </Trigger>
-
                     </Style.Triggers>
                 </Style>
             </Setter.Value>
@@ -719,7 +708,7 @@
 
                     <Setter
                         Property="MinHeight"
-                        Value="58" />
+                        Value="57" />
 
                     <Setter
                         Property="Background"
@@ -741,7 +730,7 @@
 
                             <Setter
                                 Property="Background"
-                                Value="#F4FAF6" />
+                                Value="#FCF6F1" />
                         </Trigger>
 
                         <Trigger
@@ -750,13 +739,12 @@
 
                             <Setter
                                 Property="Background"
-                                Value="#E8F6ED" />
+                                Value="#F9EBE8" />
 
                             <Setter
                                 Property="Foreground"
                                 Value="{StaticResource TextPrimaryBrush}" />
                         </Trigger>
-
                     </Style.Triggers>
                 </Style>
             </Setter.Value>
