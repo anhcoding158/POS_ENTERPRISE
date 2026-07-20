@@ -335,6 +335,26 @@
                         </Button>
 
                         <Button
+                            Command="{Binding OpenCategoryManagementCommand}"
+                            Style="{StaticResource NavigationButtonStyle}"
+                            ToolTip="Quản lý danh mục sản phẩm">
+
+                            <StackPanel Orientation="Horizontal">
+
+                                <TextBlock
+                                    Text="&#xE8EC;"
+                                    FontFamily="Segoe MDL2 Assets"
+                                    FontSize="17"
+                                    Width="32"
+                                    VerticalAlignment="Center" />
+
+                                <TextBlock
+                                    Text="Danh mục"
+                                    VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button
                             Style="{StaticResource NavigationButtonStyle}"
                             IsEnabled="False">
 

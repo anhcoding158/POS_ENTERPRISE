@@ -33,6 +33,9 @@ public sealed class ShellViewModel :
     private readonly IProductDialogService
         _productDialogService;
 
+    private readonly ICategoryManagementDialogService
+        _categoryManagementDialogService;
+
     private readonly IInventoryDialogService
         _inventoryDialogService;
 
@@ -65,6 +68,8 @@ public sealed class ShellViewModel :
     public ShellViewModel(
         IServiceScopeFactory scopeFactory,
         IProductDialogService productDialogService,
+        ICategoryManagementDialogService
+            categoryManagementDialogService,
         IInventoryDialogService inventoryDialogService,
         ILogger<ShellViewModel> logger)
     {
@@ -77,6 +82,11 @@ public sealed class ShellViewModel :
             productDialogService ??
             throw new ArgumentNullException(
                 nameof(productDialogService));
+
+        _categoryManagementDialogService =
+            categoryManagementDialogService ??
+            throw new ArgumentNullException(
+                nameof(categoryManagementDialogService));
 
         _inventoryDialogService =
             inventoryDialogService ??
@@ -115,6 +125,12 @@ public sealed class ShellViewModel :
         AddProductCommand =
             new AsyncRelayCommand(
                 AddProductAsync,
+                CanLoadProducts,
+                HandleCommandException);
+
+        OpenCategoryManagementCommand =
+            new AsyncRelayCommand(
+                OpenCategoryManagementAsync,
                 CanLoadProducts,
                 HandleCommandException);
 
@@ -157,6 +173,10 @@ public sealed class ShellViewModel :
     public AsyncRelayCommand NextPageCommand { get; }
 
     public AsyncRelayCommand AddProductCommand { get; }
+
+    public AsyncRelayCommand
+        OpenCategoryManagementCommand
+    { get; }
 
     public AsyncRelayCommand EditProductCommand { get; }
 
@@ -532,6 +552,35 @@ public sealed class ShellViewModel :
         {
             StatusMessage =
                 "Sản phẩm mới đã được tạo thành công.";
+        }
+    }
+
+    private async Task OpenCategoryManagementAsync()
+    {
+        var selectedProductId =
+            SelectedProduct?.Id;
+
+        StatusMessage =
+            "Đang mở màn hình quản lý danh mục...";
+
+        await _categoryManagementDialogService
+            .ShowAsync();
+
+        /*
+         * Danh mục có thể đã được thêm, đổi tên,
+         * đổi thứ tự hoặc thay đổi trạng thái.
+         *
+         * Tải lại Product grid để tên danh mục hiển thị
+         * luôn đồng bộ với dữ liệu mới nhất.
+         */
+        var reloaded =
+            await LoadProductsAsync(
+                selectedProductId);
+
+        if (reloaded)
+        {
+            StatusMessage =
+                "Danh mục đã được đồng bộ với danh sách sản phẩm.";
         }
     }
 
@@ -1001,6 +1050,9 @@ public sealed class ShellViewModel :
             .NotifyCanExecuteChanged();
 
         AddProductCommand
+            .NotifyCanExecuteChanged();
+
+        OpenCategoryManagementCommand
             .NotifyCanExecuteChanged();
 
         EditProductCommand

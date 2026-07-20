@@ -70,9 +70,18 @@ public partial class App :
              * Dialog service chỉ chịu trách nhiệm tạo Window
              * và resolve ViewModel.
              */
+
             builder.Services.AddSingleton<
                 IProductDialogService,
                 ProductDialogService>();
+
+            builder.Services.AddSingleton<
+                ICategoryDialogService,
+                CategoryDialogService>();
+
+            builder.Services.AddSingleton<
+                ICategoryManagementDialogService,
+                CategoryManagementDialogService>();
 
             builder.Services.AddSingleton<
                 IInventoryDialogService,
@@ -80,6 +89,12 @@ public partial class App :
 
             builder.Services.AddTransient<
                 ProductEditorViewModel>();
+
+            builder.Services.AddTransient<
+                CategoryEditorViewModel>();
+
+            builder.Services.AddTransient<
+                CategoryManagementViewModel>();
 
             builder.Services.AddTransient<
                 InventoryAdjustmentViewModel>();
