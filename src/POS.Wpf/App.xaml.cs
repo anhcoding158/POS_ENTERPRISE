@@ -49,8 +49,10 @@ public partial class App :
                 builder.Configuration);
 
             /*
-             * Application services chỉ được resolve
-             * trong scope của từng thao tác.
+             * Application services là Scoped.
+             *
+             * ViewModel tạo scope ngắn cho từng thao tác,
+             * không giữ DbContext suốt vòng đời cửa sổ.
              */
             builder.Services.AddScoped<
                 IProductService,
@@ -60,15 +62,30 @@ public partial class App :
                 ICategoryService,
                 CategoryService>();
 
+            builder.Services.AddScoped<
+                IInventoryService,
+                InventoryService>();
+
             /*
-             * Dialog service và ViewModel không giữ DbContext.
+             * Dialog service chỉ chịu trách nhiệm tạo Window
+             * và resolve ViewModel.
              */
             builder.Services.AddSingleton<
                 IProductDialogService,
                 ProductDialogService>();
 
+            builder.Services.AddSingleton<
+                IInventoryDialogService,
+                InventoryDialogService>();
+
             builder.Services.AddTransient<
                 ProductEditorViewModel>();
+
+            builder.Services.AddTransient<
+                InventoryAdjustmentViewModel>();
+
+            builder.Services.AddTransient<
+                InventoryHistoryViewModel>();
 
             builder.Services.AddTransient<
                 ShellViewModel>();
@@ -76,7 +93,8 @@ public partial class App :
             builder.Services.AddTransient<
                 ShellWindow>();
 
-            _host = builder.Build();
+            _host =
+                builder.Build();
 
             await _host.StartAsync();
 
@@ -88,7 +106,8 @@ public partial class App :
                     .GetRequiredService<
                         ShellWindow>();
 
-            MainWindow = shellWindow;
+            MainWindow =
+                shellWindow;
 
             shellWindow.Show();
         }
@@ -111,7 +130,8 @@ public partial class App :
     protected override async void OnExit(
         global::System.Windows.ExitEventArgs e)
     {
-        var host = _host;
+        var host =
+            _host;
 
         _host = null;
 

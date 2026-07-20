@@ -21,9 +21,7 @@
 
     <Window.Resources>
 
-        <!-- =================================================
-             INVENTORY ACTION BUTTON
-             ================================================= -->
+        <!-- Nút điều chỉnh kho màu vàng đồng -->
 
         <Style
             x:Key="InventoryActionButtonStyle"
@@ -47,9 +45,7 @@
                 Value="142" />
         </Style>
 
-        <!-- =================================================
-             INVENTORY HISTORY BUTTON
-             ================================================= -->
+        <!-- Nút lịch sử kho màu đỏ rượu vang -->
 
         <Style
             x:Key="InventoryHistoryButtonStyle"
@@ -447,7 +443,7 @@
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- Sidebar footer -->
+                <!-- Footer -->
 
                 <StackPanel
                     Grid.Row="2"
@@ -503,7 +499,7 @@
 
             <!-- Header -->
 
-            <Grid Grid.Row="0">
+            <Grid>
 
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -544,8 +540,6 @@
                             VerticalAlignment="Center" />
                     </StackPanel>
                 </StackPanel>
-
-                <!-- Administrator card -->
 
                 <Border
                     Grid.Column="1"
@@ -608,16 +602,12 @@
                 </Border>
             </Grid>
 
-            <!-- =================================================
-                 KPI CARDS
-                 ================================================= -->
+            <!-- KPI -->
 
             <UniformGrid
                 Grid.Row="1"
                 Columns="4"
                 Margin="0,18,0,16">
-
-                <!-- Total products -->
 
                 <Border
                     Style="{StaticResource CardStyle}"
@@ -671,8 +661,6 @@
                     </Grid>
                 </Border>
 
-                <!-- Active products -->
-
                 <Border
                     Style="{StaticResource CardStyle}"
                     Margin="4,0,6,0"
@@ -725,8 +713,6 @@
                     </Grid>
                 </Border>
 
-                <!-- Low-stock products -->
-
                 <Border
                     Style="{StaticResource CardStyle}"
                     Margin="6,0,4,0"
@@ -778,8 +764,6 @@
                         </StackPanel>
                     </Grid>
                 </Border>
-
-                <!-- Inventory value -->
 
                 <Border
                     Style="{StaticResource CardStyle}"
@@ -837,9 +821,7 @@
                 </Border>
             </UniformGrid>
 
-            <!-- =================================================
-                 PRODUCT WORKSPACE
-                 ================================================= -->
+            <!-- Product workspace -->
 
             <Border
                 Grid.Row="2"
@@ -849,31 +831,16 @@
 
                 <Grid>
 
-                    <!--
-                        Có đúng 5 hàng:
-
-                        0: Product title/actions
-                        1: Inventory operation rail
-                        2: Search toolbar
-                        3: Product DataGrid
-                        4: Footer/pagination
-                    -->
-
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <!-- =================================================
-                         ROW 0: PRODUCT TITLE AND OLD ACTIONS
-                         ================================================= -->
+                    <!-- Product title and actions -->
 
-                    <Grid
-                        Grid.Row="0"
-                        Margin="20,14,20,12">
+                    <Grid Margin="20,14,20,0">
 
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -908,13 +875,11 @@
                                     Style="{StaticResource SectionTitleTextStyle}" />
 
                                 <TextBlock
-                                    Text="Quản lý thông tin, giá bán và trạng thái hoạt động."
+                                    Text="Quản lý thông tin và trạng thái bán."
                                     Style="{StaticResource CaptionTextStyle}"
                                     Margin="0,3,0,0" />
                             </StackPanel>
                         </StackPanel>
-
-                        <!-- Các tính năng Product cũ -->
 
                         <StackPanel
                             Grid.Column="1"
@@ -970,13 +935,10 @@
                         </StackPanel>
                     </Grid>
 
-                    <!-- =================================================
-                         ROW 1: INVENTORY OPERATION RAIL
-                         ================================================= -->
+                    <!-- Inventory operation rail -->
 
                     <Border
-                        Grid.Row="1"
-                        Margin="20,0,20,13"
+                        Margin="20,12,20,14"
                         Padding="13"
                         Background="{StaticResource SurfaceMutedBrush}"
                         BorderBrush="{StaticResource BorderBrush}"
@@ -1008,8 +970,6 @@
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center" />
                             </Border>
-
-                            <!-- Selected product information -->
 
                             <StackPanel
                                 Grid.Column="1"
@@ -1103,8 +1063,6 @@
                                 </WrapPanel>
                             </StackPanel>
 
-                            <!-- Inventory actions -->
-
                             <StackPanel
                                 Grid.Column="2"
                                 Orientation="Horizontal"
@@ -1156,12 +1114,10 @@
                         </Grid>
                     </Border>
 
-                    <!-- =================================================
-                         ROW 2: SEARCH TOOLBAR
-                         ================================================= -->
+                    <!-- Search toolbar -->
 
                     <Border
-                        Grid.Row="2"
+                        Grid.Row="1"
                         Padding="20,11"
                         Background="{StaticResource SurfaceMutedBrush}"
                         BorderBrush="{StaticResource BorderBrush}"
@@ -1274,11 +1230,9 @@
                         </Grid>
                     </Border>
 
-                    <!-- =================================================
-                         ROW 3: PRODUCT DATA TABLE
-                         ================================================= -->
+                    <!-- Data table -->
 
-                    <Grid Grid.Row="3">
+                    <Grid Grid.Row="2">
 
                         <DataGrid
                             ItemsSource="{Binding Products}"
@@ -1625,7 +1579,7 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- Loading overlay -->
+                        <!-- Loading -->
 
                         <Border
                             Background="#D9FFFEFB"
@@ -1652,12 +1606,10 @@
                         </Border>
                     </Grid>
 
-                    <!-- =================================================
-                         ROW 4: FOOTER AND PAGINATION
-                         ================================================= -->
+                    <!-- Footer -->
 
                     <Grid
-                        Grid.Row="4"
+                        Grid.Row="3"
                         Margin="20,11">
 
                         <Grid.ColumnDefinitions>

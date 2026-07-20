@@ -3,21 +3,871 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Title="Điều chỉnh tồn kho"
-    Width="760"
-    Height="620"
-    MinWidth="680"
-    MinHeight="520"
+    Width="980"
+    Height="700"
+    MinWidth="900"
+    MinHeight="620"
     WindowStartupLocation="CenterOwner"
     ResizeMode="CanResize"
     ShowInTaskbar="False"
-    Background="{StaticResource AppBackgroundBrush}">
+    Background="{StaticResource AppBackgroundBrush}"
+    FontFamily="Segoe UI"
+    TextOptions.TextFormattingMode="Display"
+    TextOptions.TextRenderingMode="ClearType"
+    UseLayoutRounding="True"
+    SnapsToDevicePixels="True">
 
-    <Grid>
-        <TextBlock
-            Text="Inventory Adjustment — UI sẽ hoàn thiện ở chặng 6C"
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center"
-            Foreground="{StaticResource TextSecondaryBrush}"
-            FontSize="16" />
+    <Window.Resources>
+
+        <!-- Form label -->
+
+        <Style
+            x:Key="InventoryFormLabelStyle"
+            TargetType="{x:Type TextBlock}">
+
+            <Setter
+                Property="Foreground"
+                Value="{StaticResource TextPrimaryBrush}" />
+
+            <Setter
+                Property="FontSize"
+                Value="12" />
+
+            <Setter
+                Property="FontWeight"
+                Value="SemiBold" />
+
+            <Setter
+                Property="Margin"
+                Value="0,0,0,7" />
+        </Style>
+
+        <!-- TextBox -->
+
+        <Style
+            x:Key="InventoryTextBoxStyle"
+            TargetType="{x:Type TextBox}"
+            BasedOn="{StaticResource SearchTextBoxStyle}">
+
+            <Setter
+                Property="Height"
+                Value="44" />
+
+            <Setter
+                Property="Padding"
+                Value="13,0" />
+
+            <Setter
+                Property="FontSize"
+                Value="13" />
+        </Style>
+
+        <!-- ComboBox -->
+
+        <Style
+            x:Key="InventoryComboBoxStyle"
+            TargetType="{x:Type ComboBox}">
+
+            <Setter
+                Property="Height"
+                Value="44" />
+
+            <Setter
+                Property="Padding"
+                Value="12,6" />
+
+            <Setter
+                Property="Background"
+                Value="{StaticResource SurfaceBrush}" />
+
+            <Setter
+                Property="Foreground"
+                Value="{StaticResource TextPrimaryBrush}" />
+
+            <Setter
+                Property="BorderBrush"
+                Value="{StaticResource BorderStrongBrush}" />
+
+            <Setter
+                Property="BorderThickness"
+                Value="1" />
+
+            <Setter
+                Property="FontSize"
+                Value="13" />
+
+            <Setter
+                Property="VerticalContentAlignment"
+                Value="Center" />
+        </Style>
+
+        <!-- Small metadata pill -->
+
+        <Style
+            x:Key="InventoryPillStyle"
+            TargetType="{x:Type Border}">
+
+            <Setter
+                Property="Padding"
+                Value="10,5" />
+
+            <Setter
+                Property="CornerRadius"
+                Value="9" />
+
+            <Setter
+                Property="Background"
+                Value="#342D29" />
+
+            <Setter
+                Property="BorderBrush"
+                Value="#5B4D42" />
+
+            <Setter
+                Property="BorderThickness"
+                Value="1" />
+        </Style>
+    </Window.Resources>
+
+    <Grid Background="{StaticResource AppBackgroundBrush}">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="92" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="76" />
+        </Grid.RowDefinitions>
+
+        <!-- =================================================
+             HEADER
+             ================================================= -->
+
+        <Border
+            Grid.Row="0"
+            Background="{StaticResource SidebarBrush}"
+            BorderBrush="#6A4C27"
+            BorderThickness="0,0,0,1">
+
+            <Grid Margin="28,0">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel
+                    VerticalAlignment="Center">
+
+                    <StackPanel Orientation="Horizontal">
+
+                        <Border
+                            Width="42"
+                            Height="42"
+                            Background="{StaticResource SidebarSurfaceBrush}"
+                            BorderBrush="{StaticResource GoldBrush}"
+                            BorderThickness="1"
+                            CornerRadius="12">
+
+                            <TextBlock
+                                Text="±"
+                                Foreground="{StaticResource GoldHoverBrush}"
+                                FontFamily="Georgia"
+                                FontSize="24"
+                                FontWeight="Bold"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center" />
+                        </Border>
+
+                        <StackPanel
+                            Margin="13,0,0,0"
+                            VerticalAlignment="Center">
+
+                            <TextBlock
+                                Text="ĐIỀU CHỈNH TỒN KHO"
+                                Foreground="{StaticResource GoldHoverBrush}"
+                                FontFamily="Georgia"
+                                FontSize="20"
+                                FontWeight="SemiBold" />
+
+                            <TextBlock
+                                Text="Mỗi thay đổi được lưu thành lịch sử kiểm toán bất biến."
+                                Foreground="{StaticResource SidebarMutedBrush}"
+                                FontSize="11"
+                                Margin="0,4,0,0" />
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel
+                    Grid.Column="1"
+                    Orientation="Horizontal"
+                    VerticalAlignment="Center">
+
+                    <Border
+                        Style="{StaticResource InventoryPillStyle}"
+                        Margin="0,0,8,0">
+
+                        <TextBlock
+                            Text="TRANSACTIONAL"
+                            Foreground="{StaticResource GoldHoverBrush}"
+                            FontSize="9"
+                            FontWeight="SemiBold" />
+                    </Border>
+
+                    <Border
+                        Style="{StaticResource InventoryPillStyle}">
+
+                        <TextBlock
+                            Text="AUDIT READY"
+                            Foreground="#D7C7B7"
+                            FontSize="9"
+                            FontWeight="SemiBold" />
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- =================================================
+             BODY
+             ================================================= -->
+
+        <Grid
+            Grid.Row="1"
+            Margin="22,18">
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="294" />
+                <ColumnDefinition Width="18" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- =============================================
+                 PRODUCT SUMMARY
+                 ============================================= -->
+
+            <Border
+                Grid.Column="0"
+                Background="{StaticResource SidebarBrush}"
+                BorderBrush="#57483E"
+                BorderThickness="1"
+                CornerRadius="16">
+
+                <Border.Effect>
+                    <DropShadowEffect
+                        Color="#3C261B"
+                        BlurRadius="18"
+                        ShadowDepth="3"
+                        Direction="270"
+                        Opacity="0.13" />
+                </Border.Effect>
+
+                <Grid Margin="20">
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel>
+
+                        <Border
+                            Width="66"
+                            Height="66"
+                            HorizontalAlignment="Left"
+                            Background="{StaticResource SidebarSurfaceBrush}"
+                            BorderBrush="{StaticResource GoldBrush}"
+                            BorderThickness="1"
+                            CornerRadius="19">
+
+                            <Grid>
+
+                                <Border
+                                    Width="40"
+                                    Height="40"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    BorderBrush="{StaticResource GoldHoverBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="5"
+                                    RenderTransformOrigin="0.5,0.5">
+
+                                    <Border.RenderTransform>
+                                        <RotateTransform Angle="45" />
+                                    </Border.RenderTransform>
+                                </Border>
+
+                                <TextBlock
+                                    Text="P"
+                                    Foreground="{StaticResource GoldHoverBrush}"
+                                    FontFamily="Georgia"
+                                    FontSize="24"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center" />
+                            </Grid>
+                        </Border>
+
+                        <TextBlock
+                            Text="{Binding ProductName}"
+                            Foreground="White"
+                            FontFamily="Georgia"
+                            FontSize="20"
+                            FontWeight="SemiBold"
+                            TextWrapping="Wrap"
+                            Margin="0,17,0,0" />
+
+                        <TextBlock
+                            Text="{Binding ProductIdentityText}"
+                            Foreground="{StaticResource GoldHoverBrush}"
+                            FontSize="11"
+                            FontWeight="SemiBold"
+                            Margin="0,7,0,0" />
+                    </StackPanel>
+
+                    <StackPanel
+                        Grid.Row="1"
+                        Margin="0,24,0,0">
+
+                        <TextBlock
+                            Text="TỒN KHO HIỆN TẠI"
+                            Foreground="{StaticResource SidebarMutedBrush}"
+                            FontSize="9"
+                            FontWeight="SemiBold" />
+
+                        <TextBlock
+                            Text="{Binding CurrentStockText}"
+                            Foreground="White"
+                            FontFamily="Georgia"
+                            FontSize="31"
+                            FontWeight="Bold"
+                            Margin="0,6,0,0" />
+
+                        <Border
+                            Height="1"
+                            Margin="0,17,0,16"
+                            Background="#554A43" />
+
+                        <Grid>
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock
+                                Text="Ngưỡng cảnh báo"
+                                Foreground="{StaticResource SidebarMutedBrush}"
+                                FontSize="11" />
+
+                            <TextBlock
+                                Grid.Column="1"
+                                Text="{Binding MinimumStockText}"
+                                Foreground="#F0D5A0"
+                                FontSize="11"
+                                FontWeight="SemiBold" />
+                        </Grid>
+
+                        <Grid Margin="0,12,0,0">
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock
+                                Text="Chính sách tồn âm"
+                                Foreground="{StaticResource SidebarMutedBrush}"
+                                FontSize="11" />
+
+                            <TextBlock
+                                Grid.Column="1"
+                                Text="{Binding StockPolicyText}"
+                                Foreground="#F0D5A0"
+                                FontSize="10"
+                                FontWeight="SemiBold"
+                                TextAlignment="Right" />
+                        </Grid>
+                    </StackPanel>
+
+                    <Border
+                        Grid.Row="2"
+                        Margin="0,25,0,0"
+                        Padding="14"
+                        Background="{StaticResource SidebarSurfaceBrush}"
+                        BorderBrush="#5B4B41"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        VerticalAlignment="Top">
+
+                        <StackPanel>
+
+                            <StackPanel Orientation="Horizontal">
+
+                                <Ellipse
+                                    Width="8"
+                                    Height="8"
+                                    Fill="{StaticResource SuccessBrush}"
+                                    Margin="0,0,8,0"
+                                    VerticalAlignment="Center" />
+
+                                <TextBlock
+                                    Text="TRẠNG THÁI KHO"
+                                    Foreground="{StaticResource SidebarMutedBrush}"
+                                    FontSize="9"
+                                    FontWeight="SemiBold" />
+                            </StackPanel>
+
+                            <TextBlock
+                                Text="{Binding StockStateText}"
+                                Foreground="#F3E4CF"
+                                FontSize="12"
+                                FontWeight="SemiBold"
+                                TextWrapping="Wrap"
+                                Margin="0,9,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel
+                        Grid.Row="3"
+                        Margin="0,20,0,0">
+
+                        <Border
+                            Height="1"
+                            Background="#554A43"
+                            Margin="0,0,0,13" />
+
+                        <TextBlock
+                            Text="Tồn kho chỉ thay đổi sau khi transaction được commit thành công."
+                            Foreground="{StaticResource SidebarMutedBrush}"
+                            FontSize="10"
+                            TextWrapping="Wrap"
+                            LineHeight="17" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- =============================================
+                 ADJUSTMENT FORM
+                 ============================================= -->
+
+            <Border
+                Grid.Column="2"
+                Style="{StaticResource CardStyle}"
+                Padding="0"
+                ClipToBounds="True">
+
+                <Grid>
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Form title -->
+
+                    <Border
+                        Padding="21,16"
+                        Background="{StaticResource SurfaceMutedBrush}"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="0,0,0,1">
+
+                        <StackPanel>
+
+                            <TextBlock
+                                Text="Thông tin biến động"
+                                Style="{StaticResource SectionTitleTextStyle}" />
+
+                            <TextBlock
+                                Text="Kiểm tra kỹ số lượng và lý do trước khi xác nhận."
+                                Style="{StaticResource CaptionTextStyle}"
+                                Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <ScrollViewer
+                        Grid.Row="1"
+                        VerticalScrollBarVisibility="Auto"
+                        HorizontalScrollBarVisibility="Disabled">
+
+                        <StackPanel Margin="22,18,22,22">
+
+                            <!-- Movement type -->
+
+                            <TextBlock
+                                Text="Loại nghiệp vụ"
+                                Style="{StaticResource InventoryFormLabelStyle}" />
+
+                            <ComboBox
+                                ItemsSource="{Binding MovementOptions}"
+                                SelectedItem="{Binding SelectedMovement,
+                                    Mode=TwoWay}"
+                                DisplayMemberPath="DisplayName"
+                                Style="{StaticResource InventoryComboBoxStyle}" />
+
+                            <Border
+                                Margin="0,8,0,0"
+                                Padding="12,9"
+                                Background="{StaticResource GoldSoftBrush}"
+                                BorderBrush="{StaticResource GoldBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="9">
+
+                                <TextBlock
+                                    Text="{Binding MovementDescription}"
+                                    Foreground="{StaticResource TextSecondaryBrush}"
+                                    FontSize="11"
+                                    TextWrapping="Wrap" />
+                            </Border>
+
+                            <!-- Quantity -->
+
+                            <Grid Margin="0,18,0,0">
+
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="18" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel>
+
+                                    <TextBlock
+                                        Text="{Binding QuantityLabel}"
+                                        Style="{StaticResource InventoryFormLabelStyle}" />
+
+                                    <TextBox
+                                        Text="{Binding QuantityText,
+                                            UpdateSourceTrigger=PropertyChanged}"
+                                        Style="{StaticResource InventoryTextBoxStyle}"
+                                        MaxLength="15" />
+
+                                    <TextBlock
+                                        Text="{Binding QuantityHint}"
+                                        Style="{StaticResource CaptionTextStyle}"
+                                        TextWrapping="Wrap"
+                                        Margin="2,6,0,0" />
+                                </StackPanel>
+
+                                <!-- Preview -->
+
+                                <Border
+                                    Grid.Column="2"
+                                    Padding="14"
+                                    Background="{StaticResource SurfaceMutedBrush}"
+                                    BorderBrush="{StaticResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="11">
+
+                                    <Grid>
+
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel>
+
+                                            <TextBlock
+                                                Text="TỒN SAU THAO TÁC"
+                                                Style="{StaticResource CaptionTextStyle}"
+                                                FontWeight="SemiBold" />
+
+                                            <TextBlock
+                                                Text="{Binding PreviewAfterText}"
+                                                FontFamily="Georgia"
+                                                FontSize="21"
+                                                FontWeight="Bold"
+                                                Margin="0,5,0,0">
+
+                                                <TextBlock.Style>
+                                                    <Style TargetType="{x:Type TextBlock}">
+
+                                                        <Setter
+                                                            Property="Foreground"
+                                                            Value="{StaticResource TextPrimaryBrush}" />
+
+                                                        <Style.Triggers>
+
+                                                            <DataTrigger
+                                                                Binding="{Binding PreviewIsNegative}"
+                                                                Value="True">
+
+                                                                <Setter
+                                                                    Property="Foreground"
+                                                                    Value="{StaticResource DangerBrush}" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+
+                                            <TextBlock
+                                                Text="{Binding PreviewStateText}"
+                                                Style="{StaticResource CaptionTextStyle}"
+                                                TextWrapping="Wrap"
+                                                Margin="0,5,0,0" />
+                                        </StackPanel>
+
+                                        <Border
+                                            Grid.Column="1"
+                                            Padding="9,5"
+                                            Margin="12,0,0,0"
+                                            Background="{StaticResource GoldSoftBrush}"
+                                            BorderBrush="{StaticResource GoldBorderBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="8"
+                                            VerticalAlignment="Top">
+
+                                            <TextBlock
+                                                Text="{Binding PreviewDeltaText}"
+                                                Foreground="{StaticResource GoldBrush}"
+                                                FontSize="10"
+                                                FontWeight="SemiBold" />
+                                        </Border>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+
+                            <!-- Reason -->
+
+                            <TextBlock
+                                Text="Lý do biến động"
+                                Style="{StaticResource InventoryFormLabelStyle}"
+                                Margin="0,18,0,7" />
+
+                            <TextBox
+                                Text="{Binding Reason,
+                                    UpdateSourceTrigger=PropertyChanged}"
+                                Style="{StaticResource InventoryTextBoxStyle}"
+                                Height="76"
+                                MinHeight="76"
+                                MaxLength="500"
+                                AcceptsReturn="True"
+                                TextWrapping="Wrap"
+                                VerticalContentAlignment="Top"
+                                VerticalScrollBarVisibility="Auto"
+                                Padding="13,10" />
+
+                            <TextBlock
+                                Text="Lý do là bắt buộc và sẽ xuất hiện trong lịch sử kho."
+                                Style="{StaticResource CaptionTextStyle}"
+                                Margin="2,6,0,0" />
+
+                            <!-- Reference -->
+
+                            <TextBlock
+                                Text="Chứng từ liên quan"
+                                Style="{StaticResource InventoryFormLabelStyle}"
+                                Margin="0,18,0,7" />
+
+                            <Grid>
+
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel>
+
+                                    <TextBlock
+                                        Text="Loại chứng từ"
+                                        Style="{StaticResource CaptionTextStyle}"
+                                        Margin="2,0,0,5" />
+
+                                    <TextBox
+                                        Text="{Binding ReferenceType,
+                                            UpdateSourceTrigger=PropertyChanged}"
+                                        Style="{StaticResource InventoryTextBoxStyle}"
+                                        MaxLength="100" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+
+                                    <TextBlock
+                                        Text="Mã chứng từ"
+                                        Style="{StaticResource CaptionTextStyle}"
+                                        Margin="2,0,0,5" />
+
+                                    <TextBox
+                                        Text="{Binding ReferenceId,
+                                            UpdateSourceTrigger=PropertyChanged}"
+                                        Style="{StaticResource InventoryTextBoxStyle}"
+                                        MaxLength="100" />
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock
+                                Text="Có thể bỏ trống cả hai. Khi sử dụng, phải nhập đủ loại và mã chứng từ."
+                                Style="{StaticResource CaptionTextStyle}"
+                                TextWrapping="Wrap"
+                                Margin="2,7,0,0" />
+
+                            <!-- Error -->
+
+                            <Border
+                                Margin="0,16,0,0"
+                                Padding="12,10"
+                                Background="{StaticResource DangerSoftBrush}"
+                                BorderBrush="#F1C7CA"
+                                BorderThickness="1"
+                                CornerRadius="9"
+                                Visibility="{Binding HasError,
+                                    Converter={StaticResource BooleanToVisibilityConverter}}">
+
+                                <StackPanel Orientation="Horizontal">
+
+                                    <TextBlock
+                                        Text="!"
+                                        Foreground="{StaticResource DangerBrush}"
+                                        FontSize="14"
+                                        FontWeight="Bold"
+                                        Margin="0,0,9,0"
+                                        VerticalAlignment="Top" />
+
+                                    <TextBlock
+                                        Text="{Binding ErrorMessage}"
+                                        Foreground="{StaticResource DangerBrush}"
+                                        FontSize="11"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Success -->
+
+                            <Border
+                                Margin="0,16,0,0"
+                                Padding="12,10"
+                                Background="{StaticResource SuccessSoftBrush}"
+                                BorderBrush="#C9E2D0"
+                                BorderThickness="1"
+                                CornerRadius="9"
+                                Visibility="{Binding HasStatus,
+                                    Converter={StaticResource BooleanToVisibilityConverter}}">
+
+                                <TextBlock
+                                    Text="{Binding StatusMessage}"
+                                    Foreground="{StaticResource SuccessBrush}"
+                                    FontSize="11"
+                                    FontWeight="SemiBold"
+                                    TextWrapping="Wrap" />
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- =================================================
+             FOOTER
+             ================================================= -->
+
+        <Border
+            Grid.Row="2"
+            Background="{StaticResource SurfaceBrush}"
+            BorderBrush="{StaticResource BorderBrush}"
+            BorderThickness="0,1,0,0">
+
+            <Grid Margin="22,0">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel
+                    Orientation="Horizontal"
+                    VerticalAlignment="Center">
+
+                    <Ellipse
+                        Width="7"
+                        Height="7"
+                        Fill="{StaticResource GoldBrush}"
+                        Margin="0,0,8,0" />
+
+                    <TextBlock
+                        Text="Hệ thống sẽ kiểm tra tồn âm, giới hạn và concurrency trước khi lưu."
+                        Style="{StaticResource CaptionTextStyle}"
+                        VerticalAlignment="Center" />
+                </StackPanel>
+
+                <StackPanel
+                    Grid.Column="1"
+                    Orientation="Horizontal"
+                    VerticalAlignment="Center">
+
+                    <Button
+                        Content="Hủy"
+                        IsCancel="True"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        MinWidth="96" />
+
+                    <Button
+                        Command="{Binding SaveCommand}"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        MinWidth="176"
+                        Margin="10,0,0,0">
+
+                        <StackPanel Orientation="Horizontal">
+
+                            <TextBlock
+                                Text="&#xE74E;"
+                                FontFamily="Segoe MDL2 Assets"
+                                FontSize="13"
+                                Margin="0,0,8,0"
+                                VerticalAlignment="Center" />
+
+                            <TextBlock
+                                Text="Xác nhận biến động"
+                                VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Busy overlay -->
+
+        <Border
+            Grid.RowSpan="3"
+            Background="#BFFFFFFB"
+            Visibility="{Binding IsBusy,
+                Converter={StaticResource BooleanToVisibilityConverter}}">
+
+            <Border
+                Width="300"
+                Padding="24"
+                Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource GoldBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="14"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+
+                <Border.Effect>
+                    <DropShadowEffect
+                        Color="#3B271D"
+                        BlurRadius="20"
+                        ShadowDepth="3"
+                        Opacity="0.18" />
+                </Border.Effect>
+
+                <StackPanel>
+
+                    <ProgressBar
+                        Height="5"
+                        IsIndeterminate="True"
+                        Foreground="{StaticResource AccentBrush}" />
+
+                    <TextBlock
+                        Text="Đang kiểm tra và lưu biến động kho..."
+                        Foreground="{StaticResource TextSecondaryBrush}"
+                        FontSize="12"
+                        HorizontalAlignment="Center"
+                        TextAlignment="Center"
+                        Margin="0,14,0,0" />
+                </StackPanel>
+            </Border>
+        </Border>
     </Grid>
 </Window>
