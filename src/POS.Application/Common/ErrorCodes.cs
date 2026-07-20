@@ -86,6 +86,33 @@ public static class ErrorCodes
             "PRODUCT.INSUFFICIENT_STOCK";
     }
 
+    public static class Inventory
+    {
+        public const string ProductNotFound =
+            "INVENTORY.PRODUCT_NOT_FOUND";
+
+        public const string InventoryNotTracked =
+            "INVENTORY.NOT_TRACKED";
+
+        public const string InvalidMovementType =
+            "INVENTORY.INVALID_MOVEMENT_TYPE";
+
+        public const string UnsupportedManualMovement =
+            "INVENTORY.UNSUPPORTED_MANUAL_MOVEMENT";
+
+        public const string InvalidQuantity =
+            "INVENTORY.INVALID_QUANTITY";
+
+        public const string InsufficientStock =
+            "INVENTORY.INSUFFICIENT_STOCK";
+
+        public const string ConcurrencyConflict =
+            "INVENTORY.CONCURRENCY_CONFLICT";
+
+        public const string PersistenceConflict =
+            "INVENTORY.PERSISTENCE_CONFLICT";
+    }
+
     public static class Categories
     {
         public const string NotFound =

@@ -6,12 +6,10 @@ namespace POS.Infrastructure.Persistence;
 /// <summary>
 /// DbContext chính của POS Enterprise.
 ///
-/// Giai đoạn Product vertical slice hiện đăng ký:
+/// Các vertical slice hiện đã đưa vào database:
 /// - Category;
-/// - Product.
-///
-/// Các aggregate còn lại sẽ được bổ sung theo từng chặng
-/// để migration luôn được kiểm soát.
+/// - Product;
+/// - InventoryMovement.
 /// </summary>
 public sealed class PosDbContext : DbContext
 {
@@ -26,6 +24,10 @@ public sealed class PosDbContext : DbContext
 
     public DbSet<Product> Products =>
         Set<Product>();
+
+    public DbSet<InventoryMovement>
+        InventoryMovements =>
+            Set<InventoryMovement>();
 
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)

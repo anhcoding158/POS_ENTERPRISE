@@ -3,7 +3,7 @@
 /// <summary>
 /// Các giới hạn dùng chung của Domain.
 ///
-/// EF Core Configuration sau này phải sử dụng cùng các giá trị này
+/// EF Core Configuration phải sử dụng cùng các giá trị này
 /// để giới hạn Domain và database không bị lệch nhau.
 /// </summary>
 public static class BusinessRules
@@ -64,6 +64,28 @@ public static class BusinessRules
 
         public const long MaximumPrice = 999_999_999_999;
         public const int MaximumStockQuantity = 999_999_999;
+    }
+
+    public static class Inventory
+    {
+        public const int ReasonMaxLength = 500;
+
+        public const int ReferenceTypeMaxLength = 100;
+        public const int ReferenceIdMaxLength = 100;
+
+        public const int MaximumSearchPageSize = 200;
+
+        /*
+         * Một biến động lớn nhất có thể chuyển tồn kho từ:
+         *
+         * -999.999.999
+         * sang
+         * +999.999.999
+         *
+         * nên độ lệch tối đa là 1.999.999.998.
+         */
+        public const int MaximumQuantityDelta =
+            Products.MaximumStockQuantity * 2;
     }
 
     public static class ModifierGroups

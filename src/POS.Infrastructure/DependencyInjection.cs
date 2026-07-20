@@ -35,6 +35,7 @@ public static class DependencyInjection
                     try
                     {
                         options.Validate();
+
                         return true;
                     }
                     catch
@@ -45,11 +46,15 @@ public static class DependencyInjection
                 "Cấu hình Infrastructure không hợp lệ.")
             .ValidateOnStart();
 
-        services.AddSingleton<DatabasePathResolver>();
+        services.AddSingleton<
+            DatabasePathResolver>();
 
-        services.AddSingleton<AuditableEntityInterceptor>();
+        services.AddSingleton<
+            AuditableEntityInterceptor>();
 
-        services.AddSingleton<IClock, SystemClock>();
+        services.AddSingleton<
+            IClock,
+            SystemClock>();
 
         services.AddDbContext<PosDbContext>(
             (serviceProvider, optionsBuilder) =>
@@ -57,7 +62,8 @@ public static class DependencyInjection
                 var infrastructureOptions =
                     serviceProvider
                         .GetRequiredService<
-                            IOptions<InfrastructureOptions>>()
+                            IOptions<
+                                InfrastructureOptions>>()
                         .Value;
 
                 var pathResolver =
@@ -66,8 +72,9 @@ public static class DependencyInjection
                             DatabasePathResolver>();
 
                 var connectionString =
-                    pathResolver.CreateConnectionString(
-                        infrastructureOptions);
+                    pathResolver
+                        .CreateConnectionString(
+                            infrastructureOptions);
 
                 var auditableEntityInterceptor =
                     serviceProvider
@@ -82,13 +89,16 @@ public static class DependencyInjection
                             infrastructureOptions
                                 .DatabaseTimeoutSeconds);
                     });
+
                 optionsBuilder.AddInterceptors(
                     auditableEntityInterceptor);
 
                 optionsBuilder.EnableDetailedErrors();
             });
 
-        services.AddScoped<IUnitOfWork, EfUnitOfWork>();
+        services.AddScoped<
+            IUnitOfWork,
+            EfUnitOfWork>();
 
         services.AddScoped<
             ICategoryRepository,
@@ -98,7 +108,12 @@ public static class DependencyInjection
             IProductRepository,
             ProductRepository>();
 
-        services.AddScoped<DatabaseInitializer>();
+        services.AddScoped<
+            IInventoryMovementRepository,
+            InventoryMovementRepository>();
+
+        services.AddScoped<
+            DatabaseInitializer>();
 
         return services;
     }
