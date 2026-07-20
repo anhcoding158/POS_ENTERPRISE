@@ -3,62 +3,211 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Title="{Binding WindowTitle}"
-    Width="900"
-    Height="790"
-    MinWidth="820"
-    MinHeight="680"
+    Width="980"
+    Height="820"
+    MinWidth="840"
+    MinHeight="650"
     ResizeMode="CanResize"
     WindowStartupLocation="CenterOwner"
+    ShowInTaskbar="False"
     Background="{StaticResource AppBackgroundBrush}"
     FontFamily="Segoe UI"
-    ShowInTaskbar="False">
+    TextOptions.TextFormattingMode="Display"
+    TextOptions.TextRenderingMode="ClearType"
+    UseLayoutRounding="True"
+    SnapsToDevicePixels="True">
 
     <Window.Resources>
+
+        <!-- =================================================
+             LABEL
+             ================================================= -->
 
         <Style
             x:Key="EditorLabelStyle"
             TargetType="{x:Type TextBlock}">
 
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter
+                Property="FontSize"
+                Value="12" />
+
+            <Setter
+                Property="FontWeight"
+                Value="SemiBold" />
+
             <Setter
                 Property="Foreground"
-                Value="{StaticResource TextSecondaryBrush}" />
-            <Setter Property="Margin" Value="0,0,0,7" />
+                Value="{StaticResource TextPrimaryBrush}" />
+
+            <Setter
+                Property="TextWrapping"
+                Value="Wrap" />
+
+            <Setter
+                Property="Margin"
+                Value="0,0,0,7" />
         </Style>
+
+        <!-- =================================================
+             TEXTBOX
+             ================================================= -->
 
         <Style
             x:Key="EditorTextBoxStyle"
             TargetType="{x:Type TextBox}"
             BasedOn="{StaticResource SearchTextBoxStyle}">
 
-            <Setter Property="Height" Value="44" />
+            <Setter
+                Property="Height"
+                Value="44" />
+
+            <Setter
+                Property="Padding"
+                Value="13,0" />
+
+            <Setter
+                Property="FontSize"
+                Value="13" />
+
+            <Style.Triggers>
+
+                <Trigger
+                    Property="IsReadOnly"
+                    Value="True">
+
+                    <Setter
+                        Property="Background"
+                        Value="{StaticResource SurfaceMutedBrush}" />
+
+                    <Setter
+                        Property="Foreground"
+                        Value="{StaticResource TextSecondaryBrush}" />
+
+                    <Setter
+                        Property="Cursor"
+                        Value="Arrow" />
+                </Trigger>
+
+                <Trigger
+                    Property="IsEnabled"
+                    Value="False">
+
+                    <Setter
+                        Property="Opacity"
+                        Value="0.6" />
+                </Trigger>
+            </Style.Triggers>
         </Style>
+
+        <!-- =================================================
+             COMBOBOX
+             ================================================= -->
 
         <Style
             x:Key="EditorComboBoxStyle"
             TargetType="{x:Type ComboBox}">
 
-            <Setter Property="Height" Value="44" />
-            <Setter Property="Padding" Value="12,7" />
-            <Setter Property="FontSize" Value="13" />
+            <Setter
+                Property="Height"
+                Value="44" />
+
+            <Setter
+                Property="Padding"
+                Value="12,7" />
+
+            <Setter
+                Property="FontSize"
+                Value="13" />
+
             <Setter
                 Property="Background"
                 Value="{StaticResource SurfaceBrush}" />
+
+            <Setter
+                Property="Foreground"
+                Value="{StaticResource TextPrimaryBrush}" />
+
             <Setter
                 Property="BorderBrush"
-                Value="{StaticResource BorderBrush}" />
+                Value="{StaticResource BorderStrongBrush}" />
+
+            <Setter
+                Property="BorderThickness"
+                Value="1" />
+
+            <Setter
+                Property="VerticalContentAlignment"
+                Value="Center" />
         </Style>
+
+        <!-- =================================================
+             CHECKBOX
+             ================================================= -->
+
+        <Style
+            x:Key="EditorCheckBoxStyle"
+            TargetType="{x:Type CheckBox}">
+
+            <Setter
+                Property="Foreground"
+                Value="{StaticResource TextPrimaryBrush}" />
+
+            <Setter
+                Property="FontSize"
+                Value="12" />
+
+            <Setter
+                Property="FontWeight"
+                Value="SemiBold" />
+
+            <Setter
+                Property="VerticalContentAlignment"
+                Value="Center" />
+
+            <Setter
+                Property="Cursor"
+                Value="Hand" />
+
+            <Style.Triggers>
+
+                <Trigger
+                    Property="IsEnabled"
+                    Value="False">
+
+                    <Setter
+                        Property="Opacity"
+                        Value="0.55" />
+
+                    <Setter
+                        Property="Cursor"
+                        Value="Arrow" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- =================================================
+             ERROR TEXT
+             ================================================= -->
 
         <Style
             x:Key="EditorErrorStyle"
             TargetType="{x:Type TextBlock}">
 
-            <Setter Property="FontSize" Value="11" />
+            <Setter
+                Property="FontSize"
+                Value="10" />
+
             <Setter
                 Property="Foreground"
                 Value="{StaticResource DangerBrush}" />
-            <Setter Property="Margin" Value="2,5,0,0" />
+
+            <Setter
+                Property="TextWrapping"
+                Value="Wrap" />
+
+            <Setter
+                Property="Margin"
+                Value="2,5,0,0" />
 
             <Style.Triggers>
 
@@ -79,331 +228,402 @@
                         Property="Visibility"
                         Value="Collapsed" />
                 </Trigger>
-
             </Style.Triggers>
         </Style>
 
+        <!-- =================================================
+             SMALL PILL
+             ================================================= -->
+
+        <Style
+            x:Key="EditorPillStyle"
+            TargetType="{x:Type Border}">
+
+            <Setter
+                Property="Padding"
+                Value="10,5" />
+
+            <Setter
+                Property="CornerRadius"
+                Value="8" />
+
+            <Setter
+                Property="Background"
+                Value="{StaticResource GoldSoftBrush}" />
+
+            <Setter
+                Property="BorderBrush"
+                Value="{StaticResource GoldBorderBrush}" />
+
+            <Setter
+                Property="BorderThickness"
+                Value="1" />
+        </Style>
     </Window.Resources>
 
-    <Grid>
+    <Grid Background="{StaticResource AppBackgroundBrush}">
 
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
+
+            <!-- Header -->
+            <RowDefinition Height="96" />
+
+            <!-- Scrollable form -->
             <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
+
+            <!-- Fixed footer -->
+            <RowDefinition Height="78" />
+
         </Grid.RowDefinitions>
 
-        <!-- Header -->
+        <!-- =================================================
+             HEADER
+             ================================================= -->
 
         <Border
+            Grid.Row="0"
             Background="{StaticResource SidebarBrush}"
-            Padding="30,24">
+            BorderBrush="#6A4C27"
+            BorderThickness="0,0,0,1">
 
-            <Grid>
+            <Grid Margin="28,0">
 
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel>
+                <StackPanel
+                    Orientation="Horizontal"
+                    VerticalAlignment="Center">
 
-                    <TextBlock
-                        Text="{Binding HeaderTitle}"
-                        Foreground="White"
-                        FontSize="24"
-                        FontWeight="SemiBold" />
+                    <Border
+                        Width="48"
+                        Height="48"
+                        Background="{StaticResource SidebarSurfaceBrush}"
+                        BorderBrush="{StaticResource GoldBrush}"
+                        BorderThickness="1"
+                        CornerRadius="14">
 
-                    <TextBlock
-                        Text="{Binding HeaderDescription}"
-                        Foreground="{StaticResource SidebarMutedBrush}"
-                        FontSize="13"
-                        Margin="0,7,0,0" />
+                        <TextBlock
+                            Text="&#xE70F;"
+                            FontFamily="Segoe MDL2 Assets"
+                            Foreground="{StaticResource GoldHoverBrush}"
+                            FontSize="21"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center" />
+                    </Border>
+
+                    <StackPanel
+                        Margin="14,0,0,0"
+                        VerticalAlignment="Center">
+
+                        <TextBlock
+                            Text="{Binding HeaderTitle}"
+                            Foreground="{StaticResource GoldHoverBrush}"
+                            FontFamily="Georgia"
+                            FontSize="21"
+                            FontWeight="SemiBold" />
+
+                        <TextBlock
+                            Text="{Binding HeaderDescription}"
+                            Foreground="{StaticResource SidebarMutedBrush}"
+                            FontSize="11"
+                            TextWrapping="Wrap"
+                            MaxWidth="650"
+                            Margin="0,5,0,0" />
+                    </StackPanel>
                 </StackPanel>
 
                 <Border
                     Grid.Column="1"
-                    Width="54"
-                    Height="54"
-                    Background="{StaticResource AccentBrush}"
-                    CornerRadius="17">
+                    Style="{StaticResource EditorPillStyle}"
+                    VerticalAlignment="Center">
 
                     <TextBlock
-                        Text="&#xE719;"
-                        FontFamily="Segoe MDL2 Assets"
-                        Foreground="White"
-                        FontSize="23"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center" />
+                        Text="{Binding InventoryModeBadgeText}"
+                        Foreground="{StaticResource GoldBrush}"
+                        FontSize="9"
+                        FontWeight="SemiBold" />
                 </Border>
             </Grid>
         </Border>
 
-        <!-- Form -->
+        <!-- =================================================
+             SCROLLABLE CONTENT
+             ================================================= -->
 
         <ScrollViewer
             Grid.Row="1"
-            VerticalScrollBarVisibility="Auto">
+            VerticalScrollBarVisibility="Auto"
+            HorizontalScrollBarVisibility="Disabled">
 
-            <StackPanel Margin="28,24">
+            <StackPanel Margin="24,18,24,24">
+
+                <!-- =========================================
+                     PRODUCT IDENTITY
+                     ========================================= -->
 
                 <Border
                     Style="{StaticResource CardStyle}"
-                    Padding="22">
+                    Padding="0"
+                    ClipToBounds="True">
 
-                    <StackPanel>
+                    <Grid>
 
-                        <TextBlock
-                            Text="Thông tin cơ bản"
-                            Style="{StaticResource SectionTitleTextStyle}" />
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
 
-                        <TextBlock
-                            Text="Mã, tên và danh mục dùng để nhận diện sản phẩm."
-                            Style="{StaticResource CaptionTextStyle}"
-                            Margin="0,5,0,20" />
-
-                        <Grid>
-
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="18" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
+                        <Border
+                            Grid.Row="0"
+                            Padding="20,15"
+                            Background="{StaticResource SurfaceMutedBrush}"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="0,0,0,1">
 
                             <StackPanel>
 
                                 <TextBlock
-                                    Text="Mã sản phẩm *"
-                                    Style="{StaticResource EditorLabelStyle}" />
-
-                                <TextBox
-                                    Text="{Binding Code,
-                                        UpdateSourceTrigger=PropertyChanged}"
-                                    Style="{StaticResource EditorTextBoxStyle}" />
+                                    Text="Thông tin nhận diện"
+                                    Style="{StaticResource SectionTitleTextStyle}" />
 
                                 <TextBlock
-                                    Text="{Binding CodeError}"
-                                    Style="{StaticResource EditorErrorStyle}" />
+                                    Text="Mã, tên, danh mục và thông tin hiển thị của sản phẩm."
+                                    Style="{StaticResource CaptionTextStyle}"
+                                    TextWrapping="Wrap"
+                                    Margin="0,4,0,0" />
                             </StackPanel>
+                        </Border>
 
-                            <StackPanel Grid.Column="2">
+                        <StackPanel
+                            Grid.Row="1"
+                            Margin="20,18,20,21">
 
-                                <TextBlock
-                                    Text="Barcode"
-                                    Style="{StaticResource EditorLabelStyle}" />
+                            <!-- Category + code -->
 
-                                <TextBox
-                                    Text="{Binding Barcode,
-                                        UpdateSourceTrigger=PropertyChanged}"
-                                    Style="{StaticResource EditorTextBoxStyle}" />
+                            <Grid>
 
-                                <TextBlock
-                                    Text="{Binding BarcodeError}"
-                                    Style="{StaticResource EditorErrorStyle}" />
-                            </StackPanel>
-                        </Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="18" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
 
-                        <Grid Margin="0,18,0,0">
+                                <StackPanel>
 
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="18" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        Text="Danh mục *"
+                                        Style="{StaticResource EditorLabelStyle}" />
 
-                            <StackPanel>
+                                    <ComboBox
+                                        ItemsSource="{Binding Categories}"
+                                        SelectedItem="{Binding SelectedCategory,
+                                            Mode=TwoWay}"
+                                        DisplayMemberPath="Name"
+                                        Style="{StaticResource EditorComboBoxStyle}"
+                                        MaxDropDownHeight="280" />
 
-                                <TextBlock
-                                    Text="Tên sản phẩm *"
-                                    Style="{StaticResource EditorLabelStyle}" />
+                                    <TextBlock
+                                        Text="{Binding CategoryError}"
+                                        Style="{StaticResource EditorErrorStyle}" />
+                                </StackPanel>
 
-                                <TextBox
-                                    Text="{Binding Name,
-                                        UpdateSourceTrigger=PropertyChanged}"
-                                    Style="{StaticResource EditorTextBoxStyle}" />
+                                <StackPanel Grid.Column="2">
 
-                                <TextBlock
-                                    Text="{Binding NameError}"
-                                    Style="{StaticResource EditorErrorStyle}" />
-                            </StackPanel>
+                                    <TextBlock
+                                        Text="Mã sản phẩm *"
+                                        Style="{StaticResource EditorLabelStyle}" />
 
-                            <StackPanel Grid.Column="2">
+                                    <TextBox
+                                        Text="{Binding Code,
+                                            UpdateSourceTrigger=PropertyChanged,
+                                            ValidatesOnNotifyDataErrors=True}"
+                                        Style="{StaticResource EditorTextBoxStyle}"
+                                        MaxLength="50" />
 
-                                <TextBlock
-                                    Text="Danh mục *"
-                                    Style="{StaticResource EditorLabelStyle}" />
+                                    <TextBlock
+                                        Text="{Binding CodeError}"
+                                        Style="{StaticResource EditorErrorStyle}" />
+                                </StackPanel>
+                            </Grid>
 
-                                <ComboBox
-                                    ItemsSource="{Binding Categories}"
-                                    SelectedItem="{Binding SelectedCategory}"
-                                    DisplayMemberPath="Name"
-                                    Style="{StaticResource EditorComboBoxStyle}" />
+                            <!-- Name + barcode -->
 
-                                <TextBlock
-                                    Text="{Binding CategoryError}"
-                                    Style="{StaticResource EditorErrorStyle}" />
-                            </StackPanel>
-                        </Grid>
+                            <Grid Margin="0,17,0,0">
 
-                        <Grid Margin="0,18,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="18" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
 
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="18" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
+                                <StackPanel>
 
-                            <StackPanel>
+                                    <TextBlock
+                                        Text="Tên sản phẩm *"
+                                        Style="{StaticResource EditorLabelStyle}" />
 
-                                <TextBlock
-                                    Text="Đơn vị tính *"
-                                    Style="{StaticResource EditorLabelStyle}" />
+                                    <TextBox
+                                        Text="{Binding Name,
+                                            UpdateSourceTrigger=PropertyChanged,
+                                            ValidatesOnNotifyDataErrors=True}"
+                                        Style="{StaticResource EditorTextBoxStyle}"
+                                        MaxLength="200" />
 
-                                <TextBox
-                                    Text="{Binding UnitName,
-                                        UpdateSourceTrigger=PropertyChanged}"
-                                    Style="{StaticResource EditorTextBoxStyle}" />
+                                    <TextBlock
+                                        Text="{Binding NameError}"
+                                        Style="{StaticResource EditorErrorStyle}" />
+                                </StackPanel>
 
-                                <TextBlock
-                                    Text="{Binding UnitNameError}"
-                                    Style="{StaticResource EditorErrorStyle}" />
-                            </StackPanel>
+                                <StackPanel Grid.Column="2">
 
-                            <StackPanel Grid.Column="2">
+                                    <TextBlock
+                                        Text="Mã vạch"
+                                        Style="{StaticResource EditorLabelStyle}" />
 
-                                <TextBlock
-                                    Text="Đường dẫn ảnh"
-                                    Style="{StaticResource EditorLabelStyle}" />
+                                    <TextBox
+                                        Text="{Binding Barcode,
+                                            UpdateSourceTrigger=PropertyChanged,
+                                            ValidatesOnNotifyDataErrors=True}"
+                                        Style="{StaticResource EditorTextBoxStyle}"
+                                        MaxLength="50" />
 
-                                <TextBox
-                                    Text="{Binding ImagePath,
-                                        UpdateSourceTrigger=PropertyChanged}"
-                                    Style="{StaticResource EditorTextBoxStyle}" />
-                            </StackPanel>
-                        </Grid>
+                                    <TextBlock
+                                        Text="{Binding BarcodeError}"
+                                        Style="{StaticResource EditorErrorStyle}" />
+                                </StackPanel>
+                            </Grid>
 
-                        <StackPanel Margin="0,18,0,0">
+                            <!-- Unit + image -->
+
+                            <Grid Margin="0,17,0,0">
+
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="18" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel>
+
+                                    <TextBlock
+                                        Text="Đơn vị tính *"
+                                        Style="{StaticResource EditorLabelStyle}" />
+
+                                    <TextBox
+                                        Text="{Binding UnitName,
+                                            UpdateSourceTrigger=PropertyChanged,
+                                            ValidatesOnNotifyDataErrors=True}"
+                                        Style="{StaticResource EditorTextBoxStyle}"
+                                        MaxLength="50" />
+
+                                    <TextBlock
+                                        Text="{Binding UnitNameError}"
+                                        Style="{StaticResource EditorErrorStyle}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+
+                                    <TextBlock
+                                        Text="Đường dẫn ảnh"
+                                        Style="{StaticResource EditorLabelStyle}" />
+
+                                    <TextBox
+                                        Text="{Binding ImagePath,
+                                            UpdateSourceTrigger=PropertyChanged,
+                                            ValidatesOnNotifyDataErrors=True}"
+                                        Style="{StaticResource EditorTextBoxStyle}"
+                                        MaxLength="500" />
+
+                                    <TextBlock
+                                        Text="{Binding ImagePathError}"
+                                        Style="{StaticResource EditorErrorStyle}" />
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Description -->
 
                             <TextBlock
                                 Text="Mô tả"
-                                Style="{StaticResource EditorLabelStyle}" />
+                                Style="{StaticResource EditorLabelStyle}"
+                                Margin="0,17,0,7" />
 
                             <TextBox
                                 Text="{Binding Description,
-                                    UpdateSourceTrigger=PropertyChanged}"
+                                    UpdateSourceTrigger=PropertyChanged,
+                                    ValidatesOnNotifyDataErrors=True}"
+                                Style="{StaticResource EditorTextBoxStyle}"
+                                Height="88"
+                                MinHeight="88"
+                                MaxLength="2000"
                                 AcceptsReturn="True"
                                 TextWrapping="Wrap"
+                                VerticalContentAlignment="Top"
                                 VerticalScrollBarVisibility="Auto"
-                                MinHeight="88"
-                                Padding="12"
-                                FontSize="13"
-                                Background="{StaticResource SurfaceBrush}"
-                                BorderBrush="{StaticResource BorderBrush}"
-                                BorderThickness="1" />
+                                Padding="13,10" />
+
+                            <TextBlock
+                                Text="{Binding DescriptionError}"
+                                Style="{StaticResource EditorErrorStyle}" />
                         </StackPanel>
-                    </StackPanel>
+                    </Grid>
                 </Border>
+
+                <!-- =========================================
+                     PRICING
+                     ========================================= -->
 
                 <Border
                     Style="{StaticResource CardStyle}"
-                    Padding="22"
-                    Margin="0,18,0,0">
+                    Padding="0"
+                    Margin="0,16,0,0"
+                    ClipToBounds="True">
 
-                    <StackPanel>
+                    <Grid>
 
-                        <TextBlock
-                            Text="Giá bán và lợi nhuận"
-                            Style="{StaticResource SectionTitleTextStyle}" />
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
 
-                        <TextBlock
-                            Text="Tiền được lưu bằng số nguyên theo đơn vị đồng Việt Nam."
-                            Style="{StaticResource CaptionTextStyle}"
-                            Margin="0,5,0,20" />
+                        <Border
+                            Grid.Row="0"
+                            Padding="20,15"
+                            Background="{StaticResource SurfaceMutedBrush}"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="0,0,0,1">
 
-                        <Grid>
+                            <Grid>
 
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="18" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="18" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
 
-                            <StackPanel>
-
-                                <TextBlock
-                                    Text="Giá vốn *"
-                                    Style="{StaticResource EditorLabelStyle}" />
-
-                                <TextBox
-                                    Text="{Binding CostPriceText,
-                                        UpdateSourceTrigger=PropertyChanged}"
-                                    Style="{StaticResource EditorTextBoxStyle}" />
-
-                                <TextBlock
-                                    Text="{Binding CostPriceError}"
-                                    Style="{StaticResource EditorErrorStyle}" />
-                            </StackPanel>
-
-                            <StackPanel Grid.Column="2">
-
-                                <TextBlock
-                                    Text="Giá bán *"
-                                    Style="{StaticResource EditorLabelStyle}" />
-
-                                <TextBox
-                                    Text="{Binding SalePriceText,
-                                        UpdateSourceTrigger=PropertyChanged}"
-                                    Style="{StaticResource EditorTextBoxStyle}" />
-
-                                <TextBlock
-                                    Text="{Binding SalePriceError}"
-                                    Style="{StaticResource EditorErrorStyle}" />
-                            </StackPanel>
-
-                            <Border
-                                Grid.Column="4"
-                                Background="{StaticResource SuccessSoftBrush}"
-                                CornerRadius="12"
-                                Padding="14">
-
-                                <Border.Style>
-                                    <Style TargetType="{x:Type Border}">
-
-                                        <Setter
-                                            Property="Background"
-                                            Value="{StaticResource SuccessSoftBrush}" />
-
-                                        <Style.Triggers>
-
-                                            <DataTrigger
-                                                Binding="{Binding IsProfitNegative}"
-                                                Value="True">
-
-                                                <Setter
-                                                    Property="Background"
-                                                    Value="{StaticResource DangerSoftBrush}" />
-                                            </DataTrigger>
-
-                                        </Style.Triggers>
-                                    </Style>
-                                </Border.Style>
-
-                                <StackPanel
-                                    VerticalAlignment="Center">
+                                <StackPanel>
 
                                     <TextBlock
-                                        Text="LỢI NHUẬN / ĐƠN VỊ"
-                                        FontSize="10"
-                                        FontWeight="SemiBold"
-                                        Foreground="{StaticResource TextSecondaryBrush}" />
+                                        Text="Giá và lợi nhuận"
+                                        Style="{StaticResource SectionTitleTextStyle}" />
+
+                                    <TextBlock
+                                        Text="Tiền được lưu bằng số nguyên theo đơn vị đồng."
+                                        Style="{StaticResource CaptionTextStyle}"
+                                        TextWrapping="Wrap"
+                                        Margin="0,4,0,0" />
+                                </StackPanel>
+
+                                <Border
+                                    Grid.Column="1"
+                                    Style="{StaticResource EditorPillStyle}"
+                                    Margin="15,0,0,0">
 
                                     <TextBlock
                                         Text="{Binding ProfitPreviewText}"
-                                        FontSize="15"
-                                        FontWeight="Bold"
-                                        Margin="0,7,0,0">
+                                        FontSize="11"
+                                        FontWeight="SemiBold">
 
                                         <TextBlock.Style>
                                             <Style TargetType="{x:Type TextBlock}">
@@ -422,61 +642,17 @@
                                                             Property="Foreground"
                                                             Value="{StaticResource DangerBrush}" />
                                                     </DataTrigger>
-
                                                 </Style.Triggers>
                                             </Style>
                                         </TextBlock.Style>
                                     </TextBlock>
-                                </StackPanel>
-                            </Border>
-                        </Grid>
-                    </StackPanel>
-                </Border>
+                                </Border>
+                            </Grid>
+                        </Border>
 
-                <Border
-                    Style="{StaticResource CardStyle}"
-                    Padding="22"
-                    Margin="0,18,0,0">
-
-                    <StackPanel>
-
-                        <TextBlock
-                            Text="Quản lý tồn kho"
-                            Style="{StaticResource SectionTitleTextStyle}" />
-
-                        <TextBlock
-                            Text="Tồn kho hiện tại không được sửa trực tiếp khi cập nhật sản phẩm."
-                            Style="{StaticResource CaptionTextStyle}"
-                            Margin="0,5,0,18" />
-
-                        <StackPanel
-                            Orientation="Horizontal"
-                            Margin="0,0,0,18">
-
-                            <CheckBox
-                                Content="Theo dõi tồn kho"
-                                IsChecked="{Binding TrackInventory}"
-                                VerticalAlignment="Center"
-                                FontSize="13"
-                                FontWeight="SemiBold" />
-
-                            <CheckBox
-                                Content="Cho phép tồn kho âm"
-                                IsChecked="{Binding AllowNegativeStock}"
-                                IsEnabled="{Binding TrackInventory}"
-                                VerticalAlignment="Center"
-                                FontSize="13"
-                                Margin="28,0,0,0" />
-
-                            <CheckBox
-                                Content="Đang hoạt động"
-                                IsChecked="{Binding IsActive}"
-                                VerticalAlignment="Center"
-                                FontSize="13"
-                                Margin="28,0,0,0" />
-                        </StackPanel>
-
-                        <Grid>
+                        <Grid
+                            Grid.Row="1"
+                            Margin="20,18,20,21">
 
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -487,49 +663,328 @@
                             <StackPanel>
 
                                 <TextBlock
-                                    Text="Tồn kho ban đầu"
+                                    Text="Giá vốn *"
                                     Style="{StaticResource EditorLabelStyle}" />
 
                                 <TextBox
-                                    Text="{Binding InitialStockQuantityText,
-                                        UpdateSourceTrigger=PropertyChanged}"
-                                    IsEnabled="{Binding CanEditInitialStock}"
-                                    Style="{StaticResource EditorTextBoxStyle}" />
+                                    Text="{Binding CostPriceText,
+                                        UpdateSourceTrigger=PropertyChanged,
+                                        ValidatesOnNotifyDataErrors=True}"
+                                    Style="{StaticResource EditorTextBoxStyle}"
+                                    MaxLength="20" />
 
                                 <TextBlock
-                                    Text="{Binding InitialStockError}"
+                                    Text="{Binding CostPriceError}"
                                     Style="{StaticResource EditorErrorStyle}" />
-
-                                <TextBlock
-                                    Text="Khi sửa sản phẩm, tồn kho chỉ được thay đổi qua nghiệp vụ kho."
-                                    Style="{StaticResource CaptionTextStyle}"
-                                    Margin="2,6,0,0" />
                             </StackPanel>
 
                             <StackPanel Grid.Column="2">
 
                                 <TextBlock
-                                    Text="Ngưỡng cảnh báo sắp hết"
+                                    Text="Giá bán *"
                                     Style="{StaticResource EditorLabelStyle}" />
 
                                 <TextBox
-                                    Text="{Binding MinimumStockText,
-                                        UpdateSourceTrigger=PropertyChanged}"
-                                    IsEnabled="{Binding TrackInventory}"
-                                    Style="{StaticResource EditorTextBoxStyle}" />
+                                    Text="{Binding SalePriceText,
+                                        UpdateSourceTrigger=PropertyChanged,
+                                        ValidatesOnNotifyDataErrors=True}"
+                                    Style="{StaticResource EditorTextBoxStyle}"
+                                    MaxLength="20" />
 
                                 <TextBlock
-                                    Text="{Binding MinimumStockError}"
+                                    Text="{Binding SalePriceError}"
                                     Style="{StaticResource EditorErrorStyle}" />
                             </StackPanel>
                         </Grid>
-                    </StackPanel>
+                    </Grid>
                 </Border>
 
+                <!-- =========================================
+                     INVENTORY
+                     ========================================= -->
+
                 <Border
-                    Margin="0,18,0,0"
-                    Padding="15"
-                    CornerRadius="11"
+                    Style="{StaticResource CardStyle}"
+                    Padding="0"
+                    Margin="0,16,0,0"
+                    ClipToBounds="True">
+
+                    <Grid>
+
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Inventory header -->
+
+                        <Border
+                            Grid.Row="0"
+                            Padding="20,15"
+                            Background="{StaticResource SidebarBrush}"
+                            BorderBrush="#6A4C27"
+                            BorderThickness="0,0,0,1">
+
+                            <Grid>
+
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel>
+
+                                    <TextBlock
+                                        Text="{Binding InventorySectionTitle}"
+                                        Foreground="{StaticResource GoldHoverBrush}"
+                                        FontFamily="Georgia"
+                                        FontSize="16"
+                                        FontWeight="SemiBold" />
+
+                                    <TextBlock
+                                        Text="Mọi thay đổi tồn thực tế đều phải có lịch sử kiểm toán."
+                                        Foreground="{StaticResource SidebarMutedBrush}"
+                                        FontSize="10"
+                                        TextWrapping="Wrap"
+                                        Margin="0,4,0,0" />
+                                </StackPanel>
+
+                                <Border
+                                    Grid.Column="1"
+                                    Padding="10,5"
+                                    Margin="15,0,0,0"
+                                    Background="{StaticResource SidebarSurfaceBrush}"
+                                    BorderBrush="{StaticResource GoldBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    VerticalAlignment="Center">
+
+                                    <TextBlock
+                                        Text="{Binding InventoryModeBadgeText}"
+                                        Foreground="{StaticResource GoldHoverBrush}"
+                                        FontSize="9"
+                                        FontWeight="SemiBold" />
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <StackPanel
+                            Grid.Row="1"
+                            Margin="20,18,20,21">
+
+                            <!-- Inventory policy boxes -->
+
+                            <WrapPanel>
+
+                                <Border
+                                    Width="250"
+                                    MinHeight="74"
+                                    Padding="13"
+                                    Margin="0,0,10,10"
+                                    Background="{StaticResource SurfaceMutedBrush}"
+                                    BorderBrush="{StaticResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="10">
+
+                                    <StackPanel>
+
+                                        <CheckBox
+                                            Content="Theo dõi tồn kho"
+                                            IsChecked="{Binding TrackInventory,
+                                                Mode=TwoWay}"
+                                            IsEnabled="{Binding CanChangeInventoryTracking}"
+                                            Style="{StaticResource EditorCheckBoxStyle}" />
+
+                                        <TextBlock
+                                            Text="{Binding InventoryTrackingHint}"
+                                            Style="{StaticResource CaptionTextStyle}"
+                                            TextWrapping="Wrap"
+                                            Margin="23,7,0,0" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border
+                                    Width="220"
+                                    MinHeight="74"
+                                    Padding="13"
+                                    Margin="0,0,10,10"
+                                    Background="{StaticResource SurfaceMutedBrush}"
+                                    BorderBrush="{StaticResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="10">
+
+                                    <StackPanel>
+
+                                        <CheckBox
+                                            Content="Cho phép tồn âm"
+                                            IsChecked="{Binding AllowNegativeStock,
+                                                Mode=TwoWay}"
+                                            IsEnabled="{Binding CanAllowNegativeStock}"
+                                            Style="{StaticResource EditorCheckBoxStyle}" />
+
+                                        <TextBlock
+                                            Text="Dùng cho nghiệp vụ đặc biệt cần bán hoặc xuất vượt tồn."
+                                            Style="{StaticResource CaptionTextStyle}"
+                                            TextWrapping="Wrap"
+                                            Margin="23,7,0,0" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border
+                                    Width="190"
+                                    MinHeight="74"
+                                    Padding="13"
+                                    Margin="0,0,0,10"
+                                    Background="{StaticResource SurfaceMutedBrush}"
+                                    BorderBrush="{StaticResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="10">
+
+                                    <StackPanel>
+
+                                        <CheckBox
+                                            Content="Đang bán"
+                                            IsChecked="{Binding IsActive,
+                                                Mode=TwoWay}"
+                                            Style="{StaticResource EditorCheckBoxStyle}" />
+
+                                        <TextBlock
+                                            Text="Tắt để ngừng hiển thị trong màn hình bán hàng."
+                                            Style="{StaticResource CaptionTextStyle}"
+                                            TextWrapping="Wrap"
+                                            Margin="23,7,0,0" />
+                                    </StackPanel>
+                                </Border>
+                            </WrapPanel>
+
+                            <!-- Inventory values -->
+
+                            <Grid Margin="0,8,0,0">
+
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="18" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel>
+
+                                    <TextBlock
+                                        Text="{Binding StockQuantityLabel}"
+                                        Style="{StaticResource EditorLabelStyle}" />
+
+                                    <TextBox
+                                        Text="{Binding InitialStockQuantityText,
+                                            UpdateSourceTrigger=PropertyChanged,
+                                            ValidatesOnNotifyDataErrors=True}"
+                                        IsReadOnly="{Binding IsEditMode}"
+                                        IsEnabled="{Binding TrackInventory}"
+                                        Style="{StaticResource EditorTextBoxStyle}"
+                                        MaxLength="15" />
+
+                                    <TextBlock
+                                        Text="{Binding InitialStockError}"
+                                        Style="{StaticResource EditorErrorStyle}" />
+
+                                    <TextBlock
+                                        Text="{Binding StockQuantityHint}"
+                                        Style="{StaticResource CaptionTextStyle}"
+                                        TextWrapping="Wrap"
+                                        Margin="2,6,0,0" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+
+                                    <TextBlock
+                                        Text="Ngưỡng cảnh báo tồn"
+                                        Style="{StaticResource EditorLabelStyle}" />
+
+                                    <TextBox
+                                        Text="{Binding MinimumStockText,
+                                            UpdateSourceTrigger=PropertyChanged,
+                                            ValidatesOnNotifyDataErrors=True}"
+                                        IsEnabled="{Binding CanEditMinimumStock}"
+                                        Style="{StaticResource EditorTextBoxStyle}"
+                                        MaxLength="15" />
+
+                                    <TextBlock
+                                        Text="{Binding MinimumStockError}"
+                                        Style="{StaticResource EditorErrorStyle}" />
+
+                                    <TextBlock
+                                        Text="Sản phẩm được đánh dấu sắp hết khi tồn nhỏ hơn hoặc bằng mức này."
+                                        Style="{StaticResource CaptionTextStyle}"
+                                        TextWrapping="Wrap"
+                                        Margin="2,6,0,0" />
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Audit preview -->
+
+                            <Border
+                                Margin="0,17,0,0"
+                                Padding="14,12"
+                                Background="{StaticResource GoldSoftBrush}"
+                                BorderBrush="{StaticResource GoldBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="10">
+
+                                <Grid>
+
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Border
+                                        Width="34"
+                                        Height="34"
+                                        Background="{StaticResource SurfaceBrush}"
+                                        BorderBrush="{StaticResource GoldBorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="9">
+
+                                        <TextBlock
+                                            Text="&#xE81C;"
+                                            FontFamily="Segoe MDL2 Assets"
+                                            Foreground="{StaticResource GoldBrush}"
+                                            FontSize="15"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center" />
+                                    </Border>
+
+                                    <StackPanel
+                                        Grid.Column="1"
+                                        Margin="11,0,0,0"
+                                        VerticalAlignment="Center">
+
+                                        <TextBlock
+                                            Text="XEM TRƯỚC LỊCH SỬ KHO"
+                                            Foreground="{StaticResource GoldBrush}"
+                                            FontSize="9"
+                                            FontWeight="SemiBold" />
+
+                                        <TextBlock
+                                            Text="{Binding OpeningBalancePreviewText}"
+                                            Foreground="{StaticResource TextPrimaryBrush}"
+                                            FontSize="12"
+                                            FontWeight="SemiBold"
+                                            TextWrapping="Wrap"
+                                            Margin="0,5,0,0" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Status message inside scroll area -->
+
+                <Border
+                    Margin="0,16,0,0"
+                    Padding="13,11"
+                    BorderThickness="1"
+                    CornerRadius="10"
                     Visibility="{Binding HasStatusMessage,
                         Converter={StaticResource BooleanToVisibilityConverter}}">
 
@@ -538,7 +993,11 @@
 
                             <Setter
                                 Property="Background"
-                                Value="{StaticResource InfoSoftBrush}" />
+                                Value="{StaticResource SuccessSoftBrush}" />
+
+                            <Setter
+                                Property="BorderBrush"
+                                Value="#C9E2D0" />
 
                             <Style.Triggers>
 
@@ -549,23 +1008,26 @@
                                     <Setter
                                         Property="Background"
                                         Value="{StaticResource DangerSoftBrush}" />
-                                </DataTrigger>
 
+                                    <Setter
+                                        Property="BorderBrush"
+                                        Value="#F0C8CA" />
+                                </DataTrigger>
                             </Style.Triggers>
                         </Style>
                     </Border.Style>
 
                     <TextBlock
                         Text="{Binding StatusMessage}"
-                        TextWrapping="Wrap"
-                        FontSize="12">
+                        FontSize="11"
+                        TextWrapping="Wrap">
 
                         <TextBlock.Style>
                             <Style TargetType="{x:Type TextBlock}">
 
                                 <Setter
                                     Property="Foreground"
-                                    Value="{StaticResource InfoBrush}" />
+                                    Value="{StaticResource SuccessBrush}" />
 
                                 <Style.Triggers>
 
@@ -577,7 +1039,6 @@
                                             Property="Foreground"
                                             Value="{StaticResource DangerBrush}" />
                                     </DataTrigger>
-
                                 </Style.Triggers>
                             </Style>
                         </TextBlock.Style>
@@ -586,63 +1047,103 @@
             </StackPanel>
         </ScrollViewer>
 
-        <!-- Footer -->
+        <!-- =================================================
+             FIXED FOOTER
+             ================================================= -->
 
         <Border
             Grid.Row="2"
             Background="{StaticResource SurfaceBrush}"
             BorderBrush="{StaticResource BorderBrush}"
-            BorderThickness="0,1,0,0"
-            Padding="24,16">
+            BorderThickness="0,1,0,0">
 
-            <Grid>
+            <Grid Margin="24,0">
 
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <TextBlock
-                    Text="Các trường có dấu * là bắt buộc."
-                    Style="{StaticResource CaptionTextStyle}"
-                    VerticalAlignment="Center" />
+                <StackPanel
+                    Orientation="Horizontal"
+                    VerticalAlignment="Center">
+
+                    <Ellipse
+                        Width="7"
+                        Height="7"
+                        Fill="{StaticResource GoldBrush}"
+                        Margin="0,0,8,0" />
+
+                    <TextBlock
+                        Text="Các trường có dấu * là bắt buộc."
+                        Style="{StaticResource CaptionTextStyle}"
+                        VerticalAlignment="Center" />
+                </StackPanel>
 
                 <StackPanel
                     Grid.Column="1"
-                    Orientation="Horizontal">
+                    Orientation="Horizontal"
+                    VerticalAlignment="Center">
 
                     <Button
                         Content="Hủy"
                         Command="{Binding CancelCommand}"
                         Style="{StaticResource SecondaryButtonStyle}"
-                        MinWidth="100" />
+                        MinWidth="100"
+                        IsCancel="True" />
 
                     <Button
-                        Content="{Binding SaveButtonText}"
                         Command="{Binding SaveCommand}"
                         Style="{StaticResource PrimaryButtonStyle}"
-                        MinWidth="145"
+                        MinWidth="160"
                         IsDefault="True"
-                        Margin="10,0,0,0" />
+                        Margin="10,0,0,0">
+
+                        <StackPanel Orientation="Horizontal">
+
+                            <TextBlock
+                                Text="&#xE74E;"
+                                FontFamily="Segoe MDL2 Assets"
+                                FontSize="13"
+                                Margin="0,0,8,0"
+                                VerticalAlignment="Center" />
+
+                            <TextBlock
+                                Text="{Binding SaveButtonText}"
+                                VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- Loading -->
+        <!-- =================================================
+             BUSY OVERLAY
+             ================================================= -->
 
         <Border
             Grid.RowSpan="3"
-            Background="#99FFFFFF"
+            Background="#BFFFFFFB"
             Visibility="{Binding IsBusy,
                 Converter={StaticResource BooleanToVisibilityConverter}}">
 
             <Border
-                Width="280"
+                Width="310"
                 Padding="24"
                 Background="{StaticResource SurfaceBrush}"
-                CornerRadius="16"
+                BorderBrush="{StaticResource GoldBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="14"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center">
+
+                <Border.Effect>
+                    <DropShadowEffect
+                        Color="#3B271D"
+                        BlurRadius="20"
+                        ShadowDepth="3"
+                        Opacity="0.18" />
+                </Border.Effect>
 
                 <StackPanel>
 
@@ -652,10 +1153,11 @@
                         Foreground="{StaticResource AccentBrush}" />
 
                     <TextBlock
-                        Text="Đang xử lý dữ liệu..."
+                        Text="Đang kiểm tra và lưu sản phẩm..."
                         Foreground="{StaticResource TextSecondaryBrush}"
-                        FontSize="13"
+                        FontSize="12"
                         HorizontalAlignment="Center"
+                        TextAlignment="Center"
                         Margin="0,14,0,0" />
                 </StackPanel>
             </Border>

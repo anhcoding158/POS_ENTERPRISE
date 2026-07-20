@@ -8,15 +8,28 @@ using POS.Application.Abstractions.Services;
 using POS.Application.Common;
 using POS.Application.DTOs.Categories;
 using POS.Application.DTOs.Products;
+using POS.Domain.Constants;
 using POS.Wpf.Commands;
 
 namespace POS.Wpf.ViewModels;
 
 /// <summary>
-/// ViewModel cho form thêm và sửa sản phẩm.
+/// ViewModel của cửa sổ thêm và chỉnh sửa sản phẩm.
 ///
-/// Mỗi thao tác tải/lưu tạo một DI scope riêng,
-/// vì vậy DbContext không sống cùng cửa sổ editor.
+/// Nguyên tắc tồn kho:
+///
+/// Create:
+/// - cho nhập tồn đầu kỳ;
+/// - ProductService sẽ tạo OpeningBalance;
+/// - Product và movement nằm trong cùng transaction.
+///
+/// Edit:
+/// - chỉ hiển thị tồn hiện tại;
+/// - tuyệt đối không đưa tồn kho vào UpdateProductRequest;
+/// - mọi thay đổi tồn phải đi qua InventoryService.
+///
+/// ViewModel không giữ DbContext.
+/// Mỗi thao tác tải hoặc lưu tạo một DI scope ngắn.
 /// </summary>
 public sealed class ProductEditorViewModel :
     ViewModelBase,
@@ -24,12 +37,14 @@ public sealed class ProductEditorViewModel :
 {
     private static readonly CultureInfo
         VietnameseCulture =
-            CultureInfo.GetCultureInfo("vi-VN");
+            CultureInfo.GetCultureInfo(
+                "vi-VN");
 
     private readonly IServiceScopeFactory
         _scopeFactory;
 
-    private readonly ILogger<ProductEditorViewModel>
+    private readonly ILogger<
+        ProductEditorViewModel>
         _logger;
 
     private readonly Dictionary<
@@ -44,22 +59,44 @@ public sealed class ProductEditorViewModel :
     private CategoryOptionDto?
         _selectedCategory;
 
-    private string _code = string.Empty;
-    private string _barcode = string.Empty;
-    private string _name = string.Empty;
-    private string _description = string.Empty;
-    private string _unitName = "Cái";
-    private string _imagePath = string.Empty;
+    private string _code =
+        string.Empty;
 
-    private string _costPriceText = "0";
-    private string _salePriceText = "0";
-    private string _initialStockQuantityText = "0";
-    private string _minimumStockText = "0";
+    private string _barcode =
+        string.Empty;
+
+    private string _name =
+        string.Empty;
+
+    private string _description =
+        string.Empty;
+
+    private string _unitName =
+        "Cái";
+
+    private string _imagePath =
+        string.Empty;
+
+    private string _costPriceText =
+        "0";
+
+    private string _salePriceText =
+        "0";
+
+    private string _initialStockQuantityText =
+        "0";
+
+    private string _minimumStockText =
+        "0";
+
+    private int _currentStockQuantity;
 
     private bool _trackInventory = true;
     private bool _allowNegativeStock;
     private bool _isActive = true;
+
     private bool _isBusy;
+    private bool _suppressValidation;
 
     private string _statusMessage =
         string.Empty;
@@ -122,12 +159,7 @@ public sealed class ProductEditorViewModel :
                 return;
             }
 
-            OnPropertyChanged(nameof(IsEditMode));
-            OnPropertyChanged(nameof(WindowTitle));
-            OnPropertyChanged(nameof(HeaderTitle));
-            OnPropertyChanged(nameof(HeaderDescription));
-            OnPropertyChanged(nameof(SaveButtonText));
-            OnPropertyChanged(nameof(CanEditInitialStock));
+            NotifyEditorModePresentation();
         }
     }
 
@@ -146,13 +178,137 @@ public sealed class ProductEditorViewModel :
 
     public string HeaderDescription =>
         IsEditMode
-            ? "Chỉnh sửa thông tin, giá bán và cấu hình tồn kho."
-            : "Khai báo sản phẩm mới cho danh mục bán hàng.";
+            ? "Cập nhật thông tin, giá bán và chính sách kho. " +
+              "Tồn thực tế không được chỉnh trực tiếp tại đây."
+            : "Khai báo sản phẩm mới. Tồn đầu kỳ sẽ được " +
+              "ghi thành lịch sử kho ngay khi tạo.";
 
     public string SaveButtonText =>
         IsEditMode
             ? "Lưu thay đổi"
             : "Tạo sản phẩm";
+
+    public string InventorySectionTitle =>
+        IsEditMode
+            ? "Chính sách và trạng thái kho"
+            : "Thiết lập tồn kho ban đầu";
+
+    public string InventoryModeBadgeText =>
+        IsEditMode
+            ? "TỒN KHO ĐƯỢC KHÓA"
+            : "OPENING BALANCE";
+
+    public string StockQuantityLabel =>
+        IsEditMode
+            ? "Tồn hiện tại"
+            : "Tồn đầu kỳ";
+
+    public string StockQuantityHint
+    {
+        get
+        {
+            if (IsEditMode)
+            {
+                return TrackInventory
+                    ? "Đây là số tồn đã lưu trong hệ thống. " +
+                      "Hãy dùng Điều chỉnh kho để thay đổi."
+                    : "Sản phẩm hiện không theo dõi tồn kho.";
+            }
+
+            if (!TrackInventory)
+            {
+                return
+                    "Sản phẩm không theo dõi kho sẽ được tạo với tồn bằng 0.";
+            }
+
+            return
+                "Giá trị khác 0 sẽ tạo đúng một movement Tồn đầu kỳ.";
+        }
+    }
+
+    public string InventoryTrackingHint
+    {
+        get
+        {
+            if (!IsEditMode)
+            {
+                return
+                    "Bật để quản lý nhập, xuất, kiểm kê và cảnh báo tồn.";
+            }
+
+            if (CurrentStockQuantity != 0)
+            {
+                return
+                    "Không thể tắt theo dõi kho khi tồn hiện tại khác 0. " +
+                    "Hãy kiểm kê về 0 trước.";
+            }
+
+            return
+                "Có thể thay đổi chế độ theo dõi vì tồn hiện tại bằng 0.";
+        }
+    }
+
+    public string OpeningBalancePreviewText
+    {
+        get
+        {
+            if (IsEditMode)
+            {
+                return
+                    $"Tồn hiện tại: " +
+                    $"{FormatQuantity(CurrentStockQuantity)}";
+            }
+
+            if (!TrackInventory)
+            {
+                return
+                    "Không tạo lịch sử tồn đầu kỳ.";
+            }
+
+            if (!TryParseInteger(
+                    InitialStockQuantityText,
+                    out var quantity))
+            {
+                return
+                    "Nhập số nguyên hợp lệ để xem trước.";
+            }
+
+            if (quantity == 0)
+            {
+                return
+                    "Tồn bằng 0 — không tạo movement rỗng.";
+            }
+
+            var prefix =
+                quantity > 0
+                    ? "+"
+                    : string.Empty;
+
+            return
+                $"Sẽ tạo OpeningBalance: " +
+                $"{prefix}{FormatQuantity(quantity)}";
+        }
+    }
+
+    public bool CanEditInitialStock =>
+        !IsEditMode &&
+        TrackInventory &&
+        !IsBusy;
+
+    public bool CanChangeInventoryTracking =>
+        !IsBusy &&
+        (
+            !IsEditMode ||
+            CurrentStockQuantity == 0
+        );
+
+    public bool CanEditMinimumStock =>
+        TrackInventory &&
+        !IsBusy;
+
+    public bool CanAllowNegativeStock =>
+        TrackInventory &&
+        !IsBusy;
 
     public CategoryOptionDto?
         SelectedCategory
@@ -168,7 +324,8 @@ public sealed class ProductEditorViewModel :
                 return;
             }
 
-            ValidateCategory();
+            ValidateWhenEnabled(
+                ValidateCategory);
         }
     }
 
@@ -178,14 +335,18 @@ public sealed class ProductEditorViewModel :
 
         set
         {
+            var normalized =
+                value ?? string.Empty;
+
             if (!SetProperty(
                     ref _code,
-                    value))
+                    normalized))
             {
                 return;
             }
 
-            ValidateCode();
+            ValidateWhenEnabled(
+                ValidateCode);
         }
     }
 
@@ -195,14 +356,18 @@ public sealed class ProductEditorViewModel :
 
         set
         {
+            var normalized =
+                value ?? string.Empty;
+
             if (!SetProperty(
                     ref _barcode,
-                    value))
+                    normalized))
             {
                 return;
             }
 
-            ValidateBarcode();
+            ValidateWhenEnabled(
+                ValidateBarcode);
         }
     }
 
@@ -212,14 +377,18 @@ public sealed class ProductEditorViewModel :
 
         set
         {
+            var normalized =
+                value ?? string.Empty;
+
             if (!SetProperty(
                     ref _name,
-                    value))
+                    normalized))
             {
                 return;
             }
 
-            ValidateName();
+            ValidateWhenEnabled(
+                ValidateName);
         }
     }
 
@@ -227,9 +396,21 @@ public sealed class ProductEditorViewModel :
     {
         get => _description;
 
-        set => SetProperty(
-            ref _description,
-            value);
+        set
+        {
+            var normalized =
+                value ?? string.Empty;
+
+            if (!SetProperty(
+                    ref _description,
+                    normalized))
+            {
+                return;
+            }
+
+            ValidateWhenEnabled(
+                ValidateDescription);
+        }
     }
 
     public string UnitName
@@ -238,14 +419,21 @@ public sealed class ProductEditorViewModel :
 
         set
         {
+            var normalized =
+                value ?? string.Empty;
+
             if (!SetProperty(
                     ref _unitName,
-                    value))
+                    normalized))
             {
                 return;
             }
 
-            ValidateUnitName();
+            OnPropertyChanged(
+                nameof(OpeningBalancePreviewText));
+
+            ValidateWhenEnabled(
+                ValidateUnitName);
         }
     }
 
@@ -253,9 +441,21 @@ public sealed class ProductEditorViewModel :
     {
         get => _imagePath;
 
-        set => SetProperty(
-            ref _imagePath,
-            value);
+        set
+        {
+            var normalized =
+                value ?? string.Empty;
+
+            if (!SetProperty(
+                    ref _imagePath,
+                    normalized))
+            {
+                return;
+            }
+
+            ValidateWhenEnabled(
+                ValidateImagePath);
+        }
     }
 
     public string CostPriceText
@@ -264,15 +464,20 @@ public sealed class ProductEditorViewModel :
 
         set
         {
+            var normalized =
+                value ?? string.Empty;
+
             if (!SetProperty(
                     ref _costPriceText,
-                    value))
+                    normalized))
             {
                 return;
             }
 
-            ValidateCostPrice();
-            NotifyProfitPreviewChanged();
+            NotifyProfitPresentation();
+
+            ValidateWhenEnabled(
+                ValidateCostPrice);
         }
     }
 
@@ -282,15 +487,20 @@ public sealed class ProductEditorViewModel :
 
         set
         {
+            var normalized =
+                value ?? string.Empty;
+
             if (!SetProperty(
                     ref _salePriceText,
-                    value))
+                    normalized))
             {
                 return;
             }
 
-            ValidateSalePrice();
-            NotifyProfitPreviewChanged();
+            NotifyProfitPresentation();
+
+            ValidateWhenEnabled(
+                ValidateSalePrice);
         }
     }
 
@@ -300,14 +510,21 @@ public sealed class ProductEditorViewModel :
 
         set
         {
+            var normalized =
+                value ?? string.Empty;
+
             if (!SetProperty(
                     ref _initialStockQuantityText,
-                    value))
+                    normalized))
             {
                 return;
             }
 
-            ValidateInitialStock();
+            OnPropertyChanged(
+                nameof(OpeningBalancePreviewText));
+
+            ValidateWhenEnabled(
+                ValidateInitialStock);
         }
     }
 
@@ -317,14 +534,42 @@ public sealed class ProductEditorViewModel :
 
         set
         {
+            var normalized =
+                value ?? string.Empty;
+
             if (!SetProperty(
                     ref _minimumStockText,
+                    normalized))
+            {
+                return;
+            }
+
+            ValidateWhenEnabled(
+                ValidateMinimumStock);
+        }
+    }
+
+    public int CurrentStockQuantity
+    {
+        get => _currentStockQuantity;
+
+        private set
+        {
+            if (!SetProperty(
+                    ref _currentStockQuantity,
                     value))
             {
                 return;
             }
 
-            ValidateMinimumStock();
+            OnPropertyChanged(
+                nameof(CanChangeInventoryTracking));
+
+            OnPropertyChanged(
+                nameof(InventoryTrackingHint));
+
+            OnPropertyChanged(
+                nameof(OpeningBalancePreviewText));
         }
     }
 
@@ -344,19 +589,15 @@ public sealed class ProductEditorViewModel :
             if (!value)
             {
                 AllowNegativeStock = false;
-                MinimumStockText = "0";
-
-                if (!IsEditMode)
-                {
-                    InitialStockQuantityText = "0";
-                }
             }
 
-            OnPropertyChanged(
-                nameof(CanEditInitialStock));
+            NotifyInventoryPresentation();
 
-            ValidateInitialStock();
-            ValidateMinimumStock();
+            ValidateWhenEnabled(
+                ValidateInitialStock);
+
+            ValidateWhenEnabled(
+                ValidateMinimumStock);
         }
     }
 
@@ -366,18 +607,19 @@ public sealed class ProductEditorViewModel :
 
         set
         {
-            var normalizedValue =
+            var normalized =
                 TrackInventory &&
                 value;
 
             if (!SetProperty(
                     ref _allowNegativeStock,
-                    normalizedValue))
+                    normalized))
             {
                 return;
             }
 
-            ValidateInitialStock();
+            ValidateWhenEnabled(
+                ValidateInitialStock);
         }
     }
 
@@ -389,10 +631,6 @@ public sealed class ProductEditorViewModel :
             ref _isActive,
             value);
     }
-
-    public bool CanEditInitialStock =>
-        !IsEditMode &&
-        TrackInventory;
 
     public bool IsBusy
     {
@@ -407,8 +645,13 @@ public sealed class ProductEditorViewModel :
                 return;
             }
 
-            SaveCommand.NotifyCanExecuteChanged();
-            CancelCommand.NotifyCanExecuteChanged();
+            NotifyInventoryPresentation();
+
+            SaveCommand
+                .NotifyCanExecuteChanged();
+
+            CancelCommand
+                .NotifyCanExecuteChanged();
         }
     }
 
@@ -457,11 +700,24 @@ public sealed class ProductEditorViewModel :
                     SalePriceText,
                     out var salePrice))
             {
-                return "Nhập giá để xem lợi nhuận";
+                return
+                    "Nhập giá để xem lợi nhuận";
             }
 
-            var profit =
-                salePrice - costPrice;
+            long profit;
+
+            try
+            {
+                profit =
+                    checked(
+                        salePrice -
+                        costPrice);
+            }
+            catch (OverflowException)
+            {
+                return
+                    "Giá trị lợi nhuận vượt giới hạn";
+            }
 
             var percentage =
                 salePrice > 0
@@ -496,22 +752,36 @@ public sealed class ProductEditorViewModel :
             nameof(SelectedCategory));
 
     public string? CodeError =>
-        GetFirstError(nameof(Code));
+        GetFirstError(
+            nameof(Code));
 
     public string? BarcodeError =>
-        GetFirstError(nameof(Barcode));
+        GetFirstError(
+            nameof(Barcode));
 
     public string? NameError =>
-        GetFirstError(nameof(Name));
+        GetFirstError(
+            nameof(Name));
+
+    public string? DescriptionError =>
+        GetFirstError(
+            nameof(Description));
 
     public string? UnitNameError =>
-        GetFirstError(nameof(UnitName));
+        GetFirstError(
+            nameof(UnitName));
+
+    public string? ImagePathError =>
+        GetFirstError(
+            nameof(ImagePath));
 
     public string? CostPriceError =>
-        GetFirstError(nameof(CostPriceText));
+        GetFirstError(
+            nameof(CostPriceText));
 
     public string? SalePriceError =>
-        GetFirstError(nameof(SalePriceText));
+        GetFirstError(
+            nameof(SalePriceText));
 
     public string? InitialStockError =>
         GetFirstError(
@@ -520,11 +790,6 @@ public sealed class ProductEditorViewModel :
     public string? MinimumStockError =>
         GetFirstError(
             nameof(MinimumStockText));
-
-    public bool GetHasErrors()
-    {
-        return HasErrors;
-    }
 
     public IEnumerable GetErrors(
         string? propertyName)
@@ -541,15 +806,24 @@ public sealed class ProductEditorViewModel :
         }
 
         return _errors.TryGetValue(
-                propertyName,
-                out var propertyErrors)
-            ? propertyErrors
-            : Array.Empty<string>();
+            propertyName,
+            out var propertyErrors)
+                ? propertyErrors
+                : Array.Empty<string>();
+    }
+
+    public bool GetHasErrors()
+    {
+        return HasErrors;
     }
 
     public async Task InitializeAsync(
         int? productId)
     {
+        _suppressValidation = true;
+
+        ClearAllErrors();
+
         ProductId = productId;
 
         IsBusy = true;
@@ -587,7 +861,8 @@ public sealed class ProductEditorViewModel :
             foreach (var category in
                      categoryResult.Value)
             {
-                Categories.Add(category);
+                Categories.Add(
+                    category);
             }
 
             if (IsEditMode)
@@ -598,8 +873,9 @@ public sealed class ProductEditorViewModel :
                             IProductService>();
 
                 var productResult =
-                    await productService.GetByIdAsync(
-                        ProductId!.Value);
+                    await productService
+                        .GetByIdAsync(
+                            ProductId!.Value);
 
                 if (productResult.IsFailure)
                 {
@@ -614,10 +890,33 @@ public sealed class ProductEditorViewModel :
             }
             else
             {
+                CurrentStockQuantity = 0;
+
                 SelectedCategory =
                     Categories.FirstOrDefault();
 
-                StatusMessage = string.Empty;
+                Code = string.Empty;
+                Barcode = string.Empty;
+                Name = string.Empty;
+                Description = string.Empty;
+                UnitName = "Cái";
+                ImagePath = string.Empty;
+
+                CostPriceText = "0";
+                SalePriceText = "0";
+
+                InitialStockQuantityText =
+                    "0";
+
+                MinimumStockText =
+                    "0";
+
+                TrackInventory = true;
+                AllowNegativeStock = false;
+                IsActive = true;
+
+                StatusMessage =
+                    string.Empty;
             }
         }
         catch (Exception exception)
@@ -628,11 +927,19 @@ public sealed class ProductEditorViewModel :
 
             ShowError(
                 "Không thể tải dữ liệu sản phẩm. " +
-                exception.GetBaseException().Message);
+                exception
+                    .GetBaseException()
+                    .Message);
         }
         finally
         {
+            _suppressValidation = false;
+
             IsBusy = false;
+
+            NotifyEditorModePresentation();
+            NotifyInventoryPresentation();
+            NotifyProfitPresentation();
         }
     }
 
@@ -662,23 +969,66 @@ public sealed class ProductEditorViewModel :
                 out var costPrice) ||
             !TryParseMoney(
                 SalePriceText,
-                out var salePrice) ||
-            !TryParseInteger(
-                MinimumStockText,
-                out var minimumStock) ||
-            !TryParseInteger(
-                InitialStockQuantityText,
-                out var initialStock))
+                out var salePrice))
         {
             ShowError(
-                "Một hoặc nhiều giá trị số không hợp lệ.");
+                "Giá vốn hoặc giá bán không hợp lệ.");
+
+            return;
+        }
+
+        var minimumStock = 0;
+
+        if (TrackInventory &&
+            !TryParseInteger(
+                MinimumStockText,
+                out minimumStock))
+        {
+            ShowError(
+                "Mức cảnh báo tồn kho không hợp lệ.");
+
+            return;
+        }
+
+        var initialStock = 0;
+
+        if (!IsEditMode &&
+            TrackInventory &&
+            !TryParseInteger(
+                InitialStockQuantityText,
+                out initialStock))
+        {
+            ShowError(
+                "Tồn đầu kỳ không hợp lệ.");
+
+            return;
+        }
+
+        /*
+         * Hàng rào giao diện cuối cùng.
+         *
+         * Checkbox đã bị khóa khi tồn khác 0,
+         * nhưng vẫn kiểm tra lại để tránh state bị thay đổi
+         * bằng code hoặc binding ngoài ý muốn.
+         */
+        if (IsEditMode &&
+            !TrackInventory &&
+            CurrentStockQuantity != 0)
+        {
+            ShowError(
+                "Không thể tắt theo dõi kho khi tồn hiện tại khác 0. " +
+                "Hãy kiểm kê về 0 trước.");
 
             return;
         }
 
         IsBusy = true;
         IsStatusError = false;
-        StatusMessage = "Đang lưu sản phẩm...";
+
+        StatusMessage =
+            IsEditMode
+                ? "Đang lưu thay đổi..."
+                : "Đang tạo sản phẩm và ghi tồn đầu kỳ...";
 
         try
         {
@@ -698,33 +1048,52 @@ public sealed class ProductEditorViewModel :
                     new UpdateProductRequest(
                         productId:
                             ProductId!.Value,
+
                         categoryId:
                             SelectedCategory.Id,
-                        code: Code,
-                        name: Name,
-                        unitName: UnitName,
-                        costPrice: costPrice,
-                        salePrice: salePrice,
+
+                        code:
+                            Code,
+
+                        name:
+                            Name,
+
+                        unitName:
+                            UnitName,
+
+                        costPrice:
+                            costPrice,
+
+                        salePrice:
+                            salePrice,
+
                         minimumStock:
                             TrackInventory
                                 ? minimumStock
                                 : 0,
+
                         trackInventory:
                             TrackInventory,
+
                         allowNegativeStock:
                             AllowNegativeStock,
+
                         isActive:
                             IsActive,
+
                         barcode:
                             Barcode,
+
                         description:
                             Description,
+
                         imagePath:
                             ImagePath);
 
                 result =
                     await productService
-                        .UpdateAsync(request);
+                        .UpdateAsync(
+                            request);
             }
             else
             {
@@ -732,61 +1101,89 @@ public sealed class ProductEditorViewModel :
                     new CreateProductRequest(
                         categoryId:
                             SelectedCategory.Id,
-                        code: Code,
-                        name: Name,
-                        unitName: UnitName,
-                        costPrice: costPrice,
-                        salePrice: salePrice,
+
+                        code:
+                            Code,
+
+                        name:
+                            Name,
+
+                        unitName:
+                            UnitName,
+
+                        costPrice:
+                            costPrice,
+
+                        salePrice:
+                            salePrice,
+
                         initialStockQuantity:
                             TrackInventory
                                 ? initialStock
                                 : 0,
+
                         minimumStock:
                             TrackInventory
                                 ? minimumStock
                                 : 0,
+
                         trackInventory:
                             TrackInventory,
+
                         allowNegativeStock:
                             AllowNegativeStock,
+
                         barcode:
                             Barcode,
+
                         description:
                             Description,
+
                         imagePath:
                             ImagePath);
 
                 result =
                     await productService
-                        .CreateAsync(request);
+                        .CreateAsync(
+                            request);
             }
 
             if (result.IsFailure)
             {
-                ApplyServiceError(
-                    result.Error);
+                ShowError(
+                    result.Error.Message);
+
+                _logger.LogWarning(
+                    "Lưu Product thất bại: " +
+                    "{ErrorCode} - {ErrorMessage}",
+                    result.Error.Code,
+                    result.Error.Message);
 
                 return;
             }
 
             StatusMessage =
                 IsEditMode
-                    ? "Cập nhật sản phẩm thành công."
-                    : "Tạo sản phẩm thành công.";
+                    ? "Đã cập nhật sản phẩm."
+                    : initialStock == 0 ||
+                      !TrackInventory
+                        ? "Đã tạo sản phẩm."
+                        : "Đã tạo sản phẩm và ghi tồn đầu kỳ.";
 
-            IsStatusError = false;
-
-            RequestClose?.Invoke(true);
+            RequestClose?.Invoke(
+                true);
         }
         catch (Exception exception)
         {
             _logger.LogError(
                 exception,
-                "Không thể lưu sản phẩm.");
+                "Không thể lưu Product.");
 
             ShowError(
                 "Không thể lưu sản phẩm. " +
-                exception.GetBaseException().Message);
+                exception
+                    .GetBaseException()
+                    .Message);
         }
         finally
         {
@@ -796,7 +1193,8 @@ public sealed class ProductEditorViewModel :
 
     private Task CancelAsync()
     {
-        RequestClose?.Invoke(false);
+        RequestClose?.Invoke(
+            false);
 
         return Task.CompletedTask;
     }
@@ -804,63 +1202,80 @@ public sealed class ProductEditorViewModel :
     private void ApplyProduct(
         ProductDetailsDto product)
     {
-        var selectedCategory =
-            Categories.FirstOrDefault(
-                category =>
-                    category.Id ==
-                    product.CategoryId);
+        _suppressValidation = true;
 
-        if (selectedCategory is null)
+        try
         {
-            selectedCategory =
-                new CategoryOptionDto(
-                    product.CategoryId,
-                    product.CategoryName,
-                    int.MaxValue);
+            SelectedCategory =
+                Categories.FirstOrDefault(
+                    category =>
+                        category.Id ==
+                        product.CategoryId);
 
-            Categories.Add(
-                selectedCategory);
+            Code =
+                product.Code;
+
+            Barcode =
+                product.Barcode ??
+                string.Empty;
+
+            Name =
+                product.Name;
+
+            Description =
+                product.Description ??
+                string.Empty;
+
+            UnitName =
+                product.UnitName;
+
+            ImagePath =
+                product.ImagePath ??
+                string.Empty;
+
+            CostPriceText =
+                product.CostPrice.ToString(
+                    CultureInfo.InvariantCulture);
+
+            SalePriceText =
+                product.SalePrice.ToString(
+                    CultureInfo.InvariantCulture);
+
+            CurrentStockQuantity =
+                product.StockQuantity;
+
+            InitialStockQuantityText =
+                product.StockQuantity.ToString(
+                    CultureInfo.InvariantCulture);
+
+            MinimumStockText =
+                product.MinimumStock.ToString(
+                    CultureInfo.InvariantCulture);
+
+            TrackInventory =
+                product.TrackInventory;
+
+            AllowNegativeStock =
+                product.AllowNegativeStock;
+
+            IsActive =
+                product.IsActive;
+
+            StatusMessage =
+                string.Empty;
+
+            IsStatusError =
+                false;
+
+            ClearAllErrors();
         }
+        finally
+        {
+            _suppressValidation = false;
 
-        SelectedCategory =
-            selectedCategory;
-
-        Code = product.Code;
-        Barcode = product.Barcode ?? string.Empty;
-        Name = product.Name;
-        Description =
-            product.Description ?? string.Empty;
-
-        UnitName = product.UnitName;
-        ImagePath =
-            product.ImagePath ?? string.Empty;
-
-        CostPriceText =
-            product.CostPrice.ToString(
-                CultureInfo.InvariantCulture);
-
-        SalePriceText =
-            product.SalePrice.ToString(
-                CultureInfo.InvariantCulture);
-
-        InitialStockQuantityText =
-            product.StockQuantity.ToString(
-                CultureInfo.InvariantCulture);
-
-        MinimumStockText =
-            product.MinimumStock.ToString(
-                CultureInfo.InvariantCulture);
-
-        TrackInventory =
-            product.TrackInventory;
-
-        AllowNegativeStock =
-            product.AllowNegativeStock;
-
-        IsActive =
-            product.IsActive;
-
-        StatusMessage = string.Empty;
+            NotifyInventoryPresentation();
+            NotifyProfitPresentation();
+        }
     }
 
     private void ValidateAll()
@@ -869,11 +1284,14 @@ public sealed class ProductEditorViewModel :
         ValidateCode();
         ValidateBarcode();
         ValidateName();
+        ValidateDescription();
         ValidateUnitName();
+        ValidateImagePath();
         ValidateCostPrice();
         ValidateSalePrice();
         ValidateInitialStock();
         ValidateMinimumStock();
+        ValidateTrackingTransition();
     }
 
     private void ValidateCategory()
@@ -887,54 +1305,132 @@ public sealed class ProductEditorViewModel :
 
     private void ValidateCode()
     {
+        var normalized =
+            Code.Trim();
+
+        string? message =
+            string.IsNullOrWhiteSpace(normalized)
+                ? "Mã sản phẩm không được để trống."
+                : normalized.Length >
+                  BusinessRules.Products.CodeMaxLength
+                    ? $"Mã sản phẩm tối đa " +
+                      $"{BusinessRules.Products.CodeMaxLength} ký tự."
+                    : null;
+
         SetError(
             nameof(Code),
-            string.IsNullOrWhiteSpace(Code)
-                ? "Mã sản phẩm không được để trống."
-                : null);
+            message);
     }
 
     private void ValidateBarcode()
     {
         var normalized =
-            Barcode?.Trim();
+            Barcode.Trim();
+
+        var message =
+            normalized.Length >
+            BusinessRules.Products.BarcodeMaxLength
+                ? $"Mã vạch tối đa " +
+                  $"{BusinessRules.Products.BarcodeMaxLength} ký tự."
+                : null;
 
         SetError(
             nameof(Barcode),
-            normalized is not null &&
-            normalized.Length > 100
-                ? "Mã vạch quá dài."
-                : null);
+            message);
     }
 
     private void ValidateName()
     {
+        var normalized =
+            Name.Trim();
+
+        string? message =
+            string.IsNullOrWhiteSpace(normalized)
+                ? "Tên sản phẩm không được để trống."
+                : normalized.Length >
+                  BusinessRules.Products.NameMaxLength
+                    ? $"Tên sản phẩm tối đa " +
+                      $"{BusinessRules.Products.NameMaxLength} ký tự."
+                    : null;
+
         SetError(
             nameof(Name),
-            string.IsNullOrWhiteSpace(Name)
-                ? "Tên sản phẩm không được để trống."
-                : null);
+            message);
+    }
+
+    private void ValidateDescription()
+    {
+        var message =
+            Description.Trim().Length >
+            BusinessRules.Products.DescriptionMaxLength
+                ? $"Mô tả tối đa " +
+                  $"{BusinessRules.Products.DescriptionMaxLength} ký tự."
+                : null;
+
+        SetError(
+            nameof(Description),
+            message);
     }
 
     private void ValidateUnitName()
     {
+        var normalized =
+            UnitName.Trim();
+
+        string? message =
+            string.IsNullOrWhiteSpace(normalized)
+                ? "Đơn vị tính không được để trống."
+                : normalized.Length >
+                  BusinessRules.Products.UnitNameMaxLength
+                    ? $"Đơn vị tính tối đa " +
+                      $"{BusinessRules.Products.UnitNameMaxLength} ký tự."
+                    : null;
+
         SetError(
             nameof(UnitName),
-            string.IsNullOrWhiteSpace(UnitName)
-                ? "Đơn vị tính không được để trống."
-                : null);
+            message);
+    }
+
+    private void ValidateImagePath()
+    {
+        var message =
+            ImagePath.Trim().Length >
+            BusinessRules.Products.ImagePathMaxLength
+                ? $"Đường dẫn ảnh tối đa " +
+                  $"{BusinessRules.Products.ImagePathMaxLength} ký tự."
+                : null;
+
+        SetError(
+            nameof(ImagePath),
+            message);
     }
 
     private void ValidateCostPrice()
     {
-        var message =
-            !TryParseMoney(
+        string? message;
+
+        if (!TryParseMoney(
                 CostPriceText,
-                out var value)
-                ? "Giá vốn phải là số nguyên."
-                : value < 0
-                    ? "Giá vốn không được âm."
-                    : null;
+                out var value))
+        {
+            message =
+                "Giá vốn phải là số nguyên.";
+        }
+        else if (value < 0)
+        {
+            message =
+                "Giá vốn không được âm.";
+        }
+        else if (value >
+                 BusinessRules.Products.MaximumPrice)
+        {
+            message =
+                "Giá vốn vượt quá giới hạn hệ thống.";
+        }
+        else
+        {
+            message = null;
+        }
 
         SetError(
             nameof(CostPriceText),
@@ -943,14 +1439,30 @@ public sealed class ProductEditorViewModel :
 
     private void ValidateSalePrice()
     {
-        var message =
-            !TryParseMoney(
+        string? message;
+
+        if (!TryParseMoney(
                 SalePriceText,
-                out var value)
-                ? "Giá bán phải là số nguyên."
-                : value < 0
-                    ? "Giá bán không được âm."
-                    : null;
+                out var value))
+        {
+            message =
+                "Giá bán phải là số nguyên.";
+        }
+        else if (value < 0)
+        {
+            message =
+                "Giá bán không được âm.";
+        }
+        else if (value >
+                 BusinessRules.Products.MaximumPrice)
+        {
+            message =
+                "Giá bán vượt quá giới hạn hệ thống.";
+        }
+        else
+        {
+            message = null;
+        }
 
         SetError(
             nameof(SalePriceText),
@@ -959,7 +1471,12 @@ public sealed class ProductEditorViewModel :
 
     private void ValidateInitialStock()
     {
-        if (!TrackInventory)
+        /*
+         * Edit mode chỉ hiển thị tồn hiện tại.
+         * Không dùng trường này để cập nhật Product.
+         */
+        if (IsEditMode ||
+            !TrackInventory)
         {
             SetError(
                 nameof(
@@ -976,7 +1493,22 @@ public sealed class ProductEditorViewModel :
             SetError(
                 nameof(
                     InitialStockQuantityText),
-                "Tồn kho phải là số nguyên.");
+                "Tồn đầu kỳ phải là số nguyên.");
+
+            return;
+        }
+
+        if (value >
+                BusinessRules.Products
+                    .MaximumStockQuantity ||
+            value <
+                -BusinessRules.Products
+                    .MaximumStockQuantity)
+        {
+            SetError(
+                nameof(
+                    InitialStockQuantityText),
+                "Tồn đầu kỳ vượt quá giới hạn hệ thống.");
 
             return;
         }
@@ -987,7 +1519,7 @@ public sealed class ProductEditorViewModel :
             SetError(
                 nameof(
                     InitialStockQuantityText),
-                "Tồn kho không được âm.");
+                "Sản phẩm không cho phép tồn kho âm.");
 
             return;
         }
@@ -1009,76 +1541,127 @@ public sealed class ProductEditorViewModel :
             return;
         }
 
-        var message =
-            !TryParseInteger(
+        string? message;
+
+        if (!TryParseInteger(
                 MinimumStockText,
-                out var value)
-                ? "Mức cảnh báo phải là số nguyên."
-                : value < 0
-                    ? "Mức cảnh báo không được âm."
-                    : null;
+                out var value))
+        {
+            message =
+                "Mức cảnh báo phải là số nguyên.";
+        }
+        else if (value < 0)
+        {
+            message =
+                "Mức cảnh báo không được âm.";
+        }
+        else if (value >
+                 BusinessRules.Products
+                     .MaximumStockQuantity)
+        {
+            message =
+                "Mức cảnh báo vượt quá giới hạn hệ thống.";
+        }
+        else
+        {
+            message = null;
+        }
 
         SetError(
             nameof(MinimumStockText),
             message);
     }
 
-    private void ApplyServiceError(
-        Error error)
+    private void ValidateTrackingTransition()
+    {
+        if (IsEditMode &&
+            !TrackInventory &&
+            CurrentStockQuantity != 0)
+        {
+            SetError(
+                nameof(TrackInventory),
+                "Phải kiểm kê tồn về 0 trước khi tắt theo dõi kho.");
+
+            return;
+        }
+
+        SetError(
+            nameof(TrackInventory),
+            null);
+    }
+
+    private bool CanExecuteCommand()
+    {
+        return !IsBusy;
+    }
+
+    private void HandleCommandException(
+        Exception exception)
+    {
+        _logger.LogError(
+            exception,
+            "Lệnh ProductEditor không thể hoàn thành.");
+
+        ShowError(
+            "Thao tác không thể hoàn thành. " +
+            exception
+                .GetBaseException()
+                .Message);
+    }
+
+    private void ShowError(
+        string message)
     {
         IsStatusError = true;
-        StatusMessage = error.Message;
+        StatusMessage = message;
+    }
 
-        if (string.Equals(
-                error.Code,
-                ErrorCodes.Products.CodeAlreadyExists,
-                StringComparison.Ordinal))
+    private void ValidateWhenEnabled(
+        Action validationAction)
+    {
+        if (_suppressValidation)
         {
-            SetError(
-                nameof(Code),
-                error.Message);
-
             return;
         }
 
-        if (string.Equals(
-                error.Code,
-                ErrorCodes.Products
-                    .BarcodeAlreadyExists,
-                StringComparison.Ordinal))
-        {
-            SetError(
-                nameof(Barcode),
-                error.Message);
-
-            return;
-        }
-
-        if (string.Equals(
-                error.Code,
-                ErrorCodes.Products
-                    .ConcurrencyConflict,
-                StringComparison.Ordinal))
-        {
-            StatusMessage =
-                error.Message;
-        }
+        validationAction();
     }
 
     private void SetError(
         string propertyName,
         string? error)
     {
+        var hadError =
+            _errors.ContainsKey(
+                propertyName);
+
         if (string.IsNullOrWhiteSpace(error))
         {
-            if (!_errors.Remove(propertyName))
+            if (!hadError)
             {
                 return;
             }
+
+            _errors.Remove(
+                propertyName);
         }
         else
         {
-            _errors[propertyName] = [error];
+            if (hadError &&
+                _errors[propertyName]
+                    .Count == 1 &&
+                string.Equals(
+                    _errors[propertyName][0],
+                    error,
+                    StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _errors[propertyName] =
+            [
+                error
+            ];
         }
 
         ErrorsChanged?.Invoke(
@@ -1086,16 +1669,55 @@ public sealed class ProductEditorViewModel :
             new DataErrorsChangedEventArgs(
                 propertyName));
 
-        OnPropertyChanged(nameof(HasErrors));
+        OnPropertyChanged(
+            nameof(HasErrors));
 
-        NotifyErrorProperty(
+        NotifyErrorPresentation(
             propertyName);
     }
 
-    private void NotifyErrorProperty(
+    private void ClearAllErrors()
+    {
+        if (_errors.Count == 0)
+        {
+            return;
+        }
+
+        var propertyNames =
+            _errors.Keys.ToArray();
+
+        _errors.Clear();
+
+        foreach (var propertyName
+                 in propertyNames)
+        {
+            ErrorsChanged?.Invoke(
+                this,
+                new DataErrorsChangedEventArgs(
+                    propertyName));
+
+            NotifyErrorPresentation(
+                propertyName);
+        }
+
+        OnPropertyChanged(
+            nameof(HasErrors));
+    }
+
+    private string? GetFirstError(
         string propertyName)
     {
-        var errorPropertyName =
+        return _errors.TryGetValue(
+                propertyName,
+                out var errors)
+            ? errors.FirstOrDefault()
+            : null;
+    }
+
+    private void NotifyErrorPresentation(
+        string propertyName)
+    {
+        var presentationPropertyName =
             propertyName switch
             {
                 nameof(SelectedCategory) =>
@@ -1110,8 +1732,14 @@ public sealed class ProductEditorViewModel :
                 nameof(Name) =>
                     nameof(NameError),
 
+                nameof(Description) =>
+                    nameof(DescriptionError),
+
                 nameof(UnitName) =>
                     nameof(UnitNameError),
+
+                nameof(ImagePath) =>
+                    nameof(ImagePathError),
 
                 nameof(CostPriceText) =>
                     nameof(CostPriceError),
@@ -1119,58 +1747,77 @@ public sealed class ProductEditorViewModel :
                 nameof(SalePriceText) =>
                     nameof(SalePriceError),
 
-                nameof(
-                    InitialStockQuantityText) =>
+                nameof(InitialStockQuantityText) =>
                     nameof(InitialStockError),
 
                 nameof(MinimumStockText) =>
                     nameof(MinimumStockError),
 
-                _ => null
+                _ =>
+                    null
             };
 
-        if (errorPropertyName is not null)
+        if (presentationPropertyName is not null)
         {
             OnPropertyChanged(
-                errorPropertyName);
+                presentationPropertyName);
         }
     }
 
-    private string? GetFirstError(
-        string propertyName)
+    private void NotifyEditorModePresentation()
     {
-        return _errors.TryGetValue(
-                propertyName,
-                out var errors)
-            ? errors.FirstOrDefault()
-            : null;
+        OnPropertyChanged(
+            nameof(IsEditMode));
+
+        OnPropertyChanged(
+            nameof(WindowTitle));
+
+        OnPropertyChanged(
+            nameof(HeaderTitle));
+
+        OnPropertyChanged(
+            nameof(HeaderDescription));
+
+        OnPropertyChanged(
+            nameof(SaveButtonText));
+
+        OnPropertyChanged(
+            nameof(InventorySectionTitle));
+
+        OnPropertyChanged(
+            nameof(InventoryModeBadgeText));
+
+        OnPropertyChanged(
+            nameof(StockQuantityLabel));
+
+        NotifyInventoryPresentation();
     }
 
-    private void ShowError(
-        string message)
+    private void NotifyInventoryPresentation()
     {
-        IsStatusError = true;
-        StatusMessage = message;
+        OnPropertyChanged(
+            nameof(CanEditInitialStock));
+
+        OnPropertyChanged(
+            nameof(CanChangeInventoryTracking));
+
+        OnPropertyChanged(
+            nameof(CanEditMinimumStock));
+
+        OnPropertyChanged(
+            nameof(CanAllowNegativeStock));
+
+        OnPropertyChanged(
+            nameof(StockQuantityHint));
+
+        OnPropertyChanged(
+            nameof(InventoryTrackingHint));
+
+        OnPropertyChanged(
+            nameof(OpeningBalancePreviewText));
     }
 
-    private void HandleCommandException(
-        Exception exception)
-    {
-        _logger.LogError(
-            exception,
-            "Lệnh ProductEditor thất bại.");
-
-        ShowError(
-            "Thao tác không thể hoàn thành. " +
-            exception.GetBaseException().Message);
-    }
-
-    private bool CanExecuteCommand()
-    {
-        return !IsBusy;
-    }
-
-    private void NotifyProfitPreviewChanged()
+    private void NotifyProfitPresentation()
     {
         OnPropertyChanged(
             nameof(ProfitPreviewText));
@@ -1179,12 +1826,27 @@ public sealed class ProductEditorViewModel :
             nameof(IsProfitNegative));
     }
 
+    private string FormatQuantity(
+        int quantity)
+    {
+        var formatted =
+            quantity.ToString(
+                "N0",
+                VietnameseCulture);
+
+        return string.IsNullOrWhiteSpace(
+            UnitName)
+                ? formatted
+                : $"{formatted} {UnitName.Trim()}";
+    }
+
     private static bool TryParseMoney(
         string? text,
         out long value)
     {
         var normalized =
-            NormalizeNumericText(text);
+            NormalizeNumericText(
+                text);
 
         return long.TryParse(
             normalized,
@@ -1198,7 +1860,8 @@ public sealed class ProductEditorViewModel :
         out int value)
     {
         var normalized =
-            NormalizeNumericText(text);
+            NormalizeNumericText(
+                text);
 
         return int.TryParse(
             normalized,
@@ -1210,28 +1873,29 @@ public sealed class ProductEditorViewModel :
     private static string NormalizeNumericText(
         string? text)
     {
-        return (text ?? string.Empty)
-            .Trim()
-            .Replace(
-                ".",
-                string.Empty,
-                StringComparison.Ordinal)
-            .Replace(
-                ",",
-                string.Empty,
-                StringComparison.Ordinal)
-            .Replace(
-                " ",
-                string.Empty,
-                StringComparison.Ordinal)
-            .Replace(
-                "₫",
-                string.Empty,
-                StringComparison.Ordinal)
-            .Replace(
-                "đ",
-                string.Empty,
-                StringComparison.OrdinalIgnoreCase);
+        return
+            (text ?? string.Empty)
+                .Trim()
+                .Replace(
+                    ".",
+                    string.Empty,
+                    StringComparison.Ordinal)
+                .Replace(
+                    ",",
+                    string.Empty,
+                    StringComparison.Ordinal)
+                .Replace(
+                    " ",
+                    string.Empty,
+                    StringComparison.Ordinal)
+                .Replace(
+                    "₫",
+                    string.Empty,
+                    StringComparison.Ordinal)
+                .Replace(
+                    "đ",
+                    string.Empty,
+                    StringComparison.OrdinalIgnoreCase);
     }
 
     private static string FormatMoney(
