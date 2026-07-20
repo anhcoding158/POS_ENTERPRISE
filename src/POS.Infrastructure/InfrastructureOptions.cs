@@ -41,6 +41,14 @@ public sealed class InfrastructureOptions
     /// Cho phép tạo tài khoản quản trị đầu tiên
     /// khi database chưa có người dùng.
     /// </summary>
+    /// 
+    /// <summary>
+    /// Cho phép tạo danh mục và sản phẩm minh họa.
+    ///
+    /// Giá trị mặc định phải là false để bản phát hành
+    /// không tự đưa dữ liệu demo vào database của cửa hàng.
+    /// </summary>
+    public bool SeedDemoProductCatalog { get; set; }
     public bool SeedDefaultAdministrator { get; set; }
 
     public string DefaultAdminUsername { get; set; } =

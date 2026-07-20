@@ -182,11 +182,33 @@ public sealed class DatabasePathResolver
         }
 
         /*
-         * Bản đóng gói không còn solution file:
-         * đường dẫn tương đối sẽ được tính từ thư mục executable.
-         */
+ * Bản đóng gói không còn solution file:
+ * database được đặt trong LocalApplicationData của
+ * tài khoản Windows hiện tại.
+ *
+ * Không đặt database trong Program Files hoặc cạnh executable
+ * vì người dùng thường không có quyền ghi tại đó.
+ */
+        var localApplicationData =
+            Environment.GetFolderPath(
+                Environment.SpecialFolder.LocalApplicationData);
+
+        if (string.IsNullOrWhiteSpace(localApplicationData))
+        {
+            throw new InvalidOperationException(
+                "Không xác định được thư mục LocalApplicationData.");
+        }
+
+        var applicationDataDirectory =
+            Path.Combine(
+                localApplicationData,
+                "POS Enterprise");
+
+        Directory.CreateDirectory(
+            applicationDataDirectory);
+
         return Path.GetFullPath(
-            AppContext.BaseDirectory);
+            applicationDataDirectory);
     }
 
     private static void

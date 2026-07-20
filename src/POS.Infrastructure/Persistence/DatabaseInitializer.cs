@@ -69,9 +69,20 @@ public sealed class DatabaseInitializer
                 cancellationToken);
         }
 
-        await SeedProductCatalogAsync(
-            cancellationToken);
+        if (_options.SeedDemoProductCatalog)
+        {
+            _logger.LogInformation(
+                "Môi trường hiện tại cho phép tạo dữ liệu demo.");
 
+            await SeedProductCatalogAsync(
+                cancellationToken);
+        }
+        else
+        {
+            _logger.LogInformation(
+                "Đã bỏ qua dữ liệu demo vì " +
+                "SeedDemoProductCatalog đang tắt.");
+        }
         _logger.LogInformation(
             "Khởi tạo database POS Enterprise hoàn tất.");
     }

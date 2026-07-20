@@ -1,10 +1,10 @@
 ﻿using System.Collections.ObjectModel;
 using System.Globalization;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using POS.Application.Abstractions.Services;
 using POS.Application.DTOs.Products;
 using POS.Wpf.Commands;
-
 namespace POS.Wpf.ViewModels;
 
 /// <summary>
@@ -18,7 +18,7 @@ public sealed class ShellViewModel : ViewModelBase
         VietnameseCulture =
             CultureInfo.GetCultureInfo("vi-VN");
 
-    private readonly IProductService _productService;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<ShellViewModel> _logger;
 
     private string? _searchTerm;
@@ -40,13 +40,13 @@ public sealed class ShellViewModel : ViewModelBase
         "Chưa tải dữ liệu";
 
     public ShellViewModel(
-        IProductService productService,
-        ILogger<ShellViewModel> logger)
+        IServiceScopeFactory scopeFactory,
+    ILogger<ShellViewModel> logger)
     {
-        _productService =
-            productService ??
+        _scopeFactory =
+            scopeFactory ??
             throw new ArgumentNullException(
-                nameof(productService));
+                nameof(scopeFactory));
 
         _logger =
             logger ??
@@ -56,22 +56,26 @@ public sealed class ShellViewModel : ViewModelBase
         SearchCommand =
             new AsyncRelayCommand(
                 SearchAsync,
-                CanLoadProducts);
+                CanLoadProducts,
+                HandleCommandException);
 
         RefreshCommand =
             new AsyncRelayCommand(
                 RefreshAsync,
-                CanLoadProducts);
+                CanLoadProducts,
+                HandleCommandException);
 
         PreviousPageCommand =
             new AsyncRelayCommand(
                 PreviousPageAsync,
-                CanGoToPreviousPage);
+                CanGoToPreviousPage,
+                HandleCommandException);
 
         NextPageCommand =
             new AsyncRelayCommand(
                 NextPageAsync,
-                CanGoToNextPage);
+                CanGoToNextPage,
+                HandleCommandException);
     }
 
     public ObservableCollection<ProductRowViewModel>
@@ -347,8 +351,21 @@ public sealed class ShellViewModel : ViewModelBase
                     pageNumber: PageNumber,
                     pageSize: DefaultPageSize);
 
+            /*
+ * Mỗi thao tác tạo một DI scope riêng.
+ *
+ * ProductService, repository và PosDbContext sẽ được
+ * giải phóng ngay khi thao tác kết thúc.
+ */
+            await using var operationScope =
+                _scopeFactory.CreateAsyncScope();
+
+            var productService =
+                operationScope.ServiceProvider
+                    .GetRequiredService<IProductService>();
+
             var result =
-                await _productService.SearchAsync(
+                await productService.SearchAsync(
                     request);
 
             if (result.IsFailure)
@@ -457,6 +474,18 @@ public sealed class ShellViewModel : ViewModelBase
     {
         return !IsLoading &&
                PageNumber < TotalPages;
+    }
+
+    private void HandleCommandException(
+        Exception exception)
+    {
+        _logger.LogError(
+            exception,
+            "Một lệnh giao diện không thể hoàn thành.");
+
+        StatusMessage =
+            "Thao tác không thể hoàn thành. " +
+            exception.GetBaseException().Message;
     }
 
     private void NotifyCommandStates()
