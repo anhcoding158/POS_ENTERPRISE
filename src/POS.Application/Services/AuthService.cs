@@ -1,15 +1,20 @@
-﻿using POS.Application.Abstractions.Authentication;
+﻿using System.Security.Cryptography;
+using System.Text;
+using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.DateTime;
 using POS.Application.Abstractions.Persistence;
 using POS.Application.Common;
 using POS.Application.DTOs.Authentication;
+using POS.Domain.Entities;
 
 namespace POS.Application.Services;
 
 /// <summary>
-/// Xử lý đăng nhập, khóa tài khoản và phiên người dùng.
+/// Xử lý đăng nhập, khóa tài khoản, phiên hiện tại
+/// và đăng nhập được ghi nhớ.
 ///
-/// Service không phụ thuộc WPF, EF Core hoặc BCrypt cụ thể.
+/// Service không phụ thuộc WPF, EF Core, BCrypt hoặc
+/// Windows DPAPI cụ thể.
 /// </summary>
 public sealed class AuthService :
     IAuthService
@@ -17,6 +22,10 @@ public sealed class AuthService :
     private static readonly TimeSpan
         AccountLockDuration =
             TimeSpan.FromMinutes(15);
+
+    private static readonly TimeSpan
+        RememberedLoginDuration =
+            TimeSpan.FromDays(30);
 
     private readonly IUserRepository
         _userRepository;
@@ -33,12 +42,39 @@ public sealed class AuthService :
     private readonly IClock
         _clock;
 
+    private readonly IRememberedLoginStore
+        _rememberedLoginStore;
+
+    /// <summary>
+    /// Constructor tương thích với các test cũ.
+    ///
+    /// Khi không cung cấp store, chức năng ghi nhớ
+    /// được coi như không bật.
+    /// </summary>
     public AuthService(
         IUserRepository userRepository,
         IPasswordHasher passwordHasher,
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         IClock clock)
+        : this(
+            userRepository,
+            passwordHasher,
+            unitOfWork,
+            currentUserService,
+            clock,
+            NullRememberedLoginStore.Instance)
+    {
+    }
+
+    public AuthService(
+        IUserRepository userRepository,
+        IPasswordHasher passwordHasher,
+        IUnitOfWork unitOfWork,
+        ICurrentUserService currentUserService,
+        IClock clock,
+        IRememberedLoginStore
+            rememberedLoginStore)
     {
         _userRepository =
             userRepository ??
@@ -64,6 +100,11 @@ public sealed class AuthService :
             clock ??
             throw new ArgumentNullException(
                 nameof(clock));
+
+        _rememberedLoginStore =
+            rememberedLoginStore ??
+            throw new ArgumentNullException(
+                nameof(rememberedLoginStore));
     }
 
     public async Task<
@@ -81,19 +122,21 @@ public sealed class AuthService :
         if (string.IsNullOrWhiteSpace(
                 request.Username))
         {
-            return Failure(
-                ErrorCodes.Authentication
-                    .UsernameRequired,
-                "Vui lòng nhập tên đăng nhập.");
+            return Failure<
+                AuthenticatedUserDto>(
+                    ErrorCodes.Authentication
+                        .UsernameRequired,
+                    "Vui lòng nhập tên đăng nhập.");
         }
 
         if (string.IsNullOrEmpty(
                 request.Password))
         {
-            return Failure(
-                ErrorCodes.Authentication
-                    .PasswordRequired,
-                "Vui lòng nhập mật khẩu.");
+            return Failure<
+                AuthenticatedUserDto>(
+                    ErrorCodes.Authentication
+                        .PasswordRequired,
+                    "Vui lòng nhập mật khẩu.");
         }
 
         var normalizedUsername =
@@ -108,8 +151,7 @@ public sealed class AuthService :
                     cancellationToken);
 
         /*
-         * Không trả UserNotFound ra giao diện để tránh
-         * xác nhận một username có tồn tại hay không.
+         * Không xác nhận username có tồn tại hay không.
          */
         if (user is null)
         {
@@ -121,21 +163,23 @@ public sealed class AuthService :
 
         if (!user.IsActive)
         {
-            return Failure(
-                ErrorCodes.Authentication
-                    .AccountInactive,
-                "Tài khoản đã ngừng hoạt động. " +
-                "Vui lòng liên hệ quản trị viên.");
+            return Failure<
+                AuthenticatedUserDto>(
+                    ErrorCodes.Authentication
+                        .AccountInactive,
+                    "Tài khoản đã ngừng hoạt động. " +
+                    "Vui lòng liên hệ quản trị viên.");
         }
 
         if (user.IsLocked(
                 utcNow))
         {
-            return Failure(
-                ErrorCodes.Authentication
-                    .AccountLocked,
-                "Tài khoản đang bị khóa tạm thời do " +
-                "đăng nhập sai nhiều lần.");
+            return Failure<
+                AuthenticatedUserDto>(
+                    ErrorCodes.Authentication
+                        .AccountLocked,
+                    "Tài khoản đang bị khóa tạm thời do " +
+                    "đăng nhập sai nhiều lần.");
         }
 
         var passwordIsValid =
@@ -160,18 +204,15 @@ public sealed class AuthService :
                         saveResult.Error);
             }
 
-            /*
-             * Lần nhập sai đạt giới hạn sẽ trả AccountLocked
-             * ngay lập tức thay vì InvalidCredentials.
-             */
             if (user.IsLocked(
                     utcNow))
             {
-                return Failure(
-                    ErrorCodes.Authentication
-                        .AccountLocked,
-                    "Tài khoản đã bị khóa 15 phút do " +
-                    "đăng nhập sai quá nhiều lần.");
+                return Failure<
+                    AuthenticatedUserDto>(
+                        ErrorCodes.Authentication
+                            .AccountLocked,
+                        "Tài khoản đã bị khóa 15 phút do " +
+                        "đăng nhập sai quá nhiều lần.");
             }
 
             return InvalidCredentials();
@@ -191,26 +232,27 @@ public sealed class AuthService :
                     successfulLoginSaveResult.Error);
         }
 
+        var rememberedLoginResult =
+            ConfigureRememberedLogin(
+                request.RememberLogin,
+                user,
+                utcNow);
+
+        if (rememberedLoginResult.IsFailure)
+        {
+            return Result.Failure<
+                AuthenticatedUserDto>(
+                    rememberedLoginResult.Error);
+        }
+
         var authenticatedUser =
-            new AuthenticatedUserDto(
-                id:
-                    user.Id,
-
-                username:
-                    user.Username,
-
-                fullName:
-                    user.FullName,
-
-                role:
-                    user.Role,
-
-                authenticatedAtUtc:
-                    utcNow);
+            CreateAuthenticatedUser(
+                user,
+                utcNow);
 
         /*
-         * Chỉ thiết lập session sau khi trạng thái đăng nhập
-         * đã được lưu thành công vào database.
+         * Chỉ tạo session sau khi database và trạng thái
+         * ghi nhớ đã hoàn thành thành công.
          */
         _currentUserService.SetCurrentUser(
             authenticatedUser);
@@ -219,9 +261,168 @@ public sealed class AuthService :
             authenticatedUser);
     }
 
+    public async Task<Result<bool>>
+        TryRestoreRememberedLoginAsync(
+            CancellationToken cancellationToken = default)
+    {
+        cancellationToken
+            .ThrowIfCancellationRequested();
+
+        var credential =
+            _rememberedLoginStore
+                .Load();
+
+        if (credential is null)
+        {
+            return Result.Success(
+                false);
+        }
+
+        var utcNow =
+            _clock.UtcNow;
+
+        if (credential.Version !=
+                RememberedLoginCredential
+                    .CurrentVersion ||
+            credential.ExpiresAtUtc
+                .ToUniversalTime() <=
+            utcNow.ToUniversalTime())
+        {
+            _rememberedLoginStore
+                .TryDelete();
+
+            return Result.Success(
+                false);
+        }
+
+        var user =
+            await _userRepository
+                .GetByIdAsync(
+                    credential.UserId,
+                    cancellationToken);
+
+        if (user is null ||
+            !user.IsActive ||
+            user.IsLocked(
+                utcNow) ||
+            !PasswordHashFingerprintMatches(
+                user.PasswordHash,
+                credential
+                    .PasswordHashFingerprint))
+        {
+            _rememberedLoginStore
+                .TryDelete();
+
+            return Result.Success(
+                false);
+        }
+
+        /*
+         * Khôi phục phiên hợp lệ cũng được tính là
+         * một lần đăng nhập thành công.
+         */
+        user.RegisterSuccessfulLogin(
+            utcNow);
+
+        var saveResult =
+            await SaveAuthenticationStateAsync(
+                cancellationToken);
+
+        if (saveResult.IsFailure)
+        {
+            _rememberedLoginStore
+                .TryDelete();
+
+            return Result.Failure<bool>(
+                saveResult.Error);
+        }
+
+        var authenticatedUser =
+            CreateAuthenticatedUser(
+                user,
+                utcNow);
+
+        _currentUserService.SetCurrentUser(
+            authenticatedUser);
+
+        return Result.Success(
+            true);
+    }
+
     public Result Logout()
     {
+        /*
+         * Phải xóa credential trước.
+         *
+         * Nếu Windows không cho phép xóa file, không đóng
+         * Shell để tránh lần mở sau tự đăng nhập ngoài ý muốn.
+         */
+        if (!_rememberedLoginStore
+            .TryDelete())
+        {
+            return Result.Failure(
+                new Error(
+                    ErrorCodes.General.Unexpected,
+                    "Không thể xóa phiên đăng nhập đã ghi nhớ. " +
+                    "Vui lòng đóng các tiến trình đang sử dụng " +
+                    "file bảo mật rồi thử lại."));
+        }
+
         _currentUserService.Clear();
+
+        return Result.Success();
+    }
+
+    private Result ConfigureRememberedLogin(
+        bool rememberLogin,
+        User user,
+        DateTimeOffset utcNow)
+    {
+        if (!rememberLogin)
+        {
+            if (!_rememberedLoginStore
+                .TryDelete())
+            {
+                return Result.Failure(
+                    new Error(
+                        ErrorCodes.General.Unexpected,
+                        "Không thể xóa phiên đăng nhập cũ " +
+                        "trên máy hiện tại."));
+            }
+
+            return Result.Success();
+        }
+
+        var credential =
+            new RememberedLoginCredential(
+                Version:
+                    RememberedLoginCredential
+                        .CurrentVersion,
+
+                UserId:
+                    user.Id,
+
+                PasswordHashFingerprint:
+                    CreatePasswordHashFingerprint(
+                        user.PasswordHash),
+
+                ExpiresAtUtc:
+                    utcNow
+                        .ToUniversalTime()
+                        .Add(
+                            RememberedLoginDuration));
+
+        if (!_rememberedLoginStore
+            .TrySave(
+                credential))
+        {
+            return Result.Failure(
+                new Error(
+                    ErrorCodes.General.Unexpected,
+                    "Đăng nhập thành công nhưng không thể " +
+                    "lưu phiên 30 ngày trên máy này. " +
+                    "Hãy bỏ chọn duy trì đăng nhập rồi thử lại."));
+        }
 
         return Result.Success();
     }
@@ -249,26 +450,155 @@ public sealed class AuthService :
         }
     }
 
-    private static Result<
-        AuthenticatedUserDto>
-        InvalidCredentials()
+    private static AuthenticatedUserDto
+        CreateAuthenticatedUser(
+            User user,
+            DateTimeOffset utcNow)
     {
-        return Failure(
-            ErrorCodes.Authentication
-                .InvalidCredentials,
-            "Tên đăng nhập hoặc mật khẩu không chính xác.");
+        return new AuthenticatedUserDto(
+            id:
+                user.Id,
+
+            username:
+                user.Username,
+
+            fullName:
+                user.FullName,
+
+            role:
+                user.Role,
+
+            authenticatedAtUtc:
+                utcNow);
+    }
+
+    private static string
+        CreatePasswordHashFingerprint(
+            string passwordHash)
+    {
+        var inputBytes =
+            Encoding.UTF8.GetBytes(
+                passwordHash);
+
+        try
+        {
+            var digest =
+                SHA256.HashData(
+                    inputBytes);
+
+            return Convert.ToHexString(
+                digest);
+        }
+        finally
+        {
+            CryptographicOperations
+                .ZeroMemory(
+                    inputBytes);
+        }
+    }
+
+    private static bool
+        PasswordHashFingerprintMatches(
+            string passwordHash,
+            string expectedFingerprint)
+    {
+        byte[] expectedBytes;
+
+        try
+        {
+            expectedBytes =
+                Convert.FromHexString(
+                    expectedFingerprint);
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
+
+        var inputBytes =
+            Encoding.UTF8.GetBytes(
+                passwordHash);
+
+        try
+        {
+            var actualBytes =
+                SHA256.HashData(
+                    inputBytes);
+
+            return
+                actualBytes.Length ==
+                expectedBytes.Length &&
+
+                CryptographicOperations
+                    .FixedTimeEquals(
+                        actualBytes,
+                        expectedBytes);
+        }
+        finally
+        {
+            CryptographicOperations
+                .ZeroMemory(
+                    inputBytes);
+
+            CryptographicOperations
+                .ZeroMemory(
+                    expectedBytes);
+        }
     }
 
     private static Result<
         AuthenticatedUserDto>
-        Failure(
+        InvalidCredentials()
+    {
+        return Failure<
+            AuthenticatedUserDto>(
+                ErrorCodes.Authentication
+                    .InvalidCredentials,
+                "Tên đăng nhập hoặc mật khẩu không chính xác.");
+    }
+
+    private static Result<TValue>
+        Failure<TValue>(
             string errorCode,
             string errorMessage)
     {
-        return Result.Failure<
-            AuthenticatedUserDto>(
-                new Error(
-                    errorCode,
-                    errorMessage));
+        return Result.Failure<TValue>(
+            new Error(
+                errorCode,
+                errorMessage));
+    }
+
+    /// <summary>
+    /// Store rỗng để giữ tương thích constructor cũ
+    /// trong các unit test đã tồn tại.
+    /// </summary>
+    private sealed class
+        NullRememberedLoginStore :
+            IRememberedLoginStore
+    {
+        public static
+            NullRememberedLoginStore
+            Instance
+        { get; } = new();
+
+        public RememberedLoginCredential?
+            Load()
+        {
+            return null;
+        }
+
+        public bool TrySave(
+            RememberedLoginCredential credential)
+        {
+            ArgumentNullException.ThrowIfNull(
+                credential);
+
+            return true;
+        }
+
+        public bool TryDelete()
+        {
+            return true;
+        }
     }
 }

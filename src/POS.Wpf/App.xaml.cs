@@ -17,7 +17,8 @@ namespace POS.Wpf;
 /// Composition root và vòng đời chính của ứng dụng.
 ///
 /// Luồng hoạt động:
-/// First-run/Login → Shell → Logout → Login.
+/// First-run / Remembered Login / Login
+/// → Shell → Logout → Login.
 /// </summary>
 public partial class App :
     global::System.Windows.Application
@@ -69,9 +70,7 @@ public partial class App :
                 AuthService>();
 
             /*
-             * =================================================
-             * PRODUCT SERVICES
-             * =================================================
+             * Product decorator.
              */
             builder.Services.AddScoped<
                 ProductService>();
@@ -89,15 +88,7 @@ public partial class App :
                                     IPermissionService>()));
 
             /*
-             * =================================================
-             * CATEGORY SERVICES
-             * =================================================
-             *
-             * CategoryService thật được đăng ký bằng
-             * concrete type.
-             *
-             * Mọi nơi yêu cầu ICategoryService sẽ nhận
-             * AuthorizedCategoryService.
+             * Category decorator.
              */
             builder.Services.AddScoped<
                 CategoryService>();
@@ -115,9 +106,7 @@ public partial class App :
                                     IPermissionService>()));
 
             /*
-             * =================================================
-             * INVENTORY SERVICES
-             * =================================================
+             * Inventory decorator.
              */
             builder.Services.AddScoped<
                 InventoryService>();
@@ -235,6 +224,12 @@ public partial class App :
 
         if (host is not null)
         {
+            /*
+             * Chỉ xóa session RAM.
+             *
+             * Không xóa remembered credential khi người dùng
+             * đóng ứng dụng bằng nút X.
+             */
             var currentUserService =
                 host.Services
                     .GetService<
@@ -282,6 +277,17 @@ public partial class App :
             EnsureAuthenticatedSession(
                 serviceProvider);
         }
+        else
+        {
+            /*
+             * Chỉ thử tự đăng nhập một lần khi ứng dụng
+             * vừa khởi động.
+             *
+             * Sau khi Logout, vòng while không tự khôi phục lại.
+             */
+            await TryRestoreRememberedLoginAsync(
+                serviceProvider);
+        }
 
         while (true)
         {
@@ -323,27 +329,60 @@ public partial class App :
 
             if (!logoutRequested)
             {
+                /*
+                 * Đóng bằng X:
+                 * chỉ xóa RAM, giữ credential 30 ngày.
+                 */
                 currentUserService.Clear();
 
                 Shutdown(0);
 
                 return;
             }
+
+            /*
+             * Đăng xuất:
+             * AuthService đã xóa credential và session.
+             * Vòng lặp mở LoginWindow.
+             */
         }
+    }
+
+    private static async Task
+        TryRestoreRememberedLoginAsync(
+            IServiceProvider serviceProvider)
+    {
+        await using var scope =
+            serviceProvider
+                .CreateAsyncScope();
+
+        var authService =
+            scope.ServiceProvider
+                .GetRequiredService<
+                    IAuthService>();
+
+        /*
+         * Credential không tồn tại, hết hạn hoặc không hợp lệ
+         * là trạng thái bình thường; LoginWindow sẽ được mở.
+         */
+        await authService
+            .TryRestoreRememberedLoginAsync();
     }
 
     private static async Task InitializeDatabaseAsync(
         IServiceProvider serviceProvider)
     {
         await using var scope =
-            serviceProvider.CreateAsyncScope();
+            serviceProvider
+                .CreateAsyncScope();
 
         var initializer =
             scope.ServiceProvider
                 .GetRequiredService<
                     DatabaseInitializer>();
 
-        await initializer.InitializeAsync();
+        await initializer
+            .InitializeAsync();
     }
 
     private static async Task<bool>
@@ -351,7 +390,8 @@ public partial class App :
             IServiceProvider serviceProvider)
     {
         await using var scope =
-            serviceProvider.CreateAsyncScope();
+            serviceProvider
+                .CreateAsyncScope();
 
         var setupService =
             scope.ServiceProvider

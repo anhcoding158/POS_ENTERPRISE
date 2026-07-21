@@ -76,9 +76,13 @@ public static class DependencyInjection
             CurrentUserService>();
 
         /*
-         * PermissionService chỉ đọc phiên hiện tại,
-         * không giữ DbContext hoặc dữ liệu request.
+         * Credential được mã hóa bằng Windows DPAPI
+         * và lưu dưới LocalApplicationData.
          */
+        services.AddSingleton<
+            IRememberedLoginStore,
+            WindowsRememberedLoginStore>();
+
         services.AddSingleton<
             IPermissionService,
             PermissionService>();
@@ -126,16 +130,10 @@ public static class DependencyInjection
                 optionsBuilder.EnableDetailedErrors();
             });
 
-        /*
-         * Persistence transaction boundary.
-         */
         services.AddScoped<
             IUnitOfWork,
             EfUnitOfWork>();
 
-        /*
-         * Repositories.
-         */
         services.AddScoped<
             ICategoryRepository,
             CategoryRepository>();
@@ -152,9 +150,6 @@ public static class DependencyInjection
             IUserRepository,
             UserRepository>();
 
-        /*
-         * Database bootstrap.
-         */
         services.AddScoped<
             DatabaseInitializer>();
 

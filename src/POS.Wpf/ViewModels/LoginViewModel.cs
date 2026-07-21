@@ -37,6 +37,7 @@ public sealed class LoginViewModel :
     private string _statusMessage =
         string.Empty;
 
+    private bool _rememberLogin;
     private bool _isStatusError;
     private bool _isBusy;
 
@@ -95,6 +96,20 @@ public sealed class LoginViewModel :
 
             ValidateUsername();
         }
+    }
+
+    /// <summary>
+    /// Mặc định tắt vì máy POS có thể là máy dùng chung.
+    ///
+    /// Người dùng chỉ cần bật một lần trên máy riêng.
+    /// </summary>
+    public bool RememberLogin
+    {
+        get => _rememberLogin;
+
+        set => SetProperty(
+            ref _rememberLogin,
+            value);
     }
 
     public string UsernameError
@@ -197,7 +212,9 @@ public sealed class LoginViewModel :
         IsStatusError = false;
 
         StatusMessage =
-            "Đang xác thực tài khoản...";
+            RememberLogin
+                ? "Đang xác thực và lưu phiên bảo mật..."
+                : "Đang xác thực tài khoản...";
 
         try
         {
@@ -217,7 +234,10 @@ public sealed class LoginViewModel :
                             Username,
 
                         password:
-                            _password));
+                            _password,
+
+                        rememberLogin:
+                            RememberLogin));
 
             if (result.IsFailure)
             {
@@ -233,7 +253,10 @@ public sealed class LoginViewModel :
             IsStatusError = false;
 
             StatusMessage =
-                $"Xin chào {result.Value.FullName}.";
+                RememberLogin
+                    ? $"Xin chào {result.Value.FullName}. " +
+                      "Phiên đã được duy trì trong 30 ngày."
+                    : $"Xin chào {result.Value.FullName}.";
 
             RequestClose?.Invoke(
                 true);

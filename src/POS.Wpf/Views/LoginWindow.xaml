@@ -280,14 +280,28 @@
                         Text="{Binding PasswordError}"
                         Style="{StaticResource LoginErrorStyle}" />
 
-                    <CheckBox
-                        x:Name="ShowPasswordCheckBox"
-                        Content="Hiện mật khẩu"
-                        Checked="OnShowPasswordChecked"
-                        Unchecked="OnShowPasswordUnchecked"
-                        Foreground="{StaticResource TextSecondaryBrush}"
-                        FontSize="11"
-                        Margin="1,13,0,0" />
+                    <StackPanel
+                        Orientation="Horizontal"
+                        Margin="1,13,0,0">
+
+                        <CheckBox
+                         x:Name="ShowPasswordCheckBox"
+                         Content="Hiện mật khẩu"
+                         Checked="OnShowPasswordChecked"
+                         Unchecked="OnShowPasswordUnchecked"
+                         Foreground="{StaticResource TextSecondaryBrush}"
+                         FontSize="11" />
+
+                        <CheckBox
+                         Content="Duy trì đăng nhập trong 30 ngày"
+                         IsChecked="{Binding RememberLogin,
+                         Mode=TwoWay,
+                         UpdateSourceTrigger=PropertyChanged}"
+                         Foreground="{StaticResource TextSecondaryBrush}"
+                         FontSize="11"
+                         Margin="24,0,0,0"
+                         ToolTip="Chỉ nên bật trên máy POS riêng của cửa hàng." />
+                    </StackPanel>
 
                     <!-- Status -->
 
