@@ -4,12 +4,14 @@ using POS.Domain.Constants;
 namespace POS.Domain.Entities;
 
 /// <summary>
-/// Snapshot của một modifier/topping được chọn tại thời điểm bán.
+/// Snapshot modifier/topping thuộc một dòng đơn hàng.
 ///
-/// Dữ liệu tên và giá được lưu lại để hóa đơn cũ không thay đổi
-/// khi modifier trong danh mục được chỉnh sửa sau này.
+/// Dữ liệu tên, nhóm và giá được đóng băng tại thời điểm bán.
+/// Việc đổi tên hoặc đổi giá Modifier sau này không làm thay đổi
+/// hóa đơn lịch sử.
 /// </summary>
-public sealed class OrderItemModifier : Entity
+public sealed class OrderItemModifier :
+    Entity
 {
     private OrderItemModifier()
     {
@@ -23,68 +25,92 @@ public sealed class OrderItemModifier : Entity
         int quantity,
         long unitAdditionalPrice)
     {
-        SetModifierId(modifierId);
-        SetModifierGroupId(modifierGroupId);
-        SetModifierGroupName(modifierGroupName);
-        SetModifierName(modifierName);
-        SetQuantity(quantity);
-        SetUnitAdditionalPrice(unitAdditionalPrice);
+        SetModifierId(
+            modifierId);
+
+        SetModifierGroupId(
+            modifierGroupId);
+
+        SetModifierGroupName(
+            modifierGroupName);
+
+        SetModifierName(
+            modifierName);
+
+        SetQuantity(
+            quantity);
+
+        SetUnitAdditionalPrice(
+            unitAdditionalPrice);
     }
 
-    public int OrderItemId { get; private set; }
+    public int OrderItemId
+    {
+        get;
+        private set;
+    }
 
-    public int ModifierId { get; private set; }
+    public int ModifierId
+    {
+        get;
+        private set;
+    }
 
-    public int ModifierGroupId { get; private set; }
+    public int ModifierGroupId
+    {
+        get;
+        private set;
+    }
 
-    public string ModifierGroupName { get; private set; } =
-        string.Empty;
+    public string ModifierGroupName
+    {
+        get;
+        private set;
+    } = string.Empty;
 
-    public string ModifierName { get; private set; } =
-        string.Empty;
+    public string ModifierName
+    {
+        get;
+        private set;
+    } = string.Empty;
 
     /// <summary>
-    /// Số lượng modifier áp dụng trên mỗi đơn vị sản phẩm.
+    /// Số lượng modifier áp dụng trên một đơn vị sản phẩm.
     ///
-    /// Ví dụ một ly có 2 phần trân châu thì Quantity = 2.
+    /// Ví dụ một ly có 2 phần trân châu.
     /// </summary>
-    public int Quantity { get; private set; }
-
-    /// <summary>
-    /// Giá cộng thêm của một modifier tại thời điểm bán.
-    /// </summary>
-    public long UnitAdditionalPrice { get; private set; }
-
-    public OrderItem? OrderItem { get; private set; }
-
-    /// <summary>
-    /// Tổng tiền modifier trên một đơn vị sản phẩm.
-    /// </summary>
-    public long AmountPerProductUnit
+    public int Quantity
     {
-        get
-        {
-            try
-            {
-                return checked(
-                    UnitAdditionalPrice * Quantity);
-            }
-            catch (OverflowException exception)
-            {
-                throw new DomainException(
-                    "ORDER_ITEM_MODIFIER.AMOUNT_OVERFLOW",
-                    "Tổng tiền lựa chọn bổ sung vượt giới hạn.",
-                    exception);
-            }
-        }
+        get;
+        private set;
     }
 
-    internal void ChangeQuantity(int quantity)
+    public long UnitAdditionalPrice
     {
-        SetQuantity(quantity);
+        get;
+        private set;
     }
 
-    private void SetModifierId(int modifierId)
+    public OrderItem? OrderItem
+    {
+        get;
+        private set;
+    }
+
+    public long AmountPerProductUnit =>
+        SafeMultiply(
+            UnitAdditionalPrice,
+            Quantity);
+
+    internal void ChangeQuantity(
+        int quantity)
+    {
+        SetQuantity(
+            quantity);
+    }
+
+    private void SetModifierId(
+        int modifierId)
     {
         if (modifierId <= 0)
         {
@@ -93,10 +119,12 @@ public sealed class OrderItemModifier : Entity
                 "Modifier không hợp lệ.");
         }
 
-        ModifierId = modifierId;
+        ModifierId =
+            modifierId;
     }
 
-    private void SetModifierGroupId(int modifierGroupId)
+    private void SetModifierGroupId(
+        int modifierGroupId)
     {
         if (modifierGroupId <= 0)
         {
@@ -105,7 +133,8 @@ public sealed class OrderItemModifier : Entity
                 "Nhóm modifier không hợp lệ.");
         }
 
-        ModifierGroupId = modifierGroupId;
+        ModifierGroupId =
+            modifierGroupId;
     }
 
     private void SetModifierGroupName(
@@ -119,53 +148,64 @@ public sealed class OrderItemModifier : Entity
                 "Tên nhóm modifier không được để trống.");
         }
 
-        var trimmed = modifierGroupName.Trim();
+        var normalized =
+            modifierGroupName.Trim();
 
-        if (trimmed.Length >
-            BusinessRules.ModifierGroups.NameMaxLength)
+        if (normalized.Length >
+            BusinessRules.ModifierGroups
+                .NameMaxLength)
         {
             throw new DomainException(
                 "ORDER_ITEM_MODIFIER.GROUP_NAME_TOO_LONG",
                 "Tên nhóm modifier vượt quá giới hạn.");
         }
 
-        ModifierGroupName = trimmed;
+        ModifierGroupName =
+            normalized;
     }
 
-    private void SetModifierName(string modifierName)
+    private void SetModifierName(
+        string modifierName)
     {
-        if (string.IsNullOrWhiteSpace(modifierName))
+        if (string.IsNullOrWhiteSpace(
+                modifierName))
         {
             throw new DomainException(
                 "ORDER_ITEM_MODIFIER.NAME_REQUIRED",
                 "Tên modifier không được để trống.");
         }
 
-        var trimmed = modifierName.Trim();
+        var normalized =
+            modifierName.Trim();
 
-        if (trimmed.Length >
-            BusinessRules.Modifiers.NameMaxLength)
+        if (normalized.Length >
+            BusinessRules.Modifiers
+                .NameMaxLength)
         {
             throw new DomainException(
                 "ORDER_ITEM_MODIFIER.NAME_TOO_LONG",
                 "Tên modifier vượt quá giới hạn.");
         }
 
-        ModifierName = trimmed;
+        ModifierName =
+            normalized;
     }
 
-    private void SetQuantity(int quantity)
+    private void SetQuantity(
+        int quantity)
     {
         if (quantity <= 0 ||
             quantity >
-            BusinessRules.Orders.MaximumLineQuantity)
+            BusinessRules.Orders
+                .MaximumLineQuantity)
         {
             throw new DomainException(
                 "ORDER_ITEM_MODIFIER.INVALID_QUANTITY",
                 "Số lượng modifier không hợp lệ.");
         }
 
-        Quantity = quantity;
+        Quantity =
+            quantity;
     }
 
     private void SetUnitAdditionalPrice(
@@ -173,13 +213,45 @@ public sealed class OrderItemModifier : Entity
     {
         if (unitAdditionalPrice < 0 ||
             unitAdditionalPrice >
-            BusinessRules.Modifiers.MaximumAdditionalPrice)
+            BusinessRules.Modifiers
+                .MaximumAdditionalPrice)
         {
             throw new DomainException(
                 "ORDER_ITEM_MODIFIER.INVALID_PRICE",
-                "Giá cộng thêm của modifier không hợp lệ.");
+                "Giá modifier không hợp lệ.");
         }
 
-        UnitAdditionalPrice = unitAdditionalPrice;
+        UnitAdditionalPrice =
+            unitAdditionalPrice;
+    }
+
+    private static long SafeMultiply(
+        long left,
+        int right)
+    {
+        try
+        {
+            var result =
+                checked(
+                    left * right);
+
+            if (result >
+                BusinessRules.Orders
+                    .MaximumOrderAmount)
+            {
+                throw new DomainException(
+                    "ORDER_ITEM_MODIFIER.AMOUNT_OVERFLOW",
+                    "Thành tiền modifier vượt giới hạn.");
+            }
+
+            return result;
+        }
+        catch (OverflowException exception)
+        {
+            throw new DomainException(
+                "ORDER_ITEM_MODIFIER.AMOUNT_OVERFLOW",
+                "Thành tiền modifier vượt giới hạn.",
+                exception);
+        }
     }
 }

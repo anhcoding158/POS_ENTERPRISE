@@ -170,6 +170,17 @@ public sealed class EfUnitOfWork :
             return true;
         }
 
+        if (message.Contains(
+                "Orders.OrderCode",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            target =
+                PersistenceConflictTargets
+                    .OrderCode;
+
+            return true;
+        }
+
         /*
          * Đây vẫn là unique constraint nhưng Infrastructure
          * chưa xác định được trường nghiệp vụ cụ thể.

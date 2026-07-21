@@ -147,11 +147,22 @@ public static class DependencyInjection
             InventoryMovementRepository>();
 
         services.AddScoped<
-            IUserRepository,
+             IUserRepository,
             UserRepository>();
+
+        /*
+         * Order repository dùng cùng scoped DbContext
+         * với IUnitOfWork để toàn bộ aggregate Order
+         * được lưu trong một transaction thống nhất.
+         */
+        services.AddScoped<
+            IOrderRepository,
+            OrderRepository>();
 
         services.AddScoped<
             DatabaseInitializer>();
+
+
 
         return services;
     }

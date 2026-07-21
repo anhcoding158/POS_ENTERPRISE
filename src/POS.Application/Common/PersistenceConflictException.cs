@@ -37,6 +37,8 @@ public static class PersistenceConflictTargets
 
     public const string UserNormalizedUsername =
         "user.normalized_username";
+    public const string OrderCode =
+    "order.code";
 }
 
 /// <summary>

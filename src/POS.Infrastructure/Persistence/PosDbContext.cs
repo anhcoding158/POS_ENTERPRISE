@@ -10,14 +10,18 @@ namespace POS.Infrastructure.Persistence;
 /// - User;
 /// - Category;
 /// - Product;
-/// - InventoryMovement.
+/// - InventoryMovement;
+/// - Order;
+/// - OrderItem;
+/// - OrderItemModifier.
 /// </summary>
 public sealed class PosDbContext :
     DbContext
 {
     public PosDbContext(
         DbContextOptions<PosDbContext> options)
-        : base(options)
+        : base(
+            options)
     {
     }
 
@@ -34,19 +38,22 @@ public sealed class PosDbContext :
         InventoryMovements =>
             Set<InventoryMovement>();
 
+    public DbSet<Order> Orders =>
+        Set<Order>();
+
+    public DbSet<OrderItem> OrderItems =>
+        Set<OrderItem>();
+
+    public DbSet<OrderItemModifier>
+        OrderItemModifiers =>
+            Set<OrderItemModifier>();
+
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {
         base.OnModelCreating(
             modelBuilder);
 
-        /*
-         * Tự động áp dụng mọi class triển khai:
-         *
-         * IEntityTypeConfiguration<TEntity>
-         *
-         * trong assembly POS.Infrastructure.
-         */
         modelBuilder.ApplyConfigurationsFromAssembly(
             typeof(PosDbContext).Assembly);
     }
