@@ -13,3 +13,4 @@ obj/
 logs/
 src/POS.Wpf/AppData/
 artifacts/
+/Auth-Stage7-Snapshot.txt
