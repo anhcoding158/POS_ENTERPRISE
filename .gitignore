@@ -3,14 +3,14 @@ bin/
 obj/
 *.user
 *.suo
-
 # SQLite runtime files
 *.db
 *.db-shm
 *.db-wal
 *.db-journal
-
 logs/
 src/POS.Wpf/AppData/
 artifacts/
 /Auth-Stage7-Snapshot.txt
+/Category-Authorization-Snapshot.txt
+/Stage7F-Checkout-Snapshot.txt
