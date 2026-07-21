@@ -8,8 +8,13 @@ namespace POS.Application.Validation;
 /// <summary>
 /// Kiểm tra cấu trúc yêu cầu Checkout trước khi mở transaction.
 ///
-/// Các kiểm tra cần database như sản phẩm tồn tại, trạng thái bán,
-/// giá và tồn kho được CheckoutService thực hiện sau.
+/// Các kiểm tra cần database như:
+/// - sản phẩm có tồn tại;
+/// - sản phẩm còn hoạt động;
+/// - giá hiện tại;
+/// - tồn kho hiện tại;
+///
+/// sẽ được CheckoutService thực hiện sau.
 /// </summary>
 public static class CheckoutValidator
 {
@@ -44,10 +49,10 @@ public static class CheckoutValidator
         }
 
         /*
-         * 8B chỉ được phép xác nhận tiền mặt.
+         * 8B chỉ xác nhận thanh toán tiền mặt.
          *
-         * VietQR/Card/BankTransfer cần quy trình xác nhận
-         * thanh toán thật ở chặng 8D.
+         * VietQR, chuyển khoản và thẻ cần quy trình xác nhận
+         * thanh toán thật trước khi được MarkPaid.
          */
         if (request.PaymentMethod !=
             PaymentMethod.Cash)
@@ -97,6 +102,15 @@ public static class CheckoutValidator
                 "Ghi chú đơn hàng vượt quá giới hạn.");
         }
 
+        /*
+         * HashSet phải nằm ngoài foreach.
+         *
+         * Nó giữ ProductId của tất cả dòng đã duyệt,
+         * nhờ đó dòng thứ hai có cùng ProductId sẽ bị từ chối.
+         */
+        var productIds =
+            new HashSet<int>();
+
         foreach (var line in request.Lines)
         {
             if (line.ProductId <= 0)
@@ -104,6 +118,15 @@ public static class CheckoutValidator
                 return Failure(
                     ErrorCodes.Checkout.ProductNotFound,
                     "Mã sản phẩm trong giỏ hàng không hợp lệ.");
+            }
+
+            if (!productIds.Add(
+                    line.ProductId))
+            {
+                return Failure(
+                    ErrorCodes.Checkout.DuplicateProduct,
+                    "Một sản phẩm không được xuất hiện nhiều lần " +
+                    "trong cùng giỏ hàng.");
             }
 
             if (line.Quantity <= 0 ||
@@ -116,8 +139,8 @@ public static class CheckoutValidator
             }
 
             /*
-             * Không nhận giá modifier từ giao diện khi catalog
-             * modifier chưa được đưa vào database.
+             * Không nhận modifier từ giao diện khi catalog
+             * modifier chưa được triển khai hoàn chỉnh.
              */
             if (line.Modifiers.Count > 0)
             {
@@ -128,8 +151,10 @@ public static class CheckoutValidator
             }
 
             /*
-             * Không cho WPF tự gửi số tiền giảm.
-             * Sau này discount phải được tính từ policy/database.
+             * Giao diện không được tự gửi số tiền giảm.
+             *
+             * Sau này giảm giá phải được tính bằng policy
+             * và dữ liệu đọc từ database.
              */
             if (line.LineDiscountAmount != 0)
             {
