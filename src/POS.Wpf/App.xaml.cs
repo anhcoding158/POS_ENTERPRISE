@@ -13,7 +13,10 @@ using POS.Wpf.Views;
 namespace POS.Wpf;
 
 /// <summary>
-/// Composition root và quản lý vòng đời ứng dụng WPF.
+/// Composition root và vòng đời chính của ứng dụng.
+///
+/// Luồng hoạt động:
+/// First-run/Login → Shell → Logout → Login.
 /// </summary>
 public partial class App :
     global::System.Windows.Application
@@ -26,11 +29,10 @@ public partial class App :
         base.OnStartup(e);
 
         /*
-         * Bắt buộc giữ ứng dụng sống trong lúc đóng
-         * FirstRunSetupWindow hoặc LoginWindow.
+         * App tự quyết định khi nào tiến trình kết thúc.
          *
-         * Sau khi ShellWindow được mở, chế độ shutdown
-         * sẽ được chuyển sang OnMainWindowClose.
+         * Đóng SetupWindow, LoginWindow hoặc ShellWindow
+         * không được tự động shutdown ứng dụng.
          */
         ShutdownMode =
             global::System.Windows.ShutdownMode
@@ -72,7 +74,7 @@ public partial class App :
                 AuthService>();
 
             /*
-             * Product, Category và Inventory services.
+             * Business services.
              */
             builder.Services.AddScoped<
                 IProductService,
@@ -106,7 +108,7 @@ public partial class App :
                 InventoryDialogService>();
 
             /*
-             * Authentication ViewModels và Windows.
+             * Authentication UI.
              */
             builder.Services.AddTransient<
                 FirstRunSetupViewModel>();
@@ -155,36 +157,7 @@ public partial class App :
             await InitializeDatabaseAsync(
                 _host.Services);
 
-            var setupRequired =
-                await IsInitialSetupRequiredAsync(
-                    _host.Services);
-
-            bool authenticationSucceeded;
-
-            if (setupRequired)
-            {
-                authenticationSucceeded =
-                    ShowInitialSetupWindow(
-                        _host.Services);
-            }
-            else
-            {
-                authenticationSucceeded =
-                    ShowLoginWindow(
-                        _host.Services);
-            }
-
-            if (!authenticationSucceeded)
-            {
-                Shutdown(0);
-
-                return;
-            }
-
-            EnsureAuthenticatedSession(
-                _host.Services);
-
-            ShowShellWindow(
+            await RunSessionLoopAsync(
                 _host.Services);
         }
         catch (Exception exception)
@@ -196,8 +169,10 @@ public partial class App :
                 $"Ứng dụng không thể khởi động.\n\n" +
                 $"{rootException.Message}",
                 "POS Enterprise",
-                global::System.Windows.MessageBoxButton.OK,
-                global::System.Windows.MessageBoxImage.Error);
+                global::System.Windows
+                    .MessageBoxButton.OK,
+                global::System.Windows
+                    .MessageBoxImage.Error);
 
             Shutdown(-1);
         }
@@ -209,10 +184,22 @@ public partial class App :
         var host =
             _host;
 
-        _host = null;
+        _host =
+            null;
 
         if (host is not null)
         {
+            /*
+             * Xóa phiên khỏi bộ nhớ khi ứng dụng kết thúc.
+             */
+            var currentUserService =
+                host.Services
+                    .GetService<
+                        ICurrentUserService>();
+
+            currentUserService?
+                .Clear();
+
             try
             {
                 await host.StopAsync(
@@ -227,18 +214,129 @@ public partial class App :
         base.OnExit(e);
     }
 
+    /// <summary>
+    /// Vòng lặp phiên làm việc.
+    ///
+    /// Đăng xuất không tắt ứng dụng mà quay lại LoginWindow.
+    /// Đóng Shell bằng nút X mới kết thúc ứng dụng.
+    /// </summary>
+    private async Task RunSessionLoopAsync(
+        IServiceProvider serviceProvider)
+    {
+        var setupRequired =
+            await IsInitialSetupRequiredAsync(
+                serviceProvider);
+
+        /*
+         * Chỉ chạy khi database chưa có bất kỳ User nào.
+         */
+        if (setupRequired)
+        {
+            var setupCompleted =
+                ShowInitialSetupWindow(
+                    serviceProvider);
+
+            ClearMainWindowReference();
+
+            if (!setupCompleted)
+            {
+                Shutdown(0);
+
+                return;
+            }
+
+            /*
+             * InitialSetupService tự tạo session
+             * cho Administrator vừa được tạo.
+             */
+            EnsureAuthenticatedSession(
+                serviceProvider);
+        }
+
+        while (true)
+        {
+            var currentUserService =
+                serviceProvider
+                    .GetRequiredService<
+                        ICurrentUserService>();
+
+            /*
+             * Lần mở ứng dụng mới hoặc sau khi đăng xuất.
+             */
+            if (!currentUserService
+                .IsAuthenticated)
+            {
+                var loginSucceeded =
+                    ShowLoginWindow(
+                        serviceProvider);
+
+                ClearMainWindowReference();
+
+                if (!loginSucceeded)
+                {
+                    Shutdown(0);
+
+                    return;
+                }
+            }
+
+            EnsureAuthenticatedSession(
+                serviceProvider);
+
+            /*
+             * ShowDialog giữ luồng ở đây cho đến khi
+             * ShellWindow thực sự đóng.
+             */
+            var logoutRequested =
+                ShowShellWindow(
+                    serviceProvider);
+
+            ClearMainWindowReference();
+
+            /*
+             * Cho WPF hoàn tất tháo Window cũ khỏi
+             * visual tree trước khi mở LoginWindow mới.
+             */
+            await global::System.Windows.Threading
+                .Dispatcher.Yield(
+                    global::System.Windows.Threading
+                        .DispatcherPriority.ApplicationIdle);
+
+            if (!logoutRequested)
+            {
+                /*
+                 * Người dùng đóng Shell bằng nút X.
+                 */
+                currentUserService.Clear();
+
+                Shutdown(0);
+
+                return;
+            }
+
+            /*
+             * Khi LogoutRequested = true:
+             * IAuthService.Logout đã xóa session.
+             *
+             * Vòng while chạy lại và mở LoginWindow.
+             */
+        }
+    }
+
     private static async Task InitializeDatabaseAsync(
         IServiceProvider serviceProvider)
     {
         await using var scope =
-            serviceProvider.CreateAsyncScope();
+            serviceProvider
+                .CreateAsyncScope();
 
         var initializer =
             scope.ServiceProvider
                 .GetRequiredService<
                     DatabaseInitializer>();
 
-        await initializer.InitializeAsync();
+        await initializer
+            .InitializeAsync();
     }
 
     private static async Task<bool>
@@ -246,7 +344,8 @@ public partial class App :
             IServiceProvider serviceProvider)
     {
         await using var scope =
-            serviceProvider.CreateAsyncScope();
+            serviceProvider
+                .CreateAsyncScope();
 
         var setupService =
             scope.ServiceProvider
@@ -274,29 +373,11 @@ public partial class App :
                 .GetRequiredService<
                     FirstRunSetupWindow>();
 
-        /*
-         * Gán tạm để WPF quản lý focus và ownership,
-         * nhưng OnExplicitShutdown ngăn việc đóng dialog
-         * làm tắt toàn bộ ứng dụng.
-         */
         MainWindow =
             setupWindow;
 
-        var setupCompleted =
-            setupWindow.ShowDialog() ==
-            true;
-
-        /*
-         * Không giữ tham chiếu đến cửa sổ đã đóng.
-         */
-        if (ReferenceEquals(
-                MainWindow,
-                setupWindow))
-        {
-            MainWindow = null;
-        }
-
-        return setupCompleted;
+        return setupWindow.ShowDialog() ==
+               true;
     }
 
     private bool ShowLoginWindow(
@@ -310,18 +391,31 @@ public partial class App :
         MainWindow =
             loginWindow;
 
-        var loginSucceeded =
-            loginWindow.ShowDialog() ==
-            true;
+        return loginWindow.ShowDialog() ==
+               true;
+    }
 
-        if (ReferenceEquals(
-                MainWindow,
-                loginWindow))
-        {
-            MainWindow = null;
-        }
+    private bool ShowShellWindow(
+        IServiceProvider serviceProvider)
+    {
+        var shellWindow =
+            serviceProvider
+                .GetRequiredService<
+                    ShellWindow>();
 
-        return loginSucceeded;
+        MainWindow =
+            shellWindow;
+
+        /*
+         * Không dùng shellWindow.Show().
+         *
+         * ShowDialog giúp App chờ Shell đóng rồi mới
+         * kiểm tra người dùng muốn logout hay thoát.
+         */
+        shellWindow.ShowDialog();
+
+        return shellWindow
+            .LogoutRequested;
     }
 
     private static void EnsureAuthenticatedSession(
@@ -338,32 +432,20 @@ public partial class App :
             throw new InvalidOperationException(
                 "Không tìm thấy phiên đăng nhập hợp lệ.");
         }
+
+        if (currentUserService.UserId is null ||
+            currentUserService.Role is null ||
+            string.IsNullOrWhiteSpace(
+                currentUserService.Username))
+        {
+            throw new InvalidOperationException(
+                "Phiên đăng nhập không đầy đủ thông tin.");
+        }
     }
 
-    private void ShowShellWindow(
-        IServiceProvider serviceProvider)
+    private void ClearMainWindowReference()
     {
-        var shellWindow =
-            serviceProvider
-                .GetRequiredService<
-                    ShellWindow>();
-
-        /*
-         * Từ thời điểm này ShellWindow mới là cửa sổ chính
-         * thật sự của ứng dụng.
-         */
         MainWindow =
-            shellWindow;
-
-        /*
-         * Sau khi đăng nhập thành công, đóng ShellWindow
-         * sẽ kết thúc ứng dụng theo hành vi WPF thông thường.
-         */
-        ShutdownMode =
-            global::System.Windows.ShutdownMode
-                .OnMainWindowClose;
-
-        shellWindow.Show();
-        shellWindow.Activate();
+            null;
     }
 }

@@ -26,8 +26,8 @@ public partial class ShellWindow :
     private global::System.Windows.Controls.Button?
         _logoutButton;
 
-    private bool
-        _logoutInProgress;
+    private bool _logoutInProgress;
+    private bool _userCardConfigured;
 
     public ShellWindow(
         ShellViewModel viewModel,
@@ -60,8 +60,12 @@ public partial class ShellWindow :
         DataContext =
             _viewModel;
 
-        ConfigureAuthenticatedUserCard();
-
+        /*
+         * Không cấu hình card người dùng tại constructor.
+         *
+         * Lúc này Visual Tree của Window chưa hoàn chỉnh,
+         * nên không thể tìm thấy TextBlock trong XAML.
+         */
         Loaded +=
             OnWindowLoaded;
 
@@ -73,7 +77,7 @@ public partial class ShellWindow :
     }
 
     /// <summary>
-    /// True khi cửa sổ đóng do người dùng chọn đăng xuất.
+    /// True khi Shell đóng vì người dùng đăng xuất.
     ///
     /// App sẽ mở lại LoginWindow thay vì tắt ứng dụng.
     /// </summary>
@@ -90,20 +94,37 @@ public partial class ShellWindow :
         Loaded -=
             OnWindowLoaded;
 
+        /*
+         * Chờ WPF hoàn thành tạo và bố trí Visual Tree.
+         *
+         * Đây là điểm sửa lỗi khiến card tài khoản trước đó
+         * vẫn hiển thị nội dung tĩnh.
+         */
+        await Dispatcher.InvokeAsync(
+            ConfigureAuthenticatedUserCard,
+            global::System.Windows.Threading
+                .DispatcherPriority.Loaded);
+
         await _viewModel.InitializeAsync();
     }
 
     private void ConfigureAuthenticatedUserCard()
     {
+        if (_userCardConfigured)
+        {
+            return;
+        }
+
         var fullName =
             string.IsNullOrWhiteSpace(
                 _currentUserService.FullName)
                 ? _currentUserService.Username ??
                   "Người dùng"
-                : _currentUserService.FullName;
+                : _currentUserService.FullName.Trim();
 
         var username =
-            _currentUserService.Username ??
+            _currentUserService.Username?
+                .Trim() ??
             string.Empty;
 
         var roleText =
@@ -114,11 +135,11 @@ public partial class ShellWindow :
             $"POS Enterprise — {fullName}";
 
         /*
-         * ShellWindow.xaml hiện có một thẻ tài khoản
-         * với Text="Quản trị viên".
+         * ShellWindow.xaml hiện có TextBlock:
          *
-         * Ta dùng nó làm điểm neo để không phải thay thế
-         * toàn bộ file XAML rất lớn.
+         * Text="Quản trị viên"
+         *
+         * Ta dùng nó làm điểm neo sau khi Window đã Loaded.
          */
         var nameTextBlock =
             FindTextBlockByExactText(
@@ -128,13 +149,16 @@ public partial class ShellWindow :
         if (nameTextBlock is null)
         {
             /*
-             * Phím Ctrl + Shift + L vẫn hoạt động ngay cả
-             * khi giao diện tài khoản bị thay đổi sau này.
+             * Không đánh dấu đã cấu hình để tránh che lỗi
+             * nếu Visual Tree chưa thực sự sẵn sàng.
              */
             return;
         }
 
         nameTextBlock.Text =
+            fullName;
+
+        nameTextBlock.ToolTip =
             fullName;
 
         var informationPanel =
@@ -145,20 +169,12 @@ public partial class ShellWindow :
             as global::System.Windows.Controls
                 .StackPanel;
 
-        if (informationPanel is not null &&
-            informationPanel.Children.Count >= 2 &&
-            informationPanel.Children[1] is
-                global::System.Windows.Controls
-                    .TextBlock detailTextBlock)
+        if (informationPanel is not null)
         {
-            /*
-             * Bỏ binding LastUpdatedText ở dòng phụ của card,
-             * thay bằng đúng vai trò và username phiên hiện tại.
-             */
-            detailTextBlock.Text =
-                username.Length == 0
-                    ? roleText
-                    : $"{roleText} • @{username}";
+            ConfigureUserInformation(
+                informationPanel,
+                roleText,
+                username);
         }
 
         var horizontalPanel =
@@ -171,17 +187,53 @@ public partial class ShellWindow :
                     as global::System.Windows.Controls
                         .StackPanel;
 
-        if (horizontalPanel is null)
+        if (horizontalPanel is not null)
+        {
+            ConfigureAvatar(
+                horizontalPanel,
+                fullName);
+
+            ReplaceArrowWithLogoutButton(
+                horizontalPanel);
+        }
+
+        _userCardConfigured =
+            true;
+    }
+
+    private static void ConfigureUserInformation(
+        global::System.Windows.Controls.StackPanel
+            informationPanel,
+        string roleText,
+        string username)
+    {
+        if (informationPanel.Children.Count < 2 ||
+            informationPanel.Children[1] is not
+                global::System.Windows.Controls
+                    .TextBlock detailTextBlock)
         {
             return;
         }
 
-        ConfigureAvatar(
-            horizontalPanel,
-            fullName);
+        /*
+         * Gán Text trực tiếp sẽ thay binding LastUpdatedText
+         * đang tồn tại trong XAML.
+         */
+        detailTextBlock.Text =
+            string.IsNullOrWhiteSpace(
+                username)
+                ? roleText
+                : $"{roleText} • @{username}";
 
-        ReplaceArrowWithLogoutButton(
-            horizontalPanel);
+        detailTextBlock.ToolTip =
+            detailTextBlock.Text;
+
+        detailTextBlock.TextTrimming =
+            global::System.Windows
+                .TextTrimming.CharacterEllipsis;
+
+        detailTextBlock.MaxWidth =
+            220;
     }
 
     private static void ConfigureAvatar(
@@ -214,15 +266,22 @@ public partial class ShellWindow :
                 : char.ToUpperInvariant(
                         initial)
                     .ToString();
+
+        avatarBorder.ToolTip =
+            displayName;
     }
 
     private void ReplaceArrowWithLogoutButton(
         global::System.Windows.Controls.StackPanel
             horizontalPanel)
     {
+        if (_logoutButton is not null)
+        {
+            return;
+        }
+
         /*
-         * Phần tử cuối hiện là biểu tượng mũi tên
-         * của card Administrator cũ.
+         * Phần tử cuối của card hiện là biểu tượng mũi tên.
          */
         if (horizontalPanel.Children.Count >= 3)
         {
@@ -233,14 +292,11 @@ public partial class ShellWindow :
         var logoutButton =
             new global::System.Windows.Controls.Button
             {
-                Content =
-                    "Đăng xuất",
-
                 MinWidth =
-                    92,
+                    100,
 
                 Height =
-                    34,
+                    36,
 
                 Margin =
                     new global::System.Windows.Thickness(
@@ -251,8 +307,15 @@ public partial class ShellWindow :
 
                 ToolTip =
                     "Đăng xuất khỏi phiên làm việc " +
-                    "(Ctrl + Shift + L)"
+                    "(Ctrl + Shift + L)",
+
+                Cursor =
+                    global::System.Windows.Input
+                        .Cursors.Hand
             };
+
+        logoutButton.Content =
+            CreateLogoutButtonContent();
 
         if (TryFindResource(
                 "SecondaryButtonStyle")
@@ -270,6 +333,69 @@ public partial class ShellWindow :
 
         _logoutButton =
             logoutButton;
+    }
+
+    private static global::System.Windows.Controls
+        .StackPanel
+        CreateLogoutButtonContent()
+    {
+        var panel =
+            new global::System.Windows.Controls.StackPanel
+            {
+                Orientation =
+                    global::System.Windows.Controls
+                        .Orientation.Horizontal,
+
+                HorizontalAlignment =
+                    global::System.Windows
+                        .HorizontalAlignment.Center
+            };
+
+        panel.Children.Add(
+            new global::System.Windows.Controls.TextBlock
+            {
+                Text =
+                    "\uE8AC",
+
+                FontFamily =
+                    new global::System.Windows.Media
+                        .FontFamily(
+                            "Segoe MDL2 Assets"),
+
+                FontSize =
+                    12,
+
+                Margin =
+                    new global::System.Windows.Thickness(
+                        0,
+                        0,
+                        7,
+                        0),
+
+                VerticalAlignment =
+                    global::System.Windows
+                        .VerticalAlignment.Center
+            });
+
+        panel.Children.Add(
+            new global::System.Windows.Controls.TextBlock
+            {
+                Text =
+                    "Đăng xuất",
+
+                FontSize =
+                    11,
+
+                FontWeight =
+                    global::System.Windows
+                        .FontWeights.SemiBold,
+
+                VerticalAlignment =
+                    global::System.Windows
+                        .VerticalAlignment.Center
+            });
+
+        return panel;
     }
 
     private async void OnLogoutButtonClick(
@@ -306,7 +432,8 @@ public partial class ShellWindow :
             return;
         }
 
-        e.Handled = true;
+        e.Handled =
+            true;
 
         await RequestLogoutAsync();
     }
@@ -323,14 +450,13 @@ public partial class ShellWindow :
                 _currentUserService.FullName)
                 ? _currentUserService.Username ??
                   "tài khoản hiện tại"
-                : _currentUserService.FullName;
+                : _currentUserService.FullName.Trim();
 
         var confirmation =
             global::System.Windows.MessageBox.Show(
                 $"Bạn có chắc muốn đăng xuất khỏi " +
                 $"tài khoản “{displayName}” không?\n\n" +
-                "Mọi cửa sổ nghiệp vụ đang mở cần được " +
-                "hoàn tất trước khi đăng xuất.",
+                "Phiên làm việc hiện tại sẽ được kết thúc.",
                 "Xác nhận đăng xuất",
                 global::System.Windows
                     .MessageBoxButton.YesNo,
@@ -346,7 +472,8 @@ public partial class ShellWindow :
             return;
         }
 
-        _logoutInProgress = true;
+        _logoutInProgress =
+            true;
 
         if (_logoutButton is not null)
         {
@@ -354,7 +481,7 @@ public partial class ShellWindow :
                 false;
 
             _logoutButton.Content =
-                "Đang thoát...";
+                "Đang đăng xuất...";
         }
 
         try
@@ -377,11 +504,11 @@ public partial class ShellWindow :
                     result.Error.Message);
             }
 
-            LogoutRequested = true;
+            LogoutRequested =
+                true;
 
             /*
-             * Bắt buộc giữ ứng dụng sống để App mở lại
-             * LoginWindow sau khi ShellWindow đóng.
+             * Giữ tiến trình sống để App mở lại LoginWindow.
              */
             global::System.Windows.Application
                 .Current
@@ -394,7 +521,8 @@ public partial class ShellWindow :
         }
         catch (Exception exception)
         {
-            _logoutInProgress = false;
+            _logoutInProgress =
+                false;
 
             if (_logoutButton is not null)
             {
@@ -402,7 +530,7 @@ public partial class ShellWindow :
                     true;
 
                 _logoutButton.Content =
-                    "Đăng xuất";
+                    CreateLogoutButtonContent();
             }
 
             global::System.Windows.MessageBox.Show(
@@ -436,7 +564,8 @@ public partial class ShellWindow :
             _logoutButton.Click -=
                 OnLogoutButtonClick;
 
-            _logoutButton = null;
+            _logoutButton =
+                null;
         }
     }
 
