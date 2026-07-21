@@ -51,10 +51,11 @@ public partial class App :
 
             /*
              * Application services là Scoped.
-             *
-             * ViewModel tạo scope ngắn cho từng thao tác,
-             * không giữ DbContext suốt vòng đời cửa sổ.
              */
+            builder.Services.AddScoped<
+                IInitialSetupService,
+                InitialSetupService>();
+
             builder.Services.AddScoped<
                 IAuthService,
                 AuthService>();
@@ -72,8 +73,7 @@ public partial class App :
                 InventoryService>();
 
             /*
-             * Dialog services chỉ chịu trách nhiệm
-             * tạo Window và resolve ViewModel.
+             * Dialog services.
              */
             builder.Services.AddSingleton<
                 IProductDialogService,
@@ -92,7 +92,7 @@ public partial class App :
                 InventoryDialogService>();
 
             /*
-             * Mỗi lần mở cửa sổ nhận một ViewModel mới.
+             * ViewModels và Windows.
              */
             builder.Services.AddTransient<
                 ProductEditorViewModel>();
@@ -124,8 +124,9 @@ public partial class App :
                 _host.Services);
 
             /*
-             * Chặng 7C sẽ thay luồng mở thẳng Shell
-             * bằng First-run Administrator và LoginWindow.
+             * Chặng 7B-2 sẽ thay đoạn này bằng:
+             *
+             * FirstRunSetupWindow hoặc LoginWindow.
              */
             var shellWindow =
                 _host.Services

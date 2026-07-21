@@ -12,8 +12,8 @@ namespace POS.Infrastructure.Persistence.Repositories;
 public sealed class UserRepository :
     IUserRepository
 {
-    private const string LikeEscapeCharacter =
-        "\\";
+    private const string
+        LikeEscapeCharacter = "\\";
 
     private readonly PosDbContext
         _dbContext;
@@ -27,6 +27,15 @@ public sealed class UserRepository :
                 nameof(dbContext));
     }
 
+    public Task<bool> AnyAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return _dbContext.Users
+            .AsNoTracking()
+            .AnyAsync(
+                cancellationToken);
+    }
+
     public Task<User?> GetByIdAsync(
         int userId,
         CancellationToken cancellationToken = default)
@@ -37,14 +46,6 @@ public sealed class UserRepository :
                 null);
         }
 
-        /*
-         * Không dùng AsNoTracking.
-         *
-         * AuthService cần cập nhật:
-         * - FailedLoginAttempts;
-         * - LockedUntilUtc;
-         * - LastLoginAtUtc.
-         */
         return _dbContext.Users
             .SingleOrDefaultAsync(
                 user =>
@@ -68,8 +69,12 @@ public sealed class UserRepository :
         }
 
         /*
-         * Entity phải được tracking vì đăng nhập
-         * có thể thay đổi trạng thái khóa và audit.
+         * Không dùng AsNoTracking.
+         *
+         * AuthService cần cập nhật:
+         * - FailedLoginAttempts;
+         * - LockedUntilUtc;
+         * - LastLoginAtUtc.
          */
         return _dbContext.Users
             .SingleOrDefaultAsync(

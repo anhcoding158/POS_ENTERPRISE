@@ -7,16 +7,25 @@ namespace POS.Application.Abstractions.Persistence;
 /// <summary>
 /// Truy cập dữ liệu tài khoản người dùng.
 ///
-/// Repository quản lý việc truy xuất entity.
-/// Việc lưu thay đổi được thực hiện qua IUnitOfWork.
+/// Repository quản lý truy xuất entity.
+/// IUnitOfWork chịu trách nhiệm lưu thay đổi.
 /// </summary>
 public interface IUserRepository
 {
     /// <summary>
+    /// Kiểm tra database đã có tài khoản hay chưa.
+    ///
+    /// Dùng cho quy trình thiết lập Administrator
+    /// trong lần chạy đầu tiên.
+    /// </summary>
+    Task<bool> AnyAsync(
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Lấy người dùng theo khóa chính.
     ///
-    /// Entity trả về phải có thể được thay đổi và lưu lại
-    /// bằng IUnitOfWork trong cùng một use case.
+    /// Entity trả về được tracking để có thể
+    /// cập nhật trong cùng một use case.
     /// </summary>
     Task<User?> GetByIdAsync(
         int userId,
@@ -26,7 +35,7 @@ public interface IUserRepository
     /// Tìm người dùng theo username đã chuẩn hóa.
     ///
     /// Ví dụ:
-    /// admin -> ADMIN
+    /// admin → ADMIN
     /// </summary>
     Task<User?> GetByNormalizedUsernameAsync(
         string normalizedUsername,
@@ -44,9 +53,9 @@ public interface IUserRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Kiểm tra username chuẩn hóa đã tồn tại hay chưa.
+    /// Kiểm tra username chuẩn hóa đã tồn tại.
     ///
-    /// excludeUserId được dùng khi cập nhật tài khoản để bỏ qua
+    /// excludeUserId dùng khi cập nhật để bỏ qua
     /// chính bản ghi hiện tại.
     /// </summary>
     Task<bool> NormalizedUsernameExistsAsync(
@@ -55,9 +64,9 @@ public interface IUserRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Thêm người dùng mới vào persistence context.
+    /// Thêm User vào persistence context.
     ///
-    /// Phương thức này không tự gọi SaveChanges.
+    /// Không tự gọi SaveChanges.
     /// </summary>
     Task AddAsync(
         User user,
