@@ -3,8 +3,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using POS.Application.Abstractions.Authentication;
+using POS.Application.Abstractions.Authorization;
 using POS.Application.Abstractions.DateTime;
 using POS.Application.Abstractions.Persistence;
+using POS.Application.Services;
 using POS.Infrastructure.Authentication;
 using POS.Infrastructure.Common;
 using POS.Infrastructure.Persistence;
@@ -29,12 +31,10 @@ public static class DependencyInjection
 
         var infrastructureSection =
             configuration.GetSection(
-                InfrastructureOptions
-                    .SectionName);
+                InfrastructureOptions.SectionName);
 
         services
-            .AddOptions<
-                InfrastructureOptions>()
+            .AddOptions<InfrastructureOptions>()
             .Bind(
                 infrastructureSection)
             .Validate(
@@ -54,6 +54,9 @@ public static class DependencyInjection
                 "Cấu hình Infrastructure không hợp lệ.")
             .ValidateOnStart();
 
+        /*
+         * Dịch vụ dùng chung toàn ứng dụng.
+         */
         services.AddSingleton<
             DatabasePathResolver>();
 
@@ -64,25 +67,27 @@ public static class DependencyInjection
             IClock,
             SystemClock>();
 
-        /*
-         * BCrypt adapter không chứa trạng thái thay đổi.
-         */
         services.AddSingleton<
             IPasswordHasher,
             BCryptPasswordHasher>();
 
-        /*
-         * Phiên đăng nhập phải sống xuyên suốt ứng dụng.
-         */
         services.AddSingleton<
             ICurrentUserService,
             CurrentUserService>();
 
-        services.AddDbContext<
-            PosDbContext>(
-            (
-                serviceProvider,
-                optionsBuilder) =>
+        /*
+         * PermissionService chỉ đọc phiên hiện tại,
+         * không giữ DbContext hoặc dữ liệu request.
+         */
+        services.AddSingleton<
+            IPermissionService,
+            PermissionService>();
+
+        /*
+         * DbContext ngắn hạn theo từng DI scope.
+         */
+        services.AddDbContext<PosDbContext>(
+            (serviceProvider, optionsBuilder) =>
             {
                 var infrastructureOptions =
                     serviceProvider
@@ -121,14 +126,16 @@ public static class DependencyInjection
                 optionsBuilder.EnableDetailedErrors();
             });
 
+        /*
+         * Persistence transaction boundary.
+         */
         services.AddScoped<
             IUnitOfWork,
             EfUnitOfWork>();
 
-        services.AddScoped<
-            IUserRepository,
-            UserRepository>();
-
+        /*
+         * Repositories.
+         */
         services.AddScoped<
             ICategoryRepository,
             CategoryRepository>();
@@ -141,6 +148,13 @@ public static class DependencyInjection
             IInventoryMovementRepository,
             InventoryMovementRepository>();
 
+        services.AddScoped<
+            IUserRepository,
+            UserRepository>();
+
+        /*
+         * Database bootstrap.
+         */
         services.AddScoped<
             DatabaseInitializer>();
 
