@@ -13,7 +13,7 @@ using POS.Wpf.Views;
 namespace POS.Wpf;
 
 /// <summary>
-/// Composition root và vòng đời ứng dụng WPF.
+/// Composition root và quản lý vòng đời ứng dụng WPF.
 /// </summary>
 public partial class App :
     global::System.Windows.Application
@@ -24,6 +24,17 @@ public partial class App :
         global::System.Windows.StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        /*
+         * Bắt buộc giữ ứng dụng sống trong lúc đóng
+         * FirstRunSetupWindow hoặc LoginWindow.
+         *
+         * Sau khi ShellWindow được mở, chế độ shutdown
+         * sẽ được chuyển sang OnMainWindowClose.
+         */
+        ShutdownMode =
+            global::System.Windows.ShutdownMode
+                .OnExplicitShutdown;
 
         try
         {
@@ -50,7 +61,7 @@ public partial class App :
                 builder.Configuration);
 
             /*
-             * Application services.
+             * Authentication services.
              */
             builder.Services.AddScoped<
                 IInitialSetupService,
@@ -60,6 +71,9 @@ public partial class App :
                 IAuthService,
                 AuthService>();
 
+            /*
+             * Product, Category và Inventory services.
+             */
             builder.Services.AddScoped<
                 IProductService,
                 ProductService>();
@@ -124,6 +138,9 @@ public partial class App :
             builder.Services.AddTransient<
                 InventoryHistoryViewModel>();
 
+            /*
+             * Main Shell.
+             */
             builder.Services.AddTransient<
                 ShellViewModel>();
 
@@ -142,31 +159,26 @@ public partial class App :
                 await IsInitialSetupRequiredAsync(
                     _host.Services);
 
+            bool authenticationSucceeded;
+
             if (setupRequired)
             {
-                var setupCompleted =
+                authenticationSucceeded =
                     ShowInitialSetupWindow(
                         _host.Services);
-
-                if (!setupCompleted)
-                {
-                    Shutdown(0);
-
-                    return;
-                }
             }
             else
             {
-                var loginSucceeded =
+                authenticationSucceeded =
                     ShowLoginWindow(
                         _host.Services);
+            }
 
-                if (!loginSucceeded)
-                {
-                    Shutdown(0);
+            if (!authenticationSucceeded)
+            {
+                Shutdown(0);
 
-                    return;
-                }
+                return;
             }
 
             EnsureAuthenticatedSession(
@@ -215,13 +227,11 @@ public partial class App :
         base.OnExit(e);
     }
 
-    private static async Task
-        InitializeDatabaseAsync(
-            IServiceProvider serviceProvider)
+    private static async Task InitializeDatabaseAsync(
+        IServiceProvider serviceProvider)
     {
         await using var scope =
-            serviceProvider
-                .CreateAsyncScope();
+            serviceProvider.CreateAsyncScope();
 
         var initializer =
             scope.ServiceProvider
@@ -236,8 +246,7 @@ public partial class App :
             IServiceProvider serviceProvider)
     {
         await using var scope =
-            serviceProvider
-                .CreateAsyncScope();
+            serviceProvider.CreateAsyncScope();
 
         var setupService =
             scope.ServiceProvider
@@ -257,34 +266,66 @@ public partial class App :
         return result.Value;
     }
 
-    private static bool
-        ShowInitialSetupWindow(
-            IServiceProvider serviceProvider)
+    private bool ShowInitialSetupWindow(
+        IServiceProvider serviceProvider)
     {
-        var window =
+        var setupWindow =
             serviceProvider
                 .GetRequiredService<
                     FirstRunSetupWindow>();
 
-        return window.ShowDialog() ==
-               true;
+        /*
+         * Gán tạm để WPF quản lý focus và ownership,
+         * nhưng OnExplicitShutdown ngăn việc đóng dialog
+         * làm tắt toàn bộ ứng dụng.
+         */
+        MainWindow =
+            setupWindow;
+
+        var setupCompleted =
+            setupWindow.ShowDialog() ==
+            true;
+
+        /*
+         * Không giữ tham chiếu đến cửa sổ đã đóng.
+         */
+        if (ReferenceEquals(
+                MainWindow,
+                setupWindow))
+        {
+            MainWindow = null;
+        }
+
+        return setupCompleted;
     }
 
-    private static bool ShowLoginWindow(
+    private bool ShowLoginWindow(
         IServiceProvider serviceProvider)
     {
-        var window =
+        var loginWindow =
             serviceProvider
                 .GetRequiredService<
                     LoginWindow>();
 
-        return window.ShowDialog() ==
-               true;
+        MainWindow =
+            loginWindow;
+
+        var loginSucceeded =
+            loginWindow.ShowDialog() ==
+            true;
+
+        if (ReferenceEquals(
+                MainWindow,
+                loginWindow))
+        {
+            MainWindow = null;
+        }
+
+        return loginSucceeded;
     }
 
-    private static void
-        EnsureAuthenticatedSession(
-            IServiceProvider serviceProvider)
+    private static void EnsureAuthenticatedSession(
+        IServiceProvider serviceProvider)
     {
         var currentUserService =
             serviceProvider
@@ -307,26 +348,22 @@ public partial class App :
                 .GetRequiredService<
                     ShellWindow>();
 
-        shellWindow.Closed +=
-            OnShellWindowClosed;
-
+        /*
+         * Từ thời điểm này ShellWindow mới là cửa sổ chính
+         * thật sự của ứng dụng.
+         */
         MainWindow =
             shellWindow;
 
+        /*
+         * Sau khi đăng nhập thành công, đóng ShellWindow
+         * sẽ kết thúc ứng dụng theo hành vi WPF thông thường.
+         */
+        ShutdownMode =
+            global::System.Windows.ShutdownMode
+                .OnMainWindowClose;
+
         shellWindow.Show();
-    }
-
-    private void OnShellWindowClosed(
-        object? sender,
-        EventArgs e)
-    {
-        if (sender is
-            global::System.Windows.Window window)
-        {
-            window.Closed -=
-                OnShellWindowClosed;
-        }
-
-        Shutdown(0);
+        shellWindow.Activate();
     }
 }
