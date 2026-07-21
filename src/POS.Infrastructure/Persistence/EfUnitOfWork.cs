@@ -10,9 +10,11 @@ namespace POS.Infrastructure.Persistence;
 /// quản lý transaction và chuyển exception persistence
 /// thành exception độc lập với provider.
 /// </summary>
-public sealed class EfUnitOfWork : IUnitOfWork
+public sealed class EfUnitOfWork :
+    IUnitOfWork
 {
-    private const int SqliteConstraintErrorCode = 19;
+    private const int
+        SqliteConstraintErrorCode = 19;
 
     private const int
         SqliteConstraintPrimaryKeyExtendedCode = 1555;
@@ -20,7 +22,8 @@ public sealed class EfUnitOfWork : IUnitOfWork
     private const int
         SqliteConstraintUniqueExtendedCode = 2067;
 
-    private readonly PosDbContext _dbContext;
+    private readonly PosDbContext
+        _dbContext;
 
     public EfUnitOfWork(
         PosDbContext dbContext)
@@ -36,10 +39,12 @@ public sealed class EfUnitOfWork : IUnitOfWork
     {
         try
         {
-            return await _dbContext.SaveChangesAsync(
-                cancellationToken);
+            return await _dbContext
+                .SaveChangesAsync(
+                    cancellationToken);
         }
-        catch (DbUpdateConcurrencyException exception)
+        catch (
+            DbUpdateConcurrencyException exception)
         {
             throw new PersistenceConflictException(
                 PersistenceConflictKind.Concurrency,
@@ -47,7 +52,8 @@ public sealed class EfUnitOfWork : IUnitOfWork
                 target: null,
                 exception);
         }
-        catch (DbUpdateException exception)
+        catch (
+            DbUpdateException exception)
         {
             if (!TryGetUniqueConstraintTarget(
                     exception,
@@ -68,11 +74,11 @@ public sealed class EfUnitOfWork : IUnitOfWork
         BeginTransactionAsync(
             CancellationToken cancellationToken = default)
     {
-        if (_dbContext.Database.CurrentTransaction is not null)
+        if (_dbContext.Database
+            .CurrentTransaction is not null)
         {
             throw new InvalidOperationException(
-                "DbContext hiện đã có một transaction " +
-                "đang hoạt động.");
+                "DbContext hiện đã có một transaction đang hoạt động.");
         }
 
         var transaction =
@@ -84,14 +90,16 @@ public sealed class EfUnitOfWork : IUnitOfWork
             transaction);
     }
 
-    private static bool TryGetUniqueConstraintTarget(
-        DbUpdateException exception,
-        out string? target)
+    private static bool
+        TryGetUniqueConstraintTarget(
+            DbUpdateException exception,
+            out string? target)
     {
         target = null;
 
         var sqliteException =
-            FindSqliteException(exception);
+            FindSqliteException(
+                exception);
 
         if (sqliteException is null)
         {
@@ -104,9 +112,11 @@ public sealed class EfUnitOfWork : IUnitOfWork
             return false;
         }
 
-        if (sqliteException.SqliteExtendedErrorCode is not
+        if (sqliteException
+            .SqliteExtendedErrorCode is not
             (
-                SqliteConstraintUniqueExtendedCode or
+                SqliteConstraintUniqueExtendedCode
+                or
                 SqliteConstraintPrimaryKeyExtendedCode
             ))
         {
@@ -121,7 +131,8 @@ public sealed class EfUnitOfWork : IUnitOfWork
                 StringComparison.OrdinalIgnoreCase))
         {
             target =
-                PersistenceConflictTargets.ProductCode;
+                PersistenceConflictTargets
+                    .ProductCode;
 
             return true;
         }
@@ -131,7 +142,8 @@ public sealed class EfUnitOfWork : IUnitOfWork
                 StringComparison.OrdinalIgnoreCase))
         {
             target =
-                PersistenceConflictTargets.ProductBarcode;
+                PersistenceConflictTargets
+                    .ProductBarcode;
 
             return true;
         }
@@ -141,20 +153,33 @@ public sealed class EfUnitOfWork : IUnitOfWork
                 StringComparison.OrdinalIgnoreCase))
         {
             target =
-                PersistenceConflictTargets.CategoryName;
+                PersistenceConflictTargets
+                    .CategoryName;
+
+            return true;
+        }
+
+        if (message.Contains(
+                "Users.NormalizedUsername",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            target =
+                PersistenceConflictTargets
+                    .UserNormalizedUsername;
 
             return true;
         }
 
         /*
-         * Vẫn xác định đây là unique constraint,
-         * nhưng chưa biết chính xác property nghiệp vụ.
+         * Đây vẫn là unique constraint nhưng Infrastructure
+         * chưa xác định được trường nghiệp vụ cụ thể.
          */
         return true;
     }
 
-    private static SqliteException? FindSqliteException(
-        Exception exception)
+    private static SqliteException?
+        FindSqliteException(
+            Exception exception)
     {
         Exception? currentException =
             exception;

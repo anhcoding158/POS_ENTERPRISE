@@ -8,8 +8,7 @@ public enum PersistenceConflictKind
     Unknown = 0,
 
     /// <summary>
-    /// Bản ghi đã được một thao tác khác thay đổi
-    /// sau thời điểm ứng dụng tải dữ liệu.
+    /// Bản ghi đã được một thao tác khác thay đổi.
     /// </summary>
     Concurrency = 1,
 
@@ -23,7 +22,7 @@ public enum PersistenceConflictKind
 /// Các target ổn định để Infrastructure thông báo
 /// constraint nào đã bị vi phạm.
 ///
-/// Application không phụ thuộc tên bảng hoặc tên index SQLite.
+/// Application không phụ thuộc tên bảng hoặc index SQLite.
 /// </summary>
 public static class PersistenceConflictTargets
 {
@@ -35,13 +34,13 @@ public static class PersistenceConflictTargets
 
     public const string CategoryName =
         "category.name";
+
+    public const string UserNormalizedUsername =
+        "user.normalized_username";
 }
 
 /// <summary>
 /// Exception trung gian giữa Infrastructure và Application.
-///
-/// Infrastructure chuyển exception riêng của EF Core/SQLite
-/// thành exception độc lập với provider.
 /// </summary>
 public sealed class PersistenceConflictException :
     Exception
@@ -81,7 +80,8 @@ public sealed class PersistenceConflictException :
             message,
             innerException)
     {
-        if (string.IsNullOrWhiteSpace(message))
+        if (string.IsNullOrWhiteSpace(
+                message))
         {
             throw new ArgumentException(
                 "Thông báo lỗi không được để trống.",
@@ -91,15 +91,13 @@ public sealed class PersistenceConflictException :
         Kind = kind;
 
         Target =
-            string.IsNullOrWhiteSpace(target)
+            string.IsNullOrWhiteSpace(
+                target)
                 ? null
                 : target.Trim();
     }
 
     public PersistenceConflictKind Kind { get; }
 
-    /// <summary>
-    /// Trường dữ liệu gây xung đột, ví dụ product.code.
-    /// </summary>
     public string? Target { get; }
 }

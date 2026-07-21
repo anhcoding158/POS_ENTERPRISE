@@ -2,8 +2,10 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.DateTime;
 using POS.Application.Abstractions.Persistence;
+using POS.Infrastructure.Authentication;
 using POS.Infrastructure.Common;
 using POS.Infrastructure.Persistence;
 using POS.Infrastructure.Persistence.Repositories;
@@ -19,16 +21,22 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        ArgumentNullException.ThrowIfNull(services);
-        ArgumentNullException.ThrowIfNull(configuration);
+        ArgumentNullException.ThrowIfNull(
+            services);
+
+        ArgumentNullException.ThrowIfNull(
+            configuration);
 
         var infrastructureSection =
             configuration.GetSection(
-                InfrastructureOptions.SectionName);
+                InfrastructureOptions
+                    .SectionName);
 
         services
-            .AddOptions<InfrastructureOptions>()
-            .Bind(infrastructureSection)
+            .AddOptions<
+                InfrastructureOptions>()
+            .Bind(
+                infrastructureSection)
             .Validate(
                 options =>
                 {
@@ -56,8 +64,25 @@ public static class DependencyInjection
             IClock,
             SystemClock>();
 
-        services.AddDbContext<PosDbContext>(
-            (serviceProvider, optionsBuilder) =>
+        /*
+         * BCrypt adapter không chứa trạng thái thay đổi.
+         */
+        services.AddSingleton<
+            IPasswordHasher,
+            BCryptPasswordHasher>();
+
+        /*
+         * Phiên đăng nhập phải sống xuyên suốt ứng dụng.
+         */
+        services.AddSingleton<
+            ICurrentUserService,
+            CurrentUserService>();
+
+        services.AddDbContext<
+            PosDbContext>(
+            (
+                serviceProvider,
+                optionsBuilder) =>
             {
                 var infrastructureOptions =
                     serviceProvider
@@ -99,6 +124,10 @@ public static class DependencyInjection
         services.AddScoped<
             IUnitOfWork,
             EfUnitOfWork>();
+
+        services.AddScoped<
+            IUserRepository,
+            UserRepository>();
 
         services.AddScoped<
             ICategoryRepository,
