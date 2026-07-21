@@ -76,6 +76,10 @@
             Value="42" />
 
         <Setter
+            Property="MinWidth"
+            Value="74" />
+
+        <Setter
             Property="FontFamily"
             Value="Segoe UI" />
 
@@ -88,8 +92,20 @@
             Value="SemiBold" />
 
         <Setter
+            Property="HorizontalContentAlignment"
+            Value="Center" />
+
+        <Setter
+            Property="VerticalContentAlignment"
+            Value="Center" />
+
+        <Setter
             Property="Cursor"
             Value="Hand" />
+
+        <Setter
+            Property="FocusVisualStyle"
+            Value="{x:Null}" />
 
         <Setter Property="Template">
             <Setter.Value>
@@ -107,8 +123,8 @@
                         SnapsToDevicePixels="True">
 
                         <ContentPresenter
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                             RecognizesAccessKey="True" />
                     </Border>
 
@@ -137,6 +153,26 @@
                                 TargetName="ButtonBorder"
                                 Property="Background"
                                 Value="{StaticResource AccentPressedBrush}" />
+
+                            <Setter
+                                TargetName="ButtonBorder"
+                                Property="Opacity"
+                                Value="0.94" />
+                        </Trigger>
+
+                        <Trigger
+                            Property="IsKeyboardFocused"
+                            Value="True">
+
+                            <Setter
+                                TargetName="ButtonBorder"
+                                Property="BorderBrush"
+                                Value="{StaticResource GoldHoverBrush}" />
+
+                            <Setter
+                                TargetName="ButtonBorder"
+                                Property="BorderThickness"
+                                Value="1.5" />
                         </Trigger>
 
                         <Trigger
@@ -147,6 +183,10 @@
                                 TargetName="ButtonBorder"
                                 Property="Opacity"
                                 Value="0.42" />
+
+                            <Setter
+                                Property="Cursor"
+                                Value="Arrow" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -187,6 +227,10 @@
             Value="42" />
 
         <Setter
+            Property="MinWidth"
+            Value="72" />
+
+        <Setter
             Property="FontFamily"
             Value="Segoe UI" />
 
@@ -199,8 +243,20 @@
             Value="SemiBold" />
 
         <Setter
+            Property="HorizontalContentAlignment"
+            Value="Center" />
+
+        <Setter
+            Property="VerticalContentAlignment"
+            Value="Center" />
+
+        <Setter
             Property="Cursor"
             Value="Hand" />
+
+        <Setter
+            Property="FocusVisualStyle"
+            Value="{x:Null}" />
 
         <Setter Property="Template">
             <Setter.Value>
@@ -214,11 +270,13 @@
                         BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="{TemplateBinding BorderThickness}"
                         CornerRadius="9"
-                        Padding="{TemplateBinding Padding}">
+                        Padding="{TemplateBinding Padding}"
+                        SnapsToDevicePixels="True">
 
                         <ContentPresenter
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center" />
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            RecognizesAccessKey="True" />
                     </Border>
 
                     <ControlTemplate.Triggers>
@@ -249,6 +307,21 @@
                         </Trigger>
 
                         <Trigger
+                            Property="IsKeyboardFocused"
+                            Value="True">
+
+                            <Setter
+                                TargetName="ButtonBorder"
+                                Property="BorderBrush"
+                                Value="{StaticResource GoldBrush}" />
+
+                            <Setter
+                                TargetName="ButtonBorder"
+                                Property="BorderThickness"
+                                Value="1.5" />
+                        </Trigger>
+
+                        <Trigger
                             Property="IsEnabled"
                             Value="False">
 
@@ -256,6 +329,10 @@
                                 TargetName="ButtonBorder"
                                 Property="Opacity"
                                 Value="0.40" />
+
+                            <Setter
+                                Property="Cursor"
+                                Value="Arrow" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -300,6 +377,10 @@
             Value="Left" />
 
         <Setter
+            Property="VerticalContentAlignment"
+            Value="Center" />
+
+        <Setter
             Property="FontFamily"
             Value="Segoe UI" />
 
@@ -315,6 +396,10 @@
             Property="Cursor"
             Value="Hand" />
 
+        <Setter
+            Property="FocusVisualStyle"
+            Value="{x:Null}" />
+
         <Setter Property="Template">
             <Setter.Value>
 
@@ -328,8 +413,8 @@
                         Padding="{TemplateBinding Padding}">
 
                         <ContentPresenter
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center" />
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                     </Border>
 
                     <ControlTemplate.Triggers>
@@ -345,12 +430,26 @@
                         </Trigger>
 
                         <Trigger
+                            Property="IsKeyboardFocused"
+                            Value="True">
+
+                            <Setter
+                                TargetName="NavigationBorder"
+                                Property="Background"
+                                Value="{StaticResource SidebarHoverBrush}" />
+                        </Trigger>
+
+                        <Trigger
                             Property="IsEnabled"
                             Value="False">
 
                             <Setter
                                 Property="Opacity"
-                                Value="0.65" />
+                                Value="0.55" />
+
+                            <Setter
+                                Property="Cursor"
+                                Value="Arrow" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -395,6 +494,10 @@
             Value="Left" />
 
         <Setter
+            Property="VerticalContentAlignment"
+            Value="Center" />
+
+        <Setter
             Property="FontFamily"
             Value="Segoe UI" />
 
@@ -409,6 +512,10 @@
         <Setter
             Property="Cursor"
             Value="Hand" />
+
+        <Setter
+            Property="FocusVisualStyle"
+            Value="{x:Null}" />
 
         <Setter Property="Template">
             <Setter.Value>
@@ -425,8 +532,8 @@
                         Padding="{TemplateBinding Padding}">
 
                         <ContentPresenter
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center" />
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                     </Border>
 
                     <ControlTemplate.Triggers>
@@ -439,6 +546,16 @@
                                 TargetName="NavigationBorder"
                                 Property="Background"
                                 Value="{StaticResource SidebarSelectedHoverBrush}" />
+                        </Trigger>
+
+                        <Trigger
+                            Property="IsKeyboardFocused"
+                            Value="True">
+
+                            <Setter
+                                TargetName="NavigationBorder"
+                                Property="BorderBrush"
+                                Value="{StaticResource GoldBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -494,6 +611,18 @@
             Property="CaretBrush"
             Value="{StaticResource AccentBrush}" />
 
+        <Setter
+            Property="SelectionBrush"
+            Value="{StaticResource AccentSoftBrush}" />
+
+        <Setter
+            Property="SelectionTextBrush"
+            Value="{StaticResource TextPrimaryBrush}" />
+
+        <Setter
+            Property="FocusVisualStyle"
+            Value="{x:Null}" />
+
         <Setter Property="Template">
             <Setter.Value>
 
@@ -505,7 +634,8 @@
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="{TemplateBinding BorderThickness}"
-                        CornerRadius="9">
+                        CornerRadius="9"
+                        SnapsToDevicePixels="True">
 
                         <ScrollViewer
                             x:Name="PART_ContentHost"
@@ -513,6 +643,16 @@
                     </Border>
 
                     <ControlTemplate.Triggers>
+
+                        <Trigger
+                            Property="IsMouseOver"
+                            Value="True">
+
+                            <Setter
+                                TargetName="TextBoxBorder"
+                                Property="BorderBrush"
+                                Value="{StaticResource GoldBorderBrush}" />
+                        </Trigger>
 
                         <Trigger
                             Property="IsKeyboardFocused"
@@ -527,6 +667,16 @@
                                 TargetName="TextBoxBorder"
                                 Property="BorderThickness"
                                 Value="1.5" />
+                        </Trigger>
+
+                        <Trigger
+                            Property="IsReadOnly"
+                            Value="True">
+
+                            <Setter
+                                TargetName="TextBoxBorder"
+                                Property="Background"
+                                Value="{StaticResource SurfaceMutedBrush}" />
                         </Trigger>
 
                         <Trigger
@@ -555,7 +705,7 @@
     </Style>
 
     <!-- =====================================================
-         DATAGRID
+         MODERN DATAGRID
          ===================================================== -->
 
     <Style
@@ -583,6 +733,14 @@
             Value="False" />
 
         <Setter
+            Property="CanUserReorderColumns"
+            Value="False" />
+
+        <Setter
+            Property="CanUserSortColumns"
+            Value="True" />
+
+        <Setter
             Property="HeadersVisibility"
             Value="Column" />
 
@@ -599,12 +757,28 @@
             Value="{StaticResource BorderBrush}" />
 
         <Setter
+            Property="VerticalGridLinesBrush"
+            Value="Transparent" />
+
+        <Setter
             Property="Background"
             Value="{StaticResource SurfaceBrush}" />
 
         <Setter
+            Property="Foreground"
+            Value="{StaticResource TextPrimaryBrush}" />
+
+        <Setter
             Property="BorderThickness"
             Value="0" />
+
+        <Setter
+            Property="FontFamily"
+            Value="Segoe UI" />
+
+        <Setter
+            Property="FontSize"
+            Value="12.5" />
 
         <Setter
             Property="SelectionMode"
@@ -613,6 +787,57 @@
         <Setter
             Property="SelectionUnit"
             Value="FullRow" />
+
+       
+        <Setter
+            Property="MinRowHeight"
+            Value="60" />
+
+        <Setter
+            Property="ColumnHeaderHeight"
+            Value="46" />
+
+        <Setter
+            Property="HorizontalScrollBarVisibility"
+            Value="Auto" />
+
+        <Setter
+            Property="VerticalScrollBarVisibility"
+            Value="Auto" />
+
+        <Setter
+            Property="ScrollViewer.CanContentScroll"
+            Value="True" />
+
+        <Setter
+            Property="ScrollViewer.IsDeferredScrollingEnabled"
+            Value="True" />
+
+        <Setter
+            Property="EnableRowVirtualization"
+            Value="True" />
+
+        <Setter
+            Property="EnableColumnVirtualization"
+            Value="True" />
+
+        <Setter
+            Property="VirtualizingPanel.IsVirtualizing"
+            Value="True" />
+
+        <Setter
+            Property="VirtualizingPanel.VirtualizationMode"
+            Value="Recycling" />
+
+        <Setter
+            Property="SnapsToDevicePixels"
+            Value="True" />
+
+        <Setter
+            Property="FocusVisualStyle"
+            Value="{x:Null}" />
+
+        <!-- Column header -->
 
         <Setter Property="ColumnHeaderStyle">
             <Setter.Value>
@@ -638,7 +863,7 @@
 
                     <Setter
                         Property="Padding"
-                        Value="16,13" />
+                        Value="15,0" />
 
                     <Setter
                         Property="FontFamily"
@@ -646,14 +871,40 @@
 
                     <Setter
                         Property="FontSize"
-                        Value="11" />
+                        Value="11.5" />
 
                     <Setter
                         Property="FontWeight"
                         Value="SemiBold" />
+
+                    <Setter
+                        Property="HorizontalContentAlignment"
+                        Value="Stretch" />
+
+                    <Setter
+                        Property="VerticalContentAlignment"
+                        Value="Center" />
+
+                    <Setter
+                        Property="FocusVisualStyle"
+                        Value="{x:Null}" />
+
+                    <Style.Triggers>
+
+                        <Trigger
+                            Property="IsMouseOver"
+                            Value="True">
+
+                            <Setter
+                                Property="Background"
+                                Value="#F7F1E8" />
+                        </Trigger>
+                    </Style.Triggers>
                 </Style>
             </Setter.Value>
         </Setter>
+
+        <!-- Cell -->
 
         <Setter Property="CellStyle">
             <Setter.Value>
@@ -662,12 +913,20 @@
                     TargetType="{x:Type DataGridCell}">
 
                     <Setter
+                        Property="Background"
+                        Value="Transparent" />
+
+                    <Setter
                         Property="BorderThickness"
                         Value="0" />
 
                     <Setter
                         Property="Padding"
-                        Value="15,6" />
+                        Value="14,5" />
+
+                    <Setter
+                        Property="HorizontalContentAlignment"
+                        Value="Stretch" />
 
                     <Setter
                         Property="VerticalContentAlignment"
@@ -680,6 +939,10 @@
                     <Setter
                         Property="FocusVisualStyle"
                         Value="{x:Null}" />
+
+                    <Setter
+                        Property="SnapsToDevicePixels"
+                        Value="True" />
 
                     <Style.Triggers>
 
@@ -694,11 +957,30 @@
                             <Setter
                                 Property="Foreground"
                                 Value="{StaticResource TextPrimaryBrush}" />
+
+                            <Setter
+                                Property="BorderThickness"
+                                Value="0" />
+                        </Trigger>
+
+                        <Trigger
+                            Property="IsKeyboardFocusWithin"
+                            Value="True">
+
+                            <Setter
+                                Property="BorderBrush"
+                                Value="Transparent" />
+
+                            <Setter
+                                Property="BorderThickness"
+                                Value="0" />
                         </Trigger>
                     </Style.Triggers>
                 </Style>
             </Setter.Value>
         </Setter>
+
+        <!-- Row -->
 
         <Setter Property="RowStyle">
             <Setter.Value>
@@ -708,11 +990,15 @@
 
                     <Setter
                         Property="MinHeight"
-                        Value="57" />
+                        Value="60" />
 
                     <Setter
                         Property="Background"
                         Value="{StaticResource SurfaceBrush}" />
+
+                    <Setter
+                        Property="Foreground"
+                        Value="{StaticResource TextPrimaryBrush}" />
 
                     <Setter
                         Property="BorderBrush"
@@ -722,7 +1008,28 @@
                         Property="BorderThickness"
                         Value="0,0,0,1" />
 
+                    <Setter
+                        Property="VerticalContentAlignment"
+                        Value="Center" />
+
+                    <Setter
+                        Property="HorizontalContentAlignment"
+                        Value="Stretch" />
+
+                    <Setter
+                        Property="FocusVisualStyle"
+                        Value="{x:Null}" />
+
                     <Style.Triggers>
+
+                        <Trigger
+                            Property="AlternationIndex"
+                            Value="1">
+
+                            <Setter
+                                Property="Background"
+                                Value="#FFFEFCF8" />
+                        </Trigger>
 
                         <Trigger
                             Property="IsMouseOver"
@@ -744,6 +1051,10 @@
                             <Setter
                                 Property="Foreground"
                                 Value="{StaticResource TextPrimaryBrush}" />
+
+                            <Setter
+                                Property="BorderBrush"
+                                Value="{StaticResource AccentBorderBrush}" />
                         </Trigger>
                     </Style.Triggers>
                 </Style>
