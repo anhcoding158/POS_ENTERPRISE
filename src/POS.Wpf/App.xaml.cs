@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.Services;
 using POS.Application.Services;
 using POS.Infrastructure;
@@ -55,6 +56,10 @@ public partial class App :
              * không giữ DbContext suốt vòng đời cửa sổ.
              */
             builder.Services.AddScoped<
+                IAuthService,
+                AuthService>();
+
+            builder.Services.AddScoped<
                 IProductService,
                 ProductService>();
 
@@ -67,10 +72,9 @@ public partial class App :
                 InventoryService>();
 
             /*
-             * Dialog service chỉ chịu trách nhiệm tạo Window
-             * và resolve ViewModel.
+             * Dialog services chỉ chịu trách nhiệm
+             * tạo Window và resolve ViewModel.
              */
-
             builder.Services.AddSingleton<
                 IProductDialogService,
                 ProductDialogService>();
@@ -87,6 +91,9 @@ public partial class App :
                 IInventoryDialogService,
                 InventoryDialogService>();
 
+            /*
+             * Mỗi lần mở cửa sổ nhận một ViewModel mới.
+             */
             builder.Services.AddTransient<
                 ProductEditorViewModel>();
 
@@ -116,6 +123,10 @@ public partial class App :
             await InitializeDatabaseAsync(
                 _host.Services);
 
+            /*
+             * Chặng 7C sẽ thay luồng mở thẳng Shell
+             * bằng First-run Administrator và LoginWindow.
+             */
             var shellWindow =
                 _host.Services
                     .GetRequiredService<
