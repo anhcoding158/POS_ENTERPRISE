@@ -2,67 +2,44 @@
 
 	<PropertyGroup>
 		<TargetFramework>net10.0-windows</TargetFramework>
-
 		<OutputType>Exe</OutputType>
-
 		<RootNamespace>POS.Architecture.Tests</RootNamespace>
 		<AssemblyName>POS.Architecture.Tests</AssemblyName>
-
 		<IsPackable>false</IsPackable>
 		<IsTestProject>true</IsTestProject>
+
+		<!--
+      Tên test dùng dấu gạch dưới để mô tả hành vi dễ đọc.
+      Các integration test hiện tại có thời gian chạy ngắn.
+      Chỉ tắt hai cảnh báo này trong project test.
+    -->
+		<NoWarn>$(NoWarn);CA1707;xUnit1051</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
 
-		<PackageReference
-		  Include="Microsoft.NET.Test.Sdk" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" />
 
-		<PackageReference
-		  Include="xunit.v3" />
+		<PackageReference Include="xunit.v3" />
 
-		<PackageReference
-		  Include="xunit.runner.visualstudio">
-
+		<PackageReference Include="xunit.runner.visualstudio">
 			<PrivateAssets>all</PrivateAssets>
-
-			<IncludeAssets>
-				runtime;
-				build;
-				native;
-				contentfiles;
-				analyzers;
-				buildtransitive
-			</IncludeAssets>
-
+			<IncludeAssets>runtime;build;native;contentfiles;analyzers;buildtransitive</IncludeAssets>
 		</PackageReference>
 
 	</ItemGroup>
 
 	<ItemGroup>
 
-		<ProjectReference
-		  Include="..\..\src\POS.Domain\POS.Domain.csproj" />
+		<ProjectReference Include="..\..\src\POS.Domain\POS.Domain.csproj" />
 
-		<ProjectReference
-		  Include="..\..\src\POS.Application\POS.Application.csproj" />
+		<ProjectReference Include="..\..\src\POS.Application\POS.Application.csproj" />
 
-		<ProjectReference
-		  Include="..\..\src\POS.Infrastructure\POS.Infrastructure.csproj" />
+		<ProjectReference Include="..\..\src\POS.Infrastructure\POS.Infrastructure.csproj" />
 
-		<ProjectReference
-		  Include="..\..\src\POS.Wpf\POS.Wpf.csproj" />
+		<ProjectReference Include="..\..\src\POS.Wpf\POS.Wpf.csproj" />
 
 	</ItemGroup>
-
-	<!--
-  Liên kết script nằm ngoài thư mục project.
-
-  File thật vẫn nằm tại:
-  scripts/Test-QualityGate.ps1
-
-  Visual Studio sẽ hiển thị nó bên trong thư mục
-  Scripts của project test.
-  -->
 
 	<ItemGroup>
 
