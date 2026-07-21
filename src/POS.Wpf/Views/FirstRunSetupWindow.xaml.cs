@@ -1,21 +1,21 @@
-﻿using POS.Wpf.ViewModels;
+using POS.Wpf.ViewModels;
 
 namespace POS.Wpf.Views;
 
 /// <summary>
-/// Cửa sổ đăng nhập.
+/// Cửa sổ thiết lập Administrator đầu tiên.
 /// </summary>
-public partial class LoginWindow :
+public partial class FirstRunSetupWindow :
     global::System.Windows.Window
 {
-    private readonly LoginViewModel
+    private readonly FirstRunSetupViewModel
         _viewModel;
 
     private bool
-        _isSynchronizingPassword;
+        _isSynchronizingPasswords;
 
-    public LoginWindow(
-        LoginViewModel viewModel)
+    public FirstRunSetupWindow(
+        FirstRunSetupViewModel viewModel)
     {
         _viewModel =
             viewModel ??
@@ -29,9 +29,6 @@ public partial class LoginWindow :
 
         _viewModel.RequestClose +=
             OnRequestClose;
-
-        _viewModel.RequestPasswordClear +=
-            OnRequestPasswordClear;
 
         Loaded +=
             OnWindowLoaded;
@@ -53,12 +50,12 @@ public partial class LoginWindow :
         global::System.Windows
             .RoutedEventArgs e)
     {
-        if (_isSynchronizingPassword)
+        if (_isSynchronizingPasswords)
         {
             return;
         }
 
-        _isSynchronizingPassword = true;
+        _isSynchronizingPasswords = true;
 
         try
         {
@@ -79,7 +76,7 @@ public partial class LoginWindow :
         }
         finally
         {
-            _isSynchronizingPassword = false;
+            _isSynchronizingPasswords = false;
         }
     }
 
@@ -88,12 +85,12 @@ public partial class LoginWindow :
         global::System.Windows.Controls
             .TextChangedEventArgs e)
     {
-        if (_isSynchronizingPassword)
+        if (_isSynchronizingPasswords)
         {
             return;
         }
 
-        _isSynchronizingPassword = true;
+        _isSynchronizingPasswords = true;
 
         try
         {
@@ -114,62 +111,122 @@ public partial class LoginWindow :
         }
         finally
         {
-            _isSynchronizingPassword = false;
+            _isSynchronizingPasswords = false;
         }
     }
 
-    private void OnShowPasswordChecked(
+    private void OnConfirmPasswordChanged(
         object sender,
         global::System.Windows
             .RoutedEventArgs e)
     {
-        VisiblePasswordInput.Visibility =
-            global::System.Windows.Visibility
-                .Visible;
+        if (_isSynchronizingPasswords)
+        {
+            return;
+        }
 
-        PasswordInput.Visibility =
-            global::System.Windows.Visibility
-                .Collapsed;
-
-        VisiblePasswordInput.Focus();
-        VisiblePasswordInput.CaretIndex =
-            VisiblePasswordInput.Text.Length;
-    }
-
-    private void OnShowPasswordUnchecked(
-        object sender,
-        global::System.Windows
-            .RoutedEventArgs e)
-    {
-        PasswordInput.Visibility =
-            global::System.Windows.Visibility
-                .Visible;
-
-        VisiblePasswordInput.Visibility =
-            global::System.Windows.Visibility
-                .Collapsed;
-
-        PasswordInput.Focus();
-    }
-
-    private void OnRequestPasswordClear()
-    {
-        _isSynchronizingPassword = true;
+        _isSynchronizingPasswords = true;
 
         try
         {
-            PasswordInput.Clear();
-            VisiblePasswordInput.Clear();
+            var password =
+                ConfirmPasswordInput.Password;
 
-            _viewModel.UpdatePassword(
-                string.Empty);
+            if (!string.Equals(
+                    VisibleConfirmPasswordInput.Text,
+                    password,
+                    StringComparison.Ordinal))
+            {
+                VisibleConfirmPasswordInput.Text =
+                    password;
+            }
+
+            _viewModel.UpdateConfirmPassword(
+                password);
         }
         finally
         {
-            _isSynchronizingPassword = false;
+            _isSynchronizingPasswords = false;
+        }
+    }
+
+    private void OnVisibleConfirmPasswordChanged(
+        object sender,
+        global::System.Windows.Controls
+            .TextChangedEventArgs e)
+    {
+        if (_isSynchronizingPasswords)
+        {
+            return;
         }
 
-        PasswordInput.Focus();
+        _isSynchronizingPasswords = true;
+
+        try
+        {
+            var password =
+                VisibleConfirmPasswordInput.Text;
+
+            if (!string.Equals(
+                    ConfirmPasswordInput.Password,
+                    password,
+                    StringComparison.Ordinal))
+            {
+                ConfirmPasswordInput.Password =
+                    password;
+            }
+
+            _viewModel.UpdateConfirmPassword(
+                password);
+        }
+        finally
+        {
+            _isSynchronizingPasswords = false;
+        }
+    }
+
+    private void OnShowPasswordsChecked(
+        object sender,
+        global::System.Windows
+            .RoutedEventArgs e)
+    {
+        VisiblePasswordInput.Visibility =
+            global::System.Windows.Visibility
+                .Visible;
+
+        PasswordInput.Visibility =
+            global::System.Windows.Visibility
+                .Collapsed;
+
+        VisibleConfirmPasswordInput.Visibility =
+            global::System.Windows.Visibility
+                .Visible;
+
+        ConfirmPasswordInput.Visibility =
+            global::System.Windows.Visibility
+                .Collapsed;
+    }
+
+    private void OnShowPasswordsUnchecked(
+        object sender,
+        global::System.Windows
+            .RoutedEventArgs e)
+    {
+        PasswordInput.Visibility =
+            global::System.Windows.Visibility
+                .Visible;
+
+        VisiblePasswordInput.Visibility =
+            global::System.Windows.Visibility
+                .Collapsed;
+
+        ConfirmPasswordInput.Visibility =
+            global::System.Windows.Visibility
+                .Visible;
+
+        VisibleConfirmPasswordInput.Visibility =
+            global::System.Windows.Visibility
+                .Collapsed;
     }
 
     private void OnRequestClose(
@@ -185,9 +242,6 @@ public partial class LoginWindow :
     {
         _viewModel.RequestClose -=
             OnRequestClose;
-
-        _viewModel.RequestPasswordClear -=
-            OnRequestPasswordClear;
 
         Loaded -=
             OnWindowLoaded;

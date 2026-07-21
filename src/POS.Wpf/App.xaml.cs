@@ -13,7 +13,7 @@ using POS.Wpf.Views;
 namespace POS.Wpf;
 
 /// <summary>
-/// Composition root và vòng đời của ứng dụng WPF.
+/// Composition root và vòng đời ứng dụng WPF.
 /// </summary>
 public partial class App :
     global::System.Windows.Application
@@ -50,7 +50,7 @@ public partial class App :
                 builder.Configuration);
 
             /*
-             * Application services là Scoped.
+             * Application services.
              */
             builder.Services.AddScoped<
                 IInitialSetupService,
@@ -92,7 +92,22 @@ public partial class App :
                 InventoryDialogService>();
 
             /*
-             * ViewModels và Windows.
+             * Authentication ViewModels và Windows.
+             */
+            builder.Services.AddTransient<
+                FirstRunSetupViewModel>();
+
+            builder.Services.AddTransient<
+                FirstRunSetupWindow>();
+
+            builder.Services.AddTransient<
+                LoginViewModel>();
+
+            builder.Services.AddTransient<
+                LoginWindow>();
+
+            /*
+             * Product, Category và Inventory UI.
              */
             builder.Services.AddTransient<
                 ProductEditorViewModel>();
@@ -123,20 +138,42 @@ public partial class App :
             await InitializeDatabaseAsync(
                 _host.Services);
 
-            /*
-             * Chặng 7B-2 sẽ thay đoạn này bằng:
-             *
-             * FirstRunSetupWindow hoặc LoginWindow.
-             */
-            var shellWindow =
-                _host.Services
-                    .GetRequiredService<
-                        ShellWindow>();
+            var setupRequired =
+                await IsInitialSetupRequiredAsync(
+                    _host.Services);
 
-            MainWindow =
-                shellWindow;
+            if (setupRequired)
+            {
+                var setupCompleted =
+                    ShowInitialSetupWindow(
+                        _host.Services);
 
-            shellWindow.Show();
+                if (!setupCompleted)
+                {
+                    Shutdown(0);
+
+                    return;
+                }
+            }
+            else
+            {
+                var loginSucceeded =
+                    ShowLoginWindow(
+                        _host.Services);
+
+                if (!loginSucceeded)
+                {
+                    Shutdown(0);
+
+                    return;
+                }
+            }
+
+            EnsureAuthenticatedSession(
+                _host.Services);
+
+            ShowShellWindow(
+                _host.Services);
         }
         catch (Exception exception)
         {
@@ -178,11 +215,13 @@ public partial class App :
         base.OnExit(e);
     }
 
-    private static async Task InitializeDatabaseAsync(
-        IServiceProvider serviceProvider)
+    private static async Task
+        InitializeDatabaseAsync(
+            IServiceProvider serviceProvider)
     {
         await using var scope =
-            serviceProvider.CreateAsyncScope();
+            serviceProvider
+                .CreateAsyncScope();
 
         var initializer =
             scope.ServiceProvider
@@ -190,5 +229,104 @@ public partial class App :
                     DatabaseInitializer>();
 
         await initializer.InitializeAsync();
+    }
+
+    private static async Task<bool>
+        IsInitialSetupRequiredAsync(
+            IServiceProvider serviceProvider)
+    {
+        await using var scope =
+            serviceProvider
+                .CreateAsyncScope();
+
+        var setupService =
+            scope.ServiceProvider
+                .GetRequiredService<
+                    IInitialSetupService>();
+
+        var result =
+            await setupService
+                .IsSetupRequiredAsync();
+
+        if (result.IsFailure)
+        {
+            throw new InvalidOperationException(
+                result.Error.Message);
+        }
+
+        return result.Value;
+    }
+
+    private static bool
+        ShowInitialSetupWindow(
+            IServiceProvider serviceProvider)
+    {
+        var window =
+            serviceProvider
+                .GetRequiredService<
+                    FirstRunSetupWindow>();
+
+        return window.ShowDialog() ==
+               true;
+    }
+
+    private static bool ShowLoginWindow(
+        IServiceProvider serviceProvider)
+    {
+        var window =
+            serviceProvider
+                .GetRequiredService<
+                    LoginWindow>();
+
+        return window.ShowDialog() ==
+               true;
+    }
+
+    private static void
+        EnsureAuthenticatedSession(
+            IServiceProvider serviceProvider)
+    {
+        var currentUserService =
+            serviceProvider
+                .GetRequiredService<
+                    ICurrentUserService>();
+
+        if (!currentUserService
+            .IsAuthenticated)
+        {
+            throw new InvalidOperationException(
+                "Không tìm thấy phiên đăng nhập hợp lệ.");
+        }
+    }
+
+    private void ShowShellWindow(
+        IServiceProvider serviceProvider)
+    {
+        var shellWindow =
+            serviceProvider
+                .GetRequiredService<
+                    ShellWindow>();
+
+        shellWindow.Closed +=
+            OnShellWindowClosed;
+
+        MainWindow =
+            shellWindow;
+
+        shellWindow.Show();
+    }
+
+    private void OnShellWindowClosed(
+        object? sender,
+        EventArgs e)
+    {
+        if (sender is
+            global::System.Windows.Window window)
+        {
+            window.Closed -=
+                OnShellWindowClosed;
+        }
+
+        Shutdown(0);
     }
 }
