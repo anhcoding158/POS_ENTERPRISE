@@ -18,3 +18,4 @@ public interface ICheckoutService
         CheckoutRequest request,
         CancellationToken cancellationToken = default);
 }
+

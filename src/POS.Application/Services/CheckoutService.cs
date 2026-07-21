@@ -370,13 +370,22 @@ public sealed class CheckoutService :
             await _unitOfWork.SaveChangesAsync(
                 cancellationToken);
 
+            /*
+             * Tạo toàn bộ kết quả trước khi commit.
+             *
+             * Nếu DTO không thể được tạo vì dữ liệu Order thiếu hoặc sai,
+             * transaction vẫn chưa commit và DisposeAsync sẽ rollback.
+             */
+            var checkoutResult =
+                CreateResult(
+                    order,
+                    cashierName);
+
             await transaction.CommitAsync(
                 cancellationToken);
 
             return Result.Success(
-                CreateResult(
-                    order,
-                    cashierName));
+                checkoutResult);
         }
         catch (OperationCanceledException)
             when (cancellationToken.IsCancellationRequested)
