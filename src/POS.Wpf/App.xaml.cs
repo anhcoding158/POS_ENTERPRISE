@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using POS.Application.Abstractions.Authentication;
+using POS.Application.Abstractions.Authorization;
 using POS.Application.Abstractions.Services;
 using POS.Application.Services;
 using POS.Infrastructure;
@@ -74,14 +75,16 @@ public partial class App :
                 AuthService>();
 
             /*
-             * Business services.
+             * =================================================
+             * PRODUCT SERVICES
+             * =================================================
+             *
+             * ProductService thật được đăng ký bằng
+             * concrete type.
+             *
+             * Mọi nơi yêu cầu IProductService sẽ nhận
+             * AuthorizedProductService.
              */
-            /*
- * ProductService thật được đăng ký bằng concrete type.
- *
- * Mọi nơi yêu cầu IProductService sẽ nhận
- * AuthorizedProductService và không thể bỏ qua phân quyền.
- */
             builder.Services.AddScoped<
                 ProductService>();
 
@@ -95,18 +98,42 @@ public partial class App :
 
                             serviceProvider
                                 .GetRequiredService<
-                                    POS.Application
-                                        .Abstractions
-                                        .Authorization
-                                        .IPermissionService>()));
+                                    IPermissionService>()));
 
+            /*
+             * =================================================
+             * CATEGORY SERVICES
+             * =================================================
+             */
             builder.Services.AddScoped<
                 ICategoryService,
                 CategoryService>();
 
+            /*
+             * =================================================
+             * INVENTORY SERVICES
+             * =================================================
+             *
+             * InventoryService thật không được resolve
+             * thông qua IInventoryService trực tiếp.
+             *
+             * Mọi nơi yêu cầu IInventoryService sẽ nhận
+             * AuthorizedInventoryService.
+             */
             builder.Services.AddScoped<
-                IInventoryService,
                 InventoryService>();
+
+            builder.Services.AddScoped<
+                IInventoryService>(
+                    serviceProvider =>
+                        new AuthorizedInventoryService(
+                            serviceProvider
+                                .GetRequiredService<
+                                    InventoryService>(),
+
+                            serviceProvider
+                                .GetRequiredService<
+                                    IPermissionService>()));
 
             /*
              * Dialog services.
