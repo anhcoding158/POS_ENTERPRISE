@@ -1,6 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using POS.Application.Abstractions.Authentication;
+using POS.Application.Abstractions.Authorization;
+using POS.Application.Authorization;
 using POS.Domain.Enums;
+using POS.Wpf.Authorization;
 using POS.Wpf.ViewModels;
 
 namespace POS.Wpf.Views;
@@ -8,8 +11,10 @@ namespace POS.Wpf.Views;
 /// <summary>
 /// Cửa sổ chính của ứng dụng.
 ///
-/// Hiển thị phiên người dùng hiện tại và gửi yêu cầu
-/// đăng xuất về vòng đời ứng dụng.
+/// Chức năng:
+/// - hiển thị thông tin người đang đăng nhập;
+/// - phản ánh quyền người dùng lên trạng thái các nút;
+/// - xử lý đăng xuất và quay lại LoginWindow.
 /// </summary>
 public partial class ShellWindow :
     global::System.Windows.Window
@@ -20,6 +25,9 @@ public partial class ShellWindow :
     private readonly ICurrentUserService
         _currentUserService;
 
+    private readonly IPermissionService
+        _permissionService;
+
     private readonly IServiceScopeFactory
         _scopeFactory;
 
@@ -28,10 +36,12 @@ public partial class ShellWindow :
 
     private bool _logoutInProgress;
     private bool _userCardConfigured;
+    private bool _permissionsConfigured;
 
     public ShellWindow(
         ShellViewModel viewModel,
         ICurrentUserService currentUserService,
+        IPermissionService permissionService,
         IServiceScopeFactory scopeFactory)
     {
         _viewModel =
@@ -43,6 +53,11 @@ public partial class ShellWindow :
             currentUserService ??
             throw new ArgumentNullException(
                 nameof(currentUserService));
+
+        _permissionService =
+            permissionService ??
+            throw new ArgumentNullException(
+                nameof(permissionService));
 
         _scopeFactory =
             scopeFactory ??
@@ -60,12 +75,6 @@ public partial class ShellWindow :
         DataContext =
             _viewModel;
 
-        /*
-         * Không cấu hình card người dùng tại constructor.
-         *
-         * Lúc này Visual Tree của Window chưa hoàn chỉnh,
-         * nên không thể tìm thấy TextBlock trong XAML.
-         */
         Loaded +=
             OnWindowLoaded;
 
@@ -77,9 +86,9 @@ public partial class ShellWindow :
     }
 
     /// <summary>
-    /// True khi Shell đóng vì người dùng đăng xuất.
+    /// True khi Shell đóng do người dùng đăng xuất.
     ///
-    /// App sẽ mở lại LoginWindow thay vì tắt ứng dụng.
+    /// App sẽ mở LoginWindow thay vì kết thúc tiến trình.
     /// </summary>
     public bool LogoutRequested
     {
@@ -95,17 +104,135 @@ public partial class ShellWindow :
             OnWindowLoaded;
 
         /*
-         * Chờ WPF hoàn thành tạo và bố trí Visual Tree.
+         * Đợi WPF hoàn thành Visual Tree.
          *
-         * Đây là điểm sửa lỗi khiến card tài khoản trước đó
-         * vẫn hiển thị nội dung tĩnh.
+         * Các button Command và phần tử template chỉ có thể
+         * tìm thấy ổn định sau thời điểm Window Loaded.
          */
         await Dispatcher.InvokeAsync(
-            ConfigureAuthenticatedUserCard,
+            () =>
+            {
+                ConfigureAuthenticatedUserCard();
+                ConfigureRolePermissions();
+            },
             global::System.Windows.Threading
                 .DispatcherPriority.Loaded);
 
         await _viewModel.InitializeAsync();
+    }
+
+    /// <summary>
+    /// Disable những command không được phép theo role.
+    ///
+    /// Không thay thế việc phân quyền ở Application Service.
+    /// Đây chỉ là phản hồi trực quan cho người dùng.
+    /// </summary>
+    private void ConfigureRolePermissions()
+    {
+        if (_permissionsConfigured)
+        {
+            return;
+        }
+
+        var permissionState =
+            ShellPermissionState.Create(
+                _permissionService);
+
+        ApplyCommandPermission(
+            _viewModel.AddProductCommand,
+            permissionState.CanManageProducts,
+            SystemPermission.ManageProducts);
+
+        ApplyCommandPermission(
+            _viewModel.EditProductCommand,
+            permissionState.CanManageProducts,
+            SystemPermission.ManageProducts);
+
+        ApplyCommandPermission(
+            _viewModel.ToggleProductActiveCommand,
+            permissionState.CanManageProducts,
+            SystemPermission.ManageProducts);
+
+        ApplyCommandPermission(
+            _viewModel.OpenCategoryManagementCommand,
+            permissionState.CanManageCategories,
+            SystemPermission.ManageCategories);
+
+        ApplyCommandPermission(
+            _viewModel.AdjustInventoryCommand,
+            permissionState.CanAdjustInventory,
+            SystemPermission.AdjustInventory);
+
+        ApplyCommandPermission(
+            _viewModel.ViewInventoryHistoryCommand,
+            permissionState.CanViewInventoryHistory,
+            SystemPermission.ViewInventoryHistory);
+
+        _permissionsConfigured =
+            true;
+    }
+
+    private void ApplyCommandPermission(
+        global::System.Windows.Input.ICommand command,
+        bool isAllowed,
+        SystemPermission permission)
+    {
+        ArgumentNullException.ThrowIfNull(
+            command);
+
+        if (isAllowed)
+        {
+            /*
+             * Không ép IsEnabled = true.
+             *
+             * Command vẫn tự quyết định trạng thái dựa trên:
+             * - IsLoading;
+             * - sản phẩm đang chọn;
+             * - sản phẩm có theo dõi kho hay không.
+             */
+            return;
+        }
+
+        var permissionName =
+            RolePermissionPolicy.GetDisplayName(
+                permission);
+
+        var deniedMessage =
+            $"Tài khoản hiện tại không có quyền " +
+            $"{permissionName}.";
+
+        var matchingButtons =
+            FindVisualChildren<
+                    global::System.Windows.Controls.Button>(
+                    this)
+                .Where(
+                    button =>
+                        ReferenceEquals(
+                            button.Command,
+                            command))
+                .ToArray();
+
+        foreach (var button in matchingButtons)
+        {
+            button.IsEnabled =
+                false;
+
+            button.Opacity =
+                0.48;
+
+            button.Cursor =
+                global::System.Windows.Input
+                    .Cursors.Arrow;
+
+            button.ToolTip =
+                deniedMessage;
+
+            global::System.Windows.Controls
+                .ToolTipService
+                .SetShowOnDisabled(
+                    button,
+                    true);
+        }
     }
 
     private void ConfigureAuthenticatedUserCard()
@@ -134,13 +261,6 @@ public partial class ShellWindow :
         Title =
             $"POS Enterprise — {fullName}";
 
-        /*
-         * ShellWindow.xaml hiện có TextBlock:
-         *
-         * Text="Quản trị viên"
-         *
-         * Ta dùng nó làm điểm neo sau khi Window đã Loaded.
-         */
         var nameTextBlock =
             FindTextBlockByExactText(
                 this,
@@ -148,10 +268,6 @@ public partial class ShellWindow :
 
         if (nameTextBlock is null)
         {
-            /*
-             * Không đánh dấu đã cấu hình để tránh che lỗi
-             * nếu Visual Tree chưa thực sự sẵn sàng.
-             */
             return;
         }
 
@@ -215,10 +331,6 @@ public partial class ShellWindow :
             return;
         }
 
-        /*
-         * Gán Text trực tiếp sẽ thay binding LastUpdatedText
-         * đang tồn tại trong XAML.
-         */
         detailTextBlock.Text =
             string.IsNullOrWhiteSpace(
                 username)
@@ -281,7 +393,7 @@ public partial class ShellWindow :
         }
 
         /*
-         * Phần tử cuối của card hiện là biểu tượng mũi tên.
+         * Phần tử cuối ban đầu là biểu tượng mũi tên.
          */
         if (horizontalPanel.Children.Count >= 3)
         {
@@ -507,9 +619,6 @@ public partial class ShellWindow :
             LogoutRequested =
                 true;
 
-            /*
-             * Giữ tiến trình sống để App mở lại LoginWindow.
-             */
             global::System.Windows.Application
                 .Current
                 .ShutdownMode =
@@ -589,6 +698,46 @@ public partial class ShellWindow :
             _ =>
                 "Người dùng"
         };
+    }
+
+    private static IEnumerable<TControl>
+        FindVisualChildren<TControl>(
+            global::System.Windows.DependencyObject parent)
+        where TControl :
+            global::System.Windows.DependencyObject
+    {
+        ArgumentNullException.ThrowIfNull(
+            parent);
+
+        var childCount =
+            global::System.Windows.Media
+                .VisualTreeHelper
+                .GetChildrenCount(
+                    parent);
+
+        for (var index = 0;
+             index < childCount;
+             index++)
+        {
+            var child =
+                global::System.Windows.Media
+                    .VisualTreeHelper
+                    .GetChild(
+                        parent,
+                        index);
+
+            if (child is TControl matchingChild)
+            {
+                yield return matchingChild;
+            }
+
+            foreach (var descendant in
+                     FindVisualChildren<TControl>(
+                         child))
+            {
+                yield return descendant;
+            }
+        }
     }
 
     private static global::System.Windows.Controls
