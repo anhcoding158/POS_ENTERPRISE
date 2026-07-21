@@ -124,6 +124,27 @@ public partial class App :
                                     IPermissionService>()));
 
             /*
+ * Checkout core.
+ *
+ * CheckoutService là implementation thật.
+ * Mọi nơi resolve ICheckoutService sẽ nhận
+ * AuthorizedCheckoutService để enforce UseCheckout.
+ */
+            builder.Services.AddScoped<
+                CheckoutService>();
+
+            builder.Services.AddScoped<
+                ICheckoutService>(
+                    serviceProvider =>
+                        new AuthorizedCheckoutService(
+                            serviceProvider
+                                .GetRequiredService<
+                                    CheckoutService>(),
+
+                            serviceProvider
+                                .GetRequiredService<
+                                    IPermissionService>()));
+            /*
              * Dialog services.
              */
             builder.Services.AddSingleton<

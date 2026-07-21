@@ -181,14 +181,38 @@ public static class ErrorCodes
         public const string InvalidPaymentMethod =
             "CHECKOUT.INVALID_PAYMENT_METHOD";
 
+        public const string PaymentMethodNotSupported =
+            "CHECKOUT.PAYMENT_METHOD_NOT_SUPPORTED";
+
         public const string InsufficientCash =
             "CHECKOUT.INSUFFICIENT_CASH";
 
         public const string CustomerNotFound =
             "CHECKOUT.CUSTOMER_NOT_FOUND";
 
+        public const string CustomerNotSupported =
+            "CHECKOUT.CUSTOMER_NOT_SUPPORTED";
+
+        public const string RestaurantTableNotSupported =
+            "CHECKOUT.RESTAURANT_TABLE_NOT_SUPPORTED";
+
         public const string DiscountNotApplicable =
             "CHECKOUT.DISCOUNT_NOT_APPLICABLE";
+
+        public const string DiscountNotSupported =
+            "CHECKOUT.DISCOUNT_NOT_SUPPORTED";
+
+        public const string ModifiersNotSupported =
+            "CHECKOUT.MODIFIERS_NOT_SUPPORTED";
+
+        public const string LineDiscountNotSupported =
+            "CHECKOUT.LINE_DISCOUNT_NOT_SUPPORTED";
+
+        public const string OrderCodeConflict =
+            "CHECKOUT.ORDER_CODE_CONFLICT";
+
+        public const string ConcurrencyConflict =
+            "CHECKOUT.CONCURRENCY_CONFLICT";
 
         public const string SaveFailed =
             "CHECKOUT.SAVE_FAILED";

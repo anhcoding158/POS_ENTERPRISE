@@ -11,6 +11,8 @@ using POS.Infrastructure.Authentication;
 using POS.Infrastructure.Common;
 using POS.Infrastructure.Persistence;
 using POS.Infrastructure.Persistence.Repositories;
+using POS.Application.Abstractions.Orders;
+using POS.Infrastructure.Orders;
 
 namespace POS.Infrastructure;
 
@@ -66,6 +68,10 @@ public static class DependencyInjection
         services.AddSingleton<
             IClock,
             SystemClock>();
+
+        services.AddSingleton<
+            IOrderCodeGenerator,
+            OrderCodeGenerator>();
 
         services.AddSingleton<
             IPasswordHasher,
