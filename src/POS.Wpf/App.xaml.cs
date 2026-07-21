@@ -76,9 +76,29 @@ public partial class App :
             /*
              * Business services.
              */
+            /*
+ * ProductService thật được đăng ký bằng concrete type.
+ *
+ * Mọi nơi yêu cầu IProductService sẽ nhận
+ * AuthorizedProductService và không thể bỏ qua phân quyền.
+ */
             builder.Services.AddScoped<
-                IProductService,
                 ProductService>();
+
+            builder.Services.AddScoped<
+                IProductService>(
+                    serviceProvider =>
+                        new AuthorizedProductService(
+                            serviceProvider
+                                .GetRequiredService<
+                                    ProductService>(),
+
+                            serviceProvider
+                                .GetRequiredService<
+                                    POS.Application
+                                        .Abstractions
+                                        .Authorization
+                                        .IPermissionService>()));
 
             builder.Services.AddScoped<
                 ICategoryService,
