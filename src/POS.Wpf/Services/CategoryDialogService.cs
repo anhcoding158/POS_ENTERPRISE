@@ -1,15 +1,16 @@
 using Microsoft.Extensions.DependencyInjection;
+using POS.Application.Abstractions.Authorization;
+using POS.Application.Authorization;
 using POS.Wpf.ViewModels;
 using POS.Wpf.Views;
 
 namespace POS.Wpf.Services;
 
 /// <summary>
-/// WPF implementation của hộp thoại quản lý danh mục.
+/// WPF implementation của hộp thoại thêm/sửa danh mục.
 ///
-/// CategoryEditorViewModel không giữ DbContext.
-/// Mỗi thao tác tải hoặc lưu bên trong ViewModel
-/// sẽ tạo DI scope riêng.
+/// Kiểm tra quyền trước khi tạo ViewModel hoặc mở Window.
+/// Application decorator vẫn là lớp bảo vệ cuối cùng.
 /// </summary>
 public sealed class CategoryDialogService :
     ICategoryDialogService
@@ -17,18 +18,27 @@ public sealed class CategoryDialogService :
     private readonly IServiceProvider
         _serviceProvider;
 
+    private readonly IPermissionService
+        _permissionService;
+
     public CategoryDialogService(
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        IPermissionService permissionService)
     {
         _serviceProvider =
             serviceProvider ??
             throw new ArgumentNullException(
                 nameof(serviceProvider));
+
+        _permissionService =
+            permissionService ??
+            throw new ArgumentNullException(
+                nameof(permissionService));
     }
 
     public Task<bool> ShowCreateAsync()
     {
-        return ShowEditorAsync(
+        return ShowAuthorizedEditorAsync(
             categoryId: null);
     }
 
@@ -43,19 +53,31 @@ public sealed class CategoryDialogService :
                 "Mã danh mục phải lớn hơn 0.");
         }
 
-        return ShowEditorAsync(
+        return ShowAuthorizedEditorAsync(
             categoryId);
     }
 
-    private async Task<bool> ShowEditorAsync(
-        int? categoryId)
+    private async Task<bool>
+        ShowAuthorizedEditorAsync(
+            int? categoryId)
     {
+        var authorization =
+            _permissionService.Authorize(
+                SystemPermission.ManageCategories);
+
+        if (authorization.IsFailure)
+        {
+            ShowAuthorizationError(
+                authorization.Error.Message);
+
+            return false;
+        }
+
         /*
          * ViewModel là transient.
          *
          * Mỗi lần mở editor nhận một instance mới,
-         * tránh dữ liệu và validation của cửa sổ trước
-         * bị giữ lại cho lần mở tiếp theo.
+         * tránh giữ dữ liệu và validation từ cửa sổ cũ.
          */
         var viewModel =
             _serviceProvider
@@ -78,5 +100,37 @@ public sealed class CategoryDialogService :
 
         return window.ShowDialog() ==
                true;
+    }
+
+    private static void ShowAuthorizationError(
+        string message)
+    {
+        var owner =
+            global::System.Windows
+                .Application
+                .Current?
+                .MainWindow;
+
+        if (owner is null)
+        {
+            global::System.Windows.MessageBox.Show(
+                message,
+                "Không có quyền truy cập",
+                global::System.Windows
+                    .MessageBoxButton.OK,
+                global::System.Windows
+                    .MessageBoxImage.Warning);
+
+            return;
+        }
+
+        global::System.Windows.MessageBox.Show(
+            owner,
+            message,
+            "Không có quyền truy cập",
+            global::System.Windows
+                .MessageBoxButton.OK,
+            global::System.Windows
+                .MessageBoxImage.Warning);
     }
 }

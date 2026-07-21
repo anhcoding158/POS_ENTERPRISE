@@ -29,12 +29,6 @@ public partial class App :
     {
         base.OnStartup(e);
 
-        /*
-         * App tự quyết định khi nào tiến trình kết thúc.
-         *
-         * Đóng SetupWindow, LoginWindow hoặc ShellWindow
-         * không được tự động shutdown ứng dụng.
-         */
         ShutdownMode =
             global::System.Windows.ShutdownMode
                 .OnExplicitShutdown;
@@ -78,12 +72,6 @@ public partial class App :
              * =================================================
              * PRODUCT SERVICES
              * =================================================
-             *
-             * ProductService thật được đăng ký bằng
-             * concrete type.
-             *
-             * Mọi nơi yêu cầu IProductService sẽ nhận
-             * AuthorizedProductService.
              */
             builder.Services.AddScoped<
                 ProductService>();
@@ -104,21 +92,32 @@ public partial class App :
              * =================================================
              * CATEGORY SERVICES
              * =================================================
+             *
+             * CategoryService thật được đăng ký bằng
+             * concrete type.
+             *
+             * Mọi nơi yêu cầu ICategoryService sẽ nhận
+             * AuthorizedCategoryService.
              */
             builder.Services.AddScoped<
-                ICategoryService,
                 CategoryService>();
+
+            builder.Services.AddScoped<
+                ICategoryService>(
+                    serviceProvider =>
+                        new AuthorizedCategoryService(
+                            serviceProvider
+                                .GetRequiredService<
+                                    CategoryService>(),
+
+                            serviceProvider
+                                .GetRequiredService<
+                                    IPermissionService>()));
 
             /*
              * =================================================
              * INVENTORY SERVICES
              * =================================================
-             *
-             * InventoryService thật không được resolve
-             * thông qua IInventoryService trực tiếp.
-             *
-             * Mọi nơi yêu cầu IInventoryService sẽ nhận
-             * AuthorizedInventoryService.
              */
             builder.Services.AddScoped<
                 InventoryService>();
@@ -236,9 +235,6 @@ public partial class App :
 
         if (host is not null)
         {
-            /*
-             * Xóa phiên khỏi bộ nhớ khi ứng dụng kết thúc.
-             */
             var currentUserService =
                 host.Services
                     .GetService<
@@ -261,12 +257,6 @@ public partial class App :
         base.OnExit(e);
     }
 
-    /// <summary>
-    /// Vòng lặp phiên làm việc.
-    ///
-    /// Đăng xuất không tắt ứng dụng mà quay lại LoginWindow.
-    /// Đóng Shell bằng nút X mới kết thúc ứng dụng.
-    /// </summary>
     private async Task RunSessionLoopAsync(
         IServiceProvider serviceProvider)
     {
@@ -274,9 +264,6 @@ public partial class App :
             await IsInitialSetupRequiredAsync(
                 serviceProvider);
 
-        /*
-         * Chỉ chạy khi database chưa có bất kỳ User nào.
-         */
         if (setupRequired)
         {
             var setupCompleted =
@@ -292,10 +279,6 @@ public partial class App :
                 return;
             }
 
-            /*
-             * InitialSetupService tự tạo session
-             * cho Administrator vừa được tạo.
-             */
             EnsureAuthenticatedSession(
                 serviceProvider);
         }
@@ -307,9 +290,6 @@ public partial class App :
                     .GetRequiredService<
                         ICurrentUserService>();
 
-            /*
-             * Lần mở ứng dụng mới hoặc sau khi đăng xuất.
-             */
             if (!currentUserService
                 .IsAuthenticated)
             {
@@ -330,20 +310,12 @@ public partial class App :
             EnsureAuthenticatedSession(
                 serviceProvider);
 
-            /*
-             * ShowDialog giữ luồng ở đây cho đến khi
-             * ShellWindow thực sự đóng.
-             */
             var logoutRequested =
                 ShowShellWindow(
                     serviceProvider);
 
             ClearMainWindowReference();
 
-            /*
-             * Cho WPF hoàn tất tháo Window cũ khỏi
-             * visual tree trước khi mở LoginWindow mới.
-             */
             await global::System.Windows.Threading
                 .Dispatcher.Yield(
                     global::System.Windows.Threading
@@ -351,22 +323,12 @@ public partial class App :
 
             if (!logoutRequested)
             {
-                /*
-                 * Người dùng đóng Shell bằng nút X.
-                 */
                 currentUserService.Clear();
 
                 Shutdown(0);
 
                 return;
             }
-
-            /*
-             * Khi LogoutRequested = true:
-             * IAuthService.Logout đã xóa session.
-             *
-             * Vòng while chạy lại và mở LoginWindow.
-             */
         }
     }
 
@@ -374,16 +336,14 @@ public partial class App :
         IServiceProvider serviceProvider)
     {
         await using var scope =
-            serviceProvider
-                .CreateAsyncScope();
+            serviceProvider.CreateAsyncScope();
 
         var initializer =
             scope.ServiceProvider
                 .GetRequiredService<
                     DatabaseInitializer>();
 
-        await initializer
-            .InitializeAsync();
+        await initializer.InitializeAsync();
     }
 
     private static async Task<bool>
@@ -391,8 +351,7 @@ public partial class App :
             IServiceProvider serviceProvider)
     {
         await using var scope =
-            serviceProvider
-                .CreateAsyncScope();
+            serviceProvider.CreateAsyncScope();
 
         var setupService =
             scope.ServiceProvider
@@ -453,12 +412,6 @@ public partial class App :
         MainWindow =
             shellWindow;
 
-        /*
-         * Không dùng shellWindow.Show().
-         *
-         * ShowDialog giúp App chờ Shell đóng rồi mới
-         * kiểm tra người dùng muốn logout hay thoát.
-         */
         shellWindow.ShowDialog();
 
         return shellWindow
