@@ -18,7 +18,9 @@ namespace POS.Wpf;
 ///
 /// Luồng hoạt động:
 /// First-run / Remembered Login / Login
-/// → Shell → Logout → Login.
+/// → Shell
+/// → Logout
+/// → Login.
 /// </summary>
 public partial class App :
     global::System.Windows.Application
@@ -30,6 +32,13 @@ public partial class App :
     {
         base.OnStartup(e);
 
+        /*
+         * Ứng dụng chỉ tắt khi chính App gọi Shutdown.
+         *
+         * Điều này cho phép đóng LoginWindow, ShellWindow
+         * hoặc SalesWindow mà không làm ứng dụng tự kết thúc
+         * ngoài ý muốn.
+         */
         ShutdownMode =
             global::System.Windows.ShutdownMode
                 .OnExplicitShutdown;
@@ -44,166 +53,12 @@ public partial class App :
                             AppContext.BaseDirectory
                     });
 
-            builder.Configuration
-                .AddJsonFile(
-                    "appsettings.json",
-                    optional: false,
-                    reloadOnChange: true)
-                .AddJsonFile(
-                    $"appsettings." +
-                    $"{builder.Environment.EnvironmentName}.json",
-                    optional: true,
-                    reloadOnChange: true);
+            ConfigureApplicationConfiguration(
+                builder);
 
-            builder.Services.AddInfrastructure(
+            ConfigureApplicationServices(
+                builder.Services,
                 builder.Configuration);
-
-            /*
-             * Authentication services.
-             */
-            builder.Services.AddScoped<
-                IInitialSetupService,
-                InitialSetupService>();
-
-            builder.Services.AddScoped<
-                IAuthService,
-                AuthService>();
-
-            /*
-             * Product decorator.
-             */
-            builder.Services.AddScoped<
-                ProductService>();
-
-            builder.Services.AddScoped<
-                IProductService>(
-                    serviceProvider =>
-                        new AuthorizedProductService(
-                            serviceProvider
-                                .GetRequiredService<
-                                    ProductService>(),
-
-                            serviceProvider
-                                .GetRequiredService<
-                                    IPermissionService>()));
-
-            /*
-             * Category decorator.
-             */
-            builder.Services.AddScoped<
-                CategoryService>();
-
-            builder.Services.AddScoped<
-                ICategoryService>(
-                    serviceProvider =>
-                        new AuthorizedCategoryService(
-                            serviceProvider
-                                .GetRequiredService<
-                                    CategoryService>(),
-
-                            serviceProvider
-                                .GetRequiredService<
-                                    IPermissionService>()));
-
-            /*
-             * Inventory decorator.
-             */
-            builder.Services.AddScoped<
-                InventoryService>();
-
-            builder.Services.AddScoped<
-                IInventoryService>(
-                    serviceProvider =>
-                        new AuthorizedInventoryService(
-                            serviceProvider
-                                .GetRequiredService<
-                                    InventoryService>(),
-
-                            serviceProvider
-                                .GetRequiredService<
-                                    IPermissionService>()));
-
-            /*
- * Checkout core.
- *
- * CheckoutService là implementation thật.
- * Mọi nơi resolve ICheckoutService sẽ nhận
- * AuthorizedCheckoutService để enforce UseCheckout.
- */
-            builder.Services.AddScoped<
-                CheckoutService>();
-
-            builder.Services.AddScoped<
-                ICheckoutService>(
-                    serviceProvider =>
-                        new AuthorizedCheckoutService(
-                            serviceProvider
-                                .GetRequiredService<
-                                    CheckoutService>(),
-
-                            serviceProvider
-                                .GetRequiredService<
-                                    IPermissionService>()));
-            /*
-             * Dialog services.
-             */
-            builder.Services.AddSingleton<
-                IProductDialogService,
-                ProductDialogService>();
-
-            builder.Services.AddSingleton<
-                ICategoryDialogService,
-                CategoryDialogService>();
-
-            builder.Services.AddSingleton<
-                ICategoryManagementDialogService,
-                CategoryManagementDialogService>();
-
-            builder.Services.AddSingleton<
-                IInventoryDialogService,
-                InventoryDialogService>();
-
-            /*
-             * Authentication UI.
-             */
-            builder.Services.AddTransient<
-                FirstRunSetupViewModel>();
-
-            builder.Services.AddTransient<
-                FirstRunSetupWindow>();
-
-            builder.Services.AddTransient<
-                LoginViewModel>();
-
-            builder.Services.AddTransient<
-                LoginWindow>();
-
-            /*
-             * Product, Category và Inventory UI.
-             */
-            builder.Services.AddTransient<
-                ProductEditorViewModel>();
-
-            builder.Services.AddTransient<
-                CategoryEditorViewModel>();
-
-            builder.Services.AddTransient<
-                CategoryManagementViewModel>();
-
-            builder.Services.AddTransient<
-                InventoryAdjustmentViewModel>();
-
-            builder.Services.AddTransient<
-                InventoryHistoryViewModel>();
-
-            /*
-             * Main Shell.
-             */
-            builder.Services.AddTransient<
-                ShellViewModel>();
-
-            builder.Services.AddTransient<
-                ShellWindow>();
 
             _host =
                 builder.Build();
@@ -246,10 +101,11 @@ public partial class App :
         if (host is not null)
         {
             /*
-             * Chỉ xóa session RAM.
+             * Khi đóng ứng dụng bằng nút X:
              *
-             * Không xóa remembered credential khi người dùng
-             * đóng ứng dụng bằng nút X.
+             * - chỉ xóa phiên đăng nhập trong RAM;
+             * - không xóa remembered credential;
+             * - lần mở ứng dụng sau vẫn có thể tự đăng nhập.
              */
             var currentUserService =
                 host.Services
@@ -264,6 +120,15 @@ public partial class App :
                 await host.StopAsync(
                     TimeSpan.FromSeconds(5));
             }
+            catch
+            {
+                /*
+                 * Quá trình tắt host là best-effort.
+                 *
+                 * Không để lỗi dừng background service
+                 * làm ứng dụng treo trong lúc thoát.
+                 */
+            }
             finally
             {
                 host.Dispose();
@@ -273,9 +138,278 @@ public partial class App :
         base.OnExit(e);
     }
 
+    private static void
+        ConfigureApplicationConfiguration(
+            HostApplicationBuilder builder)
+    {
+        ArgumentNullException.ThrowIfNull(
+            builder);
+
+        builder.Configuration
+            .AddJsonFile(
+                "appsettings.json",
+                optional:
+                    false,
+                reloadOnChange:
+                    true)
+            .AddJsonFile(
+                $"appsettings." +
+                $"{builder.Environment.EnvironmentName}.json",
+                optional:
+                    true,
+                reloadOnChange:
+                    true);
+    }
+
+    private static void ConfigureApplicationServices(
+        IServiceCollection services,
+        IConfiguration configuration)
+    {
+        ArgumentNullException.ThrowIfNull(
+            services);
+
+        ArgumentNullException.ThrowIfNull(
+            configuration);
+
+        /*
+         * Infrastructure:
+         *
+         * - DbContext;
+         * - repositories;
+         * - Unit of Work;
+         * - authentication infrastructure;
+         * - remembered login;
+         * - permission service;
+         * - clock;
+         * - order-code generator;
+         * - database initializer.
+         */
+        services.AddInfrastructure(
+            configuration);
+
+        ConfigureAuthenticationServices(
+            services);
+
+        ConfigureApplicationServiceDecorators(
+            services);
+
+        ConfigureDialogServices(
+            services);
+
+        ConfigureViewModelsAndWindows(
+            services);
+    }
+
+    private static void
+        ConfigureAuthenticationServices(
+            IServiceCollection services)
+    {
+        /*
+         * Initial setup và authentication sử dụng scoped
+         * lifetime để dùng chung DbContext trong từng thao tác.
+         */
+        services.AddScoped<
+            IInitialSetupService,
+            InitialSetupService>();
+
+        services.AddScoped<
+            IAuthService,
+            AuthService>();
+    }
+
+    private static void
+        ConfigureApplicationServiceDecorators(
+            IServiceCollection services)
+    {
+        /*
+         * Product service.
+         *
+         * ProductService là implementation nghiệp vụ thật.
+         * IProductService luôn được resolve qua decorator
+         * để enforce quyền truy cập.
+         */
+        services.AddScoped<
+            ProductService>();
+
+        services.AddScoped<
+            IProductService>(
+                serviceProvider =>
+                    new AuthorizedProductService(
+                        serviceProvider
+                            .GetRequiredService<
+                                ProductService>(),
+
+                        serviceProvider
+                            .GetRequiredService<
+                                IPermissionService>()));
+
+        /*
+         * Category service.
+         */
+        services.AddScoped<
+            CategoryService>();
+
+        services.AddScoped<
+            ICategoryService>(
+                serviceProvider =>
+                    new AuthorizedCategoryService(
+                        serviceProvider
+                            .GetRequiredService<
+                                CategoryService>(),
+
+                        serviceProvider
+                            .GetRequiredService<
+                                IPermissionService>()));
+
+        /*
+         * Inventory service.
+         */
+        services.AddScoped<
+            InventoryService>();
+
+        services.AddScoped<
+            IInventoryService>(
+                serviceProvider =>
+                    new AuthorizedInventoryService(
+                        serviceProvider
+                            .GetRequiredService<
+                                InventoryService>(),
+
+                        serviceProvider
+                            .GetRequiredService<
+                                IPermissionService>()));
+
+        /*
+         * Checkout service.
+         *
+         * CheckoutService chịu trách nhiệm:
+         * - đọc lại giá từ database;
+         * - kiểm tra tồn kho;
+         * - tạo Order;
+         * - trừ tồn;
+         * - tạo InventoryMovement;
+         * - commit transaction.
+         *
+         * Mọi nơi resolve ICheckoutService đều nhận
+         * AuthorizedCheckoutService để enforce UseCheckout.
+         */
+        services.AddScoped<
+            CheckoutService>();
+
+        services.AddScoped<
+            ICheckoutService>(
+                serviceProvider =>
+                    new AuthorizedCheckoutService(
+                        serviceProvider
+                            .GetRequiredService<
+                                CheckoutService>(),
+
+                        serviceProvider
+                            .GetRequiredService<
+                                IPermissionService>()));
+    }
+
+    private static void ConfigureDialogServices(
+        IServiceCollection services)
+    {
+        /*
+         * Các dialog service không trực tiếp giữ DbContext.
+         *
+         * Mỗi lần mở dialog, service sẽ tạo scope phù hợp
+         * cho ViewModel và các application service bên trong.
+         */
+        services.AddSingleton<
+            IProductDialogService,
+            ProductDialogService>();
+
+        services.AddSingleton<
+            ICategoryDialogService,
+            CategoryDialogService>();
+
+        services.AddSingleton<
+            ICategoryManagementDialogService,
+            CategoryManagementDialogService>();
+
+        services.AddSingleton<
+            IInventoryDialogService,
+            InventoryDialogService>();
+
+        /*
+         * SalesWindowService được resolve trong một scope
+         * do ShellWindow tạo ra.
+         *
+         * Scope tồn tại trong toàn bộ thời gian
+         * SalesWindow.ShowDialog() đang chạy.
+         */
+        services.AddTransient<
+            ISalesWindowService,
+            SalesWindowService>();
+    }
+
+    private static void ConfigureViewModelsAndWindows(
+        IServiceCollection services)
+    {
+        /*
+         * First-run setup UI.
+         */
+        services.AddTransient<
+            FirstRunSetupViewModel>();
+
+        services.AddTransient<
+            FirstRunSetupWindow>();
+
+        /*
+         * Login UI.
+         */
+        services.AddTransient<
+            LoginViewModel>();
+
+        services.AddTransient<
+            LoginWindow>();
+
+        /*
+         * Product, Category và Inventory UI.
+         */
+        services.AddTransient<
+            ProductEditorViewModel>();
+
+        services.AddTransient<
+            CategoryEditorViewModel>();
+
+        services.AddTransient<
+            CategoryManagementViewModel>();
+
+        services.AddTransient<
+            InventoryAdjustmentViewModel>();
+
+        services.AddTransient<
+            InventoryHistoryViewModel>();
+
+        /*
+         * Premium Sales Terminal.
+         */
+        services.AddTransient<
+            SalesViewModel>();
+
+        services.AddTransient<
+            SalesWindow>();
+
+        /*
+         * Main Shell.
+         */
+        services.AddTransient<
+            ShellViewModel>();
+
+        services.AddTransient<
+            ShellWindow>();
+    }
+
     private async Task RunSessionLoopAsync(
         IServiceProvider serviceProvider)
     {
+        ArgumentNullException.ThrowIfNull(
+            serviceProvider);
+
         var setupRequired =
             await IsInitialSetupRequiredAsync(
                 serviceProvider);
@@ -301,10 +435,11 @@ public partial class App :
         else
         {
             /*
-             * Chỉ thử tự đăng nhập một lần khi ứng dụng
-             * vừa khởi động.
+             * Chỉ thử khôi phục remembered login
+             * đúng một lần khi ứng dụng khởi động.
              *
-             * Sau khi Logout, vòng while không tự khôi phục lại.
+             * Sau khi người dùng chủ động Logout,
+             * vòng lặp không tự đăng nhập lại.
              */
             await TryRestoreRememberedLoginAsync(
                 serviceProvider);
@@ -343,6 +478,10 @@ public partial class App :
 
             ClearMainWindowReference();
 
+            /*
+             * Cho Dispatcher xử lý xong các event đóng cửa sổ
+             * trước khi tiếp tục mở LoginWindow hoặc Shutdown.
+             */
             await global::System.Windows.Threading
                 .Dispatcher.Yield(
                     global::System.Windows.Threading
@@ -351,8 +490,11 @@ public partial class App :
             if (!logoutRequested)
             {
                 /*
-                 * Đóng bằng X:
-                 * chỉ xóa RAM, giữ credential 30 ngày.
+                 * Shell đóng bằng nút X:
+                 *
+                 * - xóa session RAM;
+                 * - giữ remembered credential;
+                 * - thoát ứng dụng.
                  */
                 currentUserService.Clear();
 
@@ -362,9 +504,11 @@ public partial class App :
             }
 
             /*
-             * Đăng xuất:
-             * AuthService đã xóa credential và session.
-             * Vòng lặp mở LoginWindow.
+             * Khi người dùng bấm Logout:
+             *
+             * - AuthService đã xóa remembered credential;
+             * - AuthService đã xóa current session;
+             * - vòng while tiếp tục và mở LoginWindow.
              */
         }
     }
@@ -383,8 +527,12 @@ public partial class App :
                     IAuthService>();
 
         /*
-         * Credential không tồn tại, hết hạn hoặc không hợp lệ
-         * là trạng thái bình thường; LoginWindow sẽ được mở.
+         * Credential không tồn tại, hết hạn, hỏng,
+         * tài khoản bị khóa hoặc mật khẩu đã thay đổi
+         * đều là trạng thái bình thường.
+         *
+         * Khi restore không thành công,
+         * RunSessionLoopAsync sẽ mở LoginWindow.
          */
         await authService
             .TryRestoreRememberedLoginAsync();
@@ -435,8 +583,19 @@ public partial class App :
     private bool ShowInitialSetupWindow(
         IServiceProvider serviceProvider)
     {
-        var setupWindow =
+        /*
+         * Scope tồn tại trong toàn bộ thời gian
+         * FirstRunSetupWindow đang hiển thị.
+         *
+         * Khi cửa sổ đóng, DbContext và các scoped service
+         * của bước setup được dispose ngay.
+         */
+        using var scope =
             serviceProvider
+                .CreateScope();
+
+        var setupWindow =
+            scope.ServiceProvider
                 .GetRequiredService<
                     FirstRunSetupWindow>();
 
@@ -450,8 +609,18 @@ public partial class App :
     private bool ShowLoginWindow(
         IServiceProvider serviceProvider)
     {
-        var loginWindow =
+        /*
+         * Mỗi lần mở LoginWindow có một DI scope mới.
+         *
+         * Điều này tránh việc IAuthService và DbContext
+         * bị resolve từ root provider rồi tồn tại suốt app.
+         */
+        using var scope =
             serviceProvider
+                .CreateScope();
+
+        var loginWindow =
+            scope.ServiceProvider
                 .GetRequiredService<
                     LoginWindow>();
 
@@ -465,8 +634,19 @@ public partial class App :
     private bool ShowShellWindow(
         IServiceProvider serviceProvider)
     {
-        var shellWindow =
+        /*
+         * Shell có scope riêng trong toàn bộ thời gian
+         * cửa sổ chính đang mở.
+         *
+         * Khi Shell đóng hoặc Logout, toàn bộ scoped service
+         * của phiên Shell được dispose trước khi mở phiên mới.
+         */
+        using var scope =
             serviceProvider
+                .CreateScope();
+
+        var shellWindow =
+            scope.ServiceProvider
                 .GetRequiredService<
                     ShellWindow>();
 

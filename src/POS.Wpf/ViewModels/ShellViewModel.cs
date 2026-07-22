@@ -7,6 +7,7 @@ using POS.Application.DTOs.Products;
 using POS.Wpf.Commands;
 using POS.Wpf.Services;
 
+
 namespace POS.Wpf.ViewModels;
 
 /// <summary>
@@ -507,6 +508,22 @@ public sealed class ShellViewModel :
         $"{InventoryValueOnPage.ToString(
             "N0",
             VietnameseCulture)} ₫";
+
+    /// <summary>
+    /// Đồng bộ lại catalog sau khi một module khác
+    /// có thể đã thay đổi giá hoặc tồn kho.
+    ///
+    /// Ví dụ:
+    /// - Checkout;
+    /// - nhập kho;
+    /// - đồng bộ từ máy khác.
+    /// </summary>
+    public Task<bool>
+        RefreshAfterExternalChangeAsync()
+    {
+        return LoadProductsAsync(
+            SelectedProduct?.Id);
+    }
 
     public async Task InitializeAsync()
     {

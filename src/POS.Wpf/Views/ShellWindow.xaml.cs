@@ -5,6 +5,7 @@ using POS.Application.Authorization;
 using POS.Domain.Enums;
 using POS.Wpf.Authorization;
 using POS.Wpf.ViewModels;
+using POS.Wpf.Services;
 
 namespace POS.Wpf.Views;
 
@@ -168,6 +169,17 @@ public partial class ShellWindow :
             permissionState.CanViewInventoryHistory,
             SystemPermission.ViewInventoryHistory);
 
+        var canUseCheckout =
+        _permissionService.HasPermission(
+        SystemPermission.UseCheckout);
+
+        SalesNavigationButton.IsEnabled =
+            canUseCheckout;
+
+        SalesNavigationButton.ToolTip =
+            canUseCheckout
+                ? "Mở quầy bán hàng"
+                : "Tài khoản hiện tại không có quyền thực hiện bán hàng.";
         _permissionsConfigured =
             true;
     }
@@ -787,5 +799,48 @@ public partial class ShellWindow :
         }
 
         return null;
+    }
+
+    private async void OnOpenSalesClick(
+    object sender,
+    global::System.Windows
+        .RoutedEventArgs e)
+    {
+        try
+        {
+            await using var scope =
+                _scopeFactory
+                    .CreateAsyncScope();
+
+            var salesWindowService =
+                scope.ServiceProvider
+                    .GetRequiredService<
+                        ISalesWindowService>();
+
+            await salesWindowService
+                .ShowAsync();
+
+            /*
+             * Thanh toán có thể đã thay đổi tồn kho.
+             * Yêu cầu Shell tải lại dữ liệu sau khi đóng quầy.
+             */
+            await _viewModel
+                .RefreshAfterExternalChangeAsync();
+        }
+        catch (Exception exception)
+        {
+            global::System.Windows
+                .MessageBox.Show(
+                    this,
+                    "Không thể mở quầy bán hàng.\n\n" +
+                    exception
+                        .GetBaseException()
+                        .Message,
+                    "POS Enterprise",
+                    global::System.Windows
+                        .MessageBoxButton.OK,
+                    global::System.Windows
+                        .MessageBoxImage.Error);
+        }
     }
 }
