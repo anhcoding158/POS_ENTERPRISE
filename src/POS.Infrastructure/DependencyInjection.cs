@@ -5,14 +5,16 @@ using Microsoft.Extensions.Options;
 using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.Authorization;
 using POS.Application.Abstractions.DateTime;
+using POS.Application.Abstractions.Orders;
 using POS.Application.Abstractions.Persistence;
+using POS.Application.Abstractions.Printing;
 using POS.Application.Services;
 using POS.Infrastructure.Authentication;
 using POS.Infrastructure.Common;
+using POS.Infrastructure.Orders;
 using POS.Infrastructure.Persistence;
 using POS.Infrastructure.Persistence.Repositories;
-using POS.Application.Abstractions.Orders;
-using POS.Infrastructure.Orders;
+using POS.Infrastructure.Printing;
 
 namespace POS.Infrastructure;
 
@@ -56,6 +58,38 @@ public static class DependencyInjection
                 "Cấu hình Infrastructure không hợp lệ.")
             .ValidateOnStart();
 
+        var receiptStoreSection =
+            configuration.GetSection(
+                ReceiptStoreOptions.SectionName);
+
+        /*
+         * Thông tin cửa hàng được kiểm tra ngay khi Host
+         * khởi động.
+         *
+         * WifiPassword hoặc các secret khác không thuộc
+         * ReceiptStoreOptions và không được đưa vào hóa đơn.
+         */
+        services
+            .AddOptions<ReceiptStoreOptions>()
+            .Bind(
+                receiptStoreSection)
+            .Validate(
+                options =>
+                {
+                    try
+                    {
+                        options.Validate();
+
+                        return true;
+                    }
+                    catch
+                    {
+                        return false;
+                    }
+                },
+                "Cấu hình Store dùng cho hóa đơn không hợp lệ.")
+            .ValidateOnStart();
+
         /*
          * Dịch vụ dùng chung toàn ứng dụng.
          */
@@ -92,6 +126,20 @@ public static class DependencyInjection
         services.AddSingleton<
             IPermissionService,
             PermissionService>();
+
+        /*
+         * Receipt snapshot serializer là stateless.
+         *
+         * Store provider tạo một snapshot cấu hình bất biến
+         * cho toàn bộ phiên chạy của ứng dụng.
+         */
+        services.AddSingleton<
+            IReceiptSnapshotSerializer,
+            ReceiptSnapshotJsonSerializer>();
+
+        services.AddSingleton<
+            IReceiptStoreSnapshotProvider,
+            ReceiptStoreSnapshotProvider>();
 
         /*
          * DbContext ngắn hạn theo từng DI scope.
@@ -153,7 +201,7 @@ public static class DependencyInjection
             InventoryMovementRepository>();
 
         services.AddScoped<
-             IUserRepository,
+            IUserRepository,
             UserRepository>();
 
         /*
@@ -167,8 +215,6 @@ public static class DependencyInjection
 
         services.AddScoped<
             DatabaseInitializer>();
-
-
 
         return services;
     }

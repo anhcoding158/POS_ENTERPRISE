@@ -3,9 +3,12 @@ using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.DateTime;
 using POS.Application.Abstractions.Orders;
 using POS.Application.Abstractions.Persistence;
+using POS.Application.Abstractions.Printing;
 using POS.Application.Abstractions.Services;
 using POS.Application.Common;
 using POS.Application.DTOs.Checkout;
+using POS.Application.DTOs.Printing;
+using POS.Application.Factories;
 using POS.Application.Validation;
 using POS.Domain.Common;
 using POS.Domain.Entities;
@@ -26,7 +29,12 @@ namespace POS.Application.Services;
 /// - thanh toán;
 /// - trừ kho;
 /// - tạo InventoryMovement;
-/// - lưu và commit.
+/// - lưu thay đổi;
+/// - tạo receipt snapshot bất biến;
+/// - commit transaction;
+/// - trả kết quả cho Presentation.
+///
+/// CheckoutService không preview và không gọi máy in.
 /// </summary>
 public sealed class CheckoutService :
     ICheckoutService
@@ -61,6 +69,9 @@ public sealed class CheckoutService :
     private readonly ILogger<CheckoutService>
         _logger;
 
+    private readonly IReceiptStoreSnapshotProvider?
+        _receiptStoreSnapshotProvider;
+
     public CheckoutService(
         IProductRepository productRepository,
         IOrderRepository orderRepository,
@@ -69,7 +80,9 @@ public sealed class CheckoutService :
         IOrderCodeGenerator orderCodeGenerator,
         ICurrentUserService currentUserService,
         IClock clock,
-        ILogger<CheckoutService> logger)
+        ILogger<CheckoutService> logger,
+        IReceiptStoreSnapshotProvider?
+            receiptStoreSnapshotProvider = null)
     {
         _productRepository =
             productRepository ??
@@ -110,6 +123,16 @@ public sealed class CheckoutService :
             logger ??
             throw new ArgumentNullException(
                 nameof(logger));
+
+        /*
+         * Nullable tạm thời để các unit test cũ đang tự tạo
+         * CheckoutService không bị vỡ constructor.
+         *
+         * Composition root production đã đăng ký provider,
+         * nên ứng dụng thật luôn nhận store snapshot cấu hình.
+         */
+        _receiptStoreSnapshotProvider =
+            receiptStoreSnapshotProvider;
     }
 
     public async Task<Result<CheckoutResultDto>> CheckoutAsync(
@@ -119,7 +142,8 @@ public sealed class CheckoutService :
         ArgumentNullException.ThrowIfNull(
             request);
 
-        cancellationToken.ThrowIfCancellationRequested();
+        cancellationToken
+            .ThrowIfCancellationRequested();
 
         var validation =
             CheckoutValidator.Validate(
@@ -174,9 +198,10 @@ public sealed class CheckoutService :
                     .ThrowIfCancellationRequested();
 
                 var product =
-                    await _productRepository.GetByIdAsync(
-                        requestedProduct.Key,
-                        cancellationToken);
+                    await _productRepository
+                        .GetByIdAsync(
+                            requestedProduct.Key,
+                            cancellationToken);
 
                 if (product is null)
                 {
@@ -358,9 +383,10 @@ public sealed class CheckoutService :
                         performedByUserId:
                             cashierUserId.Value);
 
-                await _inventoryMovementRepository.AddAsync(
-                    movement,
-                    cancellationToken);
+                await _inventoryMovementRepository
+                    .AddAsync(
+                        movement,
+                        cancellationToken);
             }
 
             await _orderRepository.AddAsync(
@@ -371,16 +397,38 @@ public sealed class CheckoutService :
                 cancellationToken);
 
             /*
-             * Tạo toàn bộ kết quả trước khi commit.
+             * Sau SaveChanges:
+             * - Order và OrderItem đã có database identity;
+             * - toàn bộ giá, tên và số tiền đã được chốt;
+             * - transaction vẫn chưa commit.
              *
-             * Nếu DTO không thể được tạo vì dữ liệu Order thiếu hoặc sai,
-             * transaction vẫn chưa commit và DisposeAsync sẽ rollback.
+             * Nếu tạo receipt snapshot thất bại,
+             * code sẽ đi vào catch và DisposeAsync của transaction
+             * sẽ rollback Order, tồn kho và InventoryMovement.
              */
             var checkoutResult =
                 CreateResult(
                     order,
                     cashierName);
 
+            var receiptSnapshot =
+                CreateReceiptSnapshot(
+                    checkoutResult,
+                    request.Notes);
+
+            checkoutResult =
+                checkoutResult with
+                {
+                    ReceiptSnapshot =
+                        receiptSnapshot
+                };
+
+            /*
+             * Không serialize để lưu database và không gọi máy in
+             * trong transaction ở checkpoint này.
+             *
+             * Persistence receipt sẽ là checkpoint migration riêng.
+             */
             await transaction.CommitAsync(
                 cancellationToken);
 
@@ -426,6 +474,42 @@ public sealed class CheckoutService :
                 "Không thể lưu giao dịch bán hàng. " +
                 "Không có dữ liệu dở dang được ghi nhận.");
         }
+    }
+
+    private ReceiptRequest CreateReceiptSnapshot(
+        CheckoutResultDto checkoutResult,
+        string? receiptNotes)
+    {
+        /*
+         * Provider null chỉ xảy ra ở những test cũ tự tạo
+         * CheckoutService bằng constructor.
+         *
+         * Ứng dụng production resolve qua DI và luôn đi qua
+         * overload có store snapshot đã cấu hình.
+         */
+        if (_receiptStoreSnapshotProvider is null)
+        {
+            return ReceiptSnapshotFactory.Create(
+                checkoutResult:
+                    checkoutResult,
+
+                receiptNotes:
+                    receiptNotes);
+        }
+
+        var storeSnapshot =
+            _receiptStoreSnapshotProvider
+                .GetCurrentSnapshot();
+
+        return ReceiptSnapshotFactory.Create(
+            checkoutResult:
+                checkoutResult,
+
+            store:
+                storeSnapshot,
+
+            receiptNotes:
+                receiptNotes);
     }
 
     private async Task<Result<string>>

@@ -1,9 +1,17 @@
-﻿using POS.Domain.Enums;
+﻿using POS.Application.DTOs.Printing;
+using POS.Domain.Enums;
 
 namespace POS.Application.DTOs.Checkout;
 
 /// <summary>
-/// Kết quả hoàn chỉnh sau khi giao dịch được lưu thành công.
+/// Kết quả hoàn chỉnh sau khi giao dịch được lưu
+/// và transaction đã commit thành công.
+///
+/// ReceiptSnapshot được tạo trước transaction commit,
+/// nhưng chỉ được trả cho Presentation sau khi commit thành công.
+///
+/// Việc preview hoặc in hóa đơn không thuộc trách nhiệm
+/// của CheckoutService.
 /// </summary>
 public sealed record CheckoutResultDto(
     int OrderId,
@@ -24,4 +32,20 @@ public sealed record CheckoutResultDto(
     long ChangeAmount,
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset PaidAtUtc,
-    IReadOnlyList<CheckoutLineResultDto> Lines);
+    IReadOnlyList<CheckoutLineResultDto> Lines)
+{
+    /// <summary>
+    /// Snapshot hóa đơn bất biến của giao dịch.
+    ///
+    /// CheckoutService production luôn thiết lập thuộc tính này
+    /// trước khi commit transaction.
+    ///
+    /// Nullable tạm thời để giữ tương thích với các fake service
+    /// và test cũ đang tự tạo CheckoutResultDto.
+    /// </summary>
+    public ReceiptRequest? ReceiptSnapshot
+    {
+        get;
+        init;
+    }
+}
