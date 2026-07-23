@@ -90,6 +90,37 @@ public static class DependencyInjection
                 "Cấu hình Store dùng cho hóa đơn không hợp lệ.")
             .ValidateOnStart();
 
+        var receiptPrinterSection =
+            configuration.GetSection(
+                ReceiptPrinterOptions.SectionName);
+
+        /*
+         * Hardware:PrinterName và Hardware:PaperSize
+         * được bind thành typed options.
+         *
+         * Checkpoint hiện tại chỉ hỗ trợ giấy K80.
+         */
+        services
+            .AddOptions<ReceiptPrinterOptions>()
+            .Bind(
+                receiptPrinterSection)
+            .Validate(
+                options =>
+                {
+                    try
+                    {
+                        options.Validate();
+
+                        return true;
+                    }
+                    catch
+                    {
+                        return false;
+                    }
+                },
+                "Cấu hình máy in hóa đơn không hợp lệ.")
+            .ValidateOnStart();
+
         /*
          * Dịch vụ dùng chung toàn ứng dụng.
          */
@@ -140,6 +171,19 @@ public static class DependencyInjection
         services.AddSingleton<
             IReceiptStoreSnapshotProvider,
             ReceiptStoreSnapshotProvider>();
+
+        /*
+         * Renderer không giữ state.
+         *
+         * WpfReceiptService là singleton và tự khóa để
+         * không gửi hai print job đồng thời.
+         */
+        services.AddSingleton<
+            ReceiptDocumentBuilder>();
+
+        services.AddSingleton<
+            IReceiptService,
+            WpfReceiptService>();
 
         /*
          * DbContext ngắn hạn theo từng DI scope.
