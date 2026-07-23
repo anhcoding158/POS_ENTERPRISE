@@ -5,10 +5,12 @@ using Microsoft.Extensions.Logging;
 using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.Services;
 using POS.Application.DTOs.Checkout;
+using POS.Application.DTOs.Printing;
 using POS.Application.DTOs.Products;
 using POS.Domain.Constants;
 using POS.Domain.Enums;
 using POS.Wpf.Commands;
+using POS.Wpf.Services;
 
 namespace POS.Wpf.ViewModels;
 
@@ -43,6 +45,9 @@ public sealed class SalesViewModel :
 
     private readonly ICurrentUserService
         _currentUserService;
+
+    private readonly IReceiptPreviewService
+        _receiptPreviewService;
 
     private readonly ILogger<SalesViewModel>
         _logger;
@@ -92,6 +97,7 @@ public sealed class SalesViewModel :
     public SalesViewModel(
         IServiceScopeFactory scopeFactory,
         ICurrentUserService currentUserService,
+        IReceiptPreviewService receiptPreviewService,
         ILogger<SalesViewModel> logger)
     {
         _scopeFactory =
@@ -103,6 +109,11 @@ public sealed class SalesViewModel :
             currentUserService ??
             throw new ArgumentNullException(
                 nameof(currentUserService));
+
+        _receiptPreviewService =
+            receiptPreviewService ??
+            throw new ArgumentNullException(
+                nameof(receiptPreviewService));
 
         _logger =
             logger ??
@@ -1395,6 +1406,18 @@ public sealed class SalesViewModel :
                 notes:
                     OrderNotes);
 
+        ReceiptRequest? receiptToPreview =
+            null;
+
+        string? completedOrderCode =
+            null;
+
+        string? successMessage =
+            null;
+
+        var completedOrderSessionVersion =
+            0L;
+
         IsCheckingOut = true;
 
         ShowNeutral(
@@ -1438,8 +1461,22 @@ public sealed class SalesViewModel :
             var completedOrder =
                 result.Value;
 
-            var completedOrderSessionVersion =
+            completedOrderCode =
+                completedOrder.OrderCode;
+
+            completedOrderSessionVersion =
                 ++_orderSessionVersion;
+
+            receiptToPreview =
+                completedOrder.ReceiptSnapshot;
+
+            if (receiptToPreview is null)
+            {
+                _logger.LogError(
+                    "Checkout {OrderCode} đã commit nhưng " +
+                    "không trả về receipt snapshot.",
+                    completedOrder.OrderCode);
+            }
 
             LastOrderCode =
                 completedOrder.OrderCode;
@@ -1468,7 +1505,7 @@ public sealed class SalesViewModel :
                 autoAddExactMatch:
                     false);
 
-            var successMessage =
+            successMessage =
                 $"Thanh toán thành công • " +
                 $"{completedOrder.OrderCode} • " +
                 $"{completedOrder.TotalAmount.ToString(
@@ -1477,11 +1514,6 @@ public sealed class SalesViewModel :
 
             ShowSuccess(
                 successMessage);
-
-            ScheduleLastOrderAutoDismiss(
-                completedOrder.OrderCode,
-                successMessage,
-                completedOrderSessionVersion);
         }
         catch (Exception exception)
         {
@@ -1498,6 +1530,68 @@ public sealed class SalesViewModel :
         finally
         {
             IsCheckingOut = false;
+        }
+
+        /*
+         * Receipt preview chỉ được mở sau khi:
+         * - CheckoutService đã trả success;
+         * - transaction đã commit;
+         * - overlay khóa checkout đã được gỡ.
+         *
+         * Lỗi preview hoặc lỗi máy in không được biến
+         * giao dịch đã lưu thành checkout thất bại.
+         */
+        if (receiptToPreview is not null)
+        {
+            await ShowReceiptPreviewAsync(
+                receiptToPreview);
+        }
+        else if (!string.IsNullOrWhiteSpace(
+                     completedOrderCode))
+        {
+            ShowError(
+                $"Giao dịch {completedOrderCode} đã lưu thành công " +
+                "nhưng chưa thể tạo bản xem trước hóa đơn.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(
+                completedOrderCode) &&
+            !string.IsNullOrWhiteSpace(
+                successMessage))
+        {
+            ScheduleLastOrderAutoDismiss(
+                completedOrderCode,
+                successMessage,
+                completedOrderSessionVersion);
+        }
+    }
+
+    private async Task ShowReceiptPreviewAsync(
+        ReceiptRequest receipt)
+    {
+        ArgumentNullException.ThrowIfNull(
+            receipt);
+
+        try
+        {
+            await _receiptPreviewService
+                .ShowAsync(
+                    receipt);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(
+                exception,
+                "Giao dịch {OrderCode} đã lưu nhưng " +
+                "không thể mở receipt preview.",
+                receipt.OrderCode);
+
+            ShowError(
+                $"Giao dịch {receipt.OrderCode} đã lưu thành công, " +
+                "nhưng không thể mở màn xem trước hóa đơn. " +
+                exception
+                    .GetBaseException()
+                    .Message);
         }
     }
 

@@ -335,6 +335,16 @@ public partial class App :
             InventoryDialogService>();
 
         /*
+         * ReceiptPreviewService chỉ thuộc Presentation:
+         * - hiển thị snapshot hóa đơn đã commit;
+         * - không giữ DbContext;
+         * - lỗi preview/in không rollback giao dịch.
+         */
+        services.AddSingleton<
+            IReceiptPreviewService,
+            ReceiptPreviewService>();
+
+        /*
          * SalesWindowService được resolve trong một scope
          * do ShellWindow tạo ra.
          *
