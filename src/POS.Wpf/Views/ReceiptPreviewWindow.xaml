@@ -4,14 +4,14 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Language="vi-VN"
     Title="POS Enterprise - Xem trước hóa đơn"
-    Width="1120"
-    Height="790"
-    MinWidth="940"
-    MinHeight="680"
+    Width="1380"
+    Height="900"
+    MinWidth="1100"
+    MinHeight="720"
     WindowStartupLocation="CenterOwner"
     ResizeMode="CanResize"
     ShowInTaskbar="False"
-    Background="{StaticResource AppBackgroundBrush}"
+    Background="#F4EFE7"
     FontFamily="Segoe UI"
     FontSize="12"
     TextOptions.TextFormattingMode="Display"
@@ -23,6 +23,60 @@
     Closed="OnWindowClosed">
 
     <Window.Resources>
+
+        <LinearGradientBrush
+            x:Key="ReceiptPreviewHeaderBrush"
+            StartPoint="0,0"
+            EndPoint="1,0">
+
+            <GradientStop
+                Color="#151311"
+                Offset="0" />
+
+            <GradientStop
+                Color="#1E1B18"
+                Offset="0.58" />
+
+            <GradientStop
+                Color="#171513"
+                Offset="1" />
+        </LinearGradientBrush>
+
+        <LinearGradientBrush
+            x:Key="ReceiptPreviewPanelBrush"
+            StartPoint="0,0"
+            EndPoint="1,1">
+
+            <GradientStop
+                Color="#1B1815"
+                Offset="0" />
+
+            <GradientStop
+                Color="#211D19"
+                Offset="0.6" />
+
+            <GradientStop
+                Color="#181512"
+                Offset="1" />
+        </LinearGradientBrush>
+
+        <LinearGradientBrush
+            x:Key="ReceiptPreviewTotalBrush"
+            StartPoint="0,0"
+            EndPoint="1,0">
+
+            <GradientStop
+                Color="#3A1719"
+                Offset="0" />
+
+            <GradientStop
+                Color="#4B1B1E"
+                Offset="0.55" />
+
+            <GradientStop
+                Color="#321517"
+                Offset="1" />
+        </LinearGradientBrush>
 
         <Style
             x:Key="PreviewInfoLabelStyle"
@@ -39,6 +93,10 @@
             <Setter
                 Property="FontWeight"
                 Value="SemiBold" />
+
+            <Setter
+                Property="TextOptions.TextFormattingMode"
+                Value="Display" />
         </Style>
 
         <Style
@@ -47,7 +105,7 @@
 
             <Setter
                 Property="Foreground"
-                Value="#FFF8EE" />
+                Value="#FFF9F0" />
 
             <Setter
                 Property="FontSize"
@@ -63,7 +121,7 @@
 
             <Setter
                 Property="Margin"
-                Value="0,4,0,0" />
+                Value="0,5,0,0" />
         </Style>
 
         <Style
@@ -72,11 +130,11 @@
 
             <Setter
                 Property="Background"
-                Value="#28221E" />
+                Value="#2A2521" />
 
             <Setter
                 Property="BorderBrush"
-                Value="#58493D" />
+                Value="#55483D" />
 
             <Setter
                 Property="BorderThickness"
@@ -84,11 +142,11 @@
 
             <Setter
                 Property="CornerRadius"
-                Value="12" />
+                Value="13" />
 
             <Setter
                 Property="Padding"
-                Value="14,12" />
+                Value="15,13" />
         </Style>
 
         <Style
@@ -98,33 +156,11 @@
 
             <Setter
                 Property="Height"
-                Value="48" />
+                Value="50" />
 
             <Setter
                 Property="MinWidth"
-                Value="126" />
-
-            <Setter
-                Property="Padding"
-                Value="22,0" />
-
-            <Setter
-                Property="FontSize"
-                Value="12.5" />
-        </Style>
-
-        <Style
-            x:Key="PreviewPrintButtonStyle"
-            TargetType="{x:Type Button}"
-            BasedOn="{StaticResource PrimaryButtonStyle}">
-
-            <Setter
-                Property="Height"
-                Value="48" />
-
-            <Setter
-                Property="MinWidth"
-                Value="174" />
+                Value="142" />
 
             <Setter
                 Property="Padding"
@@ -133,6 +169,119 @@
             <Setter
                 Property="FontSize"
                 Value="12.5" />
+
+            <Setter
+                Property="FontWeight"
+                Value="SemiBold" />
+        </Style>
+
+        <Style
+            x:Key="PreviewPrintButtonStyle"
+            TargetType="{x:Type Button}">
+
+            <Setter
+                Property="Height"
+                Value="50" />
+
+            <Setter
+                Property="MinWidth"
+                Value="204" />
+
+            <Setter
+                Property="Padding"
+                Value="25,0" />
+
+            <Setter
+                Property="Foreground"
+                Value="White" />
+
+            <Setter
+                Property="Background"
+                Value="#A51119" />
+
+            <Setter
+                Property="BorderBrush"
+                Value="#D2A84B" />
+
+            <Setter
+                Property="BorderThickness"
+                Value="1" />
+
+            <Setter
+                Property="Cursor"
+                Value="Hand" />
+
+            <Setter
+                Property="Template">
+
+                <Setter.Value>
+
+                    <ControlTemplate
+                        TargetType="{x:Type Button}">
+
+                        <Border
+                            x:Name="PrintButtonBorder"
+                            Padding="{TemplateBinding Padding}"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="12">
+
+                            <Border.Effect>
+
+                                <DropShadowEffect
+                                    Color="#6C0E14"
+                                    BlurRadius="15"
+                                    ShadowDepth="3"
+                                    Direction="270"
+                                    Opacity="0.25" />
+                            </Border.Effect>
+
+                            <ContentPresenter
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center" />
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+
+                            <Trigger
+                                Property="IsMouseOver"
+                                Value="True">
+
+                                <Setter
+                                    TargetName="PrintButtonBorder"
+                                    Property="Background"
+                                    Value="#BD1721" />
+
+                                <Setter
+                                    TargetName="PrintButtonBorder"
+                                    Property="BorderBrush"
+                                    Value="#E4BF68" />
+                            </Trigger>
+
+                            <Trigger
+                                Property="IsPressed"
+                                Value="True">
+
+                                <Setter
+                                    TargetName="PrintButtonBorder"
+                                    Property="Background"
+                                    Value="#861017" />
+                            </Trigger>
+
+                            <Trigger
+                                Property="IsEnabled"
+                                Value="False">
+
+                                <Setter
+                                    TargetName="PrintButtonBorder"
+                                    Property="Opacity"
+                                    Value="0.48" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
     </Window.Resources>
@@ -140,20 +289,22 @@
     <Grid>
 
         <Grid.RowDefinitions>
-            <RowDefinition Height="88" />
+            <RowDefinition Height="102" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="82" />
+            <RowDefinition Height="86" />
         </Grid.RowDefinitions>
 
-        <!-- Header -->
+        <!-- =====================================================
+             PREMIUM HEADER
+             ===================================================== -->
 
         <Border
             Grid.Row="0"
-            Background="{StaticResource SidebarBrush}"
-            BorderBrush="#745630"
+            Background="{StaticResource ReceiptPreviewHeaderBrush}"
+            BorderBrush="#8A6834"
             BorderThickness="0,0,0,1">
 
-            <Grid Margin="26,0">
+            <Grid Margin="30,0">
 
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -165,75 +316,83 @@
                     VerticalAlignment="Center">
 
                     <Grid
-                        Width="54"
-                        Height="54">
+                        Width="64"
+                        Height="64">
 
                         <Ellipse
-                            Stroke="{StaticResource GoldBrush}"
-                            StrokeThickness="1.2" />
+                            Stroke="#B98A31"
+                            StrokeThickness="1.4" />
+
+                        <Ellipse
+                            Width="48"
+                            Height="48"
+                            Stroke="#765823"
+                            StrokeThickness="1"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center" />
 
                         <Border
-                            Width="36"
-                            Height="36"
+                            Width="39"
+                            Height="39"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
-                            Background="#302923"
-                            BorderBrush="{StaticResource GoldBorderBrush}"
+                            Background="#2B251F"
+                            BorderBrush="#B98A31"
                             BorderThickness="1"
-                            CornerRadius="11">
+                            CornerRadius="12">
 
                             <TextBlock
                                 Text="&#xE749;"
                                 FontFamily="Segoe MDL2 Assets"
-                                Foreground="{StaticResource GoldHoverBrush}"
-                                FontSize="20"
+                                Foreground="#E4B956"
+                                FontSize="21"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center" />
                         </Border>
                     </Grid>
 
                     <StackPanel
-                        Margin="15,0,0,0"
+                        Margin="17,0,0,0"
                         VerticalAlignment="Center">
 
                         <TextBlock
                             Text="XEM TRƯỚC HÓA ĐƠN"
-                            Foreground="{StaticResource GoldHoverBrush}"
+                            Foreground="#E4B956"
                             FontFamily="Georgia"
-                            FontSize="22"
-                            FontWeight="SemiBold" />
+                            FontSize="27"
+                            FontWeight="Bold" />
 
                         <TextBlock
                             Text="Bản xem trước khổ K80 từ dữ liệu giao dịch đã chốt"
-                            Foreground="{StaticResource SidebarMutedBrush}"
-                            FontSize="10.5"
-                            Margin="0,5,0,0" />
+                            Foreground="#B8AEA3"
+                            FontSize="11"
+                            Margin="0,6,0,0" />
                     </StackPanel>
                 </StackPanel>
 
                 <Border
                     Grid.Column="1"
-                    Padding="12,8"
-                    Background="#28221E"
-                    BorderBrush="#594B3F"
+                    Padding="15,10"
+                    Background="#28231F"
+                    BorderBrush="#574A3E"
                     BorderThickness="1"
-                    CornerRadius="10"
+                    CornerRadius="11"
                     VerticalAlignment="Center">
 
                     <StackPanel Orientation="Horizontal">
 
                         <Ellipse
-                            Width="7"
-                            Height="7"
-                            Fill="{StaticResource SuccessBrush}"
-                            Margin="0,0,7,0"
+                            Width="8"
+                            Height="8"
+                            Fill="#3AA86C"
+                            Margin="0,0,8,0"
                             VerticalAlignment="Center" />
 
                         <TextBlock
                             x:Name="CopyKindBadgeText"
                             Text="BẢN GỐC"
-                            Foreground="{StaticResource GoldHoverBrush}"
-                            FontSize="10.5"
+                            Foreground="#E4B956"
+                            FontSize="11"
                             FontWeight="Bold"
                             VerticalAlignment="Center" />
                     </StackPanel>
@@ -241,35 +400,40 @@
             </Grid>
         </Border>
 
-        <!-- Main -->
+        <!-- =====================================================
+             MAIN WORKSPACE
+             ===================================================== -->
 
         <Grid
             Grid.Row="1"
-            Margin="18">
+            Margin="20">
 
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="316" />
+                <ColumnDefinition Width="390" />
                 <ColumnDefinition Width="18" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <!-- Transaction summary -->
+            <!-- =================================================
+                 TRANSACTION PANEL
+                 ================================================= -->
 
             <Border
                 Grid.Column="0"
-                Background="{StaticResource SidebarBrush}"
-                BorderBrush="#674F39"
+                Background="{StaticResource ReceiptPreviewPanelBrush}"
+                BorderBrush="#6B5137"
                 BorderThickness="1"
-                CornerRadius="16"
-                Padding="20">
+                CornerRadius="18"
+                Padding="24">
 
                 <Border.Effect>
+
                     <DropShadowEffect
-                        Color="#3A2418"
-                        BlurRadius="18"
-                        ShadowDepth="3"
+                        Color="#39251A"
+                        BlurRadius="20"
+                        ShadowDepth="4"
                         Direction="270"
-                        Opacity="0.15" />
+                        Opacity="0.18" />
                 </Border.Effect>
 
                 <Grid>
@@ -288,17 +452,17 @@
 
                         <TextBlock
                             Text="THÔNG TIN GIAO DỊCH"
-                            Foreground="{StaticResource GoldBrush}"
-                            FontSize="10.5"
+                            Foreground="#D5A33E"
+                            FontSize="11"
                             FontWeight="Bold" />
 
                         <TextBlock
                             Text="Hóa đơn vừa hoàn tất"
-                            Foreground="#FFF8EE"
+                            Foreground="#FFF9F0"
                             FontFamily="Georgia"
-                            FontSize="19"
-                            FontWeight="SemiBold"
-                            Margin="0,7,0,0" />
+                            FontSize="23"
+                            FontWeight="Bold"
+                            Margin="0,8,0,0" />
 
                         <TextBlock
                             Text="Dữ liệu bên dưới không đọc lại từ sản phẩm hiện tại."
@@ -306,13 +470,13 @@
                             FontSize="10.5"
                             TextWrapping="Wrap"
                             LineHeight="17"
-                            Margin="0,7,0,0" />
+                            Margin="0,8,0,0" />
                     </StackPanel>
 
                     <Border
                         Grid.Row="1"
                         Style="{StaticResource PreviewMetricCardStyle}"
-                        Margin="0,18,0,0">
+                        Margin="0,20,0,0">
 
                         <StackPanel>
 
@@ -324,16 +488,18 @@
                                 x:Name="OrderCodeText"
                                 Text="—"
                                 Style="{StaticResource PreviewInfoValueStyle}"
-                                Foreground="{StaticResource GoldHoverBrush}"
+                                Foreground="#E6B856"
                                 FontFamily="Consolas"
-                                FontSize="14" />
+                                FontSize="14"
+                                TextTrimming="CharacterEllipsis"
+                                ToolTip="{Binding RelativeSource={RelativeSource Self}, Path=Text}" />
                         </StackPanel>
                     </Border>
 
                     <Border
                         Grid.Row="2"
                         Style="{StaticResource PreviewMetricCardStyle}"
-                        Margin="0,10,0,0">
+                        Margin="0,11,0,0">
 
                         <Grid>
 
@@ -352,12 +518,19 @@
                                     x:Name="PaidAtText"
                                     Text="—"
                                     Style="{StaticResource PreviewInfoValueStyle}"
-                                    FontSize="11.5" />
+                                    FontSize="12" />
                             </StackPanel>
+
+                            <Border
+                                Grid.Column="1"
+                                Width="1"
+                                Background="#50443A"
+                                HorizontalAlignment="Left"
+                                Margin="0,0,14,0" />
 
                             <StackPanel
                                 Grid.Column="1"
-                                Margin="12,0,0,0">
+                                Margin="15,0,0,0">
 
                                 <TextBlock
                                     Text="THU NGÂN"
@@ -367,7 +540,7 @@
                                     x:Name="CashierText"
                                     Text="—"
                                     Style="{StaticResource PreviewInfoValueStyle}"
-                                    FontSize="11.5" />
+                                    FontSize="12" />
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -375,7 +548,7 @@
                     <Border
                         Grid.Row="3"
                         Style="{StaticResource PreviewMetricCardStyle}"
-                        Margin="0,10,0,0">
+                        Margin="0,11,0,0">
 
                         <Grid>
 
@@ -396,9 +569,16 @@
                                     Style="{StaticResource PreviewInfoValueStyle}" />
                             </StackPanel>
 
+                            <Border
+                                Grid.Column="1"
+                                Width="1"
+                                Background="#50443A"
+                                HorizontalAlignment="Left"
+                                Margin="0,0,14,0" />
+
                             <StackPanel
                                 Grid.Column="1"
-                                Margin="12,0,0,0">
+                                Margin="15,0,0,0">
 
                                 <TextBlock
                                     Text="THANH TOÁN"
@@ -408,19 +588,19 @@
                                     x:Name="PaymentMethodText"
                                     Text="—"
                                     Style="{StaticResource PreviewInfoValueStyle}"
-                                    FontSize="11.5" />
+                                    FontSize="12" />
                             </StackPanel>
                         </Grid>
                     </Border>
 
                     <Border
                         Grid.Row="4"
-                        Margin="0,12,0,0"
-                        Padding="15,13"
-                        Background="#3A1719"
-                        BorderBrush="#7A3035"
+                        Margin="0,14,0,0"
+                        Padding="17,15"
+                        Background="{StaticResource ReceiptPreviewTotalBrush}"
+                        BorderBrush="#803138"
                         BorderThickness="1"
-                        CornerRadius="12">
+                        CornerRadius="13">
 
                         <Grid>
 
@@ -436,7 +616,7 @@
                                     Text="Đã được transaction xác nhận"
                                     Foreground="#A98B8A"
                                     FontSize="9.5"
-                                    Margin="0,4,0,0" />
+                                    Margin="0,5,0,0" />
                             </StackPanel>
 
                             <TextBlock
@@ -444,7 +624,7 @@
                                 Text="0 ₫"
                                 Foreground="#FFE2A8"
                                 FontFamily="Georgia"
-                                FontSize="23"
+                                FontSize="26"
                                 FontWeight="Bold"
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Center" />
@@ -457,45 +637,65 @@
 
                         <Border
                             Height="1"
-                            Background="#4C4038"
-                            Margin="0,0,0,14" />
+                            Background="#4E433A"
+                            Margin="0,0,0,15" />
 
-                        <StackPanel Orientation="Horizontal">
+                        <Grid>
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border
+                                Width="31"
+                                Height="31"
+                                Background="#153A29"
+                                BorderBrush="#2B7652"
+                                BorderThickness="1"
+                                CornerRadius="9"
+                                VerticalAlignment="Top">
+
+                                <TextBlock
+                                    Text="&#xE72E;"
+                                    FontFamily="Segoe MDL2 Assets"
+                                    Foreground="#4BC47F"
+                                    FontSize="13"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center" />
+                            </Border>
 
                             <TextBlock
-                                Text="&#xE72E;"
-                                FontFamily="Segoe MDL2 Assets"
-                                Foreground="{StaticResource SuccessBrush}"
-                                FontSize="13"
-                                Margin="0,0,8,0"
-                                VerticalAlignment="Top" />
-
-                            <TextBlock
+                                Grid.Column="1"
                                 Text="Lỗi xem trước hoặc lỗi máy in không làm đảo ngược giao dịch đã lưu."
                                 Foreground="#AFA49A"
-                                FontSize="10"
+                                FontSize="10.5"
                                 TextWrapping="Wrap"
-                                LineHeight="16"
-                                Width="235" />
-                        </StackPanel>
+                                LineHeight="17"
+                                Margin="11,0,0,0"
+                                VerticalAlignment="Center" />
+                        </Grid>
                     </StackPanel>
                 </Grid>
             </Border>
 
-            <!-- Receipt paper preview -->
+            <!-- =================================================
+                 RECEIPT PREVIEW CANVAS
+                 ================================================= -->
 
             <Border
                 Grid.Column="2"
-                Background="#E8E0D4"
-                BorderBrush="#D1C4B3"
+                Background="#EDE5DA"
+                BorderBrush="#D4C7B6"
                 BorderThickness="1"
-                CornerRadius="16"
-                Padding="20">
+                CornerRadius="18"
+                Padding="24">
 
                 <Border.Effect>
+
                     <DropShadowEffect
                         Color="#4B3327"
-                        BlurRadius="18"
+                        BlurRadius="20"
                         ShadowDepth="3"
                         Direction="270"
                         Opacity="0.12" />
@@ -508,68 +708,71 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <Grid Margin="2,0,2,13">
+                    <Grid Margin="3,0,3,16">
 
                         <StackPanel>
 
                             <TextBlock
                                 Text="BẢN XEM TRƯỚC KHỔ K80"
-                                Foreground="{StaticResource TextPrimaryBrush}"
-                                FontSize="11"
+                                Foreground="#2D2925"
+                                FontSize="12"
                                 FontWeight="Bold" />
 
                             <TextBlock
                                 Text="Nội dung hiển thị bên dưới chính là tài liệu được gửi tới máy in."
-                                Foreground="{StaticResource TextSecondaryBrush}"
+                                Foreground="#756C64"
                                 FontSize="10.5"
-                                Margin="0,4,0,0" />
+                                Margin="0,5,0,0" />
                         </StackPanel>
 
                         <Border
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
-                            Padding="9,5"
-                            Background="{StaticResource SurfaceBrush}"
-                            BorderBrush="{StaticResource BorderStrongBrush}"
+                            Padding="11,7"
+                            Background="#FFFDFC"
+                            BorderBrush="#D9CCBC"
                             BorderThickness="1"
-                            CornerRadius="8">
+                            CornerRadius="9">
 
                             <StackPanel Orientation="Horizontal">
 
                                 <TextBlock
                                     Text="&#xE8A5;"
                                     FontFamily="Segoe MDL2 Assets"
-                                    Foreground="{StaticResource GoldBrush}"
-                                    FontSize="12"
-                                    Margin="0,0,6,0" />
+                                    Foreground="#C39232"
+                                    FontSize="13"
+                                    Margin="0,0,7,0"
+                                    VerticalAlignment="Center" />
 
                                 <TextBlock
                                     Text="80 MM"
-                                    Foreground="{StaticResource TextSecondaryBrush}"
-                                    FontSize="10"
-                                    FontWeight="SemiBold" />
+                                    Foreground="#6E655D"
+                                    FontSize="10.5"
+                                    FontWeight="SemiBold"
+                                    VerticalAlignment="Center" />
                             </StackPanel>
                         </Border>
                     </Grid>
 
                     <Border
                         Grid.Row="1"
-                        Width="430"
-                        MaxWidth="510"
+                        Width="510"
+                        MaxWidth="570"
                         HorizontalAlignment="Center"
                         Background="White"
-                        BorderBrush="#D3CCC2"
+                        BorderBrush="#D1C8BD"
                         BorderThickness="1"
-                        CornerRadius="5"
-                        Padding="1">
+                        CornerRadius="6"
+                        Padding="2">
 
                         <Border.Effect>
+
                             <DropShadowEffect
-                                Color="#584536"
-                                BlurRadius="18"
-                                ShadowDepth="4"
+                                Color="#5B4737"
+                                BlurRadius="22"
+                                ShadowDepth="5"
                                 Direction="270"
-                                Opacity="0.18" />
+                                Opacity="0.2" />
                         </Border.Effect>
 
                         <FlowDocumentScrollViewer
@@ -580,23 +783,25 @@
                             IsSelectionEnabled="True"
                             VerticalScrollBarVisibility="Auto"
                             HorizontalScrollBarVisibility="Disabled"
-                            Zoom="100"
-                            MinZoom="80"
-                            MaxZoom="160" />
+                            Zoom="125"
+                            MinZoom="90"
+                            MaxZoom="180" />
                     </Border>
                 </Grid>
             </Border>
         </Grid>
 
-        <!-- Action bar -->
+        <!-- =====================================================
+             ACTION BAR
+             ===================================================== -->
 
         <Border
             Grid.Row="2"
-            Background="{StaticResource SurfaceBrush}"
-            BorderBrush="{StaticResource BorderBrush}"
+            Background="#FFFEFC"
+            BorderBrush="#DED3C5"
             BorderThickness="0,1,0,0">
 
-            <Grid Margin="24,0">
+            <Grid Margin="28,0">
 
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -605,10 +810,10 @@
 
                 <Border
                     x:Name="StatusBorder"
-                    MaxWidth="630"
+                    MaxWidth="680"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center"
-                    Padding="12,9"
+                    Padding="13,10"
                     Background="{StaticResource GoldSoftBrush}"
                     BorderBrush="{StaticResource GoldBorderBrush}"
                     BorderThickness="1"
@@ -626,12 +831,12 @@
                             Text="&#xE946;"
                             FontFamily="Segoe MDL2 Assets"
                             Foreground="{StaticResource GoldBrush}"
-                            FontSize="14"
+                            FontSize="15"
                             VerticalAlignment="Center" />
 
                         <StackPanel
                             Grid.Column="1"
-                            Margin="9,0,0,0"
+                            Margin="10,0,0,0"
                             VerticalAlignment="Center">
 
                             <TextBlock
@@ -663,7 +868,7 @@
                         Content="ĐÓNG"
                         Style="{StaticResource PreviewCloseButtonStyle}"
                         Click="OnCloseClick"
-                        Margin="0,0,10,0" />
+                        Margin="0,0,12,0" />
 
                     <Button
                         x:Name="PrintButton"
@@ -675,8 +880,8 @@
                             <TextBlock
                                 Text="&#xE749;"
                                 FontFamily="Segoe MDL2 Assets"
-                                FontSize="16"
-                                Margin="0,0,9,0"
+                                FontSize="17"
+                                Margin="0,0,10,0"
                                 VerticalAlignment="Center" />
 
                             <StackPanel>
@@ -684,7 +889,7 @@
                                 <TextBlock
                                     x:Name="PrintButtonTitleText"
                                     Text="IN HÓA ĐƠN"
-                                    FontSize="12.5"
+                                    FontSize="13"
                                     FontWeight="SemiBold"
                                     HorizontalAlignment="Center" />
 
@@ -701,77 +906,80 @@
             </Grid>
         </Border>
 
-        <!-- Printing lock -->
+        <!-- =====================================================
+             PRINTING OVERLAY
+             ===================================================== -->
 
         <Border
             x:Name="PrintingOverlay"
             Grid.RowSpan="3"
             Panel.ZIndex="999"
-            Background="#91F7F2EA"
+            Background="#A8F7F2EA"
             Visibility="Collapsed">
 
             <Border
-                Width="350"
-                Padding="25"
+                Width="370"
+                Padding="28"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                Background="{StaticResource SurfaceBrush}"
-                BorderBrush="{StaticResource GoldBorderBrush}"
+                Background="#FFFEFC"
+                BorderBrush="#C9A451"
                 BorderThickness="1"
-                CornerRadius="17">
+                CornerRadius="18">
 
                 <Border.Effect>
+
                     <DropShadowEffect
                         Color="#392317"
-                        BlurRadius="28"
-                        ShadowDepth="4"
+                        BlurRadius="30"
+                        ShadowDepth="5"
                         Direction="270"
-                        Opacity="0.25" />
+                        Opacity="0.27" />
                 </Border.Effect>
 
                 <StackPanel>
 
                     <Border
-                        Width="58"
-                        Height="58"
+                        Width="62"
+                        Height="62"
                         HorizontalAlignment="Center"
-                        Background="{StaticResource GoldSoftBrush}"
-                        BorderBrush="{StaticResource GoldBorderBrush}"
+                        Background="#FFF5DD"
+                        BorderBrush="#D8B45F"
                         BorderThickness="1"
-                        CornerRadius="17">
+                        CornerRadius="18">
 
                         <TextBlock
                             Text="&#xE749;"
                             FontFamily="Segoe MDL2 Assets"
-                            Foreground="{StaticResource GoldBrush}"
-                            FontSize="25"
+                            Foreground="#B88427"
+                            FontSize="27"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center" />
                     </Border>
 
                     <TextBlock
                         Text="ĐANG GỬI HÓA ĐƠN"
-                        Foreground="{StaticResource TextPrimaryBrush}"
+                        Foreground="#2B2723"
                         FontFamily="Georgia"
-                        FontSize="17"
-                        FontWeight="SemiBold"
+                        FontSize="19"
+                        FontWeight="Bold"
                         HorizontalAlignment="Center"
-                        Margin="0,16,0,0" />
+                        Margin="0,17,0,0" />
 
                     <TextBlock
                         Text="Vui lòng không đóng cửa sổ hoặc bấm in lần nữa."
-                        Foreground="{StaticResource TextSecondaryBrush}"
+                        Foreground="#746B63"
                         FontSize="10.5"
                         TextAlignment="Center"
                         TextWrapping="Wrap"
-                        Margin="0,8,0,0" />
+                        Margin="0,9,0,0" />
 
                     <ProgressBar
                         Height="5"
-                        Margin="16,18,16,0"
+                        Margin="18,20,18,0"
                         IsIndeterminate="True"
-                        Foreground="{StaticResource AccentBrush}"
-                        Background="{StaticResource AccentSoftBrush}" />
+                        Foreground="#A51119"
+                        Background="#F0D9DA" />
                 </StackPanel>
             </Border>
         </Border>

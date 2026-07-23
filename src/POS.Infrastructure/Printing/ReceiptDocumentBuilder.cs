@@ -38,11 +38,11 @@ public sealed class ReceiptDocumentBuilder
         K80PageWidth -
         (K80HorizontalMargin * 2);
 
-    private const double BaseFontSize = 10.5;
-    private const double SmallFontSize = 9;
+    private const double BaseFontSize = 9.7;
+    private const double SmallFontSize = 8.4;
     private const double StoreNameFontSize = 15;
-    private const double ReceiptTitleFontSize = 13;
-    private const double TotalFontSize = 13;
+    private const double ReceiptTitleFontSize = 13.5;
+    private const double TotalFontSize = 14.5;
 
     private static readonly CultureInfo
         VietnameseCulture =
@@ -55,9 +55,44 @@ public sealed class ReceiptDocumentBuilder
                 "Segoe UI");
 
     private static readonly FontFamily
-        SeparatorFontFamily =
+        BrandFontFamily =
             new(
-                "Consolas");
+                "Georgia");
+
+    private static readonly Brush
+        ReceiptTextBrush =
+            CreateFrozenBrush(
+                40,
+                36,
+                32);
+
+    private static readonly Brush
+        ReceiptMutedBrush =
+            CreateFrozenBrush(
+                101,
+                94,
+                86);
+
+    private static readonly Brush
+        ReceiptGoldBrush =
+            CreateFrozenBrush(
+                177,
+                128,
+                35);
+
+    private static readonly Brush
+        ReceiptGoldSoftBrush =
+            CreateFrozenBrush(
+                248,
+                240,
+                219);
+
+    private static readonly Brush
+        ReceiptRuleBrush =
+            CreateFrozenBrush(
+                168,
+                158,
+                147);
 
     /// <summary>
     /// Dựng tài liệu hóa đơn K80.
@@ -81,7 +116,18 @@ public sealed class ReceiptDocumentBuilder
         var document =
             CreateDocument();
 
-        AddStoreHeader(
+        AddBrandHeader(
+            document,
+            request);
+
+        AddHorizontalRule(
+            document,
+            topMargin:
+                4,
+            bottomMargin:
+                6);
+
+        AddReceiptTitle(
             document,
             request);
 
@@ -93,21 +139,16 @@ public sealed class ReceiptDocumentBuilder
             document,
             request);
 
-        AddSeparator(
-            document);
+        AddHorizontalRule(
+            document,
+            topMargin:
+                5,
+            bottomMargin:
+                5);
 
-        AddLineHeader(
-            document);
-
-        foreach (var line in request.Lines)
-        {
-            AddReceiptLine(
-                document,
-                line);
-        }
-
-        AddSeparator(
-            document);
+        AddLineItems(
+            document,
+            request);
 
         AddTotals(
             document,
@@ -151,7 +192,7 @@ public sealed class ReceiptDocumentBuilder
                 BaseFontSize,
 
             Foreground =
-                Brushes.Black,
+                ReceiptTextBrush,
 
             Background =
                 Brushes.White,
@@ -160,39 +201,198 @@ public sealed class ReceiptDocumentBuilder
                 LineStackingStrategy.BlockLineHeight,
 
             LineHeight =
-                15,
+                14,
 
             TextAlignment =
                 TextAlignment.Left
         };
     }
 
-    private static void AddStoreHeader(
+    private static void AddBrandHeader(
         FlowDocument document,
         ReceiptRequest request)
     {
-        document.Blocks.Add(
-            CreateCenteredParagraph(
+        var table =
+            new Table
+            {
+                CellSpacing =
+                    0,
+
+                Margin =
+                    new Thickness(
+                        0,
+                        0,
+                        0,
+                        1),
+
+                Tag =
+                    "Receipt.BrandHeader"
+            };
+
+        table.Columns.Add(
+            new TableColumn
+            {
+                Width =
+                    new GridLength(
+                        0.28,
+                        GridUnitType.Star)
+            });
+
+        table.Columns.Add(
+            new TableColumn
+            {
+                Width =
+                    new GridLength(
+                        0.72,
+                        GridUnitType.Star)
+            });
+
+        var rowGroup =
+            new TableRowGroup();
+
+        table.RowGroups.Add(
+            rowGroup);
+
+        var row =
+            new TableRow();
+
+        var monogramParagraph =
+            new Paragraph
+            {
+                Margin =
+                    new Thickness(
+                        0),
+
+                TextAlignment =
+                    TextAlignment.Center,
+
+                FontFamily =
+                    BrandFontFamily,
+
+                FontSize =
+                    20,
+
+                FontWeight =
+                    FontWeights.Bold,
+
+                Foreground =
+                    ReceiptGoldBrush,
+
+                LineHeight =
+                    20
+            };
+
+        monogramParagraph.Inlines.Add(
+            new Run(
+                "P\nE"));
+
+        var monogramCell =
+            new TableCell(
+                monogramParagraph)
+            {
+                Padding =
+                    new Thickness(
+                        5,
+                        4,
+                        5,
+                        4),
+
+                BorderBrush =
+                    ReceiptGoldBrush,
+
+                BorderThickness =
+                    new Thickness(
+                        1),
+
+                Tag =
+                    "Receipt.BrandMonogram"
+            };
+
+        var informationCell =
+            new TableCell
+            {
+                Padding =
+                    new Thickness(
+                        10,
+                        0,
+                        0,
+                        0),
+
+                Tag =
+                    "Receipt.BrandInformation"
+            };
+
+        informationCell.Blocks.Add(
+            CreateParagraph(
                 request.Store.Name,
                 StoreNameFontSize,
                 FontWeights.Bold,
+                TextAlignment.Left,
+                margin:
+                    new Thickness(
+                        0),
+                fontFamily:
+                    BrandFontFamily,
+                foreground:
+                    ReceiptTextBrush,
                 tag:
                     "Receipt.StoreName"));
 
-        AddOptionalCenteredParagraph(
-            document,
-            request.Store.Address,
-            SmallFontSize,
-            "Receipt.StoreAddress");
+        informationCell.Blocks.Add(
+            CreateParagraph(
+                "BÁN LẺ • NHÀ HÀNG • CÀ PHÊ",
+                7.5,
+                FontWeights.SemiBold,
+                TextAlignment.Left,
+                margin:
+                    new Thickness(
+                        0,
+                        1,
+                        0,
+                        2),
+                foreground:
+                    ReceiptGoldBrush,
+                tag:
+                    "Receipt.StoreType"));
+
+        if (!string.IsNullOrWhiteSpace(
+                request.Store.Address))
+        {
+            informationCell.Blocks.Add(
+                CreateParagraph(
+                    request.Store.Address,
+                    SmallFontSize,
+                    FontWeights.Normal,
+                    TextAlignment.Left,
+                    margin:
+                        new Thickness(
+                            0,
+                            1,
+                            0,
+                            0),
+                    foreground:
+                        ReceiptTextBrush,
+                    tag:
+                        "Receipt.StoreAddress"));
+        }
 
         if (!string.IsNullOrWhiteSpace(
                 request.Store.Phone))
         {
-            document.Blocks.Add(
-                CreateCenteredParagraph(
+            informationCell.Blocks.Add(
+                CreateParagraph(
                     $"Điện thoại: {request.Store.Phone}",
                     SmallFontSize,
                     FontWeights.Normal,
+                    TextAlignment.Left,
+                    margin:
+                        new Thickness(
+                            0,
+                            1,
+                            0,
+                            0),
+                    foreground:
+                        ReceiptTextBrush,
                     tag:
                         "Receipt.StorePhone"));
         }
@@ -200,208 +400,649 @@ public sealed class ReceiptDocumentBuilder
         if (!string.IsNullOrWhiteSpace(
                 request.Store.TaxCode))
         {
-            document.Blocks.Add(
-                CreateCenteredParagraph(
+            informationCell.Blocks.Add(
+                CreateParagraph(
                     $"Mã số thuế: {request.Store.TaxCode}",
                     SmallFontSize,
                     FontWeights.Normal,
+                    TextAlignment.Left,
+                    margin:
+                        new Thickness(
+                            0,
+                            1,
+                            0,
+                            0),
+                    foreground:
+                        ReceiptTextBrush,
                     tag:
                         "Receipt.StoreTaxCode"));
         }
 
+        row.Cells.Add(
+            monogramCell);
+
+        row.Cells.Add(
+            informationCell);
+
+        rowGroup.Rows.Add(
+            row);
+
         document.Blocks.Add(
-            CreateCenteredParagraph(
+            table);
+    }
+
+    private static void AddReceiptTitle(
+        FlowDocument document,
+        ReceiptRequest request)
+    {
+        document.Blocks.Add(
+            CreateParagraph(
                 "HÓA ĐƠN BÁN HÀNG",
                 ReceiptTitleFontSize,
                 FontWeights.Bold,
-                topMargin:
-                    7,
+                TextAlignment.Center,
+                margin:
+                    new Thickness(
+                        0,
+                        0,
+                        0,
+                        5),
+                foreground:
+                    ReceiptTextBrush,
                 tag:
                     "Receipt.Title"));
 
-        if (request.IsReprint)
+        if (!request.IsReprint)
         {
-            document.Blocks.Add(
-                CreateCenteredParagraph(
-                    $"*** BẢN IN LẠI LẦN " +
-                    $"{request.CopyNumber:N0} ***",
-                    BaseFontSize,
-                    FontWeights.Bold,
-                    topMargin:
-                        2,
-                    tag:
-                        "Receipt.Reprint"));
+            return;
         }
+
+        document.Blocks.Add(
+            CreateParagraph(
+                $"BẢN IN LẠI LẦN " +
+                $"{request.CopyNumber:N0}",
+                BaseFontSize,
+                FontWeights.Bold,
+                TextAlignment.Center,
+                margin:
+                    new Thickness(
+                        0,
+                        0,
+                        0,
+                        5),
+                foreground:
+                    ReceiptGoldBrush,
+                tag:
+                    "Receipt.Reprint"));
     }
 
     private static void AddReceiptIdentity(
         FlowDocument document,
         ReceiptRequest request)
     {
-        document.Blocks.Add(
-            CreateLabelValueParagraph(
-                "Mã đơn:",
-                request.OrderCode,
+        var table =
+            CreateInformationTable(
                 tag:
-                    "Receipt.OrderCode"));
+                    "Receipt.Identity");
+
+        AddInformationRow(
+            table,
+            "Mã đơn:",
+            request.OrderCode,
+            "Receipt.OrderCode");
+
+        AddInformationRow(
+            table,
+            "Thời gian:",
+            FormatDateTime(
+                request.PaidAtUtc),
+            "Receipt.PaidAt");
+
+        AddInformationRow(
+            table,
+            "Thu ngân:",
+            request.CashierName,
+            "Receipt.Cashier");
+
+        AddInformationRow(
+            table,
+            "Thanh toán:",
+            FormatPaymentMethod(
+                request.PaymentMethod),
+            "Receipt.PaymentMethod");
 
         document.Blocks.Add(
-            CreateLabelValueParagraph(
-                "Thời gian:",
-                FormatDateTime(
-                    request.PaidAtUtc),
-                tag:
-                    "Receipt.PaidAt"));
-
-        document.Blocks.Add(
-            CreateLabelValueParagraph(
-                "Thu ngân:",
-                request.CashierName,
-                tag:
-                    "Receipt.Cashier"));
-
-        document.Blocks.Add(
-            CreateLabelValueParagraph(
-                "Thanh toán:",
-                FormatPaymentMethod(
-                    request.PaymentMethod),
-                tag:
-                    "Receipt.PaymentMethod"));
+            table);
     }
 
     private static void AddOptionalOrderInformation(
         FlowDocument document,
         ReceiptRequest request)
     {
+        var rows =
+            new List<
+                (string Label,
+                 string Value,
+                 string Tag)>();
+
         if (!string.IsNullOrWhiteSpace(
                 request.CustomerName))
         {
-            document.Blocks.Add(
-                CreateLabelValueParagraph(
+            rows.Add(
+                (
                     "Khách hàng:",
                     request.CustomerName,
-                    tag:
-                        "Receipt.Customer"));
+                    "Receipt.Customer"
+                ));
         }
 
         if (!string.IsNullOrWhiteSpace(
                 request.RestaurantTableName))
         {
-            document.Blocks.Add(
-                CreateLabelValueParagraph(
+            rows.Add(
+                (
                     "Bàn:",
                     request.RestaurantTableName,
-                    tag:
-                        "Receipt.Table"));
+                    "Receipt.Table"
+                ));
         }
 
         if (!string.IsNullOrWhiteSpace(
                 request.DiscountCode))
         {
-            document.Blocks.Add(
-                CreateLabelValueParagraph(
+            rows.Add(
+                (
                     "Mã giảm giá:",
                     request.DiscountCode,
-                    tag:
-                        "Receipt.DiscountCode"));
+                    "Receipt.DiscountCode"
+                ));
         }
-    }
 
-    private static void AddLineHeader(
-        FlowDocument document)
-    {
+        if (rows.Count == 0)
+        {
+            return;
+        }
+
         var table =
-            CreateTwoColumnTable(
-                leftStarWidth:
-                    0.67,
-
-                rightStarWidth:
-                    0.33,
-
+            CreateInformationTable(
                 tag:
-                    "Receipt.LineHeader");
+                    "Receipt.OptionalInformation");
 
-        AddTwoColumnRow(
-            table,
-            leftText:
-                "SẢN PHẨM / SL × ĐƠN GIÁ",
-
-            rightText:
-                "THÀNH TIỀN",
-
-            fontWeight:
-                FontWeights.Bold,
-
-            fontSize:
-                SmallFontSize);
+        foreach (var row in rows)
+        {
+            AddInformationRow(
+                table,
+                row.Label,
+                row.Value,
+                row.Tag);
+        }
 
         document.Blocks.Add(
             table);
     }
 
-    private static void AddReceiptLine(
-        FlowDocument document,
-        ReceiptLineDto line)
+    private static Table CreateInformationTable(
+        string tag)
     {
-        var productNameParagraph =
-            new Paragraph
+        var table =
+            new Table
             {
+                CellSpacing =
+                    0,
+
+                Margin =
+                    new Thickness(
+                        0),
+
+                Tag =
+                    tag
+            };
+
+        table.Columns.Add(
+            new TableColumn
+            {
+                Width =
+                    new GridLength(
+                        0.29,
+                        GridUnitType.Star)
+            });
+
+        table.Columns.Add(
+            new TableColumn
+            {
+                Width =
+                    new GridLength(
+                        0.71,
+                        GridUnitType.Star)
+            });
+
+        table.RowGroups.Add(
+            new TableRowGroup());
+
+        return table;
+    }
+
+    private static void AddInformationRow(
+        Table table,
+        string label,
+        string value,
+        string tag)
+    {
+        var row =
+            new TableRow
+            {
+                Tag =
+                    tag
+            };
+
+        row.Cells.Add(
+            CreateTextCell(
+                label,
+                TextAlignment.Left,
+                FontWeights.Bold,
+                SmallFontSize,
+                padding:
+                    new Thickness(
+                        0,
+                        1,
+                        4,
+                        1),
+                foreground:
+                    ReceiptTextBrush));
+
+        row.Cells.Add(
+            CreateTextCell(
+                value,
+                TextAlignment.Left,
+                FontWeights.Normal,
+                SmallFontSize,
+                padding:
+                    new Thickness(
+                        0,
+                        1,
+                        0,
+                        1),
+                foreground:
+                    ReceiptTextBrush));
+
+        table.RowGroups[0]
+            .Rows
+            .Add(
+                row);
+    }
+
+    private static void AddLineItems(
+        FlowDocument document,
+        ReceiptRequest request)
+    {
+        var table =
+            new Table
+            {
+                CellSpacing =
+                    0,
+
                 Margin =
                     new Thickness(
                         0,
-                        4,
                         0,
-                        0),
-
-                FontWeight =
-                    FontWeights.SemiBold,
-
-                FontSize =
-                    BaseFontSize,
+                        0,
+                        5),
 
                 Tag =
-                    $"Receipt.Line.{line.OrderItemId}.Name"
+                    "Receipt.LineItems"
             };
 
-        productNameParagraph.Inlines.Add(
-            new Run(
-                line.ProductName));
+        table.Columns.Add(
+            new TableColumn
+            {
+                Width =
+                    new GridLength(
+                        0.45,
+                        GridUnitType.Star)
+            });
+
+        table.Columns.Add(
+            new TableColumn
+            {
+                Width =
+                    new GridLength(
+                        0.13,
+                        GridUnitType.Star)
+            });
+
+        table.Columns.Add(
+            new TableColumn
+            {
+                Width =
+                    new GridLength(
+                        0.2,
+                        GridUnitType.Star)
+            });
+
+        table.Columns.Add(
+            new TableColumn
+            {
+                Width =
+                    new GridLength(
+                        0.22,
+                        GridUnitType.Star)
+            });
+
+        var rowGroup =
+            new TableRowGroup();
+
+        table.RowGroups.Add(
+            rowGroup);
+
+        AddLineHeaderRow(
+            rowGroup);
+
+        foreach (var line in request.Lines)
+        {
+            AddReceiptLineRows(
+                rowGroup,
+                line);
+        }
 
         document.Blocks.Add(
-            productNameParagraph);
+            table);
+    }
 
-        var quantityAndPrice =
-            $"{line.Quantity.ToString(
-                "N0",
-                VietnameseCulture)} " +
-            $"{line.UnitName} × " +
-            $"{FormatMoney(line.FinalUnitPrice)}";
+    private static void AddLineHeaderRow(
+        TableRowGroup rowGroup)
+    {
+        var row =
+            new TableRow
+            {
+                Background =
+                    ReceiptGoldSoftBrush,
 
-        var amountTable =
-            CreateTwoColumnTable(
-                leftStarWidth:
-                    0.67,
+                Tag =
+                    "Receipt.LineHeader"
+            };
 
-                rightStarWidth:
-                    0.33,
+        row.Cells.Add(
+            CreateTextCell(
+                "SẢN PHẨM",
+                TextAlignment.Left,
+                FontWeights.Bold,
+                7.6,
+                padding:
+                    new Thickness(
+                        3,
+                        4,
+                        2,
+                        4),
+                foreground:
+                    ReceiptTextBrush,
+                borderBrush:
+                    ReceiptRuleBrush,
+                borderThickness:
+                    new Thickness(
+                        0,
+                        0,
+                        0,
+                        0.8)));
 
-                tag:
-                    $"Receipt.Line.{line.OrderItemId}.Amount");
+        row.Cells.Add(
+            CreateTextCell(
+                "SL",
+                TextAlignment.Center,
+                FontWeights.Bold,
+                7.6,
+                padding:
+                    new Thickness(
+                        1,
+                        4,
+                        1,
+                        4),
+                foreground:
+                    ReceiptTextBrush,
+                borderBrush:
+                    ReceiptRuleBrush,
+                borderThickness:
+                    new Thickness(
+                        0,
+                        0,
+                        0,
+                        0.8)));
 
-        AddTwoColumnRow(
-            amountTable,
-            quantityAndPrice,
-            FormatMoney(
-                line.NetAmount),
-            FontWeights.Normal,
-            SmallFontSize);
+        row.Cells.Add(
+            CreateTextCell(
+                "ĐƠN GIÁ",
+                TextAlignment.Right,
+                FontWeights.Bold,
+                7.6,
+                padding:
+                    new Thickness(
+                        1,
+                        4,
+                        1,
+                        4),
+                foreground:
+                    ReceiptTextBrush,
+                borderBrush:
+                    ReceiptRuleBrush,
+                borderThickness:
+                    new Thickness(
+                        0,
+                        0,
+                        0,
+                        0.8)));
 
-        document.Blocks.Add(
-            amountTable);
+        row.Cells.Add(
+            CreateTextCell(
+                "THÀNH TIỀN",
+                TextAlignment.Right,
+                FontWeights.Bold,
+                7.6,
+                padding:
+                    new Thickness(
+                        1,
+                        4,
+                        2,
+                        4),
+                foreground:
+                    ReceiptTextBrush,
+                borderBrush:
+                    ReceiptRuleBrush,
+                borderThickness:
+                    new Thickness(
+                        0,
+                        0,
+                        0,
+                        0.8)));
+
+        rowGroup.Rows.Add(
+            row);
+    }
+
+    private static void AddReceiptLineRows(
+        TableRowGroup rowGroup,
+        ReceiptLineDto line)
+    {
+        var itemRow =
+            new TableRow
+            {
+                Tag =
+                    $"Receipt.Line.{line.OrderItemId}"
+            };
+
+        var bottomBorder =
+            new Thickness(
+                0,
+                0,
+                0,
+                0.45);
+
+        itemRow.Cells.Add(
+            CreateTextCell(
+                line.ProductName,
+                TextAlignment.Left,
+                FontWeights.SemiBold,
+                BaseFontSize,
+                padding:
+                    new Thickness(
+                        3,
+                        5,
+                        3,
+                        5),
+                foreground:
+                    ReceiptTextBrush,
+                borderBrush:
+                    ReceiptRuleBrush,
+                borderThickness:
+                    bottomBorder));
+
+        itemRow.Cells.Add(
+            CreateTextCell(
+                $"{line.Quantity.ToString(
+                    "N0",
+                    VietnameseCulture)} " +
+                $"{line.UnitName}",
+                TextAlignment.Center,
+                FontWeights.Normal,
+                SmallFontSize,
+                padding:
+                    new Thickness(
+                        1,
+                        5,
+                        1,
+                        5),
+                foreground:
+                    ReceiptTextBrush,
+                borderBrush:
+                    ReceiptRuleBrush,
+                borderThickness:
+                    bottomBorder));
+
+        itemRow.Cells.Add(
+            CreateTextCell(
+                FormatMoney(
+                    line.FinalUnitPrice),
+                TextAlignment.Right,
+                FontWeights.Normal,
+                SmallFontSize,
+                padding:
+                    new Thickness(
+                        1,
+                        5,
+                        1,
+                        5),
+                foreground:
+                    ReceiptTextBrush,
+                borderBrush:
+                    ReceiptRuleBrush,
+                borderThickness:
+                    bottomBorder));
+
+        itemRow.Cells.Add(
+            CreateTextCell(
+                FormatMoney(
+                    line.NetAmount),
+                TextAlignment.Right,
+                FontWeights.SemiBold,
+                SmallFontSize,
+                padding:
+                    new Thickness(
+                        1,
+                        5,
+                        2,
+                        5),
+                foreground:
+                    ReceiptTextBrush,
+                borderBrush:
+                    ReceiptRuleBrush,
+                borderThickness:
+                    bottomBorder));
+
+        rowGroup.Rows.Add(
+            itemRow);
+
+        var details =
+            BuildLineDetails(
+                line);
+
+        if (details.Count == 0)
+        {
+            return;
+        }
+
+        var detailCell =
+            new TableCell
+            {
+                ColumnSpan =
+                    4,
+
+                Padding =
+                    new Thickness(
+                        10,
+                        0,
+                        3,
+                        5),
+
+                BorderBrush =
+                    ReceiptRuleBrush,
+
+                BorderThickness =
+                    new Thickness(
+                        0,
+                        0,
+                        0,
+                        0.45),
+
+                Tag =
+                    $"Receipt.Line.{line.OrderItemId}.Details"
+            };
+
+        foreach (var detail in details)
+        {
+            detailCell.Blocks.Add(
+                CreateParagraph(
+                    detail.Text,
+                    7.8,
+                    detail.IsImportant
+                        ? FontWeights.SemiBold
+                        : FontWeights.Normal,
+                    TextAlignment.Left,
+                    margin:
+                        new Thickness(
+                            0,
+                            1,
+                            0,
+                            0),
+                    foreground:
+                        detail.IsImportant
+                            ? ReceiptTextBrush
+                            : ReceiptMutedBrush,
+                    fontStyle:
+                        detail.IsItalic
+                            ? FontStyles.Italic
+                            : FontStyles.Normal));
+        }
+
+        var detailRow =
+            new TableRow();
+
+        detailRow.Cells.Add(
+            detailCell);
+
+        rowGroup.Rows.Add(
+            detailRow);
+    }
+
+    private static IReadOnlyList<
+        ReceiptLineDetail>
+        BuildLineDetails(
+            ReceiptLineDto line)
+    {
+        var details =
+            new List<
+                ReceiptLineDetail>();
 
         foreach (var modifier in line.Modifiers)
         {
-            var modifierText =
+            var text =
                 $"+ {modifier.Name} " +
                 $"× {modifier.Quantity.ToString(
                     "N0",
@@ -409,108 +1050,224 @@ public sealed class ReceiptDocumentBuilder
 
             if (modifier.AmountPerProductUnit > 0)
             {
-                modifierText +=
+                text +=
                     $"  (+{FormatMoney(
                         modifier.AmountPerProductUnit)}/sp)";
             }
 
-            document.Blocks.Add(
-                CreateIndentedParagraph(
-                    modifierText,
-                    tag:
-                        $"Receipt.Line.{line.OrderItemId}.Modifier"));
+            details.Add(
+                new ReceiptLineDetail(
+                    text,
+                    IsImportant:
+                        false,
+                    IsItalic:
+                        false));
         }
 
         if (line.LineDiscountAmount > 0)
         {
-            document.Blocks.Add(
-                CreateIndentedParagraph(
+            details.Add(
+                new ReceiptLineDetail(
                     $"Giảm dòng: -" +
                     $"{FormatMoney(
                         line.LineDiscountAmount)}",
-                    tag:
-                        $"Receipt.Line.{line.OrderItemId}.Discount"));
+                    IsImportant:
+                        true,
+                    IsItalic:
+                        false));
         }
 
         if (!string.IsNullOrWhiteSpace(
                 line.Notes))
         {
-            document.Blocks.Add(
-                CreateIndentedParagraph(
+            details.Add(
+                new ReceiptLineDetail(
                     $"Ghi chú: {line.Notes}",
-                    italic:
-                        true,
-                    tag:
-                        $"Receipt.Line.{line.OrderItemId}.Notes"));
+                    IsImportant:
+                        false,
+                    IsItalic:
+                        true));
         }
+
+        return details;
     }
 
     private static void AddTotals(
         FlowDocument document,
         ReceiptRequest request)
     {
-        var totalsTable =
-            CreateTwoColumnTable(
-                leftStarWidth:
-                    0.56,
+        var table =
+            new Table
+            {
+                CellSpacing =
+                    0,
 
-                rightStarWidth:
-                    0.44,
+                Margin =
+                    new Thickness(
+                        0,
+                        2,
+                        0,
+                        0),
 
-                tag:
-                    "Receipt.Totals");
+                Tag =
+                    "Receipt.Totals"
+            };
 
-        AddTwoColumnRow(
-            totalsTable,
+        table.Columns.Add(
+            new TableColumn
+            {
+                Width =
+                    new GridLength(
+                        0.56,
+                        GridUnitType.Star)
+            });
+
+        table.Columns.Add(
+            new TableColumn
+            {
+                Width =
+                    new GridLength(
+                        0.44,
+                        GridUnitType.Star)
+            });
+
+        table.RowGroups.Add(
+            new TableRowGroup());
+
+        AddTotalRow(
+            table,
             "Tiền hàng",
             FormatMoney(
                 request.Subtotal),
             FontWeights.Normal,
-            BaseFontSize);
+            BaseFontSize,
+            ReceiptTextBrush,
+            topBorder:
+                false);
 
-        if (request.DiscountAmount > 0)
-        {
-            AddTwoColumnRow(
-                totalsTable,
-                "Giảm giá",
-                $"-{FormatMoney(
-                    request.DiscountAmount)}",
-                FontWeights.Normal,
-                BaseFontSize);
-        }
+        AddTotalRow(
+            table,
+            "Giảm giá",
+            request.DiscountAmount > 0
+                ? $"-{FormatMoney(
+                    request.DiscountAmount)}"
+                : FormatMoney(
+                    0),
+            FontWeights.Normal,
+            BaseFontSize,
+            ReceiptTextBrush,
+            topBorder:
+                false);
 
-        AddTwoColumnRow(
-            totalsTable,
+        AddTotalRow(
+            table,
             "TỔNG THANH TOÁN",
             FormatMoney(
                 request.TotalAmount),
             FontWeights.Bold,
             TotalFontSize,
-            topPadding:
-                4);
+            ReceiptGoldBrush,
+            topBorder:
+                true);
 
         if (request.PaymentMethod ==
             PaymentMethod.Cash)
         {
-            AddTwoColumnRow(
-                totalsTable,
+            AddTotalRow(
+                table,
                 "Tiền khách đưa",
                 FormatMoney(
                     request.CashReceived),
                 FontWeights.Normal,
-                BaseFontSize);
+                BaseFontSize,
+                ReceiptTextBrush,
+                topBorder:
+                    false);
 
-            AddTwoColumnRow(
-                totalsTable,
-                "TIỀN THỪA",
+            AddTotalRow(
+                table,
+                "Tiền thừa",
                 FormatMoney(
                     request.ChangeAmount),
-                FontWeights.Bold,
-                BaseFontSize);
+                FontWeights.SemiBold,
+                BaseFontSize,
+                ReceiptTextBrush,
+                topBorder:
+                    false);
         }
 
         document.Blocks.Add(
-            totalsTable);
+            table);
+    }
+
+    private static void AddTotalRow(
+        Table table,
+        string label,
+        string amount,
+        FontWeight fontWeight,
+        double fontSize,
+        Brush foreground,
+        bool topBorder)
+    {
+        var borderThickness =
+            topBorder
+                ? new Thickness(
+                    0,
+                    0.9,
+                    0,
+                    0)
+                : new Thickness(
+                    0);
+
+        var row =
+            new TableRow();
+
+        row.Cells.Add(
+            CreateTextCell(
+                label,
+                TextAlignment.Left,
+                fontWeight,
+                fontSize,
+                padding:
+                    new Thickness(
+                        3,
+                        topBorder
+                            ? 6
+                            : 2,
+                        3,
+                        2),
+                foreground:
+                    foreground,
+                borderBrush:
+                    ReceiptRuleBrush,
+                borderThickness:
+                    borderThickness));
+
+        row.Cells.Add(
+            CreateTextCell(
+                amount,
+                TextAlignment.Right,
+                fontWeight,
+                fontSize,
+                padding:
+                    new Thickness(
+                        3,
+                        topBorder
+                            ? 6
+                            : 2,
+                        3,
+                        2),
+                foreground:
+                    foreground,
+                borderBrush:
+                    ReceiptRuleBrush,
+                borderThickness:
+                    borderThickness));
+
+        table.RowGroups[0]
+            .Rows
+            .Add(
+                row);
     }
 
     private static void AddOptionalReceiptNotes(
@@ -523,21 +1280,28 @@ public sealed class ReceiptDocumentBuilder
             return;
         }
 
-        AddSeparator(
-            document);
+        AddHorizontalRule(
+            document,
+            topMargin:
+                5,
+            bottomMargin:
+                3);
 
         var paragraph =
             new Paragraph
             {
                 Margin =
                     new Thickness(
-                        0,
                         2,
                         0,
+                        2,
                         0),
 
                 FontSize =
                     SmallFontSize,
+
+                Foreground =
+                    ReceiptMutedBrush,
 
                 Tag =
                     "Receipt.Notes"
@@ -560,8 +1324,12 @@ public sealed class ReceiptDocumentBuilder
         FlowDocument document,
         ReceiptRequest request)
     {
-        AddSeparator(
-            document);
+        AddHorizontalRule(
+            document,
+            topMargin:
+                6,
+            bottomMargin:
+                5);
 
         var footerMessage =
             string.IsNullOrWhiteSpace(
@@ -570,162 +1338,144 @@ public sealed class ReceiptDocumentBuilder
                 : request.Store.FooterMessage;
 
         document.Blocks.Add(
-            CreateCenteredParagraph(
+            CreateParagraph(
                 footerMessage,
-                SmallFontSize,
+                9,
                 FontWeights.SemiBold,
-                topMargin:
-                    3,
+                TextAlignment.Center,
+                margin:
+                    new Thickness(
+                        0,
+                        0,
+                        0,
+                        3),
+                foreground:
+                    ReceiptTextBrush,
                 tag:
                     "Receipt.Footer"));
 
         document.Blocks.Add(
-            CreateCenteredParagraph(
+            CreateParagraph(
                 "Hóa đơn được tạo từ dữ liệu giao dịch đã chốt.",
-                8,
+                7.4,
                 FontWeights.Normal,
-                topMargin:
-                    2,
+                TextAlignment.Center,
+                margin:
+                    new Thickness(
+                        0,
+                        0,
+                        0,
+                        5),
+                foreground:
+                    ReceiptMutedBrush,
                 tag:
                     "Receipt.SnapshotNotice"));
-    }
 
-    private static void AddSeparator(
-        FlowDocument document)
-    {
         document.Blocks.Add(
-            CreateCenteredParagraph(
-                new string(
-                    '-',
-                    38),
-                8,
+            CreateParagraph(
+                "────────  ◇  ────────",
+                8.5,
                 FontWeights.Normal,
-                fontFamily:
-                    SeparatorFontFamily,
-                tag:
-                    "Receipt.Separator"));
-    }
-
-    private static Table CreateTwoColumnTable(
-        double leftStarWidth,
-        double rightStarWidth,
-        string tag)
-    {
-        var table =
-            new Table
-            {
-                CellSpacing =
-                    0,
-
-                Margin =
+                TextAlignment.Center,
+                margin:
                     new Thickness(
                         0),
+                foreground:
+                    ReceiptGoldBrush,
+                tag:
+                    "Receipt.FooterDecoration"));
+    }
+
+    private static void AddHorizontalRule(
+        FlowDocument document,
+        double topMargin,
+        double bottomMargin)
+    {
+        var paragraph =
+            new Paragraph
+            {
+                Margin =
+                    new Thickness(
+                        0,
+                        topMargin,
+                        0,
+                        bottomMargin),
+
+                BorderBrush =
+                    ReceiptRuleBrush,
+
+                BorderThickness =
+                    new Thickness(
+                        0,
+                        0,
+                        0,
+                        0.8),
+
+                FontSize =
+                    1,
+
+                LineHeight =
+                    1,
 
                 Tag =
-                    tag
+                    "Receipt.Separator"
             };
 
-        table.Columns.Add(
-            new TableColumn
-            {
-                Width =
-                    new GridLength(
-                        leftStarWidth,
-                        GridUnitType.Star)
-            });
+        paragraph.Inlines.Add(
+            new Run(
+                " "));
 
-        table.Columns.Add(
-            new TableColumn
-            {
-                Width =
-                    new GridLength(
-                        rightStarWidth,
-                        GridUnitType.Star)
-            });
-
-        table.RowGroups.Add(
-            new TableRowGroup());
-
-        return table;
+        document.Blocks.Add(
+            paragraph);
     }
 
-    private static void AddTwoColumnRow(
-        Table table,
-        string leftText,
-        string rightText,
-        FontWeight fontWeight,
-        double fontSize,
-        double topPadding = 0)
-    {
-        var row =
-            new TableRow();
-
-        row.Cells.Add(
-            CreateTableCell(
-                leftText,
-                TextAlignment.Left,
-                fontWeight,
-                fontSize,
-                topPadding));
-
-        row.Cells.Add(
-            CreateTableCell(
-                rightText,
-                TextAlignment.Right,
-                fontWeight,
-                fontSize,
-                topPadding));
-
-        table.RowGroups[0]
-            .Rows
-            .Add(
-                row);
-    }
-
-    private static TableCell CreateTableCell(
+    private static TableCell CreateTextCell(
         string text,
         TextAlignment textAlignment,
         FontWeight fontWeight,
         double fontSize,
-        double topPadding)
+        Thickness padding,
+        Brush foreground,
+        Brush? borderBrush = null,
+        Thickness? borderThickness = null)
     {
         var paragraph =
-            new Paragraph(
-                new Run(
-                    text))
-            {
-                Margin =
+            CreateParagraph(
+                text,
+                fontSize,
+                fontWeight,
+                textAlignment,
+                margin:
                     new Thickness(
                         0),
-
-                TextAlignment =
-                    textAlignment,
-
-                FontWeight =
-                    fontWeight,
-
-                FontSize =
-                    fontSize
-            };
+                foreground:
+                    foreground);
 
         return new TableCell(
             paragraph)
         {
             Padding =
+                padding,
+
+            BorderBrush =
+                borderBrush,
+
+            BorderThickness =
+                borderThickness ??
                 new Thickness(
-                    0,
-                    topPadding,
-                    0,
                     0)
         };
     }
 
-    private static Paragraph CreateCenteredParagraph(
+    private static Paragraph CreateParagraph(
         string text,
         double fontSize,
         FontWeight fontWeight,
-        double topMargin = 0,
+        TextAlignment textAlignment,
+        Thickness margin,
         FontFamily? fontFamily = null,
+        Brush? foreground = null,
+        FontStyle? fontStyle = null,
         string? tag = null)
     {
         return new Paragraph(
@@ -733,14 +1483,10 @@ public sealed class ReceiptDocumentBuilder
                 text))
         {
             Margin =
-                new Thickness(
-                    0,
-                    topMargin,
-                    0,
-                    0),
+                margin,
 
             TextAlignment =
-                TextAlignment.Center,
+                textAlignment,
 
             FontSize =
                 fontSize,
@@ -752,97 +1498,17 @@ public sealed class ReceiptDocumentBuilder
                 fontFamily ??
                 ReceiptFontFamily,
 
+            Foreground =
+                foreground ??
+                ReceiptTextBrush,
+
+            FontStyle =
+                fontStyle ??
+                FontStyles.Normal,
+
             Tag =
                 tag
         };
-    }
-
-    private static Paragraph CreateLabelValueParagraph(
-        string label,
-        string value,
-        string tag)
-    {
-        var paragraph =
-            new Paragraph
-            {
-                Margin =
-                    new Thickness(
-                        0),
-
-                FontSize =
-                    SmallFontSize,
-
-                Tag =
-                    tag
-            };
-
-        paragraph.Inlines.Add(
-            new Bold(
-                new Run(
-                    $"{label} ")));
-
-        paragraph.Inlines.Add(
-            new Run(
-                value));
-
-        return paragraph;
-    }
-
-    private static Paragraph CreateIndentedParagraph(
-        string text,
-        bool italic = false,
-        string? tag = null)
-    {
-        var paragraph =
-            new Paragraph(
-                new Run(
-                    text))
-            {
-                Margin =
-                    new Thickness(
-                        12,
-                        0,
-                        0,
-                        0),
-
-                FontSize =
-                    SmallFontSize,
-
-                Foreground =
-                    Brushes.DimGray,
-
-                Tag =
-                    tag
-            };
-
-        if (italic)
-        {
-            paragraph.FontStyle =
-                FontStyles.Italic;
-        }
-
-        return paragraph;
-    }
-
-    private static void AddOptionalCenteredParagraph(
-        FlowDocument document,
-        string? text,
-        double fontSize,
-        string tag)
-    {
-        if (string.IsNullOrWhiteSpace(
-                text))
-        {
-            return;
-        }
-
-        document.Blocks.Add(
-            CreateCenteredParagraph(
-                text,
-                fontSize,
-                FontWeights.Normal,
-                tag:
-                    tag));
     }
 
     private static string FormatDateTime(
@@ -888,4 +1554,26 @@ public sealed class ReceiptDocumentBuilder
                     "Phương thức thanh toán không hợp lệ.")
         };
     }
+
+    private static Brush CreateFrozenBrush(
+        byte red,
+        byte green,
+        byte blue)
+    {
+        var brush =
+            new SolidColorBrush(
+                Color.FromRgb(
+                    red,
+                    green,
+                    blue));
+
+        brush.Freeze();
+
+        return brush;
+    }
+
+    private sealed record ReceiptLineDetail(
+        string Text,
+        bool IsImportant,
+        bool IsItalic);
 }
