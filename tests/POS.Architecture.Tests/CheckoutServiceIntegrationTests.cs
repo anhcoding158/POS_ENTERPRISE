@@ -29,16 +29,22 @@ public sealed class CheckoutServiceIntegrationTests
                 TimeSpan.Zero);
 
     [Fact]
-    public async Task Successful_checkout_must_commit_order_stock_and_movement()
+    public async Task
+        Successful_checkout_must_commit_order_stock_and_movement()
     {
         await using var database =
             await CheckoutTestDatabase.CreateAsync();
 
         var seed =
             await database.SeedAsync(
-                stockQuantity: 10,
-                trackInventory: true,
-                isActive: true);
+                stockQuantity:
+                    10,
+
+                trackInventory:
+                    true,
+
+                isActive:
+                    true);
 
         await using var context =
             database.CreateContext();
@@ -56,10 +62,13 @@ public sealed class CheckoutServiceIntegrationTests
                     [
                         new CheckoutLineRequest(
                             seed.ProductId,
-                            quantity: 2)
+                            quantity:
+                                2)
                     ],
+
                     paymentMethod:
                         PaymentMethod.Cash,
+
                     cashReceived:
                         100_000));
 
@@ -68,8 +77,16 @@ public sealed class CheckoutServiceIntegrationTests
             result.Error.ToString());
 
         Assert.Equal(
+            PaymentMethod.Cash,
+            result.Value.PaymentMethod);
+
+        Assert.Equal(
             60_000,
             result.Value.TotalAmount);
+
+        Assert.Equal(
+            100_000,
+            result.Value.CashReceived);
 
         Assert.Equal(
             40_000,
@@ -80,11 +97,15 @@ public sealed class CheckoutServiceIntegrationTests
 
         Assert.Equal(
             1,
-            await verifyContext.Orders.CountAsync());
+            await verifyContext
+                .Orders
+                .CountAsync());
 
         Assert.Equal(
             1,
-            await verifyContext.OrderItems.CountAsync());
+            await verifyContext
+                .OrderItems
+                .CountAsync());
 
         Assert.Equal(
             1,
@@ -126,16 +147,184 @@ public sealed class CheckoutServiceIntegrationTests
     }
 
     [Fact]
-    public async Task Insufficient_stock_must_leave_database_unchanged()
+    public async Task
+        Successful_vietqr_checkout_must_commit_non_cash_order()
     {
         await using var database =
             await CheckoutTestDatabase.CreateAsync();
 
         var seed =
             await database.SeedAsync(
-                stockQuantity: 3,
-                trackInventory: true,
-                isActive: true);
+                stockQuantity:
+                    10,
+
+                trackInventory:
+                    true,
+
+                isActive:
+                    true);
+
+        await using var context =
+            database.CreateContext();
+
+        var service =
+            CreateService(
+                context,
+                seed,
+                "HD-VIETQR-0001");
+
+        var result =
+            await service.CheckoutAsync(
+                new CheckoutRequest(
+                    lines:
+                    [
+                        new CheckoutLineRequest(
+                            seed.ProductId,
+                            quantity:
+                                2)
+                    ],
+
+                    paymentMethod:
+                        PaymentMethod.VietQr,
+
+                    cashReceived:
+                        0,
+
+                    notes:
+                        "Thanh toán VietQR đã được " +
+                        "thu ngân xác nhận thủ công."));
+
+        Assert.True(
+            result.IsSuccess,
+            result.Error.ToString());
+
+        Assert.Equal(
+            "HD-VIETQR-0001",
+            result.Value.OrderCode);
+
+        Assert.Equal(
+            PaymentMethod.VietQr,
+            result.Value.PaymentMethod);
+
+        Assert.Equal(
+            60_000,
+            result.Value.TotalAmount);
+
+        Assert.Equal(
+            0,
+            result.Value.CashReceived);
+
+        Assert.Equal(
+            0,
+            result.Value.ChangeAmount);
+
+        Assert.NotNull(
+            result.Value.ReceiptSnapshot);
+
+        Assert.Equal(
+            PaymentMethod.VietQr,
+            result.Value
+                .ReceiptSnapshot
+                .PaymentMethod);
+
+        Assert.Equal(
+            0,
+            result.Value
+                .ReceiptSnapshot
+                .CashReceived);
+
+        Assert.Equal(
+            0,
+            result.Value
+                .ReceiptSnapshot
+                .ChangeAmount);
+
+        await using var verifyContext =
+            database.CreateContext();
+
+        var persistedOrder =
+            await verifyContext.Orders
+                .SingleAsync();
+
+        Assert.Equal(
+            OrderStatus.Completed,
+            persistedOrder.Status);
+
+        Assert.True(
+            persistedOrder
+                .PaymentMethod
+                .HasValue);
+
+        Assert.Equal(
+            PaymentMethod.VietQr,
+            persistedOrder
+                .PaymentMethod
+                .Value);
+
+        Assert.Equal(
+            0,
+            persistedOrder.CashReceived);
+
+        Assert.Equal(
+            0,
+            persistedOrder.ChangeAmount);
+
+        Assert.Equal(
+            1,
+            await verifyContext
+                .OrderItems
+                .CountAsync());
+
+        var movement =
+            await verifyContext
+                .InventoryMovements
+                .SingleAsync();
+
+        Assert.Equal(
+            InventoryMovementType.Sale,
+            movement.MovementType);
+
+        Assert.Equal(
+            -2,
+            movement.QuantityDelta);
+
+        Assert.Equal(
+            "HD-VIETQR-0001",
+            movement.ReferenceId);
+
+        var stockQuantity =
+            await verifyContext.Products
+                .Where(
+                    item =>
+                        item.Id ==
+                        seed.ProductId)
+                .Select(
+                    item =>
+                        item.StockQuantity)
+                .SingleAsync();
+
+        Assert.Equal(
+            8,
+            stockQuantity);
+    }
+
+    [Fact]
+    public async Task
+        Insufficient_stock_must_leave_database_unchanged()
+    {
+        await using var database =
+            await CheckoutTestDatabase.CreateAsync();
+
+        var seed =
+            await database.SeedAsync(
+                stockQuantity:
+                    3,
+
+                trackInventory:
+                    true,
+
+                isActive:
+                    true);
 
         await using var context =
             database.CreateContext();
@@ -153,16 +342,20 @@ public sealed class CheckoutServiceIntegrationTests
                     [
                         new CheckoutLineRequest(
                             seed.ProductId,
-                            quantity: 4)
+                            quantity:
+                                4)
                     ],
+
                     paymentMethod:
                         PaymentMethod.Cash,
+
                     cashReceived:
                         200_000));
 
         Assert.Equal(
             POS.Application.Common
-                .ErrorCodes.Checkout.InsufficientStock,
+                .ErrorCodes.Checkout
+                .InsufficientStock,
             result.Error.Code);
 
         await using var verifyContext =
@@ -170,7 +363,9 @@ public sealed class CheckoutServiceIntegrationTests
 
         Assert.Equal(
             0,
-            await verifyContext.Orders.CountAsync());
+            await verifyContext
+                .Orders
+                .CountAsync());
 
         Assert.Equal(
             0,
@@ -192,16 +387,22 @@ public sealed class CheckoutServiceIntegrationTests
     }
 
     [Fact]
-    public async Task Inactive_product_must_not_be_sold()
+    public async Task
+        Inactive_product_must_not_be_sold()
     {
         await using var database =
             await CheckoutTestDatabase.CreateAsync();
 
         var seed =
             await database.SeedAsync(
-                stockQuantity: 10,
-                trackInventory: true,
-                isActive: false);
+                stockQuantity:
+                    10,
+
+                trackInventory:
+                    true,
+
+                isActive:
+                    false);
 
         await using var context =
             database.CreateContext();
@@ -219,16 +420,20 @@ public sealed class CheckoutServiceIntegrationTests
                     [
                         new CheckoutLineRequest(
                             seed.ProductId,
-                            quantity: 1)
+                            quantity:
+                                1)
                     ],
+
                     paymentMethod:
                         PaymentMethod.Cash,
+
                     cashReceived:
                         100_000));
 
         Assert.Equal(
             POS.Application.Common
-                .ErrorCodes.Checkout.ProductInactive,
+                .ErrorCodes.Checkout
+                .ProductInactive,
             result.Error.Code);
 
         await using var verifyContext =
@@ -236,20 +441,28 @@ public sealed class CheckoutServiceIntegrationTests
 
         Assert.Equal(
             0,
-            await verifyContext.Orders.CountAsync());
+            await verifyContext
+                .Orders
+                .CountAsync());
     }
 
     [Fact]
-    public async Task Product_without_inventory_tracking_must_not_create_movement()
+    public async Task
+        Product_without_inventory_tracking_must_not_create_movement()
     {
         await using var database =
             await CheckoutTestDatabase.CreateAsync();
 
         var seed =
             await database.SeedAsync(
-                stockQuantity: 0,
-                trackInventory: false,
-                isActive: true);
+                stockQuantity:
+                    0,
+
+                trackInventory:
+                    false,
+
+                isActive:
+                    true);
 
         await using var context =
             database.CreateContext();
@@ -267,10 +480,13 @@ public sealed class CheckoutServiceIntegrationTests
                     [
                         new CheckoutLineRequest(
                             seed.ProductId,
-                            quantity: 3)
+                            quantity:
+                                3)
                     ],
+
                     paymentMethod:
                         PaymentMethod.Cash,
+
                     cashReceived:
                         100_000));
 
@@ -283,7 +499,9 @@ public sealed class CheckoutServiceIntegrationTests
 
         Assert.Equal(
             1,
-            await verifyContext.Orders.CountAsync());
+            await verifyContext
+                .Orders
+                .CountAsync());
 
         Assert.Equal(
             0,
@@ -368,7 +586,10 @@ public sealed class CheckoutServiceIntegrationTests
                 utcNow.ToUniversalTime();
         }
 
-        public DateTimeOffset UtcNow { get; }
+        public DateTimeOffset UtcNow
+        {
+            get;
+        }
     }
 
     private sealed class FixedOrderCodeGenerator :
@@ -463,7 +684,8 @@ public sealed class CheckoutServiceIntegrationTests
             var category =
                 new Category(
                     name:
-                        $"Danh mục Checkout {Guid.NewGuid():N}",
+                        $"Danh mục Checkout " +
+                        $"{Guid.NewGuid():N}",
 
                     displayOrder:
                         1,
@@ -474,7 +696,8 @@ public sealed class CheckoutServiceIntegrationTests
             var user =
                 new User(
                     username:
-                        $"cashier.{Guid.NewGuid():N}",
+                        $"cashier." +
+                        $"{Guid.NewGuid():N}",
 
                     passwordHash:
                         "checkout-test-password-hash",
@@ -520,7 +743,9 @@ public sealed class CheckoutServiceIntegrationTests
                         stockQuantity,
 
                     minimumStock:
-                        trackInventory ? 2 : 0,
+                        trackInventory
+                            ? 2
+                            : 0,
 
                     trackInventory:
                         trackInventory,
@@ -534,7 +759,8 @@ public sealed class CheckoutServiceIntegrationTests
             if (!isActive)
             {
                 product.Deactivate(
-                    UtcNow.AddMinutes(1));
+                    UtcNow.AddMinutes(
+                        1));
             }
 
             context.Products.Add(
@@ -549,7 +775,8 @@ public sealed class CheckoutServiceIntegrationTests
 
         public async ValueTask DisposeAsync()
         {
-            await _connection.DisposeAsync();
+            await _connection
+                .DisposeAsync();
 
             GC.SuppressFinalize(
                 this);

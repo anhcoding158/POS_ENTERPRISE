@@ -49,26 +49,67 @@ public static class CheckoutValidator
         }
 
         /*
-         * 8B chỉ xác nhận thanh toán tiền mặt.
+         * Checkout hiện hỗ trợ hai phương thức:
          *
-         * VietQR, chuyển khoản và thẻ cần quy trình xác nhận
-         * thanh toán thật trước khi được MarkPaid.
+         * 1. Cash:
+         *    - tiền khách đưa phải không âm;
+         *    - không vượt giới hạn giá trị đơn hàng;
+         *    - CheckoutService và Domain sẽ kiểm tra
+         *      số tiền có đủ thanh toán hay không.
+         *
+         * 2. VietQr:
+         *    - chỉ được gửi sau quy trình xác nhận thủ công
+         *      tại Presentation;
+         *    - CashReceived bắt buộc bằng 0;
+         *    - Domain sẽ lưu ChangeAmount bằng 0.
+         *
+         * Việc hiển thị QR không phải xác nhận tự động
+         * từ ngân hàng. Validator chỉ kiểm tra đúng cấu trúc
+         * request sau khi thu ngân đã thực hiện bước xác nhận.
          */
-        if (request.PaymentMethod !=
-            PaymentMethod.Cash)
+        switch (request.PaymentMethod)
         {
-            return Failure(
-                ErrorCodes.Checkout.PaymentMethodNotSupported,
-                "Phiên bản hiện tại chỉ hỗ trợ thanh toán tiền mặt.");
-        }
+            case PaymentMethod.Cash:
 
-        if (request.CashReceived < 0 ||
-            request.CashReceived >
-            BusinessRules.Orders.MaximumOrderAmount)
-        {
-            return Failure(
-                ErrorCodes.General.Validation,
-                "Tiền khách đưa không hợp lệ.");
+                if (request.CashReceived < 0 ||
+                    request.CashReceived >
+                    BusinessRules.Orders
+                        .MaximumOrderAmount)
+                {
+                    return Failure(
+                        ErrorCodes.General.Validation,
+                        "Tiền khách đưa không hợp lệ.");
+                }
+
+                break;
+
+            case PaymentMethod.VietQr:
+
+                if (request.CashReceived != 0)
+                {
+                    return Failure(
+                        ErrorCodes.General.Validation,
+                        "Thanh toán VietQR không được nhập " +
+                        "tiền khách đưa.");
+                }
+
+                break;
+
+            case PaymentMethod.BankTransfer:
+            case PaymentMethod.Card:
+
+                return Failure(
+                    ErrorCodes.Checkout
+                        .PaymentMethodNotSupported,
+                    "Phiên bản hiện tại chỉ hỗ trợ " +
+                    "tiền mặt và VietQR.");
+
+            default:
+
+                return Failure(
+                    ErrorCodes.Checkout
+                        .InvalidPaymentMethod,
+                    "Phương thức thanh toán không hợp lệ.");
         }
 
         if (request.CustomerId.HasValue)
