@@ -6,12 +6,14 @@ using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.Authorization;
 using POS.Application.Abstractions.DateTime;
 using POS.Application.Abstractions.Orders;
+using POS.Application.Abstractions.Payments;
 using POS.Application.Abstractions.Persistence;
 using POS.Application.Abstractions.Printing;
 using POS.Application.Services;
 using POS.Infrastructure.Authentication;
 using POS.Infrastructure.Common;
 using POS.Infrastructure.Orders;
+using POS.Infrastructure.Payments;
 using POS.Infrastructure.Persistence;
 using POS.Infrastructure.Persistence.Repositories;
 using POS.Infrastructure.Printing;
@@ -32,6 +34,12 @@ public static class DependencyInjection
 
         ArgumentNullException.ThrowIfNull(
             configuration);
+
+        /*
+         * =====================================================
+         * INFRASTRUCTURE OPTIONS
+         * =====================================================
+         */
 
         var infrastructureSection =
             configuration.GetSection(
@@ -57,6 +65,12 @@ public static class DependencyInjection
                 },
                 "Cấu hình Infrastructure không hợp lệ.")
             .ValidateOnStart();
+
+        /*
+         * =====================================================
+         * RECEIPT STORE OPTIONS
+         * =====================================================
+         */
 
         var receiptStoreSection =
             configuration.GetSection(
@@ -90,6 +104,12 @@ public static class DependencyInjection
                 "Cấu hình Store dùng cho hóa đơn không hợp lệ.")
             .ValidateOnStart();
 
+        /*
+         * =====================================================
+         * RECEIPT PRINTER OPTIONS
+         * =====================================================
+         */
+
         var receiptPrinterSection =
             configuration.GetSection(
                 ReceiptPrinterOptions.SectionName);
@@ -122,8 +142,56 @@ public static class DependencyInjection
             .ValidateOnStart();
 
         /*
-         * Dịch vụ dùng chung toàn ứng dụng.
+         * =====================================================
+         * VIETQR OPTIONS
+         * =====================================================
          */
+
+        var vietQrSection =
+            configuration.GetSection(
+                VietQrOptions.SectionName);
+
+        /*
+         * VietQR được phép tắt khi cửa hàng chưa cấu hình
+         * tài khoản ngân hàng.
+         *
+         * Khi Payment:EnableVietQr = true, Host kiểm tra:
+         * - BIN ngân hàng;
+         * - số tài khoản;
+         * - tên chủ tài khoản;
+         * - tiền tố nội dung chuyển khoản;
+         * - kích thước ảnh QR.
+         *
+         * ValidateOnStart giúp ứng dụng không chạy với
+         * cấu hình VietQR đã bật nhưng không hợp lệ.
+         */
+        services
+            .AddOptions<VietQrOptions>()
+            .Bind(
+                vietQrSection)
+            .Validate(
+                options =>
+                {
+                    try
+                    {
+                        options.Validate();
+
+                        return true;
+                    }
+                    catch
+                    {
+                        return false;
+                    }
+                },
+                "Cấu hình Payment/VietQR không hợp lệ.")
+            .ValidateOnStart();
+
+        /*
+         * =====================================================
+         * COMMON SINGLETON SERVICES
+         * =====================================================
+         */
+
         services.AddSingleton<
             DatabasePathResolver>();
 
@@ -159,6 +227,12 @@ public static class DependencyInjection
             PermissionService>();
 
         /*
+         * =====================================================
+         * RECEIPT SERVICES
+         * =====================================================
+         */
+
+        /*
          * Receipt snapshot serializer là stateless.
          *
          * Store provider tạo một snapshot cấu hình bất biến
@@ -184,6 +258,35 @@ public static class DependencyInjection
         services.AddSingleton<
             IReceiptService,
             WpfReceiptService>();
+
+        /*
+         * =====================================================
+         * VIETQR SERVICES
+         * =====================================================
+         */
+
+        /*
+         * VietQrService:
+         * - không giữ DbContext;
+         * - không lưu trạng thái giao dịch;
+         * - không gọi API ngân hàng;
+         * - không giữ dữ liệu thay đổi theo từng request;
+         * - chỉ đọc typed options và tạo payload/PNG.
+         *
+         * Vì vậy Singleton là lifetime phù hợp.
+         *
+         * Việc tạo QR không đồng nghĩa tiền đã được nhận.
+         * Service này không được tự MarkPaid Order.
+         */
+        services.AddSingleton<
+            IVietQrService,
+            VietQrService>();
+
+        /*
+         * =====================================================
+         * ENTITY FRAMEWORK CORE
+         * =====================================================
+         */
 
         /*
          * DbContext ngắn hạn theo từng DI scope.
@@ -227,6 +330,12 @@ public static class DependencyInjection
 
                 optionsBuilder.EnableDetailedErrors();
             });
+
+        /*
+         * =====================================================
+         * PERSISTENCE SERVICES
+         * =====================================================
+         */
 
         services.AddScoped<
             IUnitOfWork,
