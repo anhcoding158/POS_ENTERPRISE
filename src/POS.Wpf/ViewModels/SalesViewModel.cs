@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.Services;
+using POS.Application.Common;
 using POS.Application.DTOs.Checkout;
 using POS.Application.DTOs.Printing;
 using POS.Application.DTOs.Products;
@@ -31,6 +32,14 @@ public sealed class SalesViewModel :
     private const int
         CatalogPageSize = 200;
 
+    /*
+     * Metadata đối soát VietQR sẽ được nối vào Notes.
+     * Giữ phần ghi chú người dùng tối đa 350 ký tự để
+     * tổng Notes không vượt BusinessRules.Orders.NotesMaxLength.
+     */
+    private const int
+        VietQrUserNotesMaxLength = 350;
+
     private static readonly TimeSpan
         LastOrderBannerLifetime =
             TimeSpan.FromSeconds(7);
@@ -48,6 +57,9 @@ public sealed class SalesViewModel :
 
     private readonly IReceiptPreviewService
         _receiptPreviewService;
+
+    private readonly ISalesPaymentFlowService
+        _paymentFlowService;
 
     private readonly ILogger<SalesViewModel>
         _logger;
@@ -70,6 +82,13 @@ public sealed class SalesViewModel :
     private bool _isInitialized;
 
     private int? _selectedCategoryId;
+
+    private PaymentMethod
+        _selectedPaymentMethod =
+            PaymentMethod.Cash;
+
+    private SalesPaymentAuthorization?
+        _pendingVietQrAuthorization;
 
     private string? _lastOrderCode;
     private string? _lastOrderSummary;
@@ -98,6 +117,7 @@ public sealed class SalesViewModel :
         IServiceScopeFactory scopeFactory,
         ICurrentUserService currentUserService,
         IReceiptPreviewService receiptPreviewService,
+        ISalesPaymentFlowService paymentFlowService,
         ILogger<SalesViewModel> logger)
     {
         _scopeFactory =
@@ -114,6 +134,11 @@ public sealed class SalesViewModel :
             receiptPreviewService ??
             throw new ArgumentNullException(
                 nameof(receiptPreviewService));
+
+        _paymentFlowService =
+            paymentFlowService ??
+            throw new ArgumentNullException(
+                nameof(paymentFlowService));
 
         _logger =
             logger ??
@@ -167,6 +192,18 @@ public sealed class SalesViewModel :
             CreateQuickCashCommand(
                 suggestionIndex: 3);
 
+        SelectCashPaymentCommand =
+            new AsyncRelayCommand(
+                SelectCashPaymentAsync,
+                CanSelectCashPayment,
+                HandleCommandException);
+
+        SelectVietQrPaymentCommand =
+            new AsyncRelayCommand(
+                SelectVietQrPaymentAsync,
+                CanSelectVietQrPayment,
+                HandleCommandException);
+
         CheckoutCommand =
             new AsyncRelayCommand(
                 CheckoutAsync,
@@ -211,6 +248,18 @@ public sealed class SalesViewModel :
 
     public AsyncRelayCommand QuickCash4Command { get; }
 
+    public AsyncRelayCommand
+        SelectCashPaymentCommand
+    {
+        get;
+    }
+
+    public AsyncRelayCommand
+        SelectVietQrPaymentCommand
+    {
+        get;
+    }
+
     public string QuickCash1Text =>
         FormatQuickCashSuggestion(
             _quickCashAmounts[0]);
@@ -244,9 +293,27 @@ public sealed class SalesViewModel :
 
         set
         {
+            var normalized =
+                value ??
+                string.Empty;
+
+            if (HasPendingVietQrAuthorization &&
+                !string.Equals(
+                    _cashReceivedText,
+                    normalized,
+                    StringComparison.Ordinal))
+            {
+                OnPropertyChanged(
+                    nameof(CashReceivedText));
+
+                ShowPendingVietQrLockError();
+
+                return;
+            }
+
             if (!SetProperty(
                     ref _cashReceivedText,
-                    value ?? string.Empty))
+                    normalized))
             {
                 return;
             }
@@ -271,10 +338,155 @@ public sealed class SalesViewModel :
     {
         get => _orderNotes;
 
-        set => SetProperty(
-            ref _orderNotes,
-            value ?? string.Empty);
+        set
+        {
+            var normalized =
+                value ??
+                string.Empty;
+
+            if (HasPendingVietQrAuthorization &&
+                !string.Equals(
+                    _orderNotes,
+                    normalized,
+                    StringComparison.Ordinal))
+            {
+                /*
+                 * Sau khi thu ngân đã xác nhận nhận tiền,
+                 * nội dung đơn phải giữ nguyên cho lần thử lưu lại.
+                 */
+                OnPropertyChanged(
+                    nameof(OrderNotes));
+
+                ShowError(
+                    "Đơn VietQR đã được xác nhận nhận tiền. " +
+                    "Không được sửa ghi chú trước khi lưu xong.");
+
+                return;
+            }
+
+            if (!SetProperty(
+                    ref _orderNotes,
+                    normalized))
+            {
+                return;
+            }
+
+            OnPropertyChanged(
+                nameof(OrderNotesLengthText));
+
+            CheckoutCommand
+                .NotifyCanExecuteChanged();
+        }
     }
+
+    public PaymentMethod SelectedPaymentMethod =>
+        _selectedPaymentMethod;
+
+    public bool IsCashPaymentSelected =>
+        SelectedPaymentMethod ==
+        PaymentMethod.Cash;
+
+    public bool IsVietQrPaymentSelected =>
+        SelectedPaymentMethod ==
+        PaymentMethod.VietQr;
+
+    public bool IsVietQrEnabled =>
+        _paymentFlowService
+            .IsVietQrEnabled;
+
+    public bool HasPendingVietQrAuthorization =>
+        _pendingVietQrAuthorization is not null;
+
+    public bool IsOrderLocked =>
+        HasPendingVietQrAuthorization;
+
+    public bool CanEditOrder =>
+        !IsBusy &&
+        !IsOrderLocked;
+
+    public bool IsPaymentSelectionEnabled =>
+        !IsBusy &&
+        !IsOrderLocked;
+
+    public bool IsCashInputEnabled =>
+        IsCashPaymentSelected &&
+        CanEditOrder;
+
+    public int OrderNotesMaxLength =>
+        IsVietQrPaymentSelected
+            ? VietQrUserNotesMaxLength
+            : BusinessRules.Orders
+                .NotesMaxLength;
+
+    public string OrderNotesLengthText =>
+        $"{OrderNotes.Length:N0}/" +
+        $"{OrderNotesMaxLength:N0}";
+
+    public string SelectedPaymentMethodText =>
+        SelectedPaymentMethod switch
+        {
+            PaymentMethod.Cash =>
+                "Tiền mặt",
+
+            PaymentMethod.VietQr =>
+                "VietQR",
+
+            _ =>
+                "Không hỗ trợ"
+        };
+
+    public string PaymentMethodHintText
+    {
+        get
+        {
+            if (HasPendingVietQrAuthorization)
+            {
+                return
+                    "Đã xác nhận nhận tiền VietQR. " +
+                    "Giữ nguyên đơn và thử lưu lại; " +
+                    "không yêu cầu khách chuyển thêm.";
+            }
+
+            if (IsCashPaymentSelected)
+            {
+                return
+                    "Nhập tiền khách đưa, hệ thống sẽ tính tiền trả lại.";
+            }
+
+            return IsVietQrEnabled
+                ? "Mở mã VietQR và chỉ lưu đơn sau khi thu ngân " +
+                  "xác nhận cửa hàng đã nhận đủ tiền."
+                : "VietQR chưa được bật trong cấu hình cửa hàng.";
+        }
+    }
+
+    public string CheckoutButtonTitle =>
+        HasPendingVietQrAuthorization
+            ? "THỬ LƯU LẠI ĐƠN VIETQR"
+            : IsVietQrPaymentSelected
+                ? "MỞ MÃ THANH TOÁN VIETQR"
+                : "THANH TOÁN TIỀN MẶT";
+
+    public string CheckoutButtonSubtitle =>
+        HasPendingVietQrAuthorization
+            ? "Không mở mã mới • Giữ nguyên xác nhận cũ"
+            : IsVietQrPaymentSelected
+                ? "F8 • Quét mã và xác nhận thủ công"
+                : "F8 • Xác nhận giá và tồn kho";
+
+    public string PendingVietQrReferenceText =>
+        _pendingVietQrAuthorization?
+            .PaymentReference ??
+        string.Empty;
+
+    public string PendingVietQrAmountText =>
+        _pendingVietQrAuthorization is null
+            ? string.Empty
+            : $"{_pendingVietQrAuthorization
+                .ConfirmedPaymentAmount
+                .ToString(
+                    "N0",
+                    VietnameseCulture)} ₫";
 
     public bool IsLoadingProducts
     {
@@ -292,6 +504,7 @@ public sealed class SalesViewModel :
             OnPropertyChanged(
                 nameof(IsBusy));
 
+            NotifyPaymentPresentation();
             NotifyCommandStates();
         }
     }
@@ -312,6 +525,7 @@ public sealed class SalesViewModel :
             OnPropertyChanged(
                 nameof(IsBusy));
 
+            NotifyPaymentPresentation();
             NotifyCommandStates();
         }
     }
@@ -451,6 +665,11 @@ public sealed class SalesViewModel :
     {
         get
         {
+            if (IsVietQrPaymentSelected)
+            {
+                return "Không áp dụng";
+            }
+
             if (string.IsNullOrWhiteSpace(
                     CashReceivedText))
             {
@@ -474,6 +693,11 @@ public sealed class SalesViewModel :
     {
         get
         {
+            if (IsVietQrPaymentSelected)
+            {
+                return "0 ₫";
+            }
+
             if (!TryGetCashReceived(
                     out var cash))
             {
@@ -504,6 +728,7 @@ public sealed class SalesViewModel :
         get
         {
             return
+                IsCashPaymentSelected &&
                 TryGetCashReceived(
                     out var cash) &&
                 (decimal)cash >=
@@ -515,6 +740,16 @@ public sealed class SalesViewModel :
     {
         get
         {
+            if (IsVietQrPaymentSelected)
+            {
+                return HasPendingVietQrAuthorization
+                    ? "Đã giữ xác nhận VietQR cũ để thử lưu lại đơn."
+                    : IsVietQrEnabled
+                        ? "VietQR không sử dụng tiền khách đưa " +
+                          "hoặc tiền trả lại."
+                        : "VietQR chưa được cấu hình.";
+            }
+
             if (!HasCartItems)
             {
                 return
@@ -836,6 +1071,13 @@ public sealed class SalesViewModel :
         ArgumentNullException.ThrowIfNull(
             product);
 
+        if (HasPendingVietQrAuthorization)
+        {
+            ShowPendingVietQrLockError();
+
+            return Task.CompletedTask;
+        }
+
         if (!product.CanSell)
         {
             ShowError(
@@ -900,6 +1142,19 @@ public sealed class SalesViewModel :
         ArgumentNullException.ThrowIfNull(
             line);
 
+        if (HasPendingVietQrAuthorization)
+        {
+            /*
+             * XAML ở checkpoint kế tiếp sẽ phủ lớp khóa lên giỏ.
+             * Guard này là lớp bảo vệ thứ hai cho lời gọi ngoài UI.
+             */
+            ShowPendingVietQrLockError();
+
+            NotifyCartPresentation();
+
+            return;
+        }
+
         NotifyCartPresentation();
 
         ShowNeutral(
@@ -912,6 +1167,13 @@ public sealed class SalesViewModel :
     {
         ArgumentNullException.ThrowIfNull(
             line);
+
+        if (HasPendingVietQrAuthorization)
+        {
+            ShowPendingVietQrLockError();
+
+            return;
+        }
 
         if (!CartLines.Remove(
                 line))
@@ -927,6 +1189,13 @@ public sealed class SalesViewModel :
 
     private Task ClearCartAsync()
     {
+        if (HasPendingVietQrAuthorization)
+        {
+            ShowPendingVietQrLockError();
+
+            return Task.CompletedTask;
+        }
+
         _orderSessionVersion++;
 
         CancelLastOrderAutoDismiss();
@@ -940,6 +1209,10 @@ public sealed class SalesViewModel :
         OrderNotes =
             string.Empty;
 
+        ResetPaymentState(
+            resetSelectedMethod:
+                true);
+
         NotifyCartPresentation();
 
         ShowNeutral(
@@ -950,6 +1223,15 @@ public sealed class SalesViewModel :
 
     private Task SetExactCashAsync()
     {
+        if (!IsCashPaymentSelected ||
+            HasPendingVietQrAuthorization)
+        {
+            ShowError(
+                "Tiền đủ chỉ áp dụng cho thanh toán tiền mặt.");
+
+            return Task.CompletedTask;
+        }
+
         if (!TryConvertEstimatedTotal(
                 out var total))
         {
@@ -966,8 +1248,8 @@ public sealed class SalesViewModel :
     }
 
     private AsyncRelayCommand
-    CreateQuickCashCommand(
-        int suggestionIndex)
+        CreateQuickCashCommand(
+            int suggestionIndex)
     {
         if (suggestionIndex < 0 ||
             suggestionIndex >=
@@ -1005,6 +1287,8 @@ public sealed class SalesViewModel :
     {
         return
             !IsBusy &&
+            IsCashPaymentSelected &&
+            !HasPendingVietQrAuthorization &&
             HasCartItems &&
             suggestionIndex >= 0 &&
             suggestionIndex <
@@ -1334,6 +1618,15 @@ public sealed class SalesViewModel :
     private void SetCashAmount(
         long amount)
     {
+        if (!IsCashPaymentSelected ||
+            HasPendingVietQrAuthorization)
+        {
+            ShowError(
+                "Không thể nhập tiền mặt trong trạng thái hiện tại.");
+
+            return;
+        }
+
         if (amount < 0)
         {
             throw new ArgumentOutOfRangeException(
@@ -1352,6 +1645,78 @@ public sealed class SalesViewModel :
                 VietnameseCulture)} ₫.");
     }
 
+    private Task SelectCashPaymentAsync()
+    {
+        return SelectPaymentMethodAsync(
+            PaymentMethod.Cash);
+    }
+
+    private Task SelectVietQrPaymentAsync()
+    {
+        return SelectPaymentMethodAsync(
+            PaymentMethod.VietQr);
+    }
+
+    private Task SelectPaymentMethodAsync(
+        PaymentMethod paymentMethod)
+    {
+        if (IsBusy)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (HasPendingVietQrAuthorization)
+        {
+            ShowPendingVietQrLockError();
+
+            return Task.CompletedTask;
+        }
+
+        if (paymentMethod ==
+                PaymentMethod.VietQr &&
+            !IsVietQrEnabled)
+        {
+            ShowError(
+                "VietQR chưa được bật hoặc chưa được " +
+                "cấu hình cho cửa hàng.");
+
+            return Task.CompletedTask;
+        }
+
+        if (paymentMethod is not
+            (PaymentMethod.Cash or
+             PaymentMethod.VietQr))
+        {
+            ShowError(
+                "Quầy bán hàng hiện chỉ hỗ trợ " +
+                "tiền mặt và VietQR.");
+
+            return Task.CompletedTask;
+        }
+
+        if (_selectedPaymentMethod ==
+            paymentMethod)
+        {
+            return Task.CompletedTask;
+        }
+
+        _selectedPaymentMethod =
+            paymentMethod;
+
+        NotifyPaymentPresentation();
+        NotifyCashPresentation();
+        NotifyCommandStates();
+
+        ShowNeutral(
+            paymentMethod ==
+            PaymentMethod.Cash
+                ? "Đã chọn thanh toán tiền mặt."
+                : "Đã chọn VietQR. Hệ thống chỉ lưu đơn " +
+                  "sau khi thu ngân xác nhận đã nhận đủ tiền.");
+
+        return Task.CompletedTask;
+    }
+
     private async Task CheckoutAsync()
     {
         if (!HasCartItems)
@@ -1362,22 +1727,59 @@ public sealed class SalesViewModel :
             return;
         }
 
-        if (!TryGetCashReceived(
-                out var cashReceived))
+        if (!TryConvertEstimatedTotal(
+                out var totalAmount) ||
+            totalAmount <= 0 ||
+            totalAmount >
+            BusinessRules.Orders
+                .MaximumOrderAmount)
         {
             ShowError(
-                "Tiền khách đưa không hợp lệ.");
+                "Tổng tiền không hợp lệ hoặc vượt giới hạn thanh toán.");
 
             return;
         }
 
-        if ((decimal)cashReceived <
-            EstimatedTotal)
+        if (OrderNotes.Length >
+            OrderNotesMaxLength)
         {
             ShowError(
-                "Tiền khách đưa chưa đủ thanh toán.");
+                IsVietQrPaymentSelected
+                    ? $"Ghi chú VietQR chỉ được tối đa " +
+                      $"{VietQrUserNotesMaxLength:N0} ký tự " +
+                      "để chừa chỗ lưu thông tin đối soát."
+                    : $"Ghi chú đơn hàng không được vượt quá " +
+                      $"{BusinessRules.Orders.NotesMaxLength:N0} ký tự.");
 
             return;
+        }
+
+        long cashReceived;
+
+        if (IsCashPaymentSelected)
+        {
+            if (!TryGetCashReceived(
+                    out cashReceived))
+            {
+                ShowError(
+                    "Tiền khách đưa không hợp lệ.");
+
+                return;
+            }
+
+            if (cashReceived <
+                totalAmount)
+            {
+                ShowError(
+                    "Tiền khách đưa chưa đủ thanh toán.");
+
+                return;
+            }
+        }
+        else
+        {
+            cashReceived =
+                0;
         }
 
         var requestLines =
@@ -1392,20 +1794,6 @@ public sealed class SalesViewModel :
                                 line.Quantity))
                 .ToArray();
 
-        var request =
-            new CheckoutRequest(
-                lines:
-                    requestLines,
-
-                paymentMethod:
-                    PaymentMethod.Cash,
-
-                cashReceived:
-                    cashReceived,
-
-                notes:
-                    OrderNotes);
-
         ReceiptRequest? receiptToPreview =
             null;
 
@@ -1418,13 +1806,116 @@ public sealed class SalesViewModel :
         var completedOrderSessionVersion =
             0L;
 
-        IsCheckingOut = true;
+        SalesPaymentAuthorization?
+            authorization =
+                null;
+
+        IsCheckingOut =
+            true;
 
         ShowNeutral(
-            "Đang xác nhận giá, tồn kho và lưu giao dịch...");
+            HasPendingVietQrAuthorization
+                ? "Đang thử lưu lại đơn bằng xác nhận " +
+                  "VietQR đã có..."
+                : IsVietQrPaymentSelected
+                    ? "Đang chuẩn bị mã VietQR..."
+                    : "Đang xác thực tiền mặt...");
 
         try
         {
+            var authorizationResult =
+                await _paymentFlowService
+                    .AuthorizeAsync(
+                        new SalesPaymentAuthorizationRequest(
+                            paymentMethod:
+                                SelectedPaymentMethod,
+
+                            totalAmount:
+                                totalAmount,
+
+                            cashReceived:
+                                cashReceived,
+
+                            existingAuthorization:
+                                _pendingVietQrAuthorization));
+
+            if (authorizationResult.IsFailure)
+            {
+                ShowError(
+                    authorizationResult
+                        .Error
+                        .Message);
+
+                return;
+            }
+
+            if (authorizationResult
+                .Value
+                .IsCancelled)
+            {
+                ShowNeutral(
+                    "Đã hủy thanh toán VietQR. " +
+                    "Đơn hàng chưa được lưu.");
+
+                return;
+            }
+
+            authorization =
+                authorizationResult
+                    .Value
+                    .Authorization;
+
+            if (authorization is null)
+            {
+                ShowError(
+                    "Luồng thanh toán không trả về xác nhận hợp lệ.");
+
+                return;
+            }
+
+            if (authorization.IsVietQr)
+            {
+                SetPendingVietQrAuthorization(
+                    authorization);
+            }
+
+            if (!TryBuildCheckoutNotes(
+                    authorization,
+                    out var checkoutNotes,
+                    out var notesError))
+            {
+                ShowError(
+                    notesError);
+
+                return;
+            }
+
+            var request =
+                new CheckoutRequest(
+                    lines:
+                        requestLines,
+
+                    paymentMethod:
+                        authorization
+                            .PaymentMethod,
+
+                    cashReceived:
+                        authorization
+                            .CashReceived,
+
+                    notes:
+                        checkoutNotes,
+
+                    confirmedPaymentAmount:
+                        authorization
+                            .ConfirmedPaymentAmount);
+
+            ShowNeutral(
+                authorization.IsVietQr
+                    ? "Đã xác nhận VietQR. Đang kiểm tra giá, " +
+                      "tồn kho và lưu giao dịch..."
+                    : "Đang xác nhận giá, tồn kho và lưu giao dịch...");
+
             await using var scope =
                 _scopeFactory
                     .CreateAsyncScope();
@@ -1441,19 +1932,20 @@ public sealed class SalesViewModel :
 
             if (result.IsFailure)
             {
-                ShowError(
-                    result.Error.Message);
-
                 /*
                  * Tồn kho hoặc giá có thể đã thay đổi
                  * trên một cửa sổ/máy khác.
+                 *
+                 * Với VietQR, authorization được giữ lại.
+                 * Lần thử sau không mở QR mới.
                  */
                 await LoadProductsAsync(
                     autoAddExactMatch:
                         false);
 
-                ShowError(
-                    result.Error.Message);
+                ShowCheckoutFailure(
+                    result.Error,
+                    authorization);
 
                 return;
             }
@@ -1482,14 +1974,17 @@ public sealed class SalesViewModel :
                 completedOrder.OrderCode;
 
             LastOrderSummary =
-                $"Đã thu " +
-                $"{completedOrder.CashReceived.ToString(
-                    "N0",
-                    VietnameseCulture)} ₫ • " +
-                $"Trả lại " +
-                $"{completedOrder.ChangeAmount.ToString(
-                    "N0",
-                    VietnameseCulture)} ₫";
+                BuildCompletedOrderSummary(
+                    completedOrder,
+                    authorization);
+
+            /*
+             * Chỉ xóa authorization sau khi CheckoutService
+             * trả về success và transaction đã commit.
+             */
+            ResetPaymentState(
+                resetSelectedMethod:
+                    true);
 
             CartLines.Clear();
 
@@ -1506,7 +2001,8 @@ public sealed class SalesViewModel :
                     false);
 
             successMessage =
-                $"Thanh toán thành công • " +
+                $"Thanh toán {FormatPaymentMethod(
+                    completedOrder.PaymentMethod)} thành công • " +
                 $"{completedOrder.OrderCode} • " +
                 $"{completedOrder.TotalAmount.ToString(
                     "N0",
@@ -1515,21 +2011,39 @@ public sealed class SalesViewModel :
             ShowSuccess(
                 successMessage);
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception exception)
         {
             _logger.LogError(
                 exception,
                 "Thanh toán từ giao diện bán hàng thất bại.");
 
-            ShowError(
-                "Không thể hoàn tất thanh toán. " +
-                exception
-                    .GetBaseException()
-                    .Message);
+            if (authorization?.IsVietQr ==
+                true)
+            {
+                ShowCheckoutFailure(
+                    "Không thể hoàn tất thanh toán. " +
+                    exception
+                        .GetBaseException()
+                        .Message,
+                    authorization);
+            }
+            else
+            {
+                ShowError(
+                    "Không thể hoàn tất thanh toán. " +
+                    exception
+                        .GetBaseException()
+                        .Message);
+            }
         }
         finally
         {
-            IsCheckingOut = false;
+            IsCheckingOut =
+                false;
         }
 
         /*
@@ -1564,6 +2078,251 @@ public sealed class SalesViewModel :
                 successMessage,
                 completedOrderSessionVersion);
         }
+    }
+
+    private bool TryBuildCheckoutNotes(
+        SalesPaymentAuthorization authorization,
+        out string? checkoutNotes,
+        out string errorMessage)
+    {
+        ArgumentNullException.ThrowIfNull(
+            authorization);
+
+        var userNotes =
+            string.IsNullOrWhiteSpace(
+                OrderNotes)
+                ? null
+                : OrderNotes.Trim();
+
+        if (!authorization.IsVietQr)
+        {
+            if (userNotes?.Length >
+                BusinessRules.Orders
+                    .NotesMaxLength)
+            {
+                checkoutNotes =
+                    null;
+
+                errorMessage =
+                    "Ghi chú đơn hàng vượt quá giới hạn.";
+
+                return false;
+            }
+
+            checkoutNotes =
+                userNotes;
+
+            errorMessage =
+                string.Empty;
+
+            return true;
+        }
+
+        if (userNotes?.Length >
+            VietQrUserNotesMaxLength)
+        {
+            checkoutNotes =
+                null;
+
+            errorMessage =
+                $"Ghi chú VietQR chỉ được tối đa " +
+                $"{VietQrUserNotesMaxLength:N0} ký tự.";
+
+            return false;
+        }
+
+        var paymentReference =
+            authorization
+                .PaymentReference;
+
+        var transferContent =
+            authorization
+                .TransferContent;
+
+        if (string.IsNullOrWhiteSpace(
+                paymentReference) ||
+            string.IsNullOrWhiteSpace(
+                transferContent))
+        {
+            checkoutNotes =
+                null;
+
+            errorMessage =
+                "Xác nhận VietQR thiếu thông tin đối soát.";
+
+            return false;
+        }
+
+        var reconciliationNote =
+            $"[VIETQR] Ref={paymentReference}; " +
+            $"Content={transferContent}";
+
+        checkoutNotes =
+            userNotes is null
+                ? reconciliationNote
+                : $"{userNotes}" +
+                  $"{Environment.NewLine}" +
+                  $"{reconciliationNote}";
+
+        if (checkoutNotes.Length >
+            BusinessRules.Orders
+                .NotesMaxLength)
+        {
+            checkoutNotes =
+                null;
+
+            errorMessage =
+                "Ghi chú và thông tin đối soát VietQR " +
+                "vượt quá giới hạn lưu trữ.";
+
+            return false;
+        }
+
+        errorMessage =
+            string.Empty;
+
+        return true;
+    }
+
+    private static string BuildCompletedOrderSummary(
+        CheckoutResultDto completedOrder,
+        SalesPaymentAuthorization authorization)
+    {
+        ArgumentNullException.ThrowIfNull(
+            completedOrder);
+
+        ArgumentNullException.ThrowIfNull(
+            authorization);
+
+        if (authorization.IsVietQr)
+        {
+            return
+                $"VietQR • " +
+                $"{authorization.PaymentReference} • " +
+                $"Đã xác nhận " +
+                $"{completedOrder.TotalAmount.ToString(
+                    "N0",
+                    VietnameseCulture)} ₫";
+        }
+
+        return
+            $"Đã thu " +
+            $"{completedOrder.CashReceived.ToString(
+                "N0",
+                VietnameseCulture)} ₫ • " +
+            $"Trả lại " +
+            $"{completedOrder.ChangeAmount.ToString(
+                "N0",
+                VietnameseCulture)} ₫";
+    }
+
+    private void ShowCheckoutFailure(
+        Error error,
+        SalesPaymentAuthorization authorization)
+    {
+        ArgumentNullException.ThrowIfNull(
+            authorization);
+
+        if (!authorization.IsVietQr)
+        {
+            ShowError(
+                error.Message);
+
+            return;
+        }
+
+        /*
+         * Khách có thể đã chuyển tiền thật.
+         *
+         * Không được hiển thị thông báo chung khiến thu ngân
+         * tạo QR khác hoặc yêu cầu khách chuyển lần hai.
+         */
+        if (string.Equals(
+                error.Code,
+                ErrorCodes.Payments
+                    .VietQrAmountMismatch,
+                StringComparison.Ordinal))
+        {
+            ShowError(
+                "ĐÃ XÁC NHẬN NHẬN TIỀN VIETQR NHƯNG " +
+                "TỔNG ĐƠN TRONG HỆ THỐNG ĐÃ THAY ĐỔI. " +
+                "Không yêu cầu khách chuyển thêm và không tạo QR mới. " +
+                $"Mã tham chiếu: " +
+                $"{authorization.PaymentReference}. " +
+                $"Số tiền đã nhận: " +
+                $"{authorization.ConfirmedPaymentAmount.ToString(
+                    "N0",
+                    VietnameseCulture)} ₫. " +
+                $"Chi tiết: {error.Message} " +
+                "Giữ nguyên đơn và báo quản lý kiểm tra giá, tồn kho " +
+                "hoặc dữ liệu sản phẩm trước khi thử lưu lại.");
+
+            return;
+        }
+
+        ShowError(
+            "ĐÃ XÁC NHẬN NHẬN TIỀN VIETQR NHƯNG ĐƠN CHƯA LƯU. " +
+            "Không yêu cầu khách chuyển thêm. " +
+            $"Mã tham chiếu: " +
+            $"{authorization.PaymentReference}. " +
+            $"Số tiền đã nhận: " +
+            $"{authorization.ConfirmedPaymentAmount.ToString(
+                "N0",
+                VietnameseCulture)} ₫. " +
+            $"Lỗi: {error.Message} " +
+            "Giữ nguyên giỏ và bấm “Thử lưu lại đơn VietQR” " +
+            "sau khi đã xử lý nguyên nhân, hoặc báo quản lý.");
+    }
+
+    private void ShowCheckoutFailure(
+        string failureMessage,
+        SalesPaymentAuthorization authorization)
+    {
+        ArgumentNullException.ThrowIfNull(
+            authorization);
+
+        if (!authorization.IsVietQr)
+        {
+            ShowError(
+                failureMessage);
+
+            return;
+        }
+
+        ShowError(
+            "ĐÃ XÁC NHẬN NHẬN TIỀN VIETQR NHƯNG ĐƠN CHƯA LƯU. " +
+            "Không yêu cầu khách chuyển thêm. " +
+            $"Mã tham chiếu: " +
+            $"{authorization.PaymentReference}. " +
+            $"Số tiền đã nhận: " +
+            $"{authorization.ConfirmedPaymentAmount.ToString(
+                "N0",
+                VietnameseCulture)} ₫. " +
+            $"Lỗi: {failureMessage} " +
+            "Giữ nguyên giỏ và thử lưu lại sau khi đã xử lý nguyên nhân, " +
+            "hoặc báo quản lý.");
+    }
+
+    private static string FormatPaymentMethod(
+        PaymentMethod paymentMethod)
+    {
+        return paymentMethod switch
+        {
+            PaymentMethod.Cash =>
+                "tiền mặt",
+
+            PaymentMethod.VietQr =>
+                "VietQR",
+
+            PaymentMethod.BankTransfer =>
+                "chuyển khoản",
+
+            PaymentMethod.Card =>
+                "thẻ",
+
+            _ =>
+                "không xác định"
+        };
     }
 
     private async Task ShowReceiptPreviewAsync(
@@ -1601,6 +2360,60 @@ public sealed class SalesViewModel :
 
         CancelLastOrderAutoDismiss();
         ClearLastOrderPresentation();
+
+        ResetPaymentState(
+            resetSelectedMethod:
+                false);
+    }
+
+    private void SetPendingVietQrAuthorization(
+        SalesPaymentAuthorization authorization)
+    {
+        ArgumentNullException.ThrowIfNull(
+            authorization);
+
+        if (!authorization.IsVietQr)
+        {
+            throw new ArgumentException(
+                "Chỉ authorization VietQR mới được giữ để thử lại.",
+                nameof(authorization));
+        }
+
+        _pendingVietQrAuthorization =
+            authorization;
+
+        _selectedPaymentMethod =
+            PaymentMethod.VietQr;
+
+        NotifyPaymentPresentation();
+        NotifyCashPresentation();
+        NotifyCommandStates();
+    }
+
+    private void ResetPaymentState(
+        bool resetSelectedMethod)
+    {
+        _pendingVietQrAuthorization =
+            null;
+
+        if (resetSelectedMethod)
+        {
+            _selectedPaymentMethod =
+                PaymentMethod.Cash;
+        }
+
+        NotifyPaymentPresentation();
+        NotifyCashPresentation();
+        NotifyCommandStates();
+    }
+
+    private void ShowPendingVietQrLockError()
+    {
+        ShowError(
+            "Đơn này đã được thu ngân xác nhận nhận tiền VietQR. " +
+            "Không được sửa món, số lượng, ghi chú hoặc phương thức " +
+            "thanh toán trước khi lưu xong. " +
+            "Không yêu cầu khách chuyển thêm.");
     }
 
     private void ScheduleLastOrderAutoDismiss(
@@ -1788,25 +2601,73 @@ public sealed class SalesViewModel :
 
     private bool CanClearCart()
     {
-        return !IsBusy &&
-               HasCartItems;
+        return
+            !IsBusy &&
+            !HasPendingVietQrAuthorization &&
+            HasCartItems;
     }
 
     private bool CanSetCash()
     {
-        return !IsBusy &&
-               HasCartItems;
+        return
+            !IsBusy &&
+            IsCashPaymentSelected &&
+            !HasPendingVietQrAuthorization &&
+            HasCartItems;
+    }
+
+    private bool CanSelectCashPayment()
+    {
+        return
+            !IsBusy &&
+            !HasPendingVietQrAuthorization;
+    }
+
+    private bool CanSelectVietQrPayment()
+    {
+        return
+            !IsBusy &&
+            !HasPendingVietQrAuthorization &&
+            IsVietQrEnabled;
     }
 
     private bool CanCheckout()
     {
+        if (IsBusy ||
+            !HasCartItems ||
+            EstimatedTotal <= 0 ||
+            EstimatedTotal >
+            BusinessRules.Orders
+                .MaximumOrderAmount ||
+            EstimatedTotal >
+            long.MaxValue)
+        {
+            return false;
+        }
+
+        if (HasPendingVietQrAuthorization)
+        {
+            return
+                IsVietQrPaymentSelected &&
+                _pendingVietQrAuthorization is not null &&
+                TryConvertEstimatedTotal(
+                    out var pendingTotal) &&
+                pendingTotal ==
+                _pendingVietQrAuthorization
+                    .ConfirmedPaymentAmount;
+        }
+
+        if (IsCashPaymentSelected)
+        {
+            return
+                HasEnoughCash;
+        }
+
         return
-            !IsBusy &&
-            HasCartItems &&
-            HasEnoughCash &&
-            EstimatedTotal > 0 &&
-            EstimatedTotal <=
-            long.MaxValue;
+            IsVietQrPaymentSelected &&
+            IsVietQrEnabled &&
+            OrderNotes.Length <=
+            VietQrUserNotesMaxLength;
     }
 
     private void NotifyCartPresentation()
@@ -1857,6 +2718,60 @@ public sealed class SalesViewModel :
             nameof(CashHintText));
     }
 
+    private void NotifyPaymentPresentation()
+    {
+        OnPropertyChanged(
+            nameof(SelectedPaymentMethod));
+
+        OnPropertyChanged(
+            nameof(IsCashPaymentSelected));
+
+        OnPropertyChanged(
+            nameof(IsVietQrPaymentSelected));
+
+        OnPropertyChanged(
+            nameof(IsVietQrEnabled));
+
+        OnPropertyChanged(
+            nameof(HasPendingVietQrAuthorization));
+
+        OnPropertyChanged(
+            nameof(IsOrderLocked));
+
+        OnPropertyChanged(
+            nameof(CanEditOrder));
+
+        OnPropertyChanged(
+            nameof(IsPaymentSelectionEnabled));
+
+        OnPropertyChanged(
+            nameof(IsCashInputEnabled));
+
+        OnPropertyChanged(
+            nameof(OrderNotesMaxLength));
+
+        OnPropertyChanged(
+            nameof(OrderNotesLengthText));
+
+        OnPropertyChanged(
+            nameof(SelectedPaymentMethodText));
+
+        OnPropertyChanged(
+            nameof(PaymentMethodHintText));
+
+        OnPropertyChanged(
+            nameof(CheckoutButtonTitle));
+
+        OnPropertyChanged(
+            nameof(CheckoutButtonSubtitle));
+
+        OnPropertyChanged(
+            nameof(PendingVietQrReferenceText));
+
+        OnPropertyChanged(
+            nameof(PendingVietQrAmountText));
+    }
+
     private void NotifyCommandStates()
     {
         SearchCommand
@@ -1881,6 +2796,12 @@ public sealed class SalesViewModel :
             .NotifyCanExecuteChanged();
 
         QuickCash4Command
+            .NotifyCanExecuteChanged();
+
+        SelectCashPaymentCommand
+            .NotifyCanExecuteChanged();
+
+        SelectVietQrPaymentCommand
             .NotifyCanExecuteChanged();
 
         CheckoutCommand
@@ -1936,6 +2857,9 @@ public sealed class SalesViewModel :
             true;
 
         CancelLastOrderAutoDismiss();
+
+        _pendingVietQrAuthorization =
+            null;
 
         GC.SuppressFinalize(
             this);

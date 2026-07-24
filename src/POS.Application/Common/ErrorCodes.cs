@@ -246,6 +246,19 @@ public static class ErrorCodes
 
         public const string VietQrGenerationFailed =
             "PAYMENT.VIETQR_GENERATION_FAILED";
+
+        /// <summary>
+        /// Số tiền VietQR thu ngân đã xác nhận khác với
+        /// tổng đơn được CheckoutService tính lại từ database.
+        ///
+        /// Presentation dùng mã lỗi này để:
+        /// - giữ nguyên authorization VietQR;
+        /// - không mở mã QR mới;
+        /// - khóa giỏ hàng;
+        /// - yêu cầu xử lý chênh lệch.
+        /// </summary>
+        public const string VietQrAmountMismatch =
+            "PAYMENT.VIETQR_AMOUNT_MISMATCH";
     }
 
     public static class Printing

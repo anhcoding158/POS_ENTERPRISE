@@ -9,7 +9,8 @@ namespace POS.Architecture.Tests;
 public sealed class CheckoutValidatorTests
 {
     [Fact]
-    public void Valid_cash_checkout_must_pass()
+    public void
+        Valid_cash_checkout_must_pass()
     {
         var request =
             new CheckoutRequest(
@@ -27,7 +28,10 @@ public sealed class CheckoutValidatorTests
                     PaymentMethod.Cash,
 
                 cashReceived:
-                    100_000);
+                    100_000,
+
+                confirmedPaymentAmount:
+                    0);
 
         var result =
             CheckoutValidator.Validate(
@@ -40,7 +44,7 @@ public sealed class CheckoutValidatorTests
 
     [Fact]
     public void
-        Valid_vietqr_checkout_with_zero_cash_must_pass()
+        Valid_vietqr_checkout_with_confirmed_amount_must_pass()
     {
         var request =
             new CheckoutRequest(
@@ -58,7 +62,10 @@ public sealed class CheckoutValidatorTests
                     PaymentMethod.VietQr,
 
                 cashReceived:
-                    0);
+                    0,
+
+                confirmedPaymentAmount:
+                    100_000);
 
         var result =
             CheckoutValidator.Validate(
@@ -70,7 +77,8 @@ public sealed class CheckoutValidatorTests
     }
 
     [Fact]
-    public void Empty_cart_must_fail()
+    public void
+        Empty_cart_must_fail()
     {
         var request =
             new CheckoutRequest(
@@ -97,6 +105,48 @@ public sealed class CheckoutValidatorTests
 
     [Fact]
     public void
+        Vietqr_checkout_without_confirmed_amount_must_fail()
+    {
+        var request =
+            new CheckoutRequest(
+                lines:
+                [
+                    new CheckoutLineRequest(
+                        productId:
+                            1,
+
+                        quantity:
+                            1)
+                ],
+
+                paymentMethod:
+                    PaymentMethod.VietQr,
+
+                cashReceived:
+                    0,
+
+                confirmedPaymentAmount:
+                    0);
+
+        var result =
+            CheckoutValidator.Validate(
+                request);
+
+        Assert.True(
+            result.IsFailure);
+
+        Assert.Equal(
+            ErrorCodes.Payments.InvalidAmount,
+            result.Error.Code);
+
+        Assert.Contains(
+            "VietQR",
+            result.Error.Message,
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void
         Vietqr_checkout_with_cash_received_must_fail()
     {
         var request =
@@ -115,6 +165,9 @@ public sealed class CheckoutValidatorTests
                     PaymentMethod.VietQr,
 
                 cashReceived:
+                    100_000,
+
+                confirmedPaymentAmount:
                     100_000);
 
         var result =
@@ -130,6 +183,48 @@ public sealed class CheckoutValidatorTests
 
         Assert.Contains(
             "VietQR",
+            result.Error.Message,
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void
+        Cash_checkout_with_confirmed_non_cash_amount_must_fail()
+    {
+        var request =
+            new CheckoutRequest(
+                lines:
+                [
+                    new CheckoutLineRequest(
+                        productId:
+                            1,
+
+                        quantity:
+                            1)
+                ],
+
+                paymentMethod:
+                    PaymentMethod.Cash,
+
+                cashReceived:
+                    100_000,
+
+                confirmedPaymentAmount:
+                    100_000);
+
+        var result =
+            CheckoutValidator.Validate(
+                request);
+
+        Assert.True(
+            result.IsFailure);
+
+        Assert.Equal(
+            ErrorCodes.General.Validation,
+            result.Error.Code);
+
+        Assert.Contains(
+            "tiền mặt",
             result.Error.Message,
             StringComparison.OrdinalIgnoreCase);
     }
@@ -159,6 +254,9 @@ public sealed class CheckoutValidatorTests
                     paymentMethod,
 
                 cashReceived:
+                    0,
+
+                confirmedPaymentAmount:
                     0);
 
         var result =

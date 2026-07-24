@@ -21,6 +21,10 @@ namespace POS.Wpf.Views;
 ///
 /// Nguyên tắc an toàn:
 /// - không cho đóng cửa sổ khi checkout đang chạy;
+/// - không cho đóng cửa sổ khi đã xác nhận nhận tiền VietQR
+///   nhưng Order chưa được lưu;
+/// - F4 và F6 chỉ hoạt động với thanh toán tiền mặt;
+/// - F8 dùng phương thức thanh toán đang chọn;
 /// - không cho gửi lệnh bàn phím lần hai trong transaction;
 /// - chỉ cho nhập và dán chữ số vào ô tiền;
 /// - định dạng tiền theo vi-VN ngay trong lúc nhập;
@@ -148,6 +152,41 @@ public partial class SalesWindow :
             return;
         }
 
+        /*
+         * Sau khi thu ngân đã xác nhận nhận tiền VietQR:
+         * - F8 được phép thử lưu lại bằng authorization cũ;
+         * - mọi phím tắt sửa đơn hoặc rời cửa sổ đều bị khóa;
+         * - không mở QR mới và không làm mất dữ liệu đối soát.
+         */
+        if (_viewModel
+            .HasPendingVietQrAuthorization)
+        {
+            if (e.Key ==
+                global::System.Windows
+                    .Input.Key.F8)
+            {
+                ExecuteCommand(
+                    _viewModel
+                        .CheckoutCommand);
+            }
+            else if (e.Key ==
+                     global::System.Windows
+                         .Input.Key.Escape)
+            {
+                ShowPendingVietQrCloseBlockedMessage();
+            }
+            else
+            {
+                SystemSounds.Beep
+                    .Play();
+            }
+
+            e.Handled =
+                true;
+
+            return;
+        }
+
         switch (e.Key)
         {
             case global::System.Windows
@@ -164,6 +203,17 @@ public partial class SalesWindow :
             case global::System.Windows
                 .Input.Key.F4:
 
+                if (!_viewModel
+                    .IsCashPaymentSelected)
+                {
+                    ShowCashShortcutUnavailable();
+
+                    e.Handled =
+                        true;
+
+                    break;
+                }
+
                 ExecuteCommand(
                     _viewModel
                         .ExactCashCommand);
@@ -178,6 +228,17 @@ public partial class SalesWindow :
 
             case global::System.Windows
                 .Input.Key.F6:
+
+                if (!_viewModel
+                    .IsCashPaymentSelected)
+                {
+                    ShowCashShortcutUnavailable();
+
+                    e.Handled =
+                        true;
+
+                    break;
+                }
 
                 FocusAndSelectAll(
                     CashReceivedTextBox);
@@ -237,7 +298,9 @@ public partial class SalesWindow :
         }
 
         if (CashReceivedTextBox
-            .IsKeyboardFocusWithin)
+                .IsKeyboardFocusWithin &&
+            _viewModel
+                .IsCashPaymentSelected)
         {
             ExecuteCommand(
                 _viewModel
@@ -259,6 +322,17 @@ public partial class SalesWindow :
         global::System.Windows.Input
             .TextCompositionEventArgs e)
     {
+        if (!CanAcceptCashInput())
+        {
+            e.Handled =
+                true;
+
+            SystemSounds.Beep
+                .Play();
+
+            return;
+        }
+
         foreach (var character in
                  e.Text)
         {
@@ -282,9 +356,9 @@ public partial class SalesWindow :
     /// Xử lý dữ liệu dán vào ô tiền.
     ///
     /// Ví dụ:
-    /// - "500000"       → 500.000;
-    /// - "500.000 đ"    → 500.000;
-    /// - "Khách đưa 1tr"→ chỉ lấy các chữ số có trong chuỗi;
+    /// - "500000"        → 500.000;
+    /// - "500.000 đ"     → 500.000;
+    /// - "Khách đưa 1tr" → chỉ lấy các chữ số có trong chuỗi;
     /// - số vượt giới hạn long → từ chối.
     ///
     /// Việc tự xử lý paste giúp tránh trạng thái TextBox
@@ -295,7 +369,7 @@ public partial class SalesWindow :
         global::System.Windows
             .DataObjectPastingEventArgs e)
     {
-        if (_viewModel.IsCheckingOut ||
+        if (!CanAcceptCashInput() ||
             sender is not
                 global::System.Windows.Controls
                     .TextBox textBox)
@@ -720,6 +794,26 @@ public partial class SalesWindow :
             return;
         }
 
+        /*
+         * Authorization VietQR hiện chỉ nằm trong bộ nhớ
+         * của SalesViewModel. Nếu đóng cửa sổ ở thời điểm này:
+         * - mã tham chiếu sẽ mất;
+         * - số tiền đã xác nhận sẽ mất;
+         * - lần mở lại có nguy cơ tạo QR khác.
+         *
+         * Vì vậy nút X, Alt+F4 và ESC đều bị chặn tuyệt đối.
+         */
+        if (_viewModel
+            .HasPendingVietQrAuthorization)
+        {
+            e.Cancel =
+                true;
+
+            ShowPendingVietQrCloseBlockedMessage();
+
+            return;
+        }
+
         if (_closeConfirmed ||
             _viewModel.CartLines.Count == 0)
         {
@@ -803,12 +897,86 @@ public partial class SalesWindow :
             null;
     }
 
+    private bool CanAcceptCashInput()
+    {
+        return
+            !_viewModel.IsCheckingOut &&
+            !_viewModel
+                .HasPendingVietQrAuthorization &&
+            _viewModel
+                .IsCashPaymentSelected &&
+            _viewModel
+                .IsCashInputEnabled;
+    }
+
+    private void ShowCashShortcutUnavailable()
+    {
+        SystemSounds.Beep
+            .Play();
+
+        global::System.Windows
+            .MessageBox.Show(
+                this,
+                "F4 và F6 chỉ dùng cho thanh toán tiền mặt.\n\n" +
+                "Với VietQR, hãy dùng F8 để mở hoặc thử lưu " +
+                "giao dịch theo trạng thái hiện tại.",
+                "Phím tắt tiền mặt",
+                global::System.Windows
+                    .MessageBoxButton.OK,
+                global::System.Windows
+                    .MessageBoxImage.Information);
+    }
+
+    private void ShowPendingVietQrCloseBlockedMessage()
+    {
+        SystemSounds.Beep
+            .Play();
+
+        var paymentReference =
+            string.IsNullOrWhiteSpace(
+                _viewModel
+                    .PendingVietQrReferenceText)
+                ? "Không xác định"
+                : _viewModel
+                    .PendingVietQrReferenceText;
+
+        var amount =
+            string.IsNullOrWhiteSpace(
+                _viewModel
+                    .PendingVietQrAmountText)
+                ? "Không xác định"
+                : _viewModel
+                    .PendingVietQrAmountText;
+
+        global::System.Windows
+            .MessageBox.Show(
+                this,
+                "Không thể đóng quầy vì thu ngân đã xác nhận " +
+                "cửa hàng nhận tiền VietQR nhưng đơn chưa được lưu.\n\n" +
+                $"Mã tham chiếu: {paymentReference}\n" +
+                $"Số tiền đã nhận: {amount}\n\n" +
+                "Không tạo QR mới và không yêu cầu khách chuyển thêm. " +
+                "Hãy xử lý nguyên nhân rồi bấm F8 để thử lưu lại, " +
+                "hoặc báo quản lý.",
+                "Đơn VietQR chưa được lưu",
+                global::System.Windows
+                    .MessageBoxButton.OK,
+                global::System.Windows
+                    .MessageBoxImage.Warning);
+    }
+
     private static void FocusAndSelectAll(
         global::System.Windows.Controls
             .TextBox textBox)
     {
         ArgumentNullException.ThrowIfNull(
             textBox);
+
+        if (!textBox.IsVisible ||
+            !textBox.IsEnabled)
+        {
+            return;
+        }
 
         textBox.Focus();
         textBox.SelectAll();

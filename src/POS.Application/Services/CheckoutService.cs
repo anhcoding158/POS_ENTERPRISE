@@ -26,6 +26,8 @@ namespace POS.Application.Services;
 /// - kiểm tra trạng thái và tồn kho;
 /// - lấy giá từ Product trong database;
 /// - tạo Order snapshot;
+/// - tính lại tổng tiền từ dữ liệu database;
+/// - đối chiếu số tiền VietQR đã xác nhận;
 /// - thanh toán;
 /// - trừ kho;
 /// - tạo InventoryMovement;
@@ -268,7 +270,8 @@ public sealed class CheckoutService :
              * Giá vốn và giá bán luôn lấy từ Product đã đọc
              * trong database, không dùng giá từ giao diện.
              */
-            foreach (var requestedLine in request.Lines)
+            foreach (var requestedLine in
+                     request.Lines)
             {
                 var product =
                     products[
@@ -308,17 +311,67 @@ public sealed class CheckoutService :
                  * Giữ nhánh code để contract sẵn sàng cho
                  * discount policy trong tương lai.
                  */
-                if (requestedLine.LineDiscountAmount > 0)
+                if (requestedLine.LineDiscountAmount >
+                    0)
                 {
                     order.ApplyItemDiscount(
                         orderItem,
-                        requestedLine.LineDiscountAmount,
+                        requestedLine
+                            .LineDiscountAmount,
                         utcNow);
                 }
             }
 
+            /*
+             * PrepareForPayment tính lại toàn bộ:
+             * - Subtotal;
+             * - DiscountAmount;
+             * - TotalAmount.
+             *
+             * Đây là tổng tiền tin cậy được xây từ Product
+             * vừa đọc trong database.
+             */
             order.PrepareForPayment(
                 utcNow);
+
+            /*
+             * =================================================
+             * VIETQR CONFIRMED AMOUNT GATE
+             * =================================================
+             *
+             * Phải kiểm tra trước:
+             * - MarkPaid;
+             * - giảm tồn kho;
+             * - tạo InventoryMovement;
+             * - Add Order;
+             * - SaveChanges;
+             * - Commit.
+             *
+             * Sai dù chỉ một đồng cũng dừng giao dịch.
+             */
+            var confirmedAmountValidation =
+                ValidateConfirmedPaymentAmount(
+                    request,
+                    order.TotalAmount);
+
+            if (confirmedAmountValidation.IsFailure)
+            {
+                _logger.LogWarning(
+                    "Checkout VietQR bị dừng do số tiền " +
+                    "không khớp. CashierUserId: {CashierUserId}, " +
+                    "OrderCode: {OrderCode}, " +
+                    "ConfirmedAmount: {ConfirmedAmount}, " +
+                    "ActualTotalAmount: {ActualTotalAmount}",
+                    cashierUserId.Value,
+                    order.OrderCode,
+                    request.ConfirmedPaymentAmount,
+                    order.TotalAmount);
+
+                return Result.Failure<
+                    CheckoutResultDto>(
+                        confirmedAmountValidation
+                            .Error);
+            }
 
             order.MarkPaid(
                 request.PaymentMethod,
@@ -329,8 +382,10 @@ public sealed class CheckoutService :
                 utcNow);
 
             /*
-             * Chỉ trừ tồn sau khi Order đã vượt qua toàn bộ
-             * validation giá và thanh toán.
+             * Chỉ trừ tồn sau khi Order đã vượt qua:
+             * - validation giá;
+             * - đối chiếu số tiền VietQR;
+             * - validation thanh toán của Domain.
              */
             foreach (var requestedProduct in
                      requestedQuantities)
@@ -436,16 +491,18 @@ public sealed class CheckoutService :
                 checkoutResult);
         }
         catch (OperationCanceledException)
-            when (cancellationToken.IsCancellationRequested)
+            when (cancellationToken
+                .IsCancellationRequested)
         {
             throw;
         }
         catch (DomainException exception)
         {
-            return Result.Failure<CheckoutResultDto>(
-                new Error(
-                    exception.Code,
-                    exception.Message));
+            return Result.Failure<
+                CheckoutResultDto>(
+                    new Error(
+                        exception.Code,
+                        exception.Message));
         }
         catch (PersistenceConflictException exception)
         {
@@ -535,9 +592,10 @@ public sealed class CheckoutService :
             }
 
             var exists =
-                await _orderRepository.CodeExistsAsync(
-                    candidate,
-                    cancellationToken);
+                await _orderRepository
+                    .CodeExistsAsync(
+                        candidate,
+                        cancellationToken);
 
             if (!exists)
             {
@@ -548,9 +606,89 @@ public sealed class CheckoutService :
 
         return Result.Failure<string>(
             new Error(
-                ErrorCodes.Checkout.OrderCodeConflict,
+                ErrorCodes.Checkout
+                    .OrderCodeConflict,
+
                 "Không thể tạo mã đơn hàng duy nhất. " +
                 "Vui lòng thử lại."));
+    }
+
+    /// <summary>
+    /// Đối chiếu số tiền Presentation đã xác nhận với
+    /// tổng tiền Application vừa tính lại từ database.
+    ///
+    /// Cash không dùng ConfirmedPaymentAmount.
+    ///
+    /// VietQR bắt buộc:
+    /// ConfirmedPaymentAmount == actualTotalAmount.
+    /// </summary>
+    private static Result
+        ValidateConfirmedPaymentAmount(
+            CheckoutRequest request,
+            long actualTotalAmount)
+    {
+        ArgumentNullException.ThrowIfNull(
+            request);
+
+        if (actualTotalAmount < 0)
+        {
+            return Result.Failure(
+                new Error(
+                    ErrorCodes.Payments
+                        .InvalidAmount,
+
+                    "Tổng tiền đơn hàng không hợp lệ."));
+        }
+
+        switch (request.PaymentMethod)
+        {
+            case PaymentMethod.Cash:
+
+                /*
+                 * CheckoutValidator đã bảo đảm:
+                 * ConfirmedPaymentAmount == 0.
+                 */
+                return Result.Success();
+
+            case PaymentMethod.VietQr:
+
+                if (request.ConfirmedPaymentAmount ==
+                    actualTotalAmount)
+                {
+                    return Result.Success();
+                }
+
+                return Result.Failure(
+                    new Error(
+                        ErrorCodes.Payments
+                            .VietQrAmountMismatch,
+
+                        "Số tiền VietQR đã xác nhận không khớp " +
+                        "với tổng đơn hiện tại. " +
+                        $"Đã xác nhận: " +
+                        $"{request.ConfirmedPaymentAmount:N0} ₫; " +
+                        $"tổng đơn: {actualTotalAmount:N0} ₫. " +
+                        "Giao dịch chưa được lưu."));
+
+            case PaymentMethod.BankTransfer:
+            case PaymentMethod.Card:
+
+                return Result.Failure(
+                    new Error(
+                        ErrorCodes.Checkout
+                            .PaymentMethodNotSupported,
+
+                        "Phương thức thanh toán chưa được hỗ trợ."));
+
+            default:
+
+                return Result.Failure(
+                    new Error(
+                        ErrorCodes.Checkout
+                            .InvalidPaymentMethod,
+
+                        "Phương thức thanh toán không hợp lệ."));
+        }
     }
 
     private static Dictionary<int, int>
@@ -560,7 +698,8 @@ public sealed class CheckoutService :
         var result =
             new Dictionary<int, int>();
 
-        foreach (var line in request.Lines)
+        foreach (var line in
+                 request.Lines)
         {
             result.TryGetValue(
                 line.ProductId,
@@ -578,7 +717,9 @@ public sealed class CheckoutService :
             catch (OverflowException exception)
             {
                 throw new DomainException(
-                    ErrorCodes.Checkout.InvalidQuantity,
+                    ErrorCodes.Checkout
+                        .InvalidQuantity,
+
                     "Tổng số lượng sản phẩm vượt giới hạn.",
                     exception);
             }
@@ -588,8 +729,11 @@ public sealed class CheckoutService :
                     .Orders.MaximumLineQuantity)
             {
                 throw new DomainException(
-                    ErrorCodes.Checkout.InvalidQuantity,
-                    "Tổng số lượng của một sản phẩm vượt giới hạn.");
+                    ErrorCodes.Checkout
+                        .InvalidQuantity,
+
+                    "Tổng số lượng của một sản phẩm " +
+                    "vượt giới hạn.");
             }
 
             result[line.ProductId] =
@@ -607,7 +751,9 @@ public sealed class CheckoutService :
             PersistenceConflictKind.Concurrency)
         {
             return Failure(
-                ErrorCodes.Checkout.ConcurrencyConflict,
+                ErrorCodes.Checkout
+                    .ConcurrencyConflict,
+
                 "Tồn kho hoặc dữ liệu sản phẩm vừa được thay đổi " +
                 "bởi giao dịch khác. Vui lòng tải lại giỏ hàng.");
         }
@@ -618,7 +764,9 @@ public sealed class CheckoutService :
                 StringComparison.Ordinal))
         {
             return Failure(
-                ErrorCodes.Checkout.OrderCodeConflict,
+                ErrorCodes.Checkout
+                    .OrderCodeConflict,
+
                 "Mã đơn hàng vừa bị trùng. Vui lòng thử lại.");
         }
 
@@ -634,12 +782,14 @@ public sealed class CheckoutService :
         var paymentMethod =
             order.PaymentMethod ??
             throw new InvalidOperationException(
-                "Order đã hoàn tất nhưng thiếu phương thức thanh toán.");
+                "Order đã hoàn tất nhưng thiếu " +
+                "phương thức thanh toán.");
 
         var paidAtUtc =
             order.PaidAtUtc ??
             throw new InvalidOperationException(
-                "Order đã hoàn tất nhưng thiếu thời điểm thanh toán.");
+                "Order đã hoàn tất nhưng thiếu " +
+                "thời điểm thanh toán.");
 
         var lines =
             order.Items

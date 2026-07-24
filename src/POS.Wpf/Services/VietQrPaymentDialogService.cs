@@ -100,6 +100,15 @@ public sealed record VietQrPaymentPresentation(
 /// </summary>
 public interface IVietQrPaymentDialogService
 {
+    /// <summary>
+    /// Cho biết VietQR đã được bật bằng cấu hình hợp lệ
+    /// cho phiên chạy hiện tại hay chưa.
+    /// </summary>
+    bool IsEnabled
+    {
+        get;
+    }
+
     Task<Result<VietQrPaymentDialogResult>> ShowAsync(
         VietQrPaymentDialogRequest request,
         CancellationToken cancellationToken = default);
@@ -140,6 +149,9 @@ public sealed class VietQrPaymentDialogService :
         _options.Validate();
     }
 
+    public bool IsEnabled =>
+        _options.EnableVietQr;
+
     public async Task<Result<VietQrPaymentDialogResult>>
         ShowAsync(
             VietQrPaymentDialogRequest request,
@@ -150,6 +162,24 @@ public sealed class VietQrPaymentDialogService :
 
         cancellationToken
             .ThrowIfCancellationRequested();
+
+        /*
+         * Dừng ngay tại Presentation khi chức năng bị tắt.
+         *
+         * Không gọi VietQrService, không tạo payload,
+         * không tạo PNG và không cố mở WPF Window.
+         */
+        if (!IsEnabled)
+        {
+            return Result.Failure<
+                VietQrPaymentDialogResult>(
+                    new Error(
+                        ErrorCodes.Payments
+                            .VietQrNotConfigured,
+
+                        "VietQR chưa được bật hoặc chưa được " +
+                        "cấu hình cho cửa hàng."));
+        }
 
         var qrRequest =
             new VietQrRequest(
@@ -441,7 +471,7 @@ public sealed class VietQrPaymentDialogService :
         {
             /*
              * CRC ở top level có dạng:
-             * 63 04 XXXX
+             * 63 04 XXXX.
              *
              * Parser vẫn đọc bình thường như một TLV.
              */

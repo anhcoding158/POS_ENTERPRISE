@@ -13,6 +13,7 @@ namespace POS.Application.Validation;
 /// - sản phẩm còn hoạt động;
 /// - giá hiện tại;
 /// - tồn kho hiện tại;
+/// - số tiền VietQR có khớp tổng đơn thực tế;
 ///
 /// sẽ được CheckoutService thực hiện sau.
 /// </summary>
@@ -32,7 +33,8 @@ public static class CheckoutValidator
         }
 
         if (request.Lines.Count >
-            BusinessRules.Orders.MaximumLinesPerOrder)
+            BusinessRules.Orders
+                .MaximumLinesPerOrder)
         {
             return Failure(
                 ErrorCodes.General.Validation,
@@ -44,28 +46,28 @@ public static class CheckoutValidator
                 request.PaymentMethod))
         {
             return Failure(
-                ErrorCodes.Checkout.InvalidPaymentMethod,
+                ErrorCodes.Checkout
+                    .InvalidPaymentMethod,
                 "Phương thức thanh toán không hợp lệ.");
         }
 
         /*
-         * Checkout hiện hỗ trợ hai phương thức:
+         * =====================================================
+         * PAYMENT CONTRACT
+         * =====================================================
          *
-         * 1. Cash:
-         *    - tiền khách đưa phải không âm;
-         *    - không vượt giới hạn giá trị đơn hàng;
-         *    - CheckoutService và Domain sẽ kiểm tra
-         *      số tiền có đủ thanh toán hay không.
+         * Cash:
+         * - CashReceived chứa tiền khách giao;
+         * - ConfirmedPaymentAmount phải bằng 0.
          *
-         * 2. VietQr:
-         *    - chỉ được gửi sau quy trình xác nhận thủ công
-         *      tại Presentation;
-         *    - CashReceived bắt buộc bằng 0;
-         *    - Domain sẽ lưu ChangeAmount bằng 0.
+         * VietQR:
+         * - CashReceived phải bằng 0;
+         * - ConfirmedPaymentAmount phải lớn hơn 0;
+         * - CheckoutService sẽ so sánh số này với tổng đơn
+         *   được tính lại từ database.
          *
-         * Việc hiển thị QR không phải xác nhận tự động
-         * từ ngân hàng. Validator chỉ kiểm tra đúng cấu trúc
-         * request sau khi thu ngân đã thực hiện bước xác nhận.
+         * Việc QR xuất hiện không đồng nghĩa ngân hàng
+         * đã xác nhận giao dịch.
          */
         switch (request.PaymentMethod)
         {
@@ -81,16 +83,37 @@ public static class CheckoutValidator
                         "Tiền khách đưa không hợp lệ.");
                 }
 
+                if (request.ConfirmedPaymentAmount !=
+                    0)
+                {
+                    return Failure(
+                        ErrorCodes.General.Validation,
+                        "Thanh toán tiền mặt không được gửi " +
+                        "số tiền xác nhận không dùng tiền mặt.");
+                }
+
                 break;
 
             case PaymentMethod.VietQr:
 
-                if (request.CashReceived != 0)
+                if (request.CashReceived !=
+                    0)
                 {
                     return Failure(
                         ErrorCodes.General.Validation,
                         "Thanh toán VietQR không được nhập " +
                         "tiền khách đưa.");
+                }
+
+                if (request.ConfirmedPaymentAmount <=
+                        0 ||
+                    request.ConfirmedPaymentAmount >
+                    BusinessRules.Orders
+                        .MaximumOrderAmount)
+                {
+                    return Failure(
+                        ErrorCodes.Payments.InvalidAmount,
+                        "Số tiền VietQR đã xác nhận không hợp lệ.");
                 }
 
                 break;
@@ -115,7 +138,8 @@ public static class CheckoutValidator
         if (request.CustomerId.HasValue)
         {
             return Failure(
-                ErrorCodes.Checkout.CustomerNotSupported,
+                ErrorCodes.Checkout
+                    .CustomerNotSupported,
                 "Chức năng gắn khách hàng sẽ được kích hoạt " +
                 "sau khi module khách hàng hoàn thiện.");
         }
@@ -123,7 +147,8 @@ public static class CheckoutValidator
         if (request.RestaurantTableId.HasValue)
         {
             return Failure(
-                ErrorCodes.Checkout.RestaurantTableNotSupported,
+                ErrorCodes.Checkout
+                    .RestaurantTableNotSupported,
                 "Chức năng chọn bàn sẽ được kích hoạt " +
                 "sau khi module sơ đồ bàn hoàn thiện.");
         }
@@ -131,12 +156,15 @@ public static class CheckoutValidator
         if (request.DiscountCode is not null)
         {
             return Failure(
-                ErrorCodes.Checkout.DiscountNotSupported,
-                "Mã giảm giá chưa được hỗ trợ trong phiên bản Checkout này.");
+                ErrorCodes.Checkout
+                    .DiscountNotSupported,
+                "Mã giảm giá chưa được hỗ trợ " +
+                "trong phiên bản Checkout này.");
         }
 
         if (request.Notes?.Length >
-            BusinessRules.Orders.NotesMaxLength)
+            BusinessRules.Orders
+                .NotesMaxLength)
         {
             return Failure(
                 ErrorCodes.General.Validation,
@@ -152,12 +180,14 @@ public static class CheckoutValidator
         var productIds =
             new HashSet<int>();
 
-        foreach (var line in request.Lines)
+        foreach (var line in
+                 request.Lines)
         {
             if (line.ProductId <= 0)
             {
                 return Failure(
-                    ErrorCodes.Checkout.ProductNotFound,
+                    ErrorCodes.Checkout
+                        .ProductNotFound,
                     "Mã sản phẩm trong giỏ hàng không hợp lệ.");
             }
 
@@ -165,28 +195,34 @@ public static class CheckoutValidator
                     line.ProductId))
             {
                 return Failure(
-                    ErrorCodes.Checkout.DuplicateProduct,
+                    ErrorCodes.Checkout
+                        .DuplicateProduct,
                     "Một sản phẩm không được xuất hiện nhiều lần " +
                     "trong cùng giỏ hàng.");
             }
 
             if (line.Quantity <= 0 ||
                 line.Quantity >
-                BusinessRules.Orders.MaximumLineQuantity)
+                BusinessRules.Orders
+                    .MaximumLineQuantity)
             {
                 return Failure(
-                    ErrorCodes.Checkout.InvalidQuantity,
-                    "Số lượng sản phẩm trong giỏ hàng không hợp lệ.");
+                    ErrorCodes.Checkout
+                        .InvalidQuantity,
+                    "Số lượng sản phẩm trong giỏ hàng " +
+                    "không hợp lệ.");
             }
 
             /*
              * Không nhận modifier từ giao diện khi catalog
              * modifier chưa được triển khai hoàn chỉnh.
              */
-            if (line.Modifiers.Count > 0)
+            if (line.Modifiers.Count >
+                0)
             {
                 return Failure(
-                    ErrorCodes.Checkout.ModifiersNotSupported,
+                    ErrorCodes.Checkout
+                        .ModifiersNotSupported,
                     "Modifier và topping chưa được hỗ trợ " +
                     "trong phiên bản Checkout này.");
             }
@@ -197,15 +233,19 @@ public static class CheckoutValidator
              * Sau này giảm giá phải được tính bằng policy
              * và dữ liệu đọc từ database.
              */
-            if (line.LineDiscountAmount != 0)
+            if (line.LineDiscountAmount !=
+                0)
             {
                 return Failure(
-                    ErrorCodes.Checkout.LineDiscountNotSupported,
-                    "Giảm giá trực tiếp trên dòng hàng chưa được hỗ trợ.");
+                    ErrorCodes.Checkout
+                        .LineDiscountNotSupported,
+                    "Giảm giá trực tiếp trên dòng hàng " +
+                    "chưa được hỗ trợ.");
             }
 
             if (line.Notes?.Length >
-                BusinessRules.Orders.NotesMaxLength)
+                BusinessRules.Orders
+                    .NotesMaxLength)
             {
                 return Failure(
                     ErrorCodes.General.Validation,

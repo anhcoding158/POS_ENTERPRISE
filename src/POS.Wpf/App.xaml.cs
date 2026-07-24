@@ -182,7 +182,8 @@ public partial class App :
          * - permission service;
          * - clock;
          * - order-code generator;
-         * - database initializer.
+         * - database initializer;
+         * - VietQR payload/PNG core.
          */
         services.AddInfrastructure(
             configuration);
@@ -288,6 +289,7 @@ public partial class App :
          * - tạo Order;
          * - trừ tồn;
          * - tạo InventoryMovement;
+         * - tạo receipt snapshot;
          * - commit transaction.
          *
          * Mọi nơi resolve ICheckoutService đều nhận
@@ -312,11 +314,14 @@ public partial class App :
     private static void ConfigureDialogServices(
         IServiceCollection services)
     {
+        ArgumentNullException.ThrowIfNull(
+            services);
+
         /*
          * Các dialog service không trực tiếp giữ DbContext.
          *
-         * Mỗi lần mở dialog, service sẽ tạo scope phù hợp
-         * cho ViewModel và các application service bên trong.
+         * Mỗi dialog hoặc service điều phối chỉ phụ thuộc
+         * vào service có lifetime phù hợp với toàn ứng dụng.
          */
         services.AddSingleton<
             IProductDialogService,
@@ -345,6 +350,39 @@ public partial class App :
             ReceiptPreviewService>();
 
         /*
+         * VietQrPaymentDialogService:
+         * - đọc typed VietQR options;
+         * - tạo payload và ảnh QR qua IVietQrService;
+         * - mở dialog xác nhận;
+         * - không giữ DbContext;
+         * - không tự xác nhận tiền từ ngân hàng;
+         * - không tự gọi CheckoutService.
+         */
+        services.AddSingleton<
+            IVietQrPaymentDialogService,
+            VietQrPaymentDialogService>();
+
+        /*
+         * SalesPaymentFlowService điều phối bước xác thực
+         * phương thức thanh toán trước Checkout.
+         *
+         * Nó chịu trách nhiệm:
+         * - kiểm tra tiền mặt có đủ hay không;
+         * - mở dialog VietQR;
+         * - phân biệt hủy và xác nhận;
+         * - tạo authorization VietQR;
+         * - tái sử dụng authorization khi Checkout cần thử lại;
+         * - không mở QR lần hai sau khi đã nhận tiền.
+         *
+         * Service không giữ DbContext và không giữ giỏ hàng.
+         * Sequence mã tham chiếu được bảo vệ bằng Interlocked,
+         * vì vậy singleton là lifetime phù hợp.
+         */
+        services.AddSingleton<
+            ISalesPaymentFlowService,
+            SalesPaymentFlowService>();
+
+        /*
          * SalesWindowService được resolve trong một scope
          * do ShellWindow tạo ra.
          *
@@ -359,6 +397,9 @@ public partial class App :
     private static void ConfigureViewModelsAndWindows(
         IServiceCollection services)
     {
+        ArgumentNullException.ThrowIfNull(
+            services);
+
         /*
          * First-run setup UI.
          */

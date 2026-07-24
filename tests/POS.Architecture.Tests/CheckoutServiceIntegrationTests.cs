@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using POS.Application.Abstractions.DateTime;
 using POS.Application.Abstractions.Orders;
+using POS.Application.Common;
 using POS.Application.DTOs.Authentication;
 using POS.Application.DTOs.Checkout;
 using POS.Application.Services;
@@ -33,7 +34,8 @@ public sealed class CheckoutServiceIntegrationTests
         Successful_checkout_must_commit_order_stock_and_movement()
     {
         await using var database =
-            await CheckoutTestDatabase.CreateAsync();
+            await CheckoutTestDatabase
+                .CreateAsync();
 
         var seed =
             await database.SeedAsync(
@@ -151,7 +153,8 @@ public sealed class CheckoutServiceIntegrationTests
         Successful_vietqr_checkout_must_commit_non_cash_order()
     {
         await using var database =
-            await CheckoutTestDatabase.CreateAsync();
+            await CheckoutTestDatabase
+                .CreateAsync();
 
         var seed =
             await database.SeedAsync(
@@ -192,7 +195,10 @@ public sealed class CheckoutServiceIntegrationTests
 
                     notes:
                         "Thanh toán VietQR đã được " +
-                        "thu ngân xác nhận thủ công."));
+                        "thu ngân xác nhận thủ công.",
+
+                    confirmedPaymentAmount:
+                        60_000));
 
         Assert.True(
             result.IsSuccess,
@@ -228,6 +234,12 @@ public sealed class CheckoutServiceIntegrationTests
                 .PaymentMethod);
 
         Assert.Equal(
+            60_000,
+            result.Value
+                .ReceiptSnapshot
+                .TotalAmount);
+
+        Assert.Equal(
             0,
             result.Value
                 .ReceiptSnapshot
@@ -260,6 +272,10 @@ public sealed class CheckoutServiceIntegrationTests
             persistedOrder
                 .PaymentMethod
                 .Value);
+
+        Assert.Equal(
+            60_000,
+            persistedOrder.TotalAmount);
 
         Assert.Equal(
             0,
@@ -308,12 +324,130 @@ public sealed class CheckoutServiceIntegrationTests
             stockQuantity);
     }
 
+    [Theory]
+    [InlineData(59_999L)]
+    [InlineData(60_001L)]
+    public async Task
+        Vietqr_amount_mismatch_must_leave_database_unchanged(
+            long confirmedPaymentAmount)
+    {
+        await using var database =
+            await CheckoutTestDatabase
+                .CreateAsync();
+
+        var seed =
+            await database.SeedAsync(
+                stockQuantity:
+                    10,
+
+                trackInventory:
+                    true,
+
+                isActive:
+                    true);
+
+        await using var context =
+            database.CreateContext();
+
+        var service =
+            CreateService(
+                context,
+                seed,
+                "HD-VIETQR-MISMATCH");
+
+        /*
+         * Tổng thật trong database:
+         *
+         * 2 × 30.000 = 60.000.
+         *
+         * Theory kiểm tra cả:
+         * - khách chuyển thiếu một đồng;
+         * - khách chuyển thừa một đồng.
+         */
+        var result =
+            await service.CheckoutAsync(
+                new CheckoutRequest(
+                    lines:
+                    [
+                        new CheckoutLineRequest(
+                            seed.ProductId,
+                            quantity:
+                                2)
+                    ],
+
+                    paymentMethod:
+                        PaymentMethod.VietQr,
+
+                    cashReceived:
+                        0,
+
+                    notes:
+                        "Kiểm thử VietQR lệch số tiền.",
+
+                    confirmedPaymentAmount:
+                        confirmedPaymentAmount));
+
+        Assert.True(
+            result.IsFailure);
+
+        Assert.Equal(
+            ErrorCodes.Payments
+                .VietQrAmountMismatch,
+            result.Error.Code);
+
+        Assert.Contains(
+            "không khớp",
+            result.Error.Message,
+            StringComparison.OrdinalIgnoreCase);
+
+        /*
+         * Dùng DbContext hoàn toàn mới để chắc chắn
+         * không đọc state đang tracking trong context Checkout.
+         */
+        await using var verifyContext =
+            database.CreateContext();
+
+        Assert.Equal(
+            0,
+            await verifyContext
+                .Orders
+                .CountAsync());
+
+        Assert.Equal(
+            0,
+            await verifyContext
+                .OrderItems
+                .CountAsync());
+
+        Assert.Equal(
+            0,
+            await verifyContext
+                .InventoryMovements
+                .CountAsync());
+
+        var stockQuantity =
+            await verifyContext.Products
+                .Where(
+                    item =>
+                        item.Id ==
+                        seed.ProductId)
+                .Select(
+                    item =>
+                        item.StockQuantity)
+                .SingleAsync();
+
+        Assert.Equal(
+            10,
+            stockQuantity);
+    }
+
     [Fact]
     public async Task
         Insufficient_stock_must_leave_database_unchanged()
     {
         await using var database =
-            await CheckoutTestDatabase.CreateAsync();
+            await CheckoutTestDatabase
+                .CreateAsync();
 
         var seed =
             await database.SeedAsync(
@@ -353,8 +487,7 @@ public sealed class CheckoutServiceIntegrationTests
                         200_000));
 
         Assert.Equal(
-            POS.Application.Common
-                .ErrorCodes.Checkout
+            ErrorCodes.Checkout
                 .InsufficientStock,
             result.Error.Code);
 
@@ -391,7 +524,8 @@ public sealed class CheckoutServiceIntegrationTests
         Inactive_product_must_not_be_sold()
     {
         await using var database =
-            await CheckoutTestDatabase.CreateAsync();
+            await CheckoutTestDatabase
+                .CreateAsync();
 
         var seed =
             await database.SeedAsync(
@@ -431,8 +565,7 @@ public sealed class CheckoutServiceIntegrationTests
                         100_000));
 
         Assert.Equal(
-            POS.Application.Common
-                .ErrorCodes.Checkout
+            ErrorCodes.Checkout
                 .ProductInactive,
             result.Error.Code);
 
@@ -451,7 +584,8 @@ public sealed class CheckoutServiceIntegrationTests
         Product_without_inventory_tracking_must_not_create_movement()
     {
         await using var database =
-            await CheckoutTestDatabase.CreateAsync();
+            await CheckoutTestDatabase
+                .CreateAsync();
 
         var seed =
             await database.SeedAsync(
