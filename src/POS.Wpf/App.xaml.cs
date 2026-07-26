@@ -1,11 +1,14 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.Authorization;
+using POS.Application.Abstractions.Payments;
 using POS.Application.Abstractions.Services;
 using POS.Application.Services;
 using POS.Infrastructure;
+using POS.Infrastructure.Payments;
 using POS.Infrastructure.Persistence;
 using POS.Wpf.Services;
 using POS.Wpf.ViewModels;
@@ -350,17 +353,30 @@ public partial class App :
             ReceiptPreviewService>();
 
         /*
-         * VietQrPaymentDialogService:
-         * - đọc typed VietQR options;
-         * - tạo payload và ảnh QR qua IVietQrService;
-         * - mở dialog xác nhận;
-         * - không giữ DbContext;
-         * - không tự xác nhận tiền từ ngân hàng;
-         * - không tự gọi CheckoutService.
+         * VietQrPaymentDialogService hiện có hai constructor:
+         *
+         * - constructor production dùng payload QR tải từ ảnh;
+         * - constructor compatibility dành cho test cũ.
+         *
+         * Đăng ký bằng factory để Microsoft DI luôn chọn
+         * constructor production, tránh lỗi ambiguous constructor.
          */
         services.AddSingleton<
-            IVietQrPaymentDialogService,
-            VietQrPaymentDialogService>();
+            IVietQrPaymentDialogService>(
+                serviceProvider =>
+                    new VietQrPaymentDialogService(
+                        serviceProvider
+                            .GetRequiredService<
+                                StoredVietQrService>(),
+
+                        serviceProvider
+                            .GetRequiredService<
+                                IVietQrPayloadStore>(),
+
+                        serviceProvider
+                            .GetRequiredService<
+                                ILogger<
+                                    VietQrPaymentDialogService>>()));
 
         /*
          * SalesPaymentFlowService điều phối bước xác thực

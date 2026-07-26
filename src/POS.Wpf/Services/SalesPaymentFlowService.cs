@@ -611,8 +611,8 @@ public sealed class SalesPaymentFlowService :
                 "cấu hình cho cửa hàng.");
         }
 
-        var paymentReference =
-            CreatePaymentReference();
+        var paymentIdentity =
+            CreatePaymentIdentity();
 
         var dialogResult =
             await _vietQrDialogService
@@ -622,7 +622,12 @@ public sealed class SalesPaymentFlowService :
                             request.TotalAmount,
 
                         paymentReference:
-                            paymentReference),
+                            paymentIdentity
+                                .PaymentReference,
+
+                        transferContent:
+                            paymentIdentity
+                                .TransferContent),
 
                     cancellationToken);
 
@@ -755,24 +760,39 @@ public sealed class SalesPaymentFlowService :
     }
 
     /// <summary>
-    /// Tạo mã tham chiếu ngắn, chỉ gồm ASCII:
+    /// Tạo hai mã có mục đích khác nhau:
     ///
-    /// QR + yyyyMMddHHmmssfff + sequence 6 chữ số.
+    /// PaymentReference:
+    /// - mã nội bộ đầy đủ;
+    /// - giữ UTC tới millisecond;
+    /// - dùng để khóa authorization và đối soát kỹ thuật;
+    /// - không cần hiển thị toàn bộ cho khách.
     ///
-    /// Sequence giúp tránh trùng khi hai yêu cầu được tạo
-    /// trong cùng một millisecond.
+    /// TransferContent:
+    /// - nội dung ngắn, có nhóm số dễ đọc;
+    /// - dùng thời gian địa phương của máy POS;
+    /// - StoredVietQrService sẽ tự thêm tiền tố cấu hình
+    ///   như POS ở phía trước;
+    /// - ví dụ kết quả cuối cùng:
+    ///   POS 2607 223045 000001.
+    ///
+    /// Sequence giúp phân biệt nhiều yêu cầu được tạo gần nhau.
     /// </summary>
-    private string CreatePaymentReference()
+    private VietQrPaymentIdentity
+        CreatePaymentIdentity()
     {
         var utcNow =
             _clock.UtcNow
                 .ToUniversalTime();
 
+        var localNow =
+            utcNow.ToLocalTime();
+
         var sequence =
             Interlocked.Increment(
                 ref _referenceSequence);
 
-        return
+        var paymentReference =
             VietQrReferencePrefix +
             utcNow.ToString(
                 "yyyyMMddHHmmssfff",
@@ -780,7 +800,24 @@ public sealed class SalesPaymentFlowService :
             sequence.ToString(
                 "D6",
                 CultureInfo.InvariantCulture);
+
+        var transferContent =
+            localNow.ToString(
+                "ddMM HHmmss",
+                CultureInfo.InvariantCulture) +
+            " " +
+            sequence.ToString(
+                "D6",
+                CultureInfo.InvariantCulture);
+
+        return new VietQrPaymentIdentity(
+            paymentReference,
+            transferContent);
     }
+
+    private sealed record VietQrPaymentIdentity(
+        string PaymentReference,
+        string TransferContent);
 
     private static Result<
         SalesPaymentAuthorizationOutcome>

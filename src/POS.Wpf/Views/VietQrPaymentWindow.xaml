@@ -4,10 +4,10 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Language="vi-VN"
     Title="POS Enterprise - Thanh toán VietQR"
-    Width="1080"
-    Height="760"
-    MinWidth="960"
-    MinHeight="680"
+    Width="1010"
+    Height="690"
+    MinWidth="920"
+    MinHeight="630"
     WindowStartupLocation="CenterOwner"
     ResizeMode="CanResize"
     ShowInTaskbar="False"
@@ -24,71 +24,19 @@
     <Window.Resources>
 
         <Style
-            x:Key="VietQrLabelStyle"
+            x:Key="VietQrSectionLabelStyle"
             TargetType="{x:Type TextBlock}">
 
-            <Setter
-                Property="FontSize"
-                Value="10.5" />
-
-            <Setter
-                Property="FontWeight"
-                Value="SemiBold" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="FontWeight" Value="Bold" />
 
             <Setter
                 Property="Foreground"
-                Value="{StaticResource TextMutedBrush}" />
+                Value="{StaticResource GoldBrush}" />
         </Style>
 
         <Style
-            x:Key="VietQrValueStyle"
-            TargetType="{x:Type TextBlock}">
-
-            <Setter
-                Property="FontSize"
-                Value="14" />
-
-            <Setter
-                Property="FontWeight"
-                Value="SemiBold" />
-
-            <Setter
-                Property="Foreground"
-                Value="{StaticResource TextPrimaryBrush}" />
-
-            <Setter
-                Property="TextWrapping"
-                Value="Wrap" />
-
-            <Setter
-                Property="Margin"
-                Value="0,5,0,0" />
-        </Style>
-
-        <Style
-            x:Key="VietQrCopyButtonStyle"
-            TargetType="{x:Type Button}"
-            BasedOn="{StaticResource SecondaryButtonStyle}">
-
-            <Setter
-                Property="Height"
-                Value="34" />
-
-            <Setter
-                Property="MinWidth"
-                Value="86" />
-
-            <Setter
-                Property="Padding"
-                Value="11,0" />
-
-            <Setter
-                Property="FontSize"
-                Value="10.5" />
-        </Style>
-
-        <Style
-            x:Key="VietQrDetailCardStyle"
+            x:Key="VietQrCardStyle"
             TargetType="{x:Type Border}">
 
             <Setter
@@ -99,27 +47,31 @@
                 Property="BorderBrush"
                 Value="{StaticResource BorderBrush}" />
 
-            <Setter
-                Property="BorderThickness"
-                Value="1" />
-
-            <Setter
-                Property="CornerRadius"
-                Value="12" />
-
-            <Setter
-                Property="Padding"
-                Value="15,13" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="Padding" Value="16" />
         </Style>
 
+        <Style
+            x:Key="VietQrStepNumberStyle"
+            TargetType="{x:Type Border}">
+
+            <Setter Property="Width" Value="30" />
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Background" Value="#F5E9CF" />
+            <Setter Property="BorderBrush" Value="#D6AE59" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="15" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+        </Style>
     </Window.Resources>
 
     <Grid>
 
         <Grid.RowDefinitions>
-            <RowDefinition Height="92" />
+            <RowDefinition Height="82" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="90" />
+            <RowDefinition Height="86" />
         </Grid.RowDefinitions>
 
         <!-- Header -->
@@ -130,7 +82,7 @@
             BorderBrush="#745630"
             BorderThickness="0,0,0,1">
 
-            <Grid Margin="26,0">
+            <Grid Margin="24,0">
 
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -141,51 +93,40 @@
                     Orientation="Horizontal"
                     VerticalAlignment="Center">
 
-                    <Grid
-                        Width="58"
-                        Height="58">
+                    <Border
+                        Width="50"
+                        Height="50"
+                        Background="#302923"
+                        BorderBrush="{StaticResource GoldBrush}"
+                        BorderThickness="1"
+                        CornerRadius="15">
 
-                        <Ellipse
-                            Stroke="{StaticResource GoldBrush}"
-                            StrokeThickness="1.3" />
-
-                        <Border
-                            Width="39"
-                            Height="39"
+                        <TextBlock
+                            Text="QR"
+                            Foreground="{StaticResource GoldHoverBrush}"
+                            FontFamily="Georgia"
+                            FontSize="16"
+                            FontWeight="Bold"
                             HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#302923"
-                            BorderBrush="{StaticResource GoldBorderBrush}"
-                            BorderThickness="1"
-                            CornerRadius="11">
-
-                            <TextBlock
-                                Text="QR"
-                                Foreground="{StaticResource GoldHoverBrush}"
-                                FontFamily="Georgia"
-                                FontSize="15"
-                                FontWeight="Bold"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center" />
-                        </Border>
-                    </Grid>
+                            VerticalAlignment="Center" />
+                    </Border>
 
                     <StackPanel
-                        Margin="15,0,0,0"
+                        Margin="14,0,0,0"
                         VerticalAlignment="Center">
 
                         <TextBlock
                             Text="THANH TOÁN VIETQR"
                             Foreground="{StaticResource GoldHoverBrush}"
                             FontFamily="Georgia"
-                            FontSize="23"
+                            FontSize="22"
                             FontWeight="SemiBold" />
 
                         <TextBlock
-                            Text="Quét mã và xác nhận thủ công sau khi kiểm tra giao dịch"
+                            Text="Quét trên màn hình hoặc in phiếu QR cho khách"
                             Foreground="{StaticResource SidebarMutedBrush}"
                             FontSize="10.5"
-                            Margin="0,5,0,0" />
+                            Margin="0,4,0,0" />
                     </StackPanel>
                 </StackPanel>
 
@@ -208,7 +149,7 @@
                             VerticalAlignment="Center" />
 
                         <TextBlock
-                            Text="CHỜ XÁC NHẬN"
+                            Text="CHỜ NHẬN TIỀN"
                             Foreground="#FFE2A8"
                             FontSize="10.5"
                             FontWeight="Bold"
@@ -218,35 +159,33 @@
             </Grid>
         </Border>
 
-        <!-- Content -->
+        <!-- Nội dung -->
 
         <Grid
             Grid.Row="1"
-            Margin="20">
+            Margin="18">
 
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="420" />
-                <ColumnDefinition Width="18" />
+                <ColumnDefinition Width="390" />
+                <ColumnDefinition Width="16" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <!-- QR panel -->
+            <!-- QR -->
 
             <Border
                 Grid.Column="0"
-                Background="{StaticResource SurfaceBrush}"
+                Style="{StaticResource VietQrCardStyle}"
                 BorderBrush="{StaticResource BorderStrongBrush}"
-                BorderThickness="1"
-                CornerRadius="17"
-                Padding="22">
+                Padding="20">
 
                 <Border.Effect>
                     <DropShadowEffect
                         Color="#4B3327"
-                        BlurRadius="18"
-                        ShadowDepth="3"
+                        BlurRadius="16"
+                        ShadowDepth="2"
                         Direction="270"
-                        Opacity="0.1" />
+                        Opacity="0.09" />
                 </Border.Effect>
 
                 <Grid>
@@ -267,44 +206,45 @@
                             HorizontalAlignment="Center" />
 
                         <TextBlock
-                            Text="Mở ứng dụng ngân hàng và quét mã bên dưới"
+                            Text="Mã đã chứa đúng số tiền và nội dung của giao dịch này"
                             Foreground="{StaticResource TextSecondaryBrush}"
-                            FontSize="10.5"
-                            HorizontalAlignment="Center"
-                            Margin="0,5,0,0" />
+                            FontSize="10"
+                            TextAlignment="Center"
+                            TextWrapping="Wrap"
+                            Margin="15,5,15,0" />
                     </StackPanel>
 
                     <Border
                         Grid.Row="1"
-                        Width="328"
-                        Height="328"
-                        Margin="0,15"
+                        Width="292"
+                        Height="292"
+                        Margin="0,12"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         Background="White"
                         BorderBrush="#D7CCBD"
                         BorderThickness="1"
-                        CornerRadius="15"
-                        Padding="16">
+                        CornerRadius="14"
+                        Padding="14">
 
                         <Border.Effect>
                             <DropShadowEffect
                                 Color="#594434"
-                                BlurRadius="17"
-                                ShadowDepth="3"
+                                BlurRadius="15"
+                                ShadowDepth="2"
                                 Direction="270"
-                                Opacity="0.13" />
+                                Opacity="0.12" />
                         </Border.Effect>
 
                         <Image
                             x:Name="QrImage"
                             Stretch="Uniform"
-                            RenderOptions.BitmapScalingMode="HighQuality" />
+                            RenderOptions.BitmapScalingMode="NearestNeighbor" />
                     </Border>
 
                     <Border
                         Grid.Row="2"
-                        Padding="15,12"
+                        Padding="14,11"
                         Background="#3A1719"
                         BorderBrush="#7A3035"
                         BorderThickness="1"
@@ -315,7 +255,7 @@
                             <TextBlock
                                 Text="SỐ TIỀN CẦN THANH TOÁN"
                                 Foreground="#D8BBB9"
-                                FontSize="10.5"
+                                FontSize="10"
                                 FontWeight="SemiBold"
                                 HorizontalAlignment="Center" />
 
@@ -324,29 +264,26 @@
                                 Text="0 ₫"
                                 Foreground="#FFE2A8"
                                 FontFamily="Georgia"
-                                FontSize="28"
+                                FontSize="27"
                                 FontWeight="Bold"
                                 HorizontalAlignment="Center"
-                                Margin="0,5,0,0" />
+                                Margin="0,4,0,0" />
                         </StackPanel>
                     </Border>
                 </Grid>
             </Border>
 
-            <!-- Information panel -->
+            <!-- Thông tin thanh toán -->
 
             <Border
                 Grid.Column="2"
-                Background="{StaticResource SurfaceBrush}"
+                Style="{StaticResource VietQrCardStyle}"
                 BorderBrush="{StaticResource BorderStrongBrush}"
-                BorderThickness="1"
-                CornerRadius="17"
-                Padding="22">
+                Padding="20">
 
                 <Grid>
 
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
@@ -357,160 +294,61 @@
                     <StackPanel>
 
                         <TextBlock
-                            Text="THÔNG TIN CHUYỂN KHOẢN"
-                            Foreground="{StaticResource GoldBrush}"
-                            FontSize="10.5"
-                            FontWeight="Bold" />
+                            Text="THÔNG TIN THANH TOÁN"
+                            Style="{StaticResource VietQrSectionLabelStyle}" />
 
                         <TextBlock
-                            Text="Khách hàng cần kiểm tra đúng người nhận và số tiền"
+                            Text="Khách quét mã và kiểm tra đúng người nhận"
                             Foreground="{StaticResource TextPrimaryBrush}"
                             FontFamily="Georgia"
-                            FontSize="20"
+                            FontSize="19"
                             FontWeight="SemiBold"
-                            Margin="0,7,0,0" />
+                            TextWrapping="Wrap"
+                            Margin="0,6,0,0" />
                     </StackPanel>
 
-                    <!-- Bank and account -->
-
-                    <Grid
-                        Grid.Row="1"
-                        Margin="0,18,0,0">
-
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="12" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-
-                        <Border
-                            Style="{StaticResource VietQrDetailCardStyle}">
-
-                            <StackPanel>
-
-                                <TextBlock
-                                    Text="BIN NGÂN HÀNG"
-                                    Style="{StaticResource VietQrLabelStyle}" />
-
-                                <TextBlock
-                                    x:Name="BankBinText"
-                                    Text="—"
-                                    Style="{StaticResource VietQrValueStyle}"
-                                    FontFamily="Consolas" />
-                            </StackPanel>
-                        </Border>
-
-                        <Border
-                            Grid.Column="2"
-                            Style="{StaticResource VietQrDetailCardStyle}">
-
-                            <Grid>
-
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-
-                                <StackPanel>
-
-                                    <TextBlock
-                                        Text="SỐ TÀI KHOẢN"
-                                        Style="{StaticResource VietQrLabelStyle}" />
-
-                                    <TextBlock
-                                        x:Name="AccountNumberText"
-                                        Text="—"
-                                        Style="{StaticResource VietQrValueStyle}"
-                                        FontFamily="Consolas" />
-                                </StackPanel>
-
-                                <Button
-                                    Grid.Column="1"
-                                    Content="Sao chép"
-                                    Style="{StaticResource VietQrCopyButtonStyle}"
-                                    Click="OnCopyAccountNumberClick"
-                                    Margin="10,0,0,0"
-                                    VerticalAlignment="Center" />
-                            </Grid>
-                        </Border>
-                    </Grid>
-
-                    <!-- Account name -->
-
                     <Border
-                        Grid.Row="2"
-                        Style="{StaticResource VietQrDetailCardStyle}"
-                        Margin="0,12,0,0">
+                        Grid.Row="1"
+                        Style="{StaticResource VietQrCardStyle}"
+                        Margin="0,16,0,0"
+                        Background="{StaticResource SurfaceMutedBrush}"
+                        Padding="15">
 
                         <StackPanel>
 
                             <TextBlock
-                                Text="CHỦ TÀI KHOẢN"
-                                Style="{StaticResource VietQrLabelStyle}" />
+                                Text="NỘI DUNG CHUYỂN KHOẢN"
+                                Foreground="{StaticResource TextMutedBrush}"
+                                FontSize="9.5"
+                                FontWeight="Bold" />
 
                             <TextBlock
-                                x:Name="AccountNameText"
+                                x:Name="TransferContentText"
                                 Text="—"
-                                Style="{StaticResource VietQrValueStyle}" />
+                                Foreground="{StaticResource AccentBrush}"
+                                FontFamily="Consolas"
+                                FontSize="14"
+                                FontWeight="Bold"
+                                TextWrapping="Wrap"
+                                Margin="0,6,0,0" />
+
+                            <TextBlock
+                                x:Name="PaymentReferenceText"
+                                Text="—"
+                                Foreground="{StaticResource TextSecondaryBrush}"
+                                FontSize="9.5"
+                                Margin="0,5,0,0" />
                         </StackPanel>
                     </Border>
 
-                    <!-- Transfer content -->
-
                     <Border
-                        Grid.Row="3"
-                        Style="{StaticResource VietQrDetailCardStyle}"
-                        Margin="0,12,0,0">
-
-                        <Grid>
-
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <StackPanel>
-
-                                <TextBlock
-                                    Text="NỘI DUNG CHUYỂN KHOẢN"
-                                    Style="{StaticResource VietQrLabelStyle}" />
-
-                                <TextBlock
-                                    x:Name="TransferContentText"
-                                    Text="—"
-                                    Style="{StaticResource VietQrValueStyle}"
-                                    Foreground="{StaticResource AccentBrush}"
-                                    FontFamily="Consolas" />
-
-                                <TextBlock
-                                    x:Name="PaymentReferenceText"
-                                    Text="—"
-                                    Foreground="{StaticResource TextMutedBrush}"
-                                    FontSize="9.5"
-                                    Margin="0,5,0,0" />
-                            </StackPanel>
-
-                            <Button
-                                Grid.Column="1"
-                                Content="Sao chép"
-                                Style="{StaticResource VietQrCopyButtonStyle}"
-                                Click="OnCopyTransferContentClick"
-                                Margin="10,0,0,0"
-                                VerticalAlignment="Center" />
-                        </Grid>
-                    </Border>
-
-                    <!-- Safety warning -->
-
-                    <Border
-                        Grid.Row="4"
-                        Margin="0,14,0,0"
-                        Padding="15"
-                        Background="#FFF5DD"
-                        BorderBrush="#E0BE72"
+                        Grid.Row="2"
+                        Margin="0,12,0,0"
+                        Padding="14"
+                        Background="#FFF8E8"
+                        BorderBrush="#E3C681"
                         BorderThickness="1"
-                        CornerRadius="12"
-                        VerticalAlignment="Top">
+                        CornerRadius="12">
 
                         <Grid>
 
@@ -520,38 +358,120 @@
                             </Grid.ColumnDefinitions>
 
                             <TextBlock
-                                Text="&#xE7BA;"
+                                Text="&#xE749;"
                                 FontFamily="Segoe MDL2 Assets"
-                                Foreground="#B17D20"
+                                Foreground="#A6751D"
                                 FontSize="19"
                                 Margin="0,1,11,0" />
 
                             <StackPanel Grid.Column="1">
 
                                 <TextBlock
-                                    Text="QR được hiển thị không có nghĩa tiền đã vào tài khoản."
-                                    Foreground="#7D5719"
+                                    Text="Khách không quét được màn hình?"
+                                    Foreground="#72521D"
                                     FontSize="11.5"
-                                    FontWeight="SemiBold"
-                                    TextWrapping="Wrap" />
+                                    FontWeight="SemiBold" />
 
                                 <TextBlock
-                                    Text="Thu ngân cần kiểm tra thông báo nhận tiền, ứng dụng ngân hàng hoặc quy trình đối soát của cửa hàng trước khi xác nhận."
+                                    Text="Bấm IN PHIẾU QR để in mã, số tiền và nội dung chuyển khoản. Phiếu in chưa xác nhận khách đã thanh toán."
                                     Foreground="#8A672D"
-                                    FontSize="10.5"
+                                    FontSize="10"
                                     TextWrapping="Wrap"
-                                    LineHeight="17"
-                                    Margin="0,6,0,0" />
+                                    LineHeight="16"
+                                    Margin="0,5,0,0" />
                             </StackPanel>
                         </Grid>
                     </Border>
 
-                    <!-- Confirmation -->
+                    <StackPanel
+                        Grid.Row="3"
+                        Margin="0,14,0,0">
+
+                        <TextBlock
+                            Text="XÁC NHẬN GIAO DỊCH"
+                            Style="{StaticResource VietQrSectionLabelStyle}" />
+
+                        <Grid Margin="0,10,0,0">
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border
+                                Style="{StaticResource VietQrStepNumberStyle}">
+
+                                <TextBlock
+                                    Text="1"
+                                    Foreground="#8D651E"
+                                    FontWeight="Bold"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center" />
+                            </Border>
+
+                            <StackPanel
+                                Grid.Column="1"
+                                Margin="11,0,0,0">
+
+                                <TextBlock
+                                    Text="Khách quét QR trên màn hình hoặc trên phiếu in."
+                                    Foreground="{StaticResource TextPrimaryBrush}"
+                                    FontSize="10.5"
+                                    FontWeight="SemiBold"
+                                    TextWrapping="Wrap" />
+
+                                <TextBlock
+                                    Text="Ứng dụng ngân hàng phải hiện đúng người nhận và đúng số tiền."
+                                    Foreground="{StaticResource TextSecondaryBrush}"
+                                    FontSize="9.5"
+                                    TextWrapping="Wrap"
+                                    Margin="0,3,0,0" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid Margin="0,10,0,0">
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border
+                                Style="{StaticResource VietQrStepNumberStyle}">
+
+                                <TextBlock
+                                    Text="2"
+                                    Foreground="#8D651E"
+                                    FontWeight="Bold"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center" />
+                            </Border>
+
+                            <StackPanel
+                                Grid.Column="1"
+                                Margin="11,0,0,0">
+
+                                <TextBlock
+                                    Text="Thu ngân kiểm tra tiền thực tế đã vào tài khoản."
+                                    Foreground="{StaticResource TextPrimaryBrush}"
+                                    FontSize="10.5"
+                                    FontWeight="SemiBold"
+                                    TextWrapping="Wrap" />
+
+                                <TextBlock
+                                    Text="Không xác nhận chỉ dựa vào ảnh chụp hoặc màn hình của khách."
+                                    Foreground="{StaticResource TextSecondaryBrush}"
+                                    FontSize="9.5"
+                                    TextWrapping="Wrap"
+                                    Margin="0,3,0,0" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
 
                     <Border
-                        Grid.Row="5"
+                        Grid.Row="4"
                         Margin="0,14,0,0"
-                        Padding="15,13"
+                        Padding="14,12"
                         Background="{StaticResource SurfaceMutedBrush}"
                         BorderBrush="{StaticResource BorderBrush}"
                         BorderThickness="1"
@@ -564,9 +484,9 @@
                             VerticalContentAlignment="Center">
 
                             <TextBlock
-                                Text="Tôi đã kiểm tra và xác nhận cửa hàng đã nhận đủ số tiền."
+                                Text="Tôi đã kiểm tra tài khoản cửa hàng và xác nhận đã nhận đủ tiền."
                                 Foreground="{StaticResource TextPrimaryBrush}"
-                                FontSize="11"
+                                FontSize="10.5"
                                 FontWeight="SemiBold"
                                 TextWrapping="Wrap"
                                 Margin="7,0,0,0" />
@@ -576,7 +496,7 @@
             </Border>
         </Grid>
 
-        <!-- Actions -->
+        <!-- Footer -->
 
         <Border
             Grid.Row="2"
@@ -584,7 +504,7 @@
             BorderBrush="{StaticResource BorderBrush}"
             BorderThickness="0,1,0,0">
 
-            <Grid Margin="25,0">
+            <Grid Margin="20,0">
 
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -592,16 +512,18 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel
-                    VerticalAlignment="Center">
+                    VerticalAlignment="Center"
+                    Margin="0,0,16,0">
 
                     <TextBlock
                         x:Name="StatusText"
                         Text="Đang chờ thu ngân kiểm tra giao dịch."
                         Foreground="{StaticResource TextSecondaryBrush}"
-                        FontSize="10.5" />
+                        FontSize="10.5"
+                        TextWrapping="Wrap" />
 
                     <TextBlock
-                        Text="Esc: hủy • Ctrl+Enter: xác nhận sau khi đã tích kiểm tra"
+                        Text="Esc: hủy • Ctrl+P: in phiếu QR • Ctrl+Enter: xác nhận"
                         Foreground="{StaticResource TextMutedBrush}"
                         FontSize="9.5"
                         Margin="0,4,0,0" />
@@ -613,19 +535,29 @@
                     VerticalAlignment="Center">
 
                     <Button
+                        x:Name="PrintSlipButton"
+                        Content="IN PHIẾU QR"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Height="48"
+                        MinWidth="150"
+                        Padding="18,0"
+                        Click="OnPrintSlipClick"
+                        Margin="0,0,10,0" />
+
+                    <Button
                         Content="HỦY"
                         Style="{StaticResource SecondaryButtonStyle}"
-                        Height="50"
-                        MinWidth="130"
-                        Padding="22,0"
+                        Height="48"
+                        MinWidth="100"
+                        Padding="18,0"
                         Click="OnCancelClick"
-                        Margin="0,0,11,0" />
+                        Margin="0,0,10,0" />
 
                     <Button
                         x:Name="ConfirmButton"
-                        Height="50"
-                        MinWidth="245"
-                        Padding="22,0"
+                        Height="48"
+                        MinWidth="220"
+                        Padding="20,0"
                         Content="XÁC NHẬN ĐÃ NHẬN TIỀN"
                         Style="{StaticResource PrimaryButtonStyle}"
                         Click="OnConfirmClick"

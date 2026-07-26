@@ -13,6 +13,13 @@ namespace POS.Infrastructure.Printing;
 /// Builder chỉ sử dụng ReceiptRequest bất biến.
 /// Không đọc lại Product, Order, Store hoặc dữ liệu sống.
 ///
+/// Hóa đơn sau khi giao dịch hoàn tất không chứa QR thanh toán.
+/// QR chỉ thuộc phiếu thanh toán VietQR trước khi thu ngân
+/// xác nhận tiền đã vào tài khoản.
+///
+/// Metadata kỹ thuật VietQR vẫn được giữ trong snapshot
+/// phục vụ đối soát nội bộ, nhưng không hiển thị trên hóa đơn.
+///
 /// Builder không mở PrintDialog và không gửi print job.
 /// Việc preview/in thuộc WpfReceiptService và Presentation.
 /// </summary>
@@ -24,25 +31,48 @@ public sealed class ReceiptDocumentBuilder
      *
      * 80 mm tương đương khoảng 302.36 DIP.
      */
-    public const double K80PageWidth = 302.36;
+    public const double K80PageWidth =
+        302.36;
 
     /*
      * Chừa khoảng 3 mm ở mỗi bên để phù hợp với
      * vùng không in được của nhiều máy K80.
      */
-    public const double K80HorizontalMargin = 11.34;
+    public const double K80HorizontalMargin =
+        11.34;
 
-    public const double K80VerticalMargin = 9.45;
+    public const double K80VerticalMargin =
+        9.45;
 
     public const double K80ContentWidth =
         K80PageWidth -
         (K80HorizontalMargin * 2);
 
-    private const double BaseFontSize = 9.7;
-    private const double SmallFontSize = 8.4;
-    private const double StoreNameFontSize = 15;
-    private const double ReceiptTitleFontSize = 13.5;
-    private const double TotalFontSize = 14.5;
+    private const double BaseFontSize =
+        9.7;
+
+    private const double SmallFontSize =
+        8.4;
+
+    private const double StoreNameFontSize =
+        15;
+
+    private const double ReceiptTitleFontSize =
+        13.5;
+
+    private const double TotalFontSize =
+        14.5;
+
+    /*
+     * Checkout lưu metadata VietQR theo dạng:
+     *
+     * [VIETQR] Ref=...; Content=...
+     *
+     * Dữ liệu này phục vụ retry và đối soát kỹ thuật.
+     * Không được in ra hóa đơn cho khách.
+     */
+    private const string VietQrMetadataPrefix =
+        "[VIETQR]";
 
     private static readonly CultureInfo
         VietnameseCulture =
@@ -51,13 +81,11 @@ public sealed class ReceiptDocumentBuilder
 
     private static readonly FontFamily
         ReceiptFontFamily =
-            new(
-                "Segoe UI");
+            new("Segoe UI");
 
     private static readonly FontFamily
         BrandFontFamily =
-            new(
-                "Georgia");
+            new("Georgia");
 
     private static readonly Brush
         ReceiptTextBrush =
@@ -95,10 +123,7 @@ public sealed class ReceiptDocumentBuilder
                 147);
 
     /// <summary>
-    /// Dựng tài liệu hóa đơn K80.
-    ///
-    /// Store chưa được cấu hình không được phép đi vào
-    /// preview hoặc print pipeline production.
+    /// Dựng tài liệu hóa đơn K80 từ snapshot đã chốt.
     /// </summary>
     public FlowDocument Build(
         ReceiptRequest request)
@@ -158,6 +183,10 @@ public sealed class ReceiptDocumentBuilder
             document,
             request);
 
+        AddPaymentCompletionStatus(
+            document,
+            request);
+
         AddFooter(
             document,
             request);
@@ -198,7 +227,8 @@ public sealed class ReceiptDocumentBuilder
                 Brushes.White,
 
             LineStackingStrategy =
-                LineStackingStrategy.BlockLineHeight,
+                LineStackingStrategy
+                    .BlockLineHeight,
 
             LineHeight =
                 14,
@@ -260,8 +290,7 @@ public sealed class ReceiptDocumentBuilder
             new Paragraph
             {
                 Margin =
-                    new Thickness(
-                        0),
+                    new Thickness(0),
 
                 TextAlignment =
                     TextAlignment.Center,
@@ -301,8 +330,7 @@ public sealed class ReceiptDocumentBuilder
                     ReceiptGoldBrush,
 
                 BorderThickness =
-                    new Thickness(
-                        1),
+                    new Thickness(1),
 
                 Tag =
                     "Receipt.BrandMonogram"
@@ -329,8 +357,7 @@ public sealed class ReceiptDocumentBuilder
                 FontWeights.Bold,
                 TextAlignment.Left,
                 margin:
-                    new Thickness(
-                        0),
+                    new Thickness(0),
                 fontFamily:
                     BrandFontFamily,
                 foreground:
@@ -381,7 +408,8 @@ public sealed class ReceiptDocumentBuilder
         {
             informationCell.Blocks.Add(
                 CreateParagraph(
-                    $"Điện thoại: {request.Store.Phone}",
+                    $"Điện thoại: " +
+                    $"{request.Store.Phone}",
                     SmallFontSize,
                     FontWeights.Normal,
                     TextAlignment.Left,
@@ -402,7 +430,8 @@ public sealed class ReceiptDocumentBuilder
         {
             informationCell.Blocks.Add(
                 CreateParagraph(
-                    $"Mã số thuế: {request.Store.TaxCode}",
+                    $"Mã số thuế: " +
+                    $"{request.Store.TaxCode}",
                     SmallFontSize,
                     FontWeights.Normal,
                     TextAlignment.Left,
@@ -460,7 +489,9 @@ public sealed class ReceiptDocumentBuilder
         document.Blocks.Add(
             CreateParagraph(
                 $"BẢN IN LẠI LẦN " +
-                $"{request.CopyNumber:N0}",
+                $"{request.CopyNumber.ToString(
+                    "N0",
+                    VietnameseCulture)}",
                 BaseFontSize,
                 FontWeights.Bold,
                 TextAlignment.Center,
@@ -521,9 +552,11 @@ public sealed class ReceiptDocumentBuilder
     {
         var rows =
             new List<
-                (string Label,
-                 string Value,
-                 string Tag)>();
+                (
+                    string Label,
+                    string Value,
+                    string Tag
+                )>();
 
         if (!string.IsNullOrWhiteSpace(
                 request.CustomerName))
@@ -591,8 +624,7 @@ public sealed class ReceiptDocumentBuilder
                     0,
 
                 Margin =
-                    new Thickness(
-                        0),
+                    new Thickness(0),
 
                 Tag =
                     tag
@@ -865,7 +897,8 @@ public sealed class ReceiptDocumentBuilder
             new TableRow
             {
                 Tag =
-                    $"Receipt.Line.{line.OrderItemId}"
+                    $"Receipt.Line." +
+                    $"{line.OrderItemId}"
             };
 
         var bottomBorder =
@@ -992,7 +1025,8 @@ public sealed class ReceiptDocumentBuilder
                         0.45),
 
                 Tag =
-                    $"Receipt.Line.{line.OrderItemId}.Details"
+                    $"Receipt.Line." +
+                    $"{line.OrderItemId}.Details"
             };
 
         foreach (var detail in details)
@@ -1031,14 +1065,12 @@ public sealed class ReceiptDocumentBuilder
             detailRow);
     }
 
-    private static IReadOnlyList<
-        ReceiptLineDetail>
+    private static List<ReceiptLineDetail>
         BuildLineDetails(
             ReceiptLineDto line)
     {
         var details =
-            new List<
-                ReceiptLineDetail>();
+            new List<ReceiptLineDetail>();
 
         foreach (var modifier in line.Modifiers)
         {
@@ -1082,7 +1114,8 @@ public sealed class ReceiptDocumentBuilder
         {
             details.Add(
                 new ReceiptLineDetail(
-                    $"Ghi chú: {line.Notes}",
+                    $"Ghi chú: " +
+                    $"{line.Notes}",
                     IsImportant:
                         false,
                     IsItalic:
@@ -1151,8 +1184,7 @@ public sealed class ReceiptDocumentBuilder
             request.DiscountAmount > 0
                 ? $"-{FormatMoney(
                     request.DiscountAmount)}"
-                : FormatMoney(
-                    0),
+                : FormatMoney(0),
             FontWeights.Normal,
             BaseFontSize,
             ReceiptTextBrush,
@@ -1216,8 +1248,7 @@ public sealed class ReceiptDocumentBuilder
                     0.9,
                     0,
                     0)
-                : new Thickness(
-                    0);
+                : new Thickness(0);
 
         var row =
             new TableRow();
@@ -1274,8 +1305,12 @@ public sealed class ReceiptDocumentBuilder
         FlowDocument document,
         ReceiptRequest request)
     {
+        var visibleNotes =
+            ExtractVisibleReceiptNotes(
+                request.Notes);
+
         if (string.IsNullOrWhiteSpace(
-                request.Notes))
+                visibleNotes))
         {
             return;
         }
@@ -1314,10 +1349,86 @@ public sealed class ReceiptDocumentBuilder
 
         paragraph.Inlines.Add(
             new Run(
-                request.Notes));
+                visibleNotes));
 
         document.Blocks.Add(
             paragraph);
+    }
+
+    /// <summary>
+    /// Hiển thị trạng thái dễ hiểu cho người mua.
+    ///
+    /// Không hiển thị mã tham chiếu nội bộ hoặc nội dung
+    /// kỹ thuật của authorization.
+    /// </summary>
+    private static void AddPaymentCompletionStatus(
+        FlowDocument document,
+        ReceiptRequest request)
+    {
+        AddHorizontalRule(
+            document,
+            topMargin:
+                6,
+            bottomMargin:
+                5);
+
+        var paymentStatus =
+            request.PaymentMethod switch
+            {
+                PaymentMethod.Cash =>
+                    "ĐÃ THANH TOÁN • TIỀN MẶT",
+
+                PaymentMethod.VietQr =>
+                    "ĐÃ THANH TOÁN • VIETQR",
+
+                PaymentMethod.BankTransfer =>
+                    "ĐÃ THANH TOÁN • CHUYỂN KHOẢN",
+
+                PaymentMethod.Card =>
+                    "ĐÃ THANH TOÁN • THẺ",
+
+                _ =>
+                    throw new ArgumentOutOfRangeException(
+                        nameof(request),
+                        request.PaymentMethod,
+                        "Phương thức thanh toán không hợp lệ.")
+            };
+
+        document.Blocks.Add(
+            CreateParagraph(
+                paymentStatus,
+                9.4,
+                FontWeights.Bold,
+                TextAlignment.Center,
+                margin:
+                    new Thickness(
+                        0,
+                        0,
+                        0,
+                        3),
+                fontFamily:
+                    BrandFontFamily,
+                foreground:
+                    ReceiptGoldBrush,
+                tag:
+                    "Receipt.PaymentStatus"));
+
+        document.Blocks.Add(
+            CreateParagraph(
+                "Giao dịch đã được cửa hàng hoàn tất.",
+                7.6,
+                FontWeights.Normal,
+                TextAlignment.Center,
+                margin:
+                    new Thickness(
+                        5,
+                        0,
+                        5,
+                        0),
+                foreground:
+                    ReceiptMutedBrush,
+                tag:
+                    "Receipt.PaymentStatusDescription"));
     }
 
     private static void AddFooter(
@@ -1378,12 +1489,65 @@ public sealed class ReceiptDocumentBuilder
                 FontWeights.Normal,
                 TextAlignment.Center,
                 margin:
-                    new Thickness(
-                        0),
+                    new Thickness(0),
                 foreground:
                     ReceiptGoldBrush,
                 tag:
                     "Receipt.FooterDecoration"));
+    }
+
+    /// <summary>
+    /// Loại metadata kỹ thuật khỏi phần ghi chú dành cho khách.
+    ///
+    /// Ghi chú thật do thu ngân nhập vẫn được giữ nguyên.
+    /// </summary>
+    private static string?
+        ExtractVisibleReceiptNotes(
+            string? notes)
+    {
+        if (string.IsNullOrWhiteSpace(
+                notes))
+        {
+            return null;
+        }
+
+        var visibleLines =
+            NormalizeLineEndings(
+                notes)
+            .Split(
+                '\n',
+                StringSplitOptions.None)
+            .Select(
+                line =>
+                    line.Trim())
+            .Where(
+                line =>
+                    !string.IsNullOrWhiteSpace(
+                        line) &&
+                    !line.StartsWith(
+                        VietQrMetadataPrefix,
+                        StringComparison
+                            .OrdinalIgnoreCase))
+            .ToArray();
+
+        return visibleLines.Length == 0
+            ? null
+            : string.Join(
+                Environment.NewLine,
+                visibleLines);
+    }
+
+    private static string NormalizeLineEndings(
+        string value)
+    {
+        return value
+            .Replace(
+                "\r\n",
+                "\n",
+                StringComparison.Ordinal)
+            .Replace(
+                '\r',
+                '\n');
     }
 
     private static void AddHorizontalRule(
@@ -1422,8 +1586,7 @@ public sealed class ReceiptDocumentBuilder
             };
 
         paragraph.Inlines.Add(
-            new Run(
-                " "));
+            new Run(" "));
 
         document.Blocks.Add(
             paragraph);
@@ -1446,8 +1609,7 @@ public sealed class ReceiptDocumentBuilder
                 fontWeight,
                 textAlignment,
                 margin:
-                    new Thickness(
-                        0),
+                    new Thickness(0),
                 foreground:
                     foreground);
 
@@ -1462,8 +1624,7 @@ public sealed class ReceiptDocumentBuilder
 
             BorderThickness =
                 borderThickness ??
-                new Thickness(
-                    0)
+                new Thickness(0)
         };
     }
 
@@ -1555,10 +1716,11 @@ public sealed class ReceiptDocumentBuilder
         };
     }
 
-    private static Brush CreateFrozenBrush(
-        byte red,
-        byte green,
-        byte blue)
+    private static SolidColorBrush
+        CreateFrozenBrush(
+            byte red,
+            byte green,
+            byte blue)
     {
         var brush =
             new SolidColorBrush(

@@ -35,12 +35,6 @@ public static class DependencyInjection
         ArgumentNullException.ThrowIfNull(
             configuration);
 
-        /*
-         * =====================================================
-         * INFRASTRUCTURE OPTIONS
-         * =====================================================
-         */
-
         var infrastructureSection =
             configuration.GetSection(
                 InfrastructureOptions.SectionName);
@@ -66,23 +60,10 @@ public static class DependencyInjection
                 "Cấu hình Infrastructure không hợp lệ.")
             .ValidateOnStart();
 
-        /*
-         * =====================================================
-         * RECEIPT STORE OPTIONS
-         * =====================================================
-         */
-
         var receiptStoreSection =
             configuration.GetSection(
                 ReceiptStoreOptions.SectionName);
 
-        /*
-         * Thông tin cửa hàng được kiểm tra ngay khi Host
-         * khởi động.
-         *
-         * WifiPassword hoặc các secret khác không thuộc
-         * ReceiptStoreOptions và không được đưa vào hóa đơn.
-         */
         services
             .AddOptions<ReceiptStoreOptions>()
             .Bind(
@@ -104,22 +85,10 @@ public static class DependencyInjection
                 "Cấu hình Store dùng cho hóa đơn không hợp lệ.")
             .ValidateOnStart();
 
-        /*
-         * =====================================================
-         * RECEIPT PRINTER OPTIONS
-         * =====================================================
-         */
-
         var receiptPrinterSection =
             configuration.GetSection(
                 ReceiptPrinterOptions.SectionName);
 
-        /*
-         * Hardware:PrinterName và Hardware:PaperSize
-         * được bind thành typed options.
-         *
-         * Checkpoint hiện tại chỉ hỗ trợ giấy K80.
-         */
         services
             .AddOptions<ReceiptPrinterOptions>()
             .Bind(
@@ -141,29 +110,18 @@ public static class DependencyInjection
                 "Cấu hình máy in hóa đơn không hợp lệ.")
             .ValidateOnStart();
 
-        /*
-         * =====================================================
-         * VIETQR OPTIONS
-         * =====================================================
-         */
-
         var vietQrSection =
             configuration.GetSection(
                 VietQrOptions.SectionName);
 
         /*
-         * VietQR được phép tắt khi cửa hàng chưa cấu hình
-         * tài khoản ngân hàng.
-         *
-         * Khi Payment:EnableVietQr = true, Host kiểm tra:
-         * - BIN ngân hàng;
-         * - số tài khoản;
-         * - tên chủ tài khoản;
+         * Options cũ vẫn được giữ để tương thích:
+         * - kích thước PNG;
          * - tiền tố nội dung chuyển khoản;
-         * - kích thước ảnh QR.
+         * - các bài test và service cũ.
          *
-         * ValidateOnStart giúp ứng dụng không chạy với
-         * cấu hình VietQR đã bật nhưng không hợp lệ.
+         * Luồng production mới không yêu cầu bật
+         * EnableVietQr hoặc nhập thông tin ngân hàng.
          */
         services
             .AddOptions<VietQrOptions>()
@@ -185,12 +143,6 @@ public static class DependencyInjection
                 },
                 "Cấu hình Payment/VietQR không hợp lệ.")
             .ValidateOnStart();
-
-        /*
-         * =====================================================
-         * COMMON SINGLETON SERVICES
-         * =====================================================
-         */
 
         services.AddSingleton<
             DatabasePathResolver>();
@@ -214,10 +166,6 @@ public static class DependencyInjection
             ICurrentUserService,
             CurrentUserService>();
 
-        /*
-         * Credential được mã hóa bằng Windows DPAPI
-         * và lưu dưới LocalApplicationData.
-         */
         services.AddSingleton<
             IRememberedLoginStore,
             WindowsRememberedLoginStore>();
@@ -226,18 +174,6 @@ public static class DependencyInjection
             IPermissionService,
             PermissionService>();
 
-        /*
-         * =====================================================
-         * RECEIPT SERVICES
-         * =====================================================
-         */
-
-        /*
-         * Receipt snapshot serializer là stateless.
-         *
-         * Store provider tạo một snapshot cấu hình bất biến
-         * cho toàn bộ phiên chạy của ứng dụng.
-         */
         services.AddSingleton<
             IReceiptSnapshotSerializer,
             ReceiptSnapshotJsonSerializer>();
@@ -246,12 +182,6 @@ public static class DependencyInjection
             IReceiptStoreSnapshotProvider,
             ReceiptStoreSnapshotProvider>();
 
-        /*
-         * Renderer không giữ state.
-         *
-         * WpfReceiptService là singleton và tự khóa để
-         * không gửi hai print job đồng thời.
-         */
         services.AddSingleton<
             ReceiptDocumentBuilder>();
 
@@ -260,37 +190,30 @@ public static class DependencyInjection
             WpfReceiptService>();
 
         /*
-         * =====================================================
-         * VIETQR SERVICES
-         * =====================================================
-         */
-
-        /*
-         * VietQrService:
-         * - không giữ DbContext;
-         * - không lưu trạng thái giao dịch;
-         * - không gọi API ngân hàng;
-         * - không giữ dữ liệu thay đổi theo từng request;
-         * - chỉ đọc typed options và tạo payload/PNG.
-         *
-         * Vì vậy Singleton là lifetime phù hợp.
-         *
-         * Việc tạo QR không đồng nghĩa tiền đã được nhận.
-         * Service này không được tự MarkPaid Order.
+         * Service VietQR cũ được giữ để không phá
+         * compatibility và bộ test hiện tại.
          */
         services.AddSingleton<
             IVietQrService,
             VietQrService>();
 
-        /*
-         * =====================================================
-         * ENTITY FRAMEWORK CORE
-         * =====================================================
-         */
+        services.AddSingleton<
+            IVietQrImageDecoder,
+            VietQrImageDecoder>();
 
         /*
-         * DbContext ngắn hạn theo từng DI scope.
+         * Pipeline mới bám đúng chương trình Python:
+         *
+         * ảnh QR → payload nền → DPAPI →
+         * thêm tiền/nội dung → CRC mới → PNG.
          */
+        services.AddSingleton<
+            IVietQrPayloadStore,
+            WindowsVietQrPayloadStore>();
+
+        services.AddSingleton<
+            StoredVietQrService>();
+
         services.AddDbContext<PosDbContext>(
             (serviceProvider, optionsBuilder) =>
             {
@@ -331,12 +254,6 @@ public static class DependencyInjection
                 optionsBuilder.EnableDetailedErrors();
             });
 
-        /*
-         * =====================================================
-         * PERSISTENCE SERVICES
-         * =====================================================
-         */
-
         services.AddScoped<
             IUnitOfWork,
             EfUnitOfWork>();
@@ -357,11 +274,6 @@ public static class DependencyInjection
             IUserRepository,
             UserRepository>();
 
-        /*
-         * Order repository dùng cùng scoped DbContext
-         * với IUnitOfWork để toàn bộ aggregate Order
-         * được lưu trong một transaction thống nhất.
-         */
         services.AddScoped<
             IOrderRepository,
             OrderRepository>();
