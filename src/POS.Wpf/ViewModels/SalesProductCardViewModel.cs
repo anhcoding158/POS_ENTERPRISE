@@ -1,4 +1,7 @@
 using System.Globalization;
+using System.IO;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using POS.Application.DTOs.Products;
 using POS.Wpf.Commands;
 
@@ -37,6 +40,10 @@ public sealed class SalesProductCardViewModel
         Barcode = product.Barcode;
         Name = product.Name;
         UnitName = product.UnitName;
+        ImagePath = product.ImagePath;
+        ProductImage =
+            LoadProductThumbnail(
+                ImagePath);
 
         SalePrice = product.SalePrice;
 
@@ -83,6 +90,13 @@ public sealed class SalesProductCardViewModel
     public string Name { get; }
 
     public string UnitName { get; }
+
+    public string? ImagePath { get; }
+
+    public BitmapSource? ProductImage { get; }
+
+    public bool HasProductImage =>
+        ProductImage is not null;
 
     public long SalePrice { get; }
 
@@ -175,4 +189,62 @@ public sealed class SalesProductCardViewModel
         CanSell
             ? "Thêm vào đơn"
             : "Không thể bán";
+
+    private static BitmapImage?
+        LoadProductThumbnail(
+            string? imagePath)
+    {
+        if (string.IsNullOrWhiteSpace(
+                imagePath) ||
+            !File.Exists(
+                imagePath))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var stream =
+                new FileStream(
+                    imagePath,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.ReadWrite |
+                    FileShare.Delete);
+
+            var bitmap =
+                new BitmapImage();
+
+            bitmap.BeginInit();
+
+            bitmap.CacheOption =
+                BitmapCacheOption.OnLoad;
+
+            bitmap.DecodePixelWidth =
+                144;
+
+            bitmap.StreamSource =
+                stream;
+
+            bitmap.EndInit();
+
+            if (bitmap.CanFreeze)
+            {
+                bitmap.Freeze();
+            }
+
+            return bitmap;
+        }
+        catch (Exception exception)
+            when (
+                exception is PathTooLongException or
+                IOException or
+                UnauthorizedAccessException or
+                NotSupportedException or
+                FileFormatException or
+                ArgumentException)
+        {
+            return null;
+        }
+    }
 }

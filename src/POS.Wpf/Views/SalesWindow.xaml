@@ -965,60 +965,135 @@
                                                     </Border>
                                                 </Grid>
 
-                                                <StackPanel
+                                                <Grid
                                                     Grid.Row="1"
                                                     Margin="0,9,0,6">
 
-                                                    <Border
-                                                        Width="44"
-                                                        Height="44"
-                                                        HorizontalAlignment="Left"
-                                                        Background="{StaticResource AccentSoftBrush}"
-                                                        BorderBrush="{StaticResource AccentBorderBrush}"
-                                                        BorderThickness="1"
-                                                        CornerRadius="13">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="58" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
 
-                                                        <TextBlock
-                                                            Text="{Binding ProductInitial}"
-                                                            FontFamily="Georgia"
-                                                            Foreground="{StaticResource AccentBrush}"
-                                                            FontSize="19"
-                                                            FontWeight="Bold"
-                                                            HorizontalAlignment="Center"
-                                                            VerticalAlignment="Center" />
-                                                    </Border>
+                                                    <Grid
+                                                        Width="58"
+                                                        Height="58">
 
-                                                    <TextBlock
-                                                        Text="{Binding Name}"
-                                                        Foreground="{StaticResource TextPrimaryBrush}"
-                                                        FontSize="13"
-                                                        FontWeight="SemiBold"
-                                                        TextWrapping="Wrap"
-                                                        TextTrimming="CharacterEllipsis"
-                                                        MaxHeight="38"
-                                                        Margin="0,7,0,0" />
+                                                        <Rectangle
+                                                            Width="58"
+                                                            Height="58"
+                                                            RadiusX="14"
+                                                            RadiusY="14">
+
+                                                            <Rectangle.Fill>
+
+                                                                <ImageBrush
+                                                                    ImageSource="{Binding ProductImage}"
+                                                                    Stretch="UniformToFill" />
+                                                            </Rectangle.Fill>
+
+                                                            <Rectangle.Style>
+
+                                                                <Style
+                                                                    TargetType="{x:Type Rectangle}">
+
+                                                                    <Setter
+                                                                        Property="Visibility"
+                                                                        Value="Collapsed" />
+
+                                                                    <Style.Triggers>
+
+                                                                        <DataTrigger
+                                                                            Binding="{Binding HasProductImage}"
+                                                                            Value="True">
+
+                                                                            <Setter
+                                                                                Property="Visibility"
+                                                                                Value="Visible" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Rectangle.Style>
+                                                        </Rectangle>
+
+                                                        <Border
+                                                            BorderBrush="{StaticResource AccentBorderBrush}"
+                                                            BorderThickness="1"
+                                                            CornerRadius="14" />
+
+                                                        <Border
+                                                            Background="{StaticResource AccentSoftBrush}"
+                                                            CornerRadius="14">
+
+                                                            <Border.Style>
+
+                                                                <Style
+                                                                    TargetType="{x:Type Border}">
+
+                                                                    <Setter
+                                                                        Property="Visibility"
+                                                                        Value="Visible" />
+
+                                                                    <Style.Triggers>
+
+                                                                        <DataTrigger
+                                                                            Binding="{Binding HasProductImage}"
+                                                                            Value="True">
+
+                                                                            <Setter
+                                                                                Property="Visibility"
+                                                                                Value="Collapsed" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Border.Style>
+
+                                                            <TextBlock
+                                                                Text="{Binding ProductInitial}"
+                                                                FontFamily="Georgia"
+                                                                Foreground="{StaticResource AccentBrush}"
+                                                                FontSize="19"
+                                                                FontWeight="Bold"
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center" />
+                                                        </Border>
+                                                    </Grid>
 
                                                     <StackPanel
-                                                        Orientation="Horizontal"
-                                                        Margin="0,3,0,0">
+                                                        Grid.Column="1"
+                                                        Margin="10,0,0,0"
+                                                        VerticalAlignment="Center">
 
                                                         <TextBlock
-                                                            Text="{Binding Code}"
-                                                            Foreground="{StaticResource GoldBrush}"
-                                                            FontSize="9.5"
-                                                            FontWeight="SemiBold" />
+                                                            Text="{Binding Name}"
+                                                            Foreground="{StaticResource TextPrimaryBrush}"
+                                                            FontSize="13"
+                                                            FontWeight="SemiBold"
+                                                            TextWrapping="Wrap"
+                                                            TextTrimming="CharacterEllipsis"
+                                                            MaxHeight="38" />
 
-                                                        <TextBlock
-                                                            Text="  •  "
-                                                            Foreground="{StaticResource TextMutedBrush}"
-                                                            FontSize="9.5" />
+                                                        <StackPanel
+                                                            Orientation="Horizontal"
+                                                            Margin="0,3,0,0">
 
-                                                        <TextBlock
-                                                            Text="{Binding UnitName}"
-                                                            Foreground="{StaticResource TextSecondaryBrush}"
-                                                            FontSize="9.5" />
+                                                            <TextBlock
+                                                                Text="{Binding Code}"
+                                                                Foreground="{StaticResource GoldBrush}"
+                                                                FontSize="9.5"
+                                                                FontWeight="SemiBold" />
+
+                                                            <TextBlock
+                                                                Text="  •  "
+                                                                Foreground="{StaticResource TextMutedBrush}"
+                                                                FontSize="9.5" />
+
+                                                            <TextBlock
+                                                                Text="{Binding UnitName}"
+                                                                Foreground="{StaticResource TextSecondaryBrush}"
+                                                                FontSize="9.5" />
+                                                        </StackPanel>
                                                     </StackPanel>
-                                                </StackPanel>
+                                                </Grid>
 
                                                 <Grid Grid.Row="2">
 
