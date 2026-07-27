@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using POS.Application.Abstractions.Printing;
 using POS.Application.DTOs.Printing;
 using POS.Infrastructure.Printing;
@@ -38,9 +39,16 @@ public sealed class ReceiptPreviewService :
     private readonly IReceiptService
         _receiptService;
 
+    private readonly string
+        _printerName;
+
+    private readonly string
+        _paperSize;
+
     public ReceiptPreviewService(
         ReceiptDocumentBuilder documentBuilder,
-        IReceiptService receiptService)
+        IReceiptService receiptService,
+        IOptions<ReceiptPrinterOptions> printerOptions)
     {
         _documentBuilder =
             documentBuilder ??
@@ -51,6 +59,23 @@ public sealed class ReceiptPreviewService :
             receiptService ??
             throw new ArgumentNullException(
                 nameof(receiptService));
+
+        ArgumentNullException.ThrowIfNull(
+            printerOptions);
+
+        var options =
+            printerOptions.Value ??
+            throw new ArgumentException(
+                "Không đọc được cấu hình máy in.",
+                nameof(printerOptions));
+
+        options.Validate();
+
+        _printerName =
+            options.GetNormalizedPrinterName();
+
+        _paperSize =
+            options.GetNormalizedPaperSize();
     }
 
     public async Task ShowAsync(
@@ -116,7 +141,9 @@ public sealed class ReceiptPreviewService :
             new ReceiptPreviewWindow(
                 request,
                 _documentBuilder,
-                _receiptService);
+                _receiptService,
+                _printerName,
+                _paperSize);
 
         if (owner is not null &&
             !ReferenceEquals(

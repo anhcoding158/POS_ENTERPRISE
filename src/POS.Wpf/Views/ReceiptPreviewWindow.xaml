@@ -728,6 +728,59 @@
                                 Foreground="#756C64"
                                 FontSize="10.5"
                                 Margin="0,5,0,0" />
+
+                            <Grid
+                                Margin="0,6,105,0">
+
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock
+                                    Text="&#xE749;"
+                                    FontFamily="Segoe MDL2 Assets"
+                                    Foreground="#C39232"
+                                    FontSize="11"
+                                    Margin="0,0,6,0"
+                                    VerticalAlignment="Center" />
+
+                                <TextBlock
+                                    Grid.Column="1"
+                                    Text="Máy in:"
+                                    Foreground="#756C64"
+                                    FontSize="10.5"
+                                    VerticalAlignment="Center" />
+
+                                <TextBlock
+                                    x:Name="PrinterNameText"
+                                    Grid.Column="2"
+                                    Foreground="#514A44"
+                                    FontSize="10.5"
+                                    FontWeight="SemiBold"
+                                    Margin="4,0,0,0"
+                                    TextTrimming="CharacterEllipsis"
+                                    VerticalAlignment="Center" />
+
+                                <TextBlock
+                                    Grid.Column="3"
+                                    Text="  •  Khổ giấy:"
+                                    Foreground="#756C64"
+                                    FontSize="10.5"
+                                    VerticalAlignment="Center" />
+
+                                <TextBlock
+                                    x:Name="PrinterPaperSizeText"
+                                    Grid.Column="4"
+                                    Foreground="#514A44"
+                                    FontSize="10.5"
+                                    FontWeight="SemiBold"
+                                    Margin="4,0,0,0"
+                                    VerticalAlignment="Center" />
+                            </Grid>
                         </StackPanel>
 
                         <Border

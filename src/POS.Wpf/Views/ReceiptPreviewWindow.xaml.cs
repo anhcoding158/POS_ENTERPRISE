@@ -32,6 +32,12 @@ public partial class ReceiptPreviewWindow :
     private readonly IReceiptService
         _receiptService;
 
+    private readonly string
+        _printerName;
+
+    private readonly string
+        _paperSize;
+
     private bool _isPrinting;
     private bool _hasPrintedSuccessfully;
     private bool _isClosed;
@@ -39,7 +45,9 @@ public partial class ReceiptPreviewWindow :
     public ReceiptPreviewWindow(
         ReceiptRequest request,
         ReceiptDocumentBuilder documentBuilder,
-        IReceiptService receiptService)
+        IReceiptService receiptService,
+        string printerName,
+        string paperSize)
     {
         _request =
             request ??
@@ -54,6 +62,28 @@ public partial class ReceiptPreviewWindow :
             throw new ArgumentNullException(
                 nameof(receiptService));
 
+        if (string.IsNullOrWhiteSpace(
+                printerName))
+        {
+            throw new ArgumentException(
+                "Tên máy in không được để trống.",
+                nameof(printerName));
+        }
+
+        if (string.IsNullOrWhiteSpace(
+                paperSize))
+        {
+            throw new ArgumentException(
+                "Khổ giấy không được để trống.",
+                nameof(paperSize));
+        }
+
+        _printerName =
+            printerName.Trim();
+
+        _paperSize =
+            paperSize.Trim();
+
         if (!_request.Store.IsConfigured)
         {
             throw new InvalidOperationException(
@@ -62,6 +92,15 @@ public partial class ReceiptPreviewWindow :
         }
 
         InitializeComponent();
+
+        PrinterNameText.Text =
+            _printerName;
+
+        PrinterNameText.ToolTip =
+            _printerName;
+
+        PrinterPaperSizeText.Text =
+            _paperSize;
 
         ReceiptViewer.Document =
             documentBuilder.Build(
@@ -247,8 +286,7 @@ public partial class ReceiptPreviewWindow :
                 "ĐÃ GỬI IN";
 
             ShowSuccessStatus(
-                $"Đã gửi hóa đơn {_request.OrderCode} " +
-                "tới hàng đợi máy in.");
+                $"Đã gửi hóa đơn tới {_printerName}.");
 
             SystemSounds.Asterisk
                 .Play();
@@ -267,7 +305,8 @@ public partial class ReceiptPreviewWindow :
                 "Không thể gửi hóa đơn tới máy in. " +
                 exception
                     .GetBaseException()
-                    .Message);
+                    .Message +
+                $"\nMáy in cấu hình: {_printerName}.");
         }
         finally
         {
@@ -307,7 +346,7 @@ public partial class ReceiptPreviewWindow :
                 "\uE749",
 
             message:
-                "Đang kiểm tra máy in và gửi hóa đơn...",
+                $"Đang gửi hóa đơn tới {_printerName}...",
 
             backgroundResource:
                 "GoldSoftBrush",
