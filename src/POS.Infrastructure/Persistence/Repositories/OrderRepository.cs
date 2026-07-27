@@ -55,6 +55,21 @@ public sealed class OrderRepository :
                 cancellationToken);
     }
 
+    public Task<Order?> GetByIdReadOnlyAsync(
+        int orderId,
+        CancellationToken cancellationToken = default)
+    {
+        if (orderId <= 0)
+        {
+            return Task.FromResult<Order?>(null);
+        }
+
+        return CreateAggregateQuery(asNoTracking: true)
+            .SingleOrDefaultAsync(
+                order => order.Id == orderId,
+                cancellationToken);
+    }
+
     public Task<Order?> GetByCodeAsync(
         string orderCode,
         CancellationToken cancellationToken = default)
@@ -91,6 +106,32 @@ public sealed class OrderRepository :
             int pageSize,
             CancellationToken cancellationToken = default)
     {
+        return await SearchAsync(
+            searchTerm,
+            status,
+            customerId,
+            cashierUserId,
+            fromUtc,
+            toUtc,
+            paymentMethod: null,
+            pageNumber,
+            pageSize,
+            cancellationToken);
+    }
+
+    public async Task<PagedResult<Order>>
+        SearchAsync(
+            string? searchTerm,
+            OrderStatus? status,
+            int? customerId,
+            int? cashierUserId,
+            DateTimeOffset? fromUtc,
+            DateTimeOffset? toUtc,
+            PaymentMethod? paymentMethod,
+            int pageNumber,
+            int pageSize,
+            CancellationToken cancellationToken = default)
+    {
         var normalizedFromUtc =
             NormalizeOptionalUtc(
                 fromUtc,
@@ -107,6 +148,7 @@ public sealed class OrderRepository :
             cashierUserId,
             normalizedFromUtc,
             normalizedToUtc,
+            paymentMethod,
             pageNumber,
             pageSize);
 
@@ -153,6 +195,14 @@ public sealed class OrderRepository :
                     order =>
                         order.CashierUserId ==
                         cashierUserId.Value);
+        }
+
+        if (paymentMethod.HasValue)
+        {
+            query = query.Where(
+                order =>
+                    order.PaymentMethod ==
+                    paymentMethod.Value);
         }
 
         if (normalizedFromUtc.HasValue)
@@ -370,6 +420,7 @@ public sealed class OrderRepository :
         int? cashierUserId,
         DateTimeOffset? fromUtc,
         DateTimeOffset? toUtc,
+        PaymentMethod? paymentMethod,
         int pageNumber,
         int pageSize)
     {
@@ -409,6 +460,15 @@ public sealed class OrderRepository :
             throw new ArgumentException(
                 "Thời gian bắt đầu không được lớn hơn " +
                 "thời gian kết thúc.");
+        }
+
+        if (paymentMethod.HasValue &&
+            !Enum.IsDefined(paymentMethod.Value))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(paymentMethod),
+                paymentMethod,
+                "Phương thức thanh toán không hợp lệ.");
         }
 
         if (pageNumber <= 0)

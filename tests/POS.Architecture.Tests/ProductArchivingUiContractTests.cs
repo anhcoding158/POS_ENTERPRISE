@@ -1,6 +1,8 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+using POS.Application.Abstractions.Authorization;
 using POS.Application.Abstractions.Services;
+using POS.Application.Authorization;
 using POS.Application.Common;
 using POS.Application.DTOs.Products;
 using POS.Wpf.Services;
@@ -173,11 +175,32 @@ public sealed class ProductArchivingUiContractTests
                 new FakeProductDialogService(),
                 new FakeCategoryDialogService(),
                 new FakeInventoryDialogService(),
+                new FakeOrderHistoryWindowService(),
+                new AllowAllPermissionService(),
                 NullLogger<ShellViewModel>.Instance);
 
         return new TestContext(
             viewModel,
             service);
+    }
+
+    private sealed class FakeOrderHistoryWindowService :
+        IOrderHistoryWindowService
+    {
+        public Task ShowAsync() =>
+            Task.CompletedTask;
+    }
+
+    private sealed class AllowAllPermissionService :
+        IPermissionService
+    {
+        public bool HasPermission(
+            SystemPermission permission) =>
+            true;
+
+        public Result Authorize(
+            SystemPermission permission) =>
+            Result.Success();
     }
 
     private static ProductListItemDto CreateProduct(

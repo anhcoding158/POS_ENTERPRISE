@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.Authorization;
 using POS.Application.Authorization;
@@ -200,6 +200,11 @@ public partial class ShellWindow :
             _viewModel.ViewInventoryHistoryCommand,
             permissionState.CanViewInventoryHistory,
             SystemPermission.ViewInventoryHistory);
+
+        ApplyCommandPermission(
+            _viewModel.OpenOrderHistoryCommand,
+            permissionState.CanViewReports,
+            SystemPermission.ViewReports);
 
         ApplyMenuItemPermission(
             InventoryHistoryMenuItem,

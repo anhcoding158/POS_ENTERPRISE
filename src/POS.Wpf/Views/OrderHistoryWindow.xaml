@@ -1,0 +1,207 @@
+<Window
+    x:Class="POS.Wpf.Views.OrderHistoryWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Lịch sử đơn hàng"
+    Width="1280"
+    Height="760"
+    MinWidth="1050"
+    MinHeight="650"
+    WindowStartupLocation="CenterOwner"
+    Background="{StaticResource AppBackgroundBrush}"
+    FontFamily="Segoe UI">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel>
+            <TextBlock
+                Text="Lịch sử đơn hàng"
+                Style="{StaticResource PageTitleTextStyle}" />
+            <TextBlock
+                Margin="0,4,0,0"
+                Text="Tra cứu giao dịch đã lưu và xem lại hóa đơn bất biến."
+                Style="{StaticResource BodyTextStyle}" />
+        </StackPanel>
+
+        <Border
+            Grid.Row="1"
+            Margin="0,16,0,12"
+            Padding="14"
+            Style="{StaticResource CardStyle}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBox
+                    Margin="0,0,8,0"
+                    Padding="10,7"
+                    Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    ToolTip="Tìm mã đơn hoặc tên thu ngân" />
+                <DatePicker
+                    Grid.Column="1"
+                    Margin="0,0,8,0"
+                    SelectedDate="{Binding FromDate, Mode=TwoWay}"
+                    ToolTip="Từ ngày" />
+                <DatePicker
+                    Grid.Column="2"
+                    Margin="0,0,8,0"
+                    SelectedDate="{Binding ToDate, Mode=TwoWay}"
+                    ToolTip="Đến ngày" />
+                <ComboBox
+                    Grid.Column="3"
+                    Margin="0,0,8,0"
+                    ItemsSource="{Binding StatusFilters}"
+                    DisplayMemberPath="DisplayName"
+                    SelectedItem="{Binding SelectedStatusFilter, Mode=TwoWay}" />
+                <ComboBox
+                    Grid.Column="4"
+                    Margin="0,0,8,0"
+                    ItemsSource="{Binding PaymentMethodFilters}"
+                    DisplayMemberPath="DisplayName"
+                    SelectedItem="{Binding SelectedPaymentMethodFilter, Mode=TwoWay}" />
+                <Button
+                    Grid.Column="5"
+                    Margin="0,0,8,0"
+                    Padding="18,7"
+                    Command="{Binding SearchCommand}"
+                    Content="Tìm kiếm"
+                    Style="{StaticResource PrimaryButtonStyle}" />
+                <Button
+                    Grid.Column="6"
+                    Padding="18,7"
+                    Command="{Binding ResetFiltersCommand}"
+                    Content="Xóa lọc"
+                    Style="{StaticResource SecondaryButtonStyle}" />
+                <TextBlock
+                    Grid.Row="1"
+                    Grid.ColumnSpan="7"
+                    Margin="0,8,0,0"
+                    Text="Ngày được tính theo múi giờ Windows của máy."
+                    Style="{StaticResource CaptionTextStyle}" />
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="2*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Padding="10" Style="{StaticResource CardStyle}">
+                <DataGrid
+                    ItemsSource="{Binding Orders}"
+                    SelectedItem="{Binding SelectedOrder, Mode=TwoWay}"
+                    AutoGenerateColumns="False"
+                    IsReadOnly="True"
+                    SelectionMode="Single">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Thời gian" Binding="{Binding CreatedAtText}" Width="130" />
+                        <DataGridTextColumn Header="Mã đơn" Binding="{Binding OrderCode}" Width="*" />
+                        <DataGridTextColumn Header="Thu ngân" Binding="{Binding CashierName}" Width="*" />
+                        <DataGridTextColumn Header="Thanh toán" Binding="{Binding PaymentText}" Width="110" />
+                        <DataGridTextColumn Header="Trạng thái" Binding="{Binding StatusText}" Width="110" />
+                        <DataGridTextColumn Header="Tổng tiền" Binding="{Binding TotalAmountText}" Width="120" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+
+            <Border Grid.Column="2" Padding="14" Style="{StaticResource CardStyle}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock
+                        Text="{Binding SelectedOrder.OrderCode, TargetNullValue=Chọn một đơn để xem chi tiết}"
+                        Style="{StaticResource SectionTitleTextStyle}" />
+                    <StackPanel Grid.Row="1" Margin="0,8,0,10">
+                        <TextBlock Text="{Binding SelectedOrder.CashierName, StringFormat=Thu ngân: {0}}" />
+                        <TextBlock Text="{Binding SelectedOrder.PaymentText, StringFormat=Thanh toán: {0}}" />
+                        <TextBlock Text="{Binding SelectedOrder.TotalAmountText, StringFormat=Tổng tiền: {0}}" />
+                        <TextBlock
+                            Margin="0,6,0,0"
+                            Foreground="{StaticResource TextSecondaryBrush}"
+                            Text="{Binding ReceiptAvailabilityMessage}" />
+                    </StackPanel>
+                    <DataGrid
+                        Grid.Row="2"
+                        ItemsSource="{Binding SelectedOrderLines}"
+                        AutoGenerateColumns="False"
+                        IsReadOnly="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Sản phẩm" Binding="{Binding ProductName}" Width="*" />
+                            <DataGridTextColumn Header="SL" Binding="{Binding Quantity}" Width="45" />
+                            <DataGridTextColumn Header="Đơn giá" Binding="{Binding FinalUnitPriceText}" Width="100" />
+                            <DataGridTextColumn Header="Thành tiền" Binding="{Binding NetAmountText}" Width="105" />
+                            <DataGridTextColumn Header="Modifier / ghi chú" Binding="{Binding ModifierSummary}" Width="*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Button
+                        Grid.Row="3"
+                        Margin="0,12,0,0"
+                        Padding="16,9"
+                        HorizontalAlignment="Right"
+                        Command="{Binding OpenReceiptCommand}"
+                        Content="Xem / in bản sao"
+                        Style="{StaticResource PrimaryButtonStyle}" />
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Grid Grid.Row="3" Margin="0,12,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="{Binding StatusMessage}" />
+                <TextBlock
+                    Foreground="{StaticResource DangerBrush}"
+                    Text="{Binding ErrorMessage}" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <TextBlock
+                    Margin="0,0,16,0"
+                    VerticalAlignment="Center"
+                    Text="{Binding TotalCount, Mode=OneWay, StringFormat=Tổng số đơn: {0:N0}}" />
+                <Button
+                    Margin="0,0,8,0"
+                    Command="{Binding PreviousPageCommand}"
+                    Content="Trang trước"
+                    Style="{StaticResource SecondaryButtonStyle}" />
+                <TextBlock
+                    Margin="8,0"
+                    VerticalAlignment="Center">
+                    <Run Text="{Binding CurrentPage, Mode=OneWay}" />
+                    <Run Text="/" />
+                    <Run Text="{Binding TotalPages, Mode=OneWay}" />
+                </TextBlock>
+                <Button
+                    Margin="8,0,0,0"
+                    Command="{Binding NextPageCommand}"
+                    Content="Trang sau"
+                    Style="{StaticResource SecondaryButtonStyle}" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

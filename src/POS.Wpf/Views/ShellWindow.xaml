@@ -1,4 +1,4 @@
-﻿<Window
+<Window
     x:Class="POS.Wpf.Views.ShellWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -475,8 +475,7 @@
                         </Grid>
 
                         <Button
-                            Style="{StaticResource NavigationButtonStyle}"
-                            IsEnabled="False">
+                            Style="{StaticResource NavigationButtonStyle}">
 
                             <StackPanel Orientation="Horizontal">
 
@@ -572,8 +571,10 @@
                         </Button>
 
                         <Button
+                            x:Name="OrderHistoryNavigationButton"
+                            Command="{Binding OpenOrderHistoryCommand}"
                             Style="{StaticResource NavigationButtonStyle}"
-                            IsEnabled="False">
+                            ToolTip="Tra cứu lịch sử đơn hàng">
 
                             <StackPanel Orientation="Horizontal">
 
@@ -585,7 +586,7 @@
                                     VerticalAlignment="Center" />
 
                                 <TextBlock
-                                    Text="Báo cáo"
+                                    Text="Lịch sử đơn hàng"
                                     VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>

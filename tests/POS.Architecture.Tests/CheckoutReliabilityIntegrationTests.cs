@@ -982,6 +982,15 @@ public sealed class
                 cancellationToken);
         }
 
+        public Task<Order?> GetByIdReadOnlyAsync(
+            int orderId,
+            CancellationToken cancellationToken = default)
+        {
+            return _inner.GetByIdReadOnlyAsync(
+                orderId,
+                cancellationToken);
+        }
+
         public Task<Order?> GetByCodeAsync(
             string orderCode,
             CancellationToken cancellationToken = default)
@@ -1009,6 +1018,31 @@ public sealed class
                 cashierUserId,
                 fromUtc,
                 toUtc,
+                pageNumber,
+                pageSize,
+                cancellationToken);
+        }
+
+        public Task<PagedResult<Order>> SearchAsync(
+            string? searchTerm,
+            OrderStatus? status,
+            int? customerId,
+            int? cashierUserId,
+            DateTimeOffset? fromUtc,
+            DateTimeOffset? toUtc,
+            PaymentMethod? paymentMethod,
+            int pageNumber,
+            int pageSize,
+            CancellationToken cancellationToken = default)
+        {
+            return _inner.SearchAsync(
+                searchTerm,
+                status,
+                customerId,
+                cashierUserId,
+                fromUtc,
+                toUtc,
+                paymentMethod,
                 pageNumber,
                 pageSize,
                 cancellationToken);

@@ -23,6 +23,10 @@ public interface IOrderRepository
         int orderId,
         CancellationToken cancellationToken = default);
 
+    Task<Order?> GetByIdReadOnlyAsync(
+        int orderId,
+        CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Lấy đầy đủ Order aggregate theo mã đơn hàng.
     /// </summary>
@@ -45,6 +49,18 @@ public interface IOrderRepository
         int? cashierUserId,
         DateTimeOffset? fromUtc,
         DateTimeOffset? toUtc,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default);
+
+    Task<PagedResult<Order>> SearchAsync(
+        string? searchTerm,
+        OrderStatus? status,
+        int? customerId,
+        int? cashierUserId,
+        DateTimeOffset? fromUtc,
+        DateTimeOffset? toUtc,
+        PaymentMethod? paymentMethod,
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken = default);

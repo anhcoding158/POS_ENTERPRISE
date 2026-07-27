@@ -13,6 +13,36 @@ namespace POS.Application.Factories;
 /// </summary>
 public static class ReceiptSnapshotFactory
 {
+    public static ReceiptRequest CreateReprint(
+        ReceiptRequest original,
+        int copyNumber)
+    {
+        ArgumentNullException.ThrowIfNull(original);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(
+            copyNumber);
+
+        return new ReceiptRequest(
+            original.Store,
+            ReceiptCopyKind.Reprint,
+            copyNumber,
+            original.OrderId,
+            original.OrderCode,
+            original.CashierName,
+            original.CreatedAtUtc,
+            original.PaymentMethod,
+            original.Subtotal,
+            original.DiscountAmount,
+            original.TotalAmount,
+            original.CashReceived,
+            original.ChangeAmount,
+            original.Lines.ToArray(),
+            original.CustomerName,
+            original.RestaurantTableName,
+            original.DiscountCode,
+            original.Notes,
+            original.PaidAtUtc);
+    }
+
     /// <summary>
     /// Overload tương thích với call site cũ.
     ///

@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -412,6 +412,10 @@ public partial class App :
         services.AddTransient<
             ISalesWindowService,
             SalesWindowService>();
+
+        services.AddSingleton<
+            IOrderHistoryWindowService,
+            OrderHistoryWindowService>();
     }
 
     private static void ConfigureViewModelsAndWindows(
@@ -464,6 +468,12 @@ public partial class App :
 
         services.AddTransient<
             SalesWindow>();
+
+        services.AddTransient<
+            OrderHistoryViewModel>();
+
+        services.AddTransient<
+            OrderHistoryWindow>();
 
         /*
          * Main Shell.

@@ -1,8 +1,10 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Globalization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using POS.Application.Abstractions.Authorization;
 using POS.Application.Abstractions.Services;
+using POS.Application.Authorization;
 using POS.Application.DTOs.Products;
 using POS.Wpf.Commands;
 using POS.Wpf.Services;
@@ -49,6 +51,12 @@ public sealed class ShellViewModel :
     private readonly IInventoryDialogService
         _inventoryDialogService;
 
+    private readonly IOrderHistoryWindowService
+        _orderHistoryWindowService;
+
+    private readonly IPermissionService
+        _permissionService;
+
     private readonly ILogger<ShellViewModel>
         _logger;
 
@@ -90,6 +98,8 @@ public sealed class ShellViewModel :
         ICategoryManagementDialogService
             categoryManagementDialogService,
         IInventoryDialogService inventoryDialogService,
+        IOrderHistoryWindowService orderHistoryWindowService,
+        IPermissionService permissionService,
         ILogger<ShellViewModel> logger)
     {
         _scopeFactory =
@@ -111,6 +121,16 @@ public sealed class ShellViewModel :
             inventoryDialogService ??
             throw new ArgumentNullException(
                 nameof(inventoryDialogService));
+
+        _orderHistoryWindowService =
+            orderHistoryWindowService ??
+            throw new ArgumentNullException(
+                nameof(orderHistoryWindowService));
+
+        _permissionService =
+            permissionService ??
+            throw new ArgumentNullException(
+                nameof(permissionService));
 
         _logger =
             logger ??
@@ -219,6 +239,12 @@ public sealed class ShellViewModel :
                 CanLoadProducts,
                 HandleCommandException);
 
+        OpenOrderHistoryCommand =
+            new AsyncRelayCommand(
+                OpenOrderHistoryAsync,
+                CanOpenOrderHistory,
+                HandleCommandException);
+
         ToggleProductActiveCommand =
             new AsyncRelayCommand(
                 ToggleProductActiveAsync,
@@ -287,6 +313,11 @@ public sealed class ShellViewModel :
     }
 
     public AsyncRelayCommand ViewInventoryHistoryCommand
+    {
+        get;
+    }
+
+    public AsyncRelayCommand OpenOrderHistoryCommand
     {
         get;
     }
@@ -1362,6 +1393,18 @@ public sealed class ShellViewModel :
                PageNumber < TotalPages;
     }
 
+    private Task OpenOrderHistoryAsync()
+    {
+        return _orderHistoryWindowService.ShowAsync();
+    }
+
+    private bool CanOpenOrderHistory()
+    {
+        return !IsLoading &&
+               _permissionService.HasPermission(
+                   SystemPermission.ViewReports);
+    }
+
     private void HandleCommandException(
         Exception exception)
     {
@@ -1453,6 +1496,9 @@ public sealed class ShellViewModel :
             .NotifyCanExecuteChanged();
 
         ViewInventoryHistoryCommand
+            .NotifyCanExecuteChanged();
+
+        OpenOrderHistoryCommand
             .NotifyCanExecuteChanged();
 
         ToggleProductActiveCommand

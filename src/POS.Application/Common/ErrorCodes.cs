@@ -221,6 +221,18 @@ public static class ErrorCodes
             "CHECKOUT.SAVE_FAILED";
     }
 
+    public static class Orders
+    {
+        public const string NotFound =
+            "ORDER.NOT_FOUND";
+
+        public const string ReceiptSnapshotUnavailable =
+            "ORDER.RECEIPT_SNAPSHOT_UNAVAILABLE";
+
+        public const string ReceiptSnapshotInvalid =
+            "ORDER.RECEIPT_SNAPSHOT_INVALID";
+    }
+
     public static class Persistence
     {
         public const string ConcurrencyConflict =

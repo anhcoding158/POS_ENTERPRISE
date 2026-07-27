@@ -9,6 +9,7 @@ using POS.Application.Abstractions.Orders;
 using POS.Application.Abstractions.Payments;
 using POS.Application.Abstractions.Persistence;
 using POS.Application.Abstractions.Printing;
+using POS.Application.Abstractions.Services;
 using POS.Application.Services;
 using POS.Infrastructure.Authentication;
 using POS.Infrastructure.Common;
@@ -288,6 +289,16 @@ public static class DependencyInjection
         services.AddScoped<
             IOrderReceiptSnapshotRepository,
             OrderReceiptSnapshotRepository>();
+
+        services.AddScoped<OrderHistoryService>();
+
+        services.AddScoped<IOrderHistoryService>(
+            serviceProvider =>
+                new AuthorizedOrderHistoryService(
+                    serviceProvider.GetRequiredService<
+                        OrderHistoryService>(),
+                    serviceProvider.GetRequiredService<
+                        IPermissionService>()));
 
         services.AddScoped<
             DatabaseInitializer>();
