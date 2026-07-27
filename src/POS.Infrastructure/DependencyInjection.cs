@@ -212,6 +212,10 @@ public static class DependencyInjection
             WindowsVietQrPayloadStore>();
 
         services.AddSingleton<
+            IVietQrRecipientMetadataStore,
+            WindowsVietQrRecipientMetadataStore>();
+
+        services.AddSingleton<
             StoredVietQrService>();
 
         services.AddDbContext<PosDbContext>(

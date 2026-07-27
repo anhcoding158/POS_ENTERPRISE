@@ -24,16 +24,21 @@ public sealed class VietQrImageImportDialogService
 
     private readonly IVietQrImageDecoder _decoder;
     private readonly IVietQrPayloadStore _payloadStore;
+    private readonly IVietQrRecipientMetadataStore _metadataStore;
 
     public VietQrImageImportDialogService(
         IVietQrImageDecoder decoder,
-        IVietQrPayloadStore payloadStore)
+        IVietQrPayloadStore payloadStore,
+        IVietQrRecipientMetadataStore metadataStore)
     {
         _decoder = decoder ??
             throw new ArgumentNullException(nameof(decoder));
 
         _payloadStore = payloadStore ??
             throw new ArgumentNullException(nameof(payloadStore));
+
+        _metadataStore = metadataStore ??
+            throw new ArgumentNullException(nameof(metadataStore));
     }
 
     public Task ShowAsync(Window owner)
@@ -288,6 +293,44 @@ public sealed class VietQrImageImportDialogService
                         0)
             };
 
+        var bankNameTextBox =
+            new TextBox
+            {
+                MaxLength = 120,
+                AcceptsReturn = false,
+                Background = surfaceMuted,
+                BorderBrush = border,
+                BorderThickness =
+                    new Thickness(1),
+                Padding =
+                    new Thickness(
+                        10,
+                        8,
+                        10,
+                        8),
+                ToolTip =
+                    "Ví dụ: Vietcombank"
+            };
+
+        var accountNameTextBox =
+            new TextBox
+            {
+                MaxLength = 160,
+                AcceptsReturn = false,
+                Background = surfaceMuted,
+                BorderBrush = border,
+                BorderThickness =
+                    new Thickness(1),
+                Padding =
+                    new Thickness(
+                        10,
+                        8,
+                        10,
+                        8),
+                ToolTip =
+                    "Nhập đúng tên người nhận hiển thị trong ứng dụng ngân hàng"
+            };
+
         var chooseButton =
             CreateButton(
                 owner,
@@ -318,51 +361,144 @@ public sealed class VietQrImageImportDialogService
 
         string? pendingPayload = null;
 
+        var payloadIsConfigured =
+            _payloadStore.IsConfigured;
+
+        VietQrRecipientMetadata?
+            persistedMetadata =
+                null;
+
+        var metadataLoadResult =
+            _metadataStore.Load();
+
+        if (metadataLoadResult.IsSuccess)
+        {
+            persistedMetadata =
+                metadataLoadResult.Value;
+
+            bankNameTextBox.Text =
+                persistedMetadata.BankName;
+
+            accountNameTextBox.Text =
+                persistedMetadata.AccountName;
+        }
+
         void ApplyConfiguredState(
-            bool isConfigured)
+            bool hasPayload,
+            bool hasMetadata)
         {
             configurationBadge.Text =
-                isConfigured
-                    ? "ĐÃ CẤU HÌNH"
-                    : "CHƯA CẤU HÌNH";
+                !hasPayload
+                    ? "CHƯA CẤU HÌNH"
+                    : hasMetadata
+                        ? "ĐÃ CẤU HÌNH"
+                        : "CẦN BỔ SUNG THÔNG TIN";
 
             configurationBadge.Foreground =
-                isConfigured
+                hasPayload &&
+                hasMetadata
                     ? success
-                    : danger;
+                    : hasPayload
+                        ? gold
+                        : danger;
 
             configurationTitle.Text =
-                isConfigured
+                hasPayload
                     ? "QR nhận tiền đang sẵn sàng"
                     : "Chưa có QR nhận tiền";
 
             configurationDescription.Text =
-                isConfigured
+                hasPayload
                     ? "Quầy bán hàng đang sử dụng QR đã lưu " +
                       "để tạo mã theo đúng số tiền của từng đơn. " +
-                      "Chọn ảnh mới khi cần thay tài khoản nhận tiền."
+                      (hasMetadata
+                          ? "Chọn ảnh mới khi cần thay tài khoản nhận tiền."
+                          : "Bổ sung tên ngân hàng và tên chủ tài khoản.")
                     : "Tải ảnh QR nhận tiền từ ứng dụng ngân hàng. " +
                       "Hệ thống sẽ đọc và lưu cấu hình để dùng " +
                       "cho từng giao dịch.";
 
             statusText.Text =
-                isConfigured
-                    ? "Máy này đã có QR ngân hàng được lưu an toàn."
-                    : "Hãy chọn ảnh QR nhận tiền của cửa hàng.";
+                hasPayload &&
+                hasMetadata
+                    ? "Máy này đã có QR ngân hàng và thông tin người nhận."
+                    : hasPayload
+                        ? "QR đã có. Hãy bổ sung thông tin người nhận."
+                        : "Hãy chọn ảnh QR nhận tiền của cửa hàng.";
 
             statusText.Foreground =
-                isConfigured
+                hasPayload &&
+                hasMetadata
                     ? success
                     : secondaryText;
 
             deleteButton.IsEnabled =
-                isConfigured;
+                hasPayload ||
+                hasMetadata;
+        }
+
+        bool HasValidMetadataInput()
+        {
+            var bankName =
+                bankNameTextBox.Text.Trim();
+
+            var accountName =
+                accountNameTextBox.Text.Trim();
+
+            return bankName.Length is > 0 and <= 120 &&
+                   accountName.Length is > 0 and <= 160;
+        }
+
+        bool MetadataInputChanged()
+        {
+            return persistedMetadata is null ||
+                   !string.Equals(
+                       bankNameTextBox.Text.Trim(),
+                       persistedMetadata.BankName,
+                       StringComparison.Ordinal) ||
+                   !string.Equals(
+                       accountNameTextBox.Text.Trim(),
+                       persistedMetadata.AccountName,
+                       StringComparison.Ordinal);
+        }
+
+        void UpdateSaveButtonState()
+        {
+            saveButton.IsEnabled =
+                (payloadIsConfigured ||
+                 !string.IsNullOrWhiteSpace(
+                     pendingPayload)) &&
+                HasValidMetadataInput() &&
+                (!string.IsNullOrWhiteSpace(
+                     pendingPayload) ||
+                 MetadataInputChanged());
         }
 
         ApplyConfiguredState(
-            _payloadStore.IsConfigured);
+            payloadIsConfigured,
+            persistedMetadata is not null);
 
-        saveButton.IsEnabled = false;
+        if (metadataLoadResult.IsFailure &&
+            metadataLoadResult.Error.Code !=
+                POS.Application.Common.ErrorCodes
+                    .Payments.VietQrNotConfigured)
+        {
+            statusText.Foreground =
+                danger;
+
+            statusText.Text =
+                metadataLoadResult.Error.Message;
+        }
+
+        UpdateSaveButtonState();
+
+        bankNameTextBox.TextChanged +=
+            (_, _) =>
+                UpdateSaveButtonState();
+
+        accountNameTextBox.TextChanged +=
+            (_, _) =>
+                UpdateSaveButtonState();
 
         chooseButton.Click +=
             async (_, _) =>
@@ -389,8 +525,8 @@ public sealed class VietQrImageImportDialogService
                 }
 
                 chooseButton.IsEnabled = false;
-                saveButton.IsEnabled = false;
                 pendingPayload = null;
+                UpdateSaveButtonState();
 
                 statusText.Foreground =
                     secondaryText;
@@ -440,8 +576,7 @@ public sealed class VietQrImageImportDialogService
                     pendingPayload =
                         result.Value;
 
-                    saveButton.IsEnabled =
-                        true;
+                    UpdateSaveButtonState();
 
                     statusText.Foreground =
                         success;
@@ -473,17 +608,37 @@ public sealed class VietQrImageImportDialogService
             (_, _) =>
             {
                 if (string.IsNullOrWhiteSpace(
-                        pendingPayload))
+                        pendingPayload) &&
+                    !payloadIsConfigured)
                 {
+                    return;
+                }
+
+                VietQrRecipientMetadata metadata;
+
+                try
+                {
+                    metadata =
+                        new VietQrRecipientMetadata(
+                            bankNameTextBox.Text.Trim(),
+                            accountNameTextBox.Text.Trim());
+                }
+                catch (ArgumentException exception)
+                {
+                    statusText.Foreground =
+                        danger;
+
+                    statusText.Text =
+                        "Thông tin người nhận chưa hợp lệ. " +
+                        exception.Message;
+
                     return;
                 }
 
                 var confirmation =
                     MessageBox.Show(
                         window,
-                        "Lưu ảnh QR này làm tài khoản nhận tiền " +
-                        "của cửa hàng?\n\n" +
-                        "Cấu hình QR cũ trên máy sẽ được thay thế.",
+                        "Lưu QR và thông tin người nhận cho cửa hàng?",
                         "Xác nhận lưu VietQR",
                         MessageBoxButton.YesNo,
                         MessageBoxImage.Question,
@@ -495,30 +650,70 @@ public sealed class VietQrImageImportDialogService
                     return;
                 }
 
-                var result =
-                    _payloadStore.Save(
-                        pendingPayload);
+                var metadataSaveResult =
+                    _metadataStore.Save(
+                        metadata);
 
-                if (result.IsFailure)
+                if (metadataSaveResult.IsFailure)
                 {
                     statusText.Foreground =
                         danger;
 
                     statusText.Text =
-                        result.Error.Message;
+                        metadataSaveResult.Error.Message;
 
                     return;
                 }
 
+                if (!string.IsNullOrWhiteSpace(
+                        pendingPayload))
+                {
+                    var payloadSaveResult =
+                        _payloadStore.Save(
+                            pendingPayload);
+
+                    if (payloadSaveResult.IsFailure)
+                    {
+                        var rollbackResult =
+                            persistedMetadata is not null
+                                ? _metadataStore.Save(
+                                    persistedMetadata)
+                                : _metadataStore.Delete();
+
+                        statusText.Foreground =
+                            danger;
+
+                        statusText.Text =
+                            payloadSaveResult.Error.Message;
+
+                        if (rollbackResult.IsFailure)
+                        {
+                            statusText.Text +=
+                                "\nKhông thể khôi phục thông tin người nhận; " +
+                                "cấu hình cần được kiểm tra lại. " +
+                                rollbackResult.Error.Message;
+                        }
+
+                        return;
+                    }
+                }
+
+                persistedMetadata =
+                    metadata;
+
+                payloadIsConfigured =
+                    true;
+
                 pendingPayload = null;
-                saveButton.IsEnabled = false;
 
                 ApplyConfiguredState(
-                    isConfigured: true);
+                    hasPayload: true,
+                    hasMetadata: true);
 
                 statusText.Text =
-                    "Đã lưu QR thành công. " +
-                    "Quầy bán hàng có thể dùng VietQR ngay.";
+                    "Đã lưu QR, tên ngân hàng và tên chủ tài khoản.";
+
+                UpdateSaveButtonState();
             };
 
         deleteButton.Click +=
@@ -555,8 +750,41 @@ public sealed class VietQrImageImportDialogService
                     return;
                 }
 
+                payloadIsConfigured =
+                    false;
+
+                var metadataDeleteResult =
+                    _metadataStore.Delete();
+
+                if (metadataDeleteResult.IsFailure)
+                {
+                    ApplyConfiguredState(
+                        hasPayload: false,
+                        hasMetadata:
+                            persistedMetadata is not null);
+
+                    statusText.Foreground =
+                        danger;
+
+                    statusText.Text =
+                        "Cấu hình QR đã bị vô hiệu hóa nhưng dữ liệu hiển thị " +
+                        "chưa được dọn hoàn toàn. " +
+                        metadataDeleteResult.Error.Message;
+
+                    UpdateSaveButtonState();
+
+                    return;
+                }
+
+                persistedMetadata = null;
                 pendingPayload = null;
                 previewImage.Source = null;
+
+                bankNameTextBox.Text =
+                    string.Empty;
+
+                accountNameTextBox.Text =
+                    string.Empty;
 
                 previewPlaceholder.Visibility =
                     Visibility.Visible;
@@ -570,13 +798,14 @@ public sealed class VietQrImageImportDialogService
                 fileInfoText.Text =
                     "Hỗ trợ PNG, JPG, JPEG và BMP.";
 
-                saveButton.IsEnabled = false;
-
                 ApplyConfiguredState(
-                    isConfigured: false);
+                    hasPayload: false,
+                    hasMetadata: false);
 
                 statusText.Text =
                     "Đã xóa cấu hình VietQR trên máy.";
+
+                UpdateSaveButtonState();
             };
 
         closeButton.Click +=
@@ -762,6 +991,26 @@ public sealed class VietQrImageImportDialogService
             guidePanel);
 
         informationContent.Children.Add(
+            CreateInputLabel(
+                "Tên ngân hàng",
+                primaryText,
+                topMargin:
+                    5));
+
+        informationContent.Children.Add(
+            bankNameTextBox);
+
+        informationContent.Children.Add(
+            CreateInputLabel(
+                "Tên chủ tài khoản",
+                primaryText,
+                topMargin:
+                    12));
+
+        informationContent.Children.Add(
+            accountNameTextBox);
+
+        informationContent.Children.Add(
             actionPanel);
 
         informationContent.Children.Add(
@@ -779,7 +1028,15 @@ public sealed class VietQrImageImportDialogService
                 Padding =
                     new Thickness(22),
                 Child =
-                    informationContent
+                    new ScrollViewer
+                    {
+                        VerticalScrollBarVisibility =
+                            ScrollBarVisibility.Auto,
+                        HorizontalScrollBarVisibility =
+                            ScrollBarVisibility.Disabled,
+                        Content =
+                            informationContent
+                    }
             };
 
         Grid.SetColumn(
@@ -1057,6 +1314,27 @@ public sealed class VietQrImageImportDialogService
         }
 
         return button;
+    }
+
+    private static TextBlock CreateInputLabel(
+        string text,
+        Brush foreground,
+        double topMargin)
+    {
+        return new TextBlock
+        {
+            Text = text,
+            Foreground = foreground,
+            FontSize = 10.5,
+            FontWeight =
+                FontWeights.SemiBold,
+            Margin =
+                new Thickness(
+                    0,
+                    topMargin,
+                    0,
+                    5)
+        };
     }
 
     private static BitmapImage CreateBitmapImage(

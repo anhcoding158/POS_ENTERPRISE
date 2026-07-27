@@ -237,10 +237,16 @@ public partial class ShellWindow
                     .GetRequiredService<
                         IVietQrPayloadStore>();
 
+            var metadataStore =
+                scope.ServiceProvider
+                    .GetRequiredService<
+                        IVietQrRecipientMetadataStore>();
+
             var dialogService =
                 new VietQrImageImportDialogService(
                     decoder,
-                    payloadStore);
+                    payloadStore,
+                    metadataStore);
 
             await dialogService
                 .ShowAsync(
