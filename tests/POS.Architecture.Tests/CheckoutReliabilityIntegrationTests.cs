@@ -14,6 +14,7 @@ using POS.Domain.Enums;
 using POS.Infrastructure.Authentication;
 using POS.Infrastructure.Persistence;
 using POS.Infrastructure.Persistence.Repositories;
+using POS.Infrastructure.Printing;
 using Xunit;
 
 namespace POS.Architecture.Tests;
@@ -748,6 +749,9 @@ public sealed class
                 new OrderRepository(
                     context),
 
+            new OrderReceiptSnapshotRepository(
+                context),
+
             new InventoryMovementRepository(
                 context),
 
@@ -764,7 +768,9 @@ public sealed class
                 UtcNow),
 
             NullLogger<CheckoutService>
-                .Instance);
+                .Instance,
+
+            new ReceiptSnapshotJsonSerializer());
     }
 
     private static async Task

@@ -286,6 +286,10 @@ public static class DependencyInjection
             OrderRepository>();
 
         services.AddScoped<
+            IOrderReceiptSnapshotRepository,
+            OrderReceiptSnapshotRepository>();
+
+        services.AddScoped<
             DatabaseInitializer>();
 
         return services;

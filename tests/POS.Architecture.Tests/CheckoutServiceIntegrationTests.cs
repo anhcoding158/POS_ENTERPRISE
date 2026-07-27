@@ -12,6 +12,7 @@ using POS.Domain.Enums;
 using POS.Infrastructure.Authentication;
 using POS.Infrastructure.Persistence;
 using POS.Infrastructure.Persistence.Repositories;
+using POS.Infrastructure.Printing;
 using Xunit;
 
 namespace POS.Architecture.Tests;
@@ -688,6 +689,9 @@ public sealed class CheckoutServiceIntegrationTests
             new OrderRepository(
                 context),
 
+            new OrderReceiptSnapshotRepository(
+                context),
+
             new InventoryMovementRepository(
                 context),
 
@@ -703,7 +707,9 @@ public sealed class CheckoutServiceIntegrationTests
                 UtcNow),
 
             NullLogger<CheckoutService>
-                .Instance);
+                .Instance,
+
+            new ReceiptSnapshotJsonSerializer());
     }
 
     private sealed record SeedData(

@@ -48,6 +48,10 @@ public sealed class PosDbContext :
         OrderItemModifiers =>
             Set<OrderItemModifier>();
 
+    public DbSet<OrderReceiptSnapshot>
+        OrderReceiptSnapshots =>
+            Set<OrderReceiptSnapshot>();
+
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {

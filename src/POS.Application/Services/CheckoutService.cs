@@ -53,6 +53,9 @@ public sealed class CheckoutService :
     private readonly IOrderRepository
         _orderRepository;
 
+    private readonly IOrderReceiptSnapshotRepository
+        _orderReceiptSnapshotRepository;
+
     private readonly IInventoryMovementRepository
         _inventoryMovementRepository;
 
@@ -74,15 +77,22 @@ public sealed class CheckoutService :
     private readonly IReceiptStoreSnapshotProvider?
         _receiptStoreSnapshotProvider;
 
+    private readonly IReceiptSnapshotSerializer
+        _receiptSnapshotSerializer;
+
     public CheckoutService(
         IProductRepository productRepository,
         IOrderRepository orderRepository,
+        IOrderReceiptSnapshotRepository
+            orderReceiptSnapshotRepository,
         IInventoryMovementRepository inventoryMovementRepository,
         IUnitOfWork unitOfWork,
         IOrderCodeGenerator orderCodeGenerator,
         ICurrentUserService currentUserService,
         IClock clock,
         ILogger<CheckoutService> logger,
+        IReceiptSnapshotSerializer
+            receiptSnapshotSerializer,
         IReceiptStoreSnapshotProvider?
             receiptStoreSnapshotProvider = null)
     {
@@ -95,6 +105,11 @@ public sealed class CheckoutService :
             orderRepository ??
             throw new ArgumentNullException(
                 nameof(orderRepository));
+
+        _orderReceiptSnapshotRepository =
+            orderReceiptSnapshotRepository ??
+            throw new ArgumentNullException(
+                nameof(orderReceiptSnapshotRepository));
 
         _inventoryMovementRepository =
             inventoryMovementRepository ??
@@ -125,6 +140,11 @@ public sealed class CheckoutService :
             logger ??
             throw new ArgumentNullException(
                 nameof(logger));
+
+        _receiptSnapshotSerializer =
+            receiptSnapshotSerializer ??
+            throw new ArgumentNullException(
+                nameof(receiptSnapshotSerializer));
 
         /*
          * Nullable tạm thời để các unit test cũ đang tự tạo
@@ -479,6 +499,14 @@ public sealed class CheckoutService :
                     checkoutResult,
                     request.Notes);
 
+            if (receiptSnapshot.OrderId !=
+                order.Id)
+            {
+                throw new InvalidOperationException(
+                    "Receipt snapshot OrderId does not match " +
+                    "the persisted order.");
+            }
+
             checkoutResult =
                 checkoutResult with
                 {
@@ -486,12 +514,32 @@ public sealed class CheckoutService :
                         receiptSnapshot
                 };
 
-            /*
-             * Không serialize để lưu database và không gọi máy in
-             * trong transaction ở checkpoint này.
-             *
-             * Persistence receipt sẽ là checkpoint migration riêng.
-             */
+            var payloadJson =
+                _receiptSnapshotSerializer.Serialize(
+                    receiptSnapshot);
+
+            var persistedSnapshot =
+                new OrderReceiptSnapshot(
+                    orderId:
+                        order.Id,
+
+                    snapshotVersion:
+                        receiptSnapshot.SnapshotVersion,
+
+                    payloadJson:
+                        payloadJson,
+
+                    createdAtUtc:
+                        utcNow);
+
+            await _orderReceiptSnapshotRepository
+                .AddAsync(
+                    persistedSnapshot,
+                    cancellationToken);
+
+            await _unitOfWork.SaveChangesAsync(
+                cancellationToken);
+
             await transaction.CommitAsync(
                 cancellationToken);
 

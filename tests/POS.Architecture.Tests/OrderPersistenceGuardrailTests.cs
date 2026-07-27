@@ -460,6 +460,7 @@ public sealed class
                 typeof(Order),
                 typeof(OrderItem),
                 typeof(OrderItemModifier),
+                typeof(OrderReceiptSnapshot),
                 typeof(Product),
                 typeof(User)
             }
