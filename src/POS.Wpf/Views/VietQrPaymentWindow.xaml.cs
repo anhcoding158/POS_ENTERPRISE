@@ -140,6 +140,43 @@ public partial class VietQrPaymentWindow :
         Title =
             $"POS Enterprise - VietQR " +
             $"{customerPaymentCode}";
+
+        var hasRecipientDetails =
+            !string.IsNullOrWhiteSpace(
+                _presentation.BankName) &&
+            !string.IsNullOrWhiteSpace(
+                _presentation.AccountName);
+
+        if (hasRecipientDetails)
+        {
+            BankNameText.Text =
+                _presentation.BankName;
+
+            AccountNameText.Text =
+                _presentation.AccountName;
+
+            RecipientDetailsPanel.Visibility =
+                Visibility.Visible;
+
+            RecipientInformationMessagePanel.Visibility =
+                Visibility.Collapsed;
+        }
+        else
+        {
+            RecipientDetailsPanel.Visibility =
+                Visibility.Collapsed;
+
+            RecipientInformationMessageText.Text =
+                string.IsNullOrWhiteSpace(
+                    _presentation
+                        .RecipientInformationMessage)
+                    ? "Thông tin người nhận chưa khả dụng."
+                    : _presentation
+                        .RecipientInformationMessage;
+
+            RecipientInformationMessagePanel.Visibility =
+                Visibility.Visible;
+        }
     }
 
     private void OnWindowLoaded(

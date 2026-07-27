@@ -281,6 +281,10 @@
                 BorderBrush="{StaticResource BorderStrongBrush}"
                 Padding="20">
 
+                <ScrollViewer
+                    VerticalScrollBarVisibility="Auto"
+                    HorizontalScrollBarVisibility="Disabled">
+
                 <Grid>
 
                     <Grid.RowDefinitions>
@@ -338,6 +342,81 @@
                                 Foreground="{StaticResource TextSecondaryBrush}"
                                 FontSize="9.5"
                                 Margin="0,5,0,0" />
+
+                            <Border
+                                x:Name="RecipientDetailsPanel"
+                                Visibility="Collapsed"
+                                Margin="0,12,0,0"
+                                Padding="12"
+                                Background="{StaticResource SurfaceBrush}"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="10">
+
+                                <Grid>
+
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="16" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel>
+
+                                        <TextBlock
+                                            Text="NGÂN HÀNG"
+                                            Foreground="{StaticResource TextMutedBrush}"
+                                            FontSize="9.5"
+                                            FontWeight="Bold" />
+
+                                        <TextBlock
+                                            x:Name="BankNameText"
+                                            Text="—"
+                                            Foreground="{StaticResource TextPrimaryBrush}"
+                                            FontSize="11.5"
+                                            FontWeight="SemiBold"
+                                            TextWrapping="Wrap"
+                                            Margin="0,5,0,0" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="2">
+
+                                        <TextBlock
+                                            Text="CHỦ TÀI KHOẢN"
+                                            Foreground="{StaticResource TextMutedBrush}"
+                                            FontSize="9.5"
+                                            FontWeight="Bold" />
+
+                                        <TextBlock
+                                            x:Name="AccountNameText"
+                                            Text="—"
+                                            Foreground="{StaticResource TextPrimaryBrush}"
+                                            FontSize="11.5"
+                                            FontWeight="SemiBold"
+                                            TextWrapping="Wrap"
+                                            Margin="0,5,0,0" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Border
+                                x:Name="RecipientInformationMessagePanel"
+                                Visibility="Collapsed"
+                                Margin="0,12,0,0"
+                                Padding="12"
+                                Background="#FFF8E8"
+                                BorderBrush="#E3C681"
+                                BorderThickness="1"
+                                CornerRadius="10">
+
+                                <TextBlock
+                                    x:Name="RecipientInformationMessageText"
+                                    Text="Thông tin người nhận chưa khả dụng."
+                                    Foreground="#8A672D"
+                                    FontSize="10.5"
+                                    FontWeight="SemiBold"
+                                    TextWrapping="Wrap" />
+                            </Border>
                         </StackPanel>
                     </Border>
 
@@ -493,6 +572,7 @@
                         </CheckBox>
                     </Border>
                 </Grid>
+                </ScrollViewer>
             </Border>
         </Grid>
 
