@@ -265,6 +265,41 @@ public partial class VietQrCustomerDisplayWindow :
         PaymentCodeText.Text =
             $"Mã thanh toán: {paymentCode}";
 
+        var hasRecipientDetails =
+            !string.IsNullOrWhiteSpace(
+                _presentation.BankName) &&
+            !string.IsNullOrWhiteSpace(
+                _presentation.AccountName);
+
+        if (hasRecipientDetails)
+        {
+            CustomerBankNameText.Text =
+                _presentation.BankName;
+
+            CustomerAccountNameText.Text =
+                _presentation.AccountName;
+
+            CustomerRecipientDetailsPanel.Visibility =
+                Visibility.Visible;
+
+            CustomerRecipientMessagePanel.Visibility =
+                Visibility.Collapsed;
+        }
+        else
+        {
+            CustomerRecipientDetailsPanel.Visibility =
+                Visibility.Collapsed;
+
+            CustomerRecipientMessageText.Text =
+                string.IsNullOrWhiteSpace(
+                    _presentation.RecipientInformationMessage)
+                    ? "Thông tin người nhận chưa khả dụng."
+                    : _presentation.RecipientInformationMessage;
+
+            CustomerRecipientMessagePanel.Visibility =
+                Visibility.Visible;
+        }
+
         SuccessAmountText.Text =
             FormatMoney(
                 _presentation.Amount);

@@ -275,6 +275,7 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
@@ -327,12 +328,92 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- Recipient information -->
+
+                        <Grid
+                            Grid.Row="2"
+                            Margin="0,14,0,0">
+
+                            <Border
+                                x:Name="CustomerRecipientDetailsPanel"
+                                Visibility="Collapsed"
+                                Padding="20,15"
+                                Background="#FFF8E8"
+                                BorderBrush="#E3C681"
+                                BorderThickness="1"
+                                CornerRadius="17">
+
+                                <Grid>
+
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="22" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel>
+
+                                        <TextBlock
+                                            Text="NGÂN HÀNG"
+                                            Foreground="{StaticResource TextMutedBrush}"
+                                            FontSize="14"
+                                            FontWeight="Bold" />
+
+                                        <TextBlock
+                                            x:Name="CustomerBankNameText"
+                                            Text="—"
+                                            Foreground="{StaticResource TextPrimaryBrush}"
+                                            FontSize="21"
+                                            FontWeight="SemiBold"
+                                            TextWrapping="Wrap"
+                                            Margin="0,5,0,0" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="2">
+
+                                        <TextBlock
+                                            Text="CHỦ TÀI KHOẢN"
+                                            Foreground="{StaticResource TextMutedBrush}"
+                                            FontSize="14"
+                                            FontWeight="Bold" />
+
+                                        <TextBlock
+                                            x:Name="CustomerAccountNameText"
+                                            Text="—"
+                                            Foreground="{StaticResource TextPrimaryBrush}"
+                                            FontSize="21"
+                                            FontWeight="SemiBold"
+                                            TextWrapping="Wrap"
+                                            Margin="0,5,0,0" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Border
+                                x:Name="CustomerRecipientMessagePanel"
+                                Visibility="Collapsed"
+                                Padding="18,14"
+                                Background="#FFF8E8"
+                                BorderBrush="#E3C681"
+                                BorderThickness="1"
+                                CornerRadius="17">
+
+                                <TextBlock
+                                    x:Name="CustomerRecipientMessageText"
+                                    Text="Thông tin người nhận chưa khả dụng."
+                                    Foreground="#8A672D"
+                                    FontSize="15"
+                                    FontWeight="SemiBold"
+                                    TextWrapping="Wrap" />
+                            </Border>
+                        </Grid>
+
                         <!-- Transfer content -->
 
                         <Border
-                            Grid.Row="2"
-                            Margin="0,18,0,0"
-                            Padding="22,18"
+                            Grid.Row="3"
+                            Margin="0,14,0,0"
+                            Padding="22,15"
                             Background="#FFFEFB"
                             BorderBrush="#E4D6C3"
                             BorderThickness="1"
@@ -368,8 +449,8 @@
                         <!-- Guidance -->
 
                         <Border
-                            Grid.Row="3"
-                            Margin="0,18,0,0"
+                            Grid.Row="4"
+                            Margin="0,14,0,0"
                             Padding="20"
                             Background="#2A2420"
                             BorderBrush="#6B5743"
