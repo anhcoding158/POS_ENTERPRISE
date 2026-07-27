@@ -148,6 +148,9 @@ public static class DependencyInjection
             DatabasePathResolver>();
 
         services.AddSingleton<
+            SqliteDatabaseSafetyService>();
+
+        services.AddSingleton<
             AuditableEntityInterceptor>();
 
         services.AddSingleton<

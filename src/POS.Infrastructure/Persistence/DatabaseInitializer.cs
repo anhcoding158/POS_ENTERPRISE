@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using POS.Application.Abstractions.DateTime;
 using POS.Domain.Entities;
+using System.IO;
 
 namespace POS.Infrastructure.Persistence;
 
@@ -16,12 +17,16 @@ public sealed class DatabaseInitializer
 {
     private readonly PosDbContext _dbContext;
     private readonly InfrastructureOptions _options;
+    private readonly DatabasePathResolver _databasePathResolver;
+    private readonly SqliteDatabaseSafetyService _databaseSafetyService;
     private readonly IClock _clock;
     private readonly ILogger<DatabaseInitializer> _logger;
 
     public DatabaseInitializer(
         PosDbContext dbContext,
         IOptions<InfrastructureOptions> options,
+        DatabasePathResolver databasePathResolver,
+        SqliteDatabaseSafetyService databaseSafetyService,
         IClock clock,
         ILogger<DatabaseInitializer> logger)
     {
@@ -33,6 +38,16 @@ public sealed class DatabaseInitializer
         ArgumentNullException.ThrowIfNull(options);
 
         _options = options.Value;
+
+        _databasePathResolver =
+            databasePathResolver ??
+            throw new ArgumentNullException(
+                nameof(databasePathResolver));
+
+        _databaseSafetyService =
+            databaseSafetyService ??
+            throw new ArgumentNullException(
+                nameof(databaseSafetyService));
 
         _clock =
             clock ??
@@ -90,6 +105,13 @@ public sealed class DatabaseInitializer
     private async Task ApplyMigrationsAsync(
         CancellationToken cancellationToken)
     {
+        var databasePath =
+            _databasePathResolver.ResolveDatabasePath(
+                _options.DatabasePath);
+
+        var databaseExistedBeforeMigrationCheck =
+            File.Exists(databasePath);
+
         var pendingMigrations =
             await _dbContext.Database
                 .GetPendingMigrationsAsync(
@@ -102,17 +124,137 @@ public sealed class DatabaseInitializer
         {
             _logger.LogInformation(
                 "Database không có migration đang chờ.");
+
+            return;
+        }
+
+        string? backupPath = null;
+
+        if (!databaseExistedBeforeMigrationCheck)
+        {
+            _logger.LogInformation(
+                "Đang tạo database mới và áp dụng " +
+                "{MigrationCount} migration.",
+                migrations.Length);
         }
         else
         {
+            var integrityResult =
+                _databaseSafetyService.CheckIntegrity(
+                    databasePath);
+
+            if (!integrityResult.IsSuccess)
+            {
+                _logger.LogError(
+                    "Database không vượt qua kiểm tra toàn vẹn " +
+                    "trước migration. Migration đã bị chặn.");
+
+                throw new InvalidOperationException(
+                    "Database không vượt qua kiểm tra toàn vẹn " +
+                    "nên migration đã bị chặn.");
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var backupDirectory =
+                Path.Combine(
+                    Path.GetDirectoryName(databasePath)!,
+                    "backups",
+                    "pre-migration");
+
+            var backupResult =
+                _databaseSafetyService.CreateVerifiedBackup(
+                    databasePath,
+                    backupDirectory,
+                    _clock.UtcNow);
+
+            if (!backupResult.IsSuccess ||
+                string.IsNullOrWhiteSpace(
+                    backupResult.BackupFilePath))
+            {
+                _logger.LogError(
+                    "Không thể tạo verified backup trước migration. " +
+                    "Migration đã bị chặn.");
+
+                throw new InvalidOperationException(
+                    "Không thể tạo verified backup trước migration " +
+                    "nên migration đã bị chặn.");
+            }
+
+            backupPath = backupResult.BackupFilePath;
+
             _logger.LogInformation(
-                "Đang áp dụng {MigrationCount} migration: {Migrations}",
+                "Sẵn sàng áp dụng {MigrationCount} migration. " +
+                "Verified backup: {BackupPath}",
                 migrations.Length,
-                string.Join(", ", migrations));
+                backupPath);
         }
 
-        await _dbContext.Database.MigrateAsync(
-            cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        try
+        {
+            await _dbContext.Database.MigrateAsync(
+                cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            if (backupPath is null)
+            {
+                _logger.LogCritical(
+                    exception,
+                    "Migration database mới thất bại. " +
+                    "Startup đã bị chặn.");
+            }
+            else
+            {
+                _logger.LogCritical(
+                    exception,
+                    "Migration thất bại. Startup đã bị chặn. " +
+                    "Giữ verified backup tại {BackupPath} " +
+                    "để phục hồi thủ công.",
+                    backupPath);
+            }
+
+            throw;
+        }
+
+        var postMigrationIntegrity =
+            _databaseSafetyService.CheckIntegrity(
+                databasePath);
+
+        if (!postMigrationIntegrity.IsSuccess)
+        {
+            if (backupPath is null)
+            {
+                _logger.LogCritical(
+                    "Database không vượt qua kiểm tra toàn vẹn " +
+                    "sau migration. Startup đã bị chặn.");
+            }
+            else
+            {
+                _logger.LogCritical(
+                    "Database không vượt qua kiểm tra toàn vẹn " +
+                    "sau migration. Startup đã bị chặn. " +
+                    "Giữ verified backup tại {BackupPath} " +
+                    "để phục hồi thủ công.",
+                    backupPath);
+            }
+
+            throw new InvalidOperationException(
+                "Database không vượt qua kiểm tra toàn vẹn " +
+                "sau migration nên startup đã bị chặn.");
+        }
+
+        _logger.LogInformation(
+            "Đã áp dụng thành công {MigrationCount} migration. " +
+            "Verified backup: {BackupPath}",
+            migrations.Length,
+            backupPath);
     }
 
     private async Task EnsureDatabaseExistsAsync(
