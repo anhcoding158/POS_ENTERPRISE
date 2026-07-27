@@ -1429,6 +1429,22 @@
                                 Grid.Column="1"
                                 Orientation="Horizontal">
 
+                                <ComboBox
+                                    ItemsSource="{Binding StockFilterOptions}"
+                                    SelectedItem="{Binding SelectedStockFilter,
+                                        Mode=TwoWay}"
+                                    DisplayMemberPath="DisplayName"
+                                    Width="210"
+                                    Height="42"
+                                    Margin="0,0,9,0"
+                                    ToolTip="Lọc sản phẩm theo tình trạng tồn kho"
+                                    Background="{StaticResource SurfaceBrush}"
+                                    BorderBrush="{StaticResource BorderStrongBrush}"
+                                    BorderThickness="1"
+                                    Padding="11,6"
+                                    FontSize="13"
+                                    VerticalContentAlignment="Center" />
+
                                 <Button
                                     Command="{Binding SearchCommand}"
                                     Style="{StaticResource PrimaryButtonStyle}"

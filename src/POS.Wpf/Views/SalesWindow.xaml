@@ -2357,13 +2357,15 @@
                                     Padding="10,8"
                                     BorderThickness="1"
                                     CornerRadius="8"
-                                    ToolTip="{Binding StatusMessage}"
-                                    Visibility="{Binding HasStatusMessage,
-                                        Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    ToolTip="{Binding StatusMessage}">
 
                                     <Border.Style>
 
                                         <Style TargetType="{x:Type Border}">
+
+                                            <Setter
+                                                Property="Visibility"
+                                                Value="Collapsed" />
 
                                             <Setter
                                                 Property="Background"
@@ -2374,6 +2376,24 @@
                                                 Value="{StaticResource GoldBorderBrush}" />
 
                                             <Style.Triggers>
+
+                                                <MultiDataTrigger>
+
+                                                    <MultiDataTrigger.Conditions>
+
+                                                        <Condition
+                                                            Binding="{Binding HasStatusMessage}"
+                                                            Value="True" />
+
+                                                        <Condition
+                                                            Binding="{Binding IsStatusSuccess}"
+                                                            Value="False" />
+                                                    </MultiDataTrigger.Conditions>
+
+                                                    <Setter
+                                                        Property="Visibility"
+                                                        Value="Visible" />
+                                                </MultiDataTrigger>
 
                                                 <DataTrigger
                                                     Binding="{Binding IsStatusError}"

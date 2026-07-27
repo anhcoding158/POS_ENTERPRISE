@@ -10,6 +10,10 @@ using POS.Wpf.Services;
 
 namespace POS.Wpf.ViewModels;
 
+public sealed record ProductStockFilterOption(
+    string DisplayName,
+    bool? IsLowStock);
+
 /// <summary>
 /// Điều khiển màn hình sản phẩm và tồn kho.
 ///
@@ -44,6 +48,9 @@ public sealed class ShellViewModel :
         _logger;
 
     private string? _searchTerm;
+
+    private ProductStockFilterOption?
+        _selectedStockFilter;
 
     private bool _isLoading;
     private bool _isInitialized;
@@ -98,6 +105,26 @@ public sealed class ShellViewModel :
             logger ??
             throw new ArgumentNullException(
                 nameof(logger));
+
+        StockFilterOptions =
+            Array.AsReadOnly<
+                ProductStockFilterOption>(
+            [
+                new(
+                    "Tất cả tồn kho",
+                    null),
+
+                new(
+                    "Sắp hết hoặc hết hàng",
+                    true),
+
+                new(
+                    "Còn đủ tồn kho",
+                    false)
+            ]);
+
+        _selectedStockFilter =
+            StockFilterOptions[0];
 
         SearchCommand =
             new AsyncRelayCommand(
@@ -165,6 +192,11 @@ public sealed class ShellViewModel :
         Products
     { get; } = [];
 
+    public IReadOnlyList<
+        ProductStockFilterOption>
+        StockFilterOptions
+    { get; }
+
     public AsyncRelayCommand SearchCommand { get; }
 
     public AsyncRelayCommand RefreshCommand { get; }
@@ -202,6 +234,16 @@ public sealed class ShellViewModel :
 
         set => SetProperty(
             ref _searchTerm,
+            value);
+    }
+
+    public ProductStockFilterOption?
+        SelectedStockFilter
+    {
+        get => _selectedStockFilter;
+
+        set => SetProperty(
+            ref _selectedStockFilter,
             value);
     }
 
@@ -838,7 +880,8 @@ public sealed class ShellViewModel :
                         null,
 
                     isLowStock:
-                        null,
+                        SelectedStockFilter?
+                            .IsLowStock,
 
                     pageNumber:
                         PageNumber,
