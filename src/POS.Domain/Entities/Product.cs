@@ -77,7 +77,15 @@ public sealed class Product : AuditableEntity
 
     public bool IsActive { get; private set; }
 
+    public bool IsArchived { get; private set; }
+
+    public DateTimeOffset? ArchivedAtUtc { get; private set; }
+
+    public int? ArchivedByUserId { get; private set; }
+
     public Category? Category { get; private set; }
+
+    public User? ArchivedByUser { get; private set; }
 
     public long ProfitPerUnit =>
         SalePrice - CostPrice;
@@ -233,6 +241,13 @@ public sealed class Product : AuditableEntity
 
     public void Activate(DateTimeOffset utcNow)
     {
+        if (IsArchived)
+        {
+            throw new DomainException(
+                "PRODUCT.ARCHIVED_CANNOT_ACTIVATE",
+                "Sản phẩm đã lưu trữ không thể được kích hoạt.");
+        }
+
         if (IsActive)
         {
             return;
@@ -251,6 +266,55 @@ public sealed class Product : AuditableEntity
 
         IsActive = false;
         MarkUpdated(utcNow);
+    }
+
+    public void Archive(
+        int archivedByUserId,
+        DateTimeOffset utcNow)
+    {
+        if (archivedByUserId <= 0)
+        {
+            throw new DomainException(
+                "PRODUCT.INVALID_ARCHIVED_BY_USER_ID",
+                "Người lưu trữ sản phẩm không hợp lệ.");
+        }
+
+        if (IsArchived)
+        {
+            throw new DomainException(
+                "PRODUCT.ALREADY_ARCHIVED",
+                "Sản phẩm đã được lưu trữ.");
+        }
+
+        var normalizedUtc =
+            utcNow.ToUniversalTime();
+
+        MarkUpdated(normalizedUtc);
+
+        IsArchived = true;
+        IsActive = false;
+        ArchivedAtUtc = normalizedUtc;
+        ArchivedByUserId = archivedByUserId;
+    }
+
+    public void Restore(DateTimeOffset utcNow)
+    {
+        if (!IsArchived)
+        {
+            throw new DomainException(
+                "PRODUCT.NOT_ARCHIVED",
+                "Sản phẩm chưa được lưu trữ.");
+        }
+
+        var normalizedUtc =
+            utcNow.ToUniversalTime();
+
+        MarkUpdated(normalizedUtc);
+
+        IsArchived = false;
+        IsActive = false;
+        ArchivedAtUtc = null;
+        ArchivedByUserId = null;
     }
 
     private void SetCategoryId(int categoryId)

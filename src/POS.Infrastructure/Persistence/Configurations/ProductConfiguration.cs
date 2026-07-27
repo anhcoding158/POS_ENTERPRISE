@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using POS.Domain.Constants;
 using POS.Domain.Entities;
 
@@ -11,6 +12,26 @@ namespace POS.Infrastructure.Persistence.Configurations;
 public sealed class ProductConfiguration :
     IEntityTypeConfiguration<Product>
 {
+    private static readonly
+        ValueConverter<
+            DateTimeOffset?,
+            long?>
+        NullableDateTimeOffsetConverter =
+            new(
+                value =>
+                    value.HasValue
+                        ? value.Value
+                            .ToUniversalTime()
+                            .ToUnixTimeMilliseconds()
+                        : null,
+
+                value =>
+                    value.HasValue
+                        ? DateTimeOffset
+                            .FromUnixTimeMilliseconds(
+                                value.Value)
+                        : null);
+
     public void Configure(
         EntityTypeBuilder<Product> builder)
     {
@@ -69,6 +90,14 @@ public sealed class ProductConfiguration :
                     "CK_Products_MinimumStock_RequiresTracking",
                     "\"TrackInventory\" = 1 OR " +
                     "\"MinimumStock\" = 0");
+
+                table.HasCheckConstraint(
+                    "CK_Products_ArchiveState",
+                    "(\"IsArchived\" = 0 AND " +
+                    "\"ArchivedAtUtc\" IS NULL AND " +
+                    "\"ArchivedByUserId\" IS NULL) OR " +
+                    "(\"IsArchived\" = 1 AND " +
+                    "\"ArchivedAtUtc\" IS NOT NULL)");
             });
 
         builder.ConfigureAuditableEntity();
@@ -134,6 +163,18 @@ public sealed class ProductConfiguration :
         builder.Property(product => product.IsActive)
             .IsRequired();
 
+        builder.Property(product => product.IsArchived)
+            .HasColumnType("INTEGER")
+            .HasDefaultValue(false)
+            .IsRequired();
+
+        builder.Property(product => product.ArchivedAtUtc)
+            .HasConversion(
+                NullableDateTimeOffsetConverter)
+            .HasColumnType("INTEGER");
+
+        builder.Property(product => product.ArchivedByUserId);
+
         /*
          * Đây là các thuộc tính tính toán trong Domain,
          * không phải cột vật lý trong database.
@@ -196,5 +237,25 @@ public sealed class ProductConfiguration :
                 })
             .HasDatabaseName(
                 "IX_Products_Inventory_Active_Stock");
+
+        builder.HasIndex(
+                product => new
+                {
+                    product.IsArchived,
+                    product.IsActive,
+                    product.Name
+                })
+            .HasDatabaseName(
+                "IX_Products_Archived_Active_Name");
+
+        builder.HasOne(
+                product =>
+                    product.ArchivedByUser)
+            .WithMany()
+            .HasForeignKey(
+                product =>
+                    product.ArchivedByUserId)
+            .OnDelete(
+                DeleteBehavior.Restrict);
     }
 }

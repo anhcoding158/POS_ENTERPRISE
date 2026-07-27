@@ -386,14 +386,9 @@ public sealed class InventoryOpeningBalanceMigrationTests
     {
         context.ChangeTracker.Clear();
 
-        var products =
-            await context
-                .Products
-                .AsNoTracking()
-                .OrderBy(
-                    product =>
-                        product.Id)
-                .ToArrayAsync();
+        var productStocks =
+            await ReadProductStocksAsync(
+                context);
 
         /*
          * Migration chỉ thêm audit history.
@@ -401,39 +396,27 @@ public sealed class InventoryOpeningBalanceMigrationTests
          */
         Assert.Equal(
             4,
-            products.Length);
+            productStocks.Count);
 
         Assert.Equal(
             10,
-            products.Single(
-                    product =>
-                        product.Id ==
-                        TrackedNonZeroProductId)
-                .StockQuantity);
+            productStocks[
+                TrackedNonZeroProductId]);
 
         Assert.Equal(
             0,
-            products.Single(
-                    product =>
-                        product.Id ==
-                        TrackedZeroProductId)
-                .StockQuantity);
+            productStocks[
+                TrackedZeroProductId]);
 
         Assert.Equal(
             7,
-            products.Single(
-                    product =>
-                        product.Id ==
-                        UntrackedProductId)
-                .StockQuantity);
+            productStocks[
+                UntrackedProductId]);
 
         Assert.Equal(
             5,
-            products.Single(
-                    product =>
-                        product.Id ==
-                        ProductWithHistoryId)
-                .StockQuantity);
+            productStocks[
+                ProductWithHistoryId]);
 
         var movements =
             await context
@@ -578,14 +561,8 @@ public sealed class InventoryOpeningBalanceMigrationTests
          * Down migration không được sửa tồn Product.
          */
         var productStocks =
-            await context
-                .Products
-                .AsNoTracking()
-                .ToDictionaryAsync(
-                    product =>
-                        product.Id,
-                    product =>
-                        product.StockQuantity);
+            await ReadProductStocksAsync(
+                context);
 
         Assert.Equal(
             10,
@@ -606,5 +583,40 @@ public sealed class InventoryOpeningBalanceMigrationTests
             5,
             productStocks[
                 ProductWithHistoryId]);
+    }
+
+    private static async Task<
+        Dictionary<int, int>>
+        ReadProductStocksAsync(
+            PosDbContext context)
+    {
+        await using var command =
+            context.Database
+                .GetDbConnection()
+                .CreateCommand();
+
+        command.CommandText =
+            """
+            SELECT
+                "Id",
+                "StockQuantity"
+            FROM "Products"
+            ORDER BY "Id";
+            """;
+
+        var productStocks =
+            new Dictionary<int, int>();
+
+        await using var reader =
+            await command.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
+        {
+            productStocks.Add(
+                reader.GetInt32(0),
+                reader.GetInt32(1));
+        }
+
+        return productStocks;
     }
 }
