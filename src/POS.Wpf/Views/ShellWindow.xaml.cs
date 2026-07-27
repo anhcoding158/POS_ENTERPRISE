@@ -186,8 +186,18 @@ public partial class ShellWindow :
             permissionState.CanAdjustInventory,
             SystemPermission.AdjustInventory);
 
+        ApplyMenuItemPermission(
+            AdjustInventoryMenuItem,
+            permissionState.CanAdjustInventory,
+            SystemPermission.AdjustInventory);
+
         ApplyCommandPermission(
             _viewModel.ViewInventoryHistoryCommand,
+            permissionState.CanViewInventoryHistory,
+            SystemPermission.ViewInventoryHistory);
+
+        ApplyMenuItemPermission(
+            InventoryHistoryMenuItem,
             permissionState.CanViewInventoryHistory,
             SystemPermission.ViewInventoryHistory);
 
@@ -267,6 +277,37 @@ public partial class ShellWindow :
                     button,
                     true);
         }
+    }
+
+    private static void ApplyMenuItemPermission(
+        global::System.Windows.Controls.MenuItem menuItem,
+        bool isAllowed,
+        SystemPermission permission)
+    {
+        if (isAllowed)
+        {
+            return;
+        }
+
+        var permissionName =
+            RolePermissionPolicy.GetDisplayName(
+                permission);
+
+        menuItem.IsEnabled =
+            false;
+
+        menuItem.Opacity =
+            0.48;
+
+        menuItem.ToolTip =
+            $"Tài khoản hiện tại không có quyền " +
+            $"{permissionName}.";
+
+        global::System.Windows.Controls
+            .ToolTipService
+            .SetShowOnDisabled(
+                menuItem,
+                true);
     }
 
     private void ConfigureAuthenticatedUserCard()
@@ -600,6 +641,40 @@ public partial class ShellWindow :
 
         command.Execute(
             parameter: null);
+    }
+
+    private void OnMoreProductActionsClick(
+        object sender,
+        global::System.Windows.RoutedEventArgs e)
+    {
+        if (sender is not
+            global::System.Windows.Controls.Button button ||
+            button.ContextMenu is null)
+        {
+            return;
+        }
+
+        button.ContextMenu.PlacementTarget =
+            button;
+
+        button.ContextMenu.IsOpen =
+            true;
+    }
+
+    private void OnFilterButtonClick(
+        object sender,
+        global::System.Windows.RoutedEventArgs e)
+    {
+        ProductFilterPopup.IsOpen =
+            !ProductFilterPopup.IsOpen;
+    }
+
+    private void OnCloseProductFilterClick(
+        object sender,
+        global::System.Windows.RoutedEventArgs e)
+    {
+        ProductFilterPopup.IsOpen =
+            false;
     }
 
     private async void OnPreviewKeyDown(

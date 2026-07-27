@@ -60,7 +60,7 @@ public sealed class ShellViewModel :
         _selectedProductStatusFilter;
 
     private bool
-        _productStatusFilterReloadPending;
+        _productFilterReloadPending;
 
     private bool _isLoading;
     private bool _isInitialized;
@@ -215,6 +215,24 @@ public sealed class ShellViewModel :
                 ToggleProductActiveAsync,
                 CanEditSelectedProduct,
                 HandleCommandException);
+
+        ResetProductStatusFilterCommand =
+            new AsyncRelayCommand(
+                ResetProductStatusFilterAsync,
+                CanLoadProducts,
+                HandleCommandException);
+
+        ResetStockFilterCommand =
+            new AsyncRelayCommand(
+                ResetStockFilterAsync,
+                CanLoadProducts,
+                HandleCommandException);
+
+        ResetProductFiltersCommand =
+            new AsyncRelayCommand(
+                ResetProductFiltersAsync,
+                CanLoadProducts,
+                HandleCommandException);
     }
 
     public ObservableCollection<
@@ -263,6 +281,16 @@ public sealed class ShellViewModel :
         get;
     }
 
+    public AsyncRelayCommand
+        ResetProductStatusFilterCommand
+    { get; }
+
+    public AsyncRelayCommand ResetStockFilterCommand
+    { get; }
+
+    public AsyncRelayCommand ResetProductFiltersCommand
+    { get; }
+
     public string? SearchTerm
     {
         get => _searchTerm;
@@ -277,9 +305,18 @@ public sealed class ShellViewModel :
     {
         get => _selectedStockFilter;
 
-        set => SetProperty(
-            ref _selectedStockFilter,
-            value);
+        set
+        {
+            if (!SetProperty(
+                    ref _selectedStockFilter,
+                    value))
+            {
+                return;
+            }
+
+            NotifyFilterPresentation();
+            QueueProductFilterReload();
+        }
     }
 
     public ProductStatusFilterOption?
@@ -296,19 +333,28 @@ public sealed class ShellViewModel :
                 return;
             }
 
-            PageNumber = 1;
-
-            if (IsLoading)
-            {
-                _productStatusFilterReloadPending =
-                    true;
-
-                return;
-            }
-
-            _ = LoadProductsAsync();
+            NotifyFilterPresentation();
+            QueueProductFilterReload();
         }
     }
+
+    public bool HasProductStatusFilter =>
+        SelectedProductStatusFilter?.IsActive is not null;
+
+    public bool HasStockFilter =>
+        SelectedStockFilter?.IsLowStock is not null;
+
+    public bool HasProductFilters =>
+        HasProductStatusFilter ||
+        HasStockFilter;
+
+    public string ProductStatusFilterText =>
+        SelectedProductStatusFilter?.DisplayName ??
+        ProductStatusFilters[0].DisplayName;
+
+    public string StockFilterText =>
+        SelectedStockFilter?.DisplayName ??
+        StockFilterOptions[0].DisplayName;
 
     public ProductRowViewModel?
         SelectedProduct
@@ -652,6 +698,58 @@ public sealed class ShellViewModel :
     private Task RefreshAsync()
     {
         return LoadProductsAsync();
+    }
+
+    private Task ResetProductStatusFilterAsync()
+    {
+        SelectedProductStatusFilter =
+            ProductStatusFilters[0];
+
+        return Task.CompletedTask;
+    }
+
+    private Task ResetStockFilterAsync()
+    {
+        SelectedStockFilter =
+            StockFilterOptions[0];
+
+        return Task.CompletedTask;
+    }
+
+    private Task ResetProductFiltersAsync()
+    {
+        var statusChanged =
+            !ReferenceEquals(
+                SelectedProductStatusFilter,
+                ProductStatusFilters[0]);
+
+        var stockChanged =
+            !ReferenceEquals(
+                SelectedStockFilter,
+                StockFilterOptions[0]);
+
+        if (!statusChanged &&
+            !stockChanged)
+        {
+            return Task.CompletedTask;
+        }
+
+        _selectedProductStatusFilter =
+            ProductStatusFilters[0];
+
+        _selectedStockFilter =
+            StockFilterOptions[0];
+
+        OnPropertyChanged(
+            nameof(SelectedProductStatusFilter));
+
+        OnPropertyChanged(
+            nameof(SelectedStockFilter));
+
+        NotifyFilterPresentation();
+        QueueProductFilterReload();
+
+        return Task.CompletedTask;
     }
 
     private async Task AddProductAsync()
@@ -1072,9 +1170,9 @@ public sealed class ShellViewModel :
         {
             IsLoading = false;
 
-            if (_productStatusFilterReloadPending)
+            if (_productFilterReloadPending)
             {
-                _productStatusFilterReloadPending =
+                _productFilterReloadPending =
                     false;
 
                 PageNumber = 1;
@@ -1087,6 +1185,39 @@ public sealed class ShellViewModel :
     private bool CanLoadProducts()
     {
         return !IsLoading;
+    }
+
+    private void QueueProductFilterReload()
+    {
+        PageNumber = 1;
+
+        if (IsLoading)
+        {
+            _productFilterReloadPending =
+                true;
+
+            return;
+        }
+
+        _ = LoadProductsAsync();
+    }
+
+    private void NotifyFilterPresentation()
+    {
+        OnPropertyChanged(
+            nameof(HasProductStatusFilter));
+
+        OnPropertyChanged(
+            nameof(HasStockFilter));
+
+        OnPropertyChanged(
+            nameof(HasProductFilters));
+
+        OnPropertyChanged(
+            nameof(ProductStatusFilterText));
+
+        OnPropertyChanged(
+            nameof(StockFilterText));
     }
 
     private bool CanEditSelectedProduct()
@@ -1199,6 +1330,15 @@ public sealed class ShellViewModel :
             .NotifyCanExecuteChanged();
 
         ToggleProductActiveCommand
+            .NotifyCanExecuteChanged();
+
+        ResetProductStatusFilterCommand
+            .NotifyCanExecuteChanged();
+
+        ResetStockFilterCommand
+            .NotifyCanExecuteChanged();
+
+        ResetProductFiltersCommand
             .NotifyCanExecuteChanged();
     }
 }
