@@ -60,7 +60,8 @@ public sealed class PermissionServiceTests
                 SystemPermission.ViewInventoryHistory,
                 SystemPermission.AdjustInventory,
                 SystemPermission.UseCheckout,
-                SystemPermission.ViewReports
+                SystemPermission.ViewReports,
+                SystemPermission.ProcessReturns
             };
 
         AssertPermissionSet(

@@ -1,0 +1,219 @@
+<Window
+    x:Class="POS.Wpf.Views.OrderReturnWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:domain="clr-namespace:POS.Domain.Enums;assembly=POS.Domain"
+    Title="Trả hàng / hoàn tiền"
+    Width="1000" Height="620" MinWidth="820" MinHeight="540"
+    MaxWidth="1320" MaxHeight="720"
+    WindowStartupLocation="CenterOwner"
+    Background="{StaticResource AppBackgroundBrush}"
+    ContentRendered="OnContentRendered">
+    <Window.Resources>
+        <Style x:Key="ReturnFieldLabelStyle" TargetType="{x:Type TextBlock}">
+            <Setter Property="Margin" Value="0,0,0,5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+        </Style>
+        <Style x:Key="QuantityEditorStyle" TargetType="{x:Type TextBox}">
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="MinWidth" Value="68"/>
+            <Setter Property="Margin" Value="5,3"/>
+            <Setter Property="Padding" Value="6,3"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderStrongBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceRaisedBrush}"/>
+            <Setter Property="InputMethod.IsInputMethodEnabled" Value="False"/>
+        </Style>
+    </Window.Resources>
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <StackPanel>
+            <TextBlock Text="Trả hàng / hoàn tiền" Style="{StaticResource PageTitleTextStyle}"/>
+            <TextBlock Text="{Binding OrderCode, Mode=OneWay, StringFormat=Mã đơn: {0}}"/>
+            <TextBlock Margin="0,6,0,0" Foreground="{StaticResource TextSecondaryBrush}"
+                       Text="Nhập số lượng khách trả và số lượng hàng đủ điều kiện nhập lại kho."/>
+        </StackPanel>
+
+        <DataGrid x:Name="ReturnLinesGrid" Grid.Row="1" Margin="0,12"
+                  ItemsSource="{Binding Lines, Mode=OneWay}"
+                  AutoGenerateColumns="False" CanUserAddRows="False"
+                  IsReadOnly="False" SelectionUnit="Cell"
+                  KeyboardNavigation.TabNavigation="Continue"
+                  PreviewKeyDown="OnReturnLinesPreviewKeyDown">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Mã" Binding="{Binding ProductCode, Mode=OneWay}" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Sản phẩm snapshot" Binding="{Binding ProductName, Mode=OneWay}"
+                                    Width="*" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Đã mua" Binding="{Binding SoldQuantity, Mode=OneWay}" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Đã trả" Binding="{Binding ReturnedQuantity, Mode=OneWay}" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Còn lại" Binding="{Binding RemainingQuantity, Mode=OneWay}" IsReadOnly="True"/>
+                <DataGridTemplateColumn Header="Số lượng trả" Width="105">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBox x:Name="ReturnQuantityEditor"
+                                     Style="{StaticResource QuantityEditorStyle}"
+                                     Text="{Binding ReturnQuantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     PreviewTextInput="OnQuantityPreviewTextInput"
+                                     DataObject.Pasting="OnQuantityPasting"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Nhập lại kho" Width="105">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBox x:Name="RestockQuantityEditor"
+                                     Style="{StaticResource QuantityEditorStyle}"
+                                     IsEnabled="{Binding TrackInventory, Mode=OneWay}"
+                                     Text="{Binding RestockQuantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     PreviewTextInput="OnQuantityPreviewTextInput"
+                                     DataObject.Pasting="OnQuantityPasting"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Hoàn dự kiến"
+                                    Binding="{Binding PreviewRefundAmount, Mode=OneWay, StringFormat={}{0:N0} ₫}"
+                                    IsReadOnly="True"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Margin="0,0,10,0">
+                <TextBlock Style="{StaticResource ReturnFieldLabelStyle}" Text="Lý do trả hàng *"/>
+                <Grid>
+                    <TextBox x:Name="ReasonTextBox" MinHeight="34" Padding="8,5"
+                             Text="{Binding Reason, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    <TextBlock Margin="9,0" VerticalAlignment="Center" IsHitTestVisible="False"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               Text="Ví dụ: Khách đổi ý, sản phẩm lỗi...">
+                        <TextBlock.Style>
+                            <Style TargetType="{x:Type TextBlock}">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Text, ElementName=ReasonTextBox}" Value="">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
+                <TextBlock Margin="2,4,0,0" Foreground="{StaticResource DangerBrush}"
+                           Text="Lý do bắt buộc">
+                    <TextBlock.Style>
+                        <Style TargetType="{x:Type TextBlock}">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasReason, Mode=OneWay}" Value="False">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                <TextBlock Style="{StaticResource ReturnFieldLabelStyle}" Text="Phương thức hoàn tiền"/>
+                <ComboBox x:Name="RefundMethodComboBox" MinHeight="34"
+                          ItemsSource="{Binding RefundMethods, Mode=OneWay}"
+                          SelectedItem="{Binding RefundMethod, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock>
+                                <TextBlock.Style>
+                                    <Style TargetType="{x:Type TextBlock}">
+                                        <Setter Property="Text" Value="{Binding}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding}" Value="{x:Static domain:PaymentMethod.Cash}">
+                                                <Setter Property="Text" Value="Tiền mặt"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding}" Value="{x:Static domain:PaymentMethod.VietQr}">
+                                                <Setter Property="Text" Value="VietQR"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </StackPanel>
+
+            <StackPanel Grid.Column="2">
+                <TextBlock Style="{StaticResource ReturnFieldLabelStyle}" Text="Mã tham chiếu"/>
+                <Grid>
+                    <TextBox x:Name="RefundReferenceTextBox" MinHeight="34" Padding="8,5"
+                             Text="{Binding RefundReference, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    <TextBlock Margin="9,0" VerticalAlignment="Center" IsHitTestVisible="False"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               Text="{Binding RefundReferenceHint, Mode=OneWay}">
+                        <TextBlock.Style>
+                            <Style TargetType="{x:Type TextBlock}">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Text, ElementName=RefundReferenceTextBox}" Value="">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Text, ElementName=RefundReferenceTextBox}" Value="{x:Null}">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
+            </StackPanel>
+        </Grid>
+
+        <Grid Grid.Row="3" Margin="0,10,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Margin="0,0,16,0" VerticalAlignment="Center">
+                <TextBlock Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap"
+                           Text="{Binding VietQrWarning, Mode=OneWay}"/>
+                <TextBlock Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"
+                           Text="Phần chênh lệch được ghi nhận là hàng không nhập lại kho.">
+                    <TextBlock.Style>
+                        <Style TargetType="{x:Type TextBlock}">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasNonRestockedQuantity, Mode=OneWay}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <TextBlock TextWrapping="Wrap" Text="{Binding Message, Mode=OneWay}"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <TextBlock Margin="0,0,0,6" HorizontalAlignment="Right"
+                           Text="{Binding TotalRefundAmount, Mode=OneWay, StringFormat=Tổng hoàn: {0:N0} ₫}"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button x:Name="CancelButton" Margin="0,0,8,0" Padding="16,8"
+                            IsCancel="True" Content="Hủy"
+                            Style="{StaticResource SecondaryButtonStyle}"/>
+                    <Button x:Name="SubmitButton" Padding="16,8"
+                            Command="{Binding SubmitCommand}"
+                            Content="Xác nhận trả hàng"
+                            Style="{StaticResource PrimaryButtonStyle}"/>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

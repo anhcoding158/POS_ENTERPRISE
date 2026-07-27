@@ -48,7 +48,7 @@ public sealed class InventoryMovementConfiguration :
                     $"\"MovementType\" >= " +
                     $"{(int)InventoryMovementType.StockIn} " +
                     $"AND \"MovementType\" <= " +
-                    $"{(int)InventoryMovementType.OpeningBalance}");
+                    $"{(int)InventoryMovementType.CustomerReturn}");
 
                 table.HasCheckConstraint(
                     "CK_InventoryMovements_QuantityBefore_Range",
@@ -87,7 +87,8 @@ public sealed class InventoryMovementConfiguration :
                     "CK_InventoryMovements_IncreaseDirection",
                     $"\"MovementType\" NOT IN (" +
                     $"{(int)InventoryMovementType.StockIn}, " +
-                    $"{(int)InventoryMovementType.Refund}) " +
+                    $"{(int)InventoryMovementType.Refund}, " +
+                    $"{(int)InventoryMovementType.CustomerReturn}) " +
                     "OR \"QuantityDelta\" > 0");
 
                 table.HasCheckConstraint(

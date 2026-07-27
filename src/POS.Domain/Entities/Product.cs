@@ -186,6 +186,32 @@ public sealed class Product : AuditableEntity
         MarkUpdated(utcNow);
     }
 
+    public void RestockFromCustomerReturn(
+        int quantity,
+        DateTimeOffset utcNow)
+    {
+        EnsureInventoryTrackingEnabled();
+
+        if (quantity <= 0)
+        {
+            throw new DomainException(
+                "PRODUCT.INVALID_RETURN_RESTOCK",
+                "Số lượng nhập lại từ trả hàng phải lớn hơn 0.");
+        }
+
+        if (quantity >
+            BusinessRules.Products.MaximumStockQuantity -
+            StockQuantity)
+        {
+            throw new DomainException(
+                "PRODUCT.STOCK_OVERFLOW",
+                "Tồn kho vượt quá giới hạn hệ thống.");
+        }
+
+        StockQuantity += quantity;
+        MarkUpdated(utcNow);
+    }
+
     public void DecreaseStock(
         int quantity,
         DateTimeOffset utcNow)

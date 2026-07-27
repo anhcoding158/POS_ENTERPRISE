@@ -287,6 +287,10 @@ public static class DependencyInjection
             OrderRepository>();
 
         services.AddScoped<
+            IOrderReturnRepository,
+            OrderReturnRepository>();
+
+        services.AddScoped<
             IOrderReceiptSnapshotRepository,
             OrderReceiptSnapshotRepository>();
 
@@ -299,6 +303,14 @@ public static class DependencyInjection
                         OrderHistoryService>(),
                     serviceProvider.GetRequiredService<
                         IPermissionService>()));
+
+        services.AddScoped<OrderReturnService>();
+
+        services.AddScoped<IOrderReturnService>(
+            serviceProvider =>
+                new AuthorizedOrderReturnService(
+                    serviceProvider.GetRequiredService<OrderReturnService>(),
+                    serviceProvider.GetRequiredService<IPermissionService>()));
 
         services.AddScoped<
             DatabaseInitializer>();

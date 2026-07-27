@@ -197,7 +197,8 @@ public sealed class SqliteDatabaseSafetyServiceTests
     }
 
     [Fact]
-    public void Backup_must_include_committed_wal_data()
+    public void
+        Verified_backup_from_wal_source_must_include_committed_wal_data()
     {
         var testDirectory =
             CreateTestDirectory();
@@ -271,10 +272,24 @@ public sealed class SqliteDatabaseSafetyServiceTests
             Assert.NotNull(
                 result.BackupFilePath);
 
+            Assert.True(
+                File.Exists(sourcePath + "-wal"));
+
+            Assert.True(
+                File.Exists(sourcePath + "-shm"));
+
             Assert.Equal(
                 "committed-wal-row",
                 ReadStoredValue(
                     result.BackupFilePath));
+
+            Assert.False(
+                File.Exists(
+                    result.BackupFilePath + "-wal"));
+
+            Assert.False(
+                File.Exists(
+                    result.BackupFilePath + "-shm"));
         }
         finally
         {
@@ -284,7 +299,7 @@ public sealed class SqliteDatabaseSafetyServiceTests
     }
 
     [Fact]
-    public void Backup_must_not_overwrite_existing_file()
+    public void Collision_retry_must_not_delete_existing_valid_backup()
     {
         var testDirectory =
             CreateTestDirectory();
@@ -350,6 +365,258 @@ public sealed class SqliteDatabaseSafetyServiceTests
         {
             DeleteTestDirectory(
                 testDirectory);
+        }
+    }
+
+    [Fact]
+    public void Verified_backup_must_not_leave_temporary_wal_or_shm()
+    {
+        var testDirectory = CreateTestDirectory();
+
+        try
+        {
+            var sourcePath =
+                Path.Combine(testDirectory, "source.db");
+            var backupDirectory =
+                Path.Combine(testDirectory, "backups");
+
+            CreateDatabaseWithRow(sourcePath, "temporary-cleanup");
+
+            var result =
+                new SqliteDatabaseSafetyService()
+                    .CreateVerifiedBackup(
+                        sourcePath,
+                        backupDirectory,
+                        BackupUtcNow);
+
+            Assert.True(result.IsSuccess, result.Message);
+            Assert.DoesNotContain(
+                Directory.GetFiles(backupDirectory),
+                path =>
+                    Path.GetFileName(path).StartsWith(
+                        '.'));
+        }
+        finally
+        {
+            DeleteTestDirectory(testDirectory);
+        }
+    }
+
+    [Fact]
+    public void Verified_backup_must_not_leave_final_wal_or_shm()
+    {
+        var testDirectory = CreateTestDirectory();
+
+        try
+        {
+            var sourcePath =
+                Path.Combine(testDirectory, "source.db");
+            var backupDirectory =
+                Path.Combine(testDirectory, "backups");
+
+            CreateDatabaseWithRow(sourcePath, "final-cleanup");
+
+            var result =
+                new SqliteDatabaseSafetyService()
+                    .CreateVerifiedBackup(
+                        sourcePath,
+                        backupDirectory,
+                        BackupUtcNow);
+
+            Assert.True(result.IsSuccess, result.Message);
+            Assert.NotNull(result.BackupFilePath);
+            Assert.False(File.Exists(result.BackupFilePath + "-wal"));
+            Assert.False(File.Exists(result.BackupFilePath + "-shm"));
+        }
+        finally
+        {
+            DeleteTestDirectory(testDirectory);
+        }
+    }
+
+    [Fact]
+    public void Backup_cleanup_must_not_delete_source_wal_or_shm()
+    {
+        var testDirectory = CreateTestDirectory();
+
+        try
+        {
+            var sourcePath =
+                Path.Combine(testDirectory, "source.db");
+            var backupDirectory =
+                Path.Combine(testDirectory, "backups");
+
+            using var sourceConnection =
+                OpenReadWriteConnection(sourcePath);
+
+            ExecuteNonQuery(sourceConnection, "PRAGMA journal_mode=WAL;");
+            ExecuteNonQuery(sourceConnection, "PRAGMA wal_autocheckpoint=0;");
+            ExecuteNonQuery(
+                sourceConnection,
+                "CREATE TABLE SafetyRows " +
+                "(Id INTEGER PRIMARY KEY, Value TEXT NOT NULL);");
+            ExecuteNonQuery(
+                sourceConnection,
+                "INSERT INTO SafetyRows (Value) VALUES ('source-sidecars');");
+
+            var result =
+                new SqliteDatabaseSafetyService()
+                    .CreateVerifiedBackup(
+                        sourcePath,
+                        backupDirectory,
+                        BackupUtcNow);
+
+            Assert.True(result.IsSuccess, result.Message);
+            Assert.True(File.Exists(sourcePath + "-wal"));
+            Assert.True(File.Exists(sourcePath + "-shm"));
+        }
+        finally
+        {
+            DeleteTestDirectory(testDirectory);
+        }
+    }
+
+    [Fact]
+    public void Final_backup_must_open_without_sidecars()
+    {
+        var testDirectory = CreateTestDirectory();
+
+        try
+        {
+            var result =
+                CreateVerifiedTestBackup(
+                    testDirectory,
+                    "opens-without-sidecars");
+
+            Assert.NotNull(result.BackupFilePath);
+            Assert.Equal(
+                "opens-without-sidecars",
+                ReadStoredValue(result.BackupFilePath));
+            Assert.False(File.Exists(result.BackupFilePath + "-wal"));
+            Assert.False(File.Exists(result.BackupFilePath + "-shm"));
+        }
+        finally
+        {
+            DeleteTestDirectory(testDirectory);
+        }
+    }
+
+    [Fact]
+    public void Final_backup_must_pass_integrity_without_sidecars()
+    {
+        var testDirectory = CreateTestDirectory();
+
+        try
+        {
+            var result =
+                CreateVerifiedTestBackup(
+                    testDirectory,
+                    "integrity-without-sidecars");
+
+            Assert.NotNull(result.BackupFilePath);
+
+            var integrity =
+                new SqliteDatabaseSafetyService()
+                    .CheckIntegrity(result.BackupFilePath);
+
+            Assert.True(integrity.IsSuccess, integrity.Message);
+            Assert.False(File.Exists(result.BackupFilePath + "-wal"));
+            Assert.False(File.Exists(result.BackupFilePath + "-shm"));
+        }
+        finally
+        {
+            DeleteTestDirectory(testDirectory);
+        }
+    }
+
+    [Fact]
+    public void Failed_backup_must_cleanup_temporary_database_and_sidecars()
+    {
+        var testDirectory = CreateTestDirectory();
+
+        try
+        {
+            var sourcePath =
+                Path.Combine(testDirectory, "corrupt.db");
+            var backupDirectory =
+                Path.Combine(testDirectory, "backups");
+
+            File.WriteAllBytes(sourcePath, [0x00, 0x01, 0x02, 0x03]);
+
+            var result =
+                new SqliteDatabaseSafetyService()
+                    .CreateVerifiedBackup(
+                        sourcePath,
+                        backupDirectory,
+                        BackupUtcNow);
+
+            Assert.False(result.IsSuccess);
+            Assert.True(
+                !Directory.Exists(backupDirectory) ||
+                Directory.GetFiles(backupDirectory).Length == 0);
+        }
+        finally
+        {
+            DeleteTestDirectory(testDirectory);
+        }
+    }
+
+    [Fact]
+    public void Cleanup_must_only_target_exact_backup_paths()
+    {
+        var testDirectory = CreateTestDirectory();
+
+        try
+        {
+            var backupDirectory =
+                Path.Combine(testDirectory, "backups");
+            Directory.CreateDirectory(backupDirectory);
+
+            var nearbyFile =
+                Path.Combine(
+                    backupDirectory,
+                    "pos-enterprise-pre-migration-nearby.db-wal");
+            File.WriteAllText(nearbyFile, "must-survive");
+
+            var result =
+                CreateVerifiedTestBackup(
+                    testDirectory,
+                    "exact-paths");
+
+            Assert.True(result.IsSuccess, result.Message);
+            Assert.Equal("must-survive", File.ReadAllText(nearbyFile));
+        }
+        finally
+        {
+            DeleteTestDirectory(testDirectory);
+        }
+    }
+
+    [Fact]
+    public void Repeated_cleanup_must_be_idempotent()
+    {
+        var testDirectory = CreateTestDirectory();
+
+        try
+        {
+            var first =
+                CreateVerifiedTestBackup(testDirectory, "repeated");
+            var second =
+                new SqliteDatabaseSafetyService()
+                    .CreateVerifiedBackup(
+                        Path.Combine(testDirectory, "source.db"),
+                        Path.Combine(testDirectory, "backups"),
+                        BackupUtcNow);
+
+            Assert.True(first.IsSuccess, first.Message);
+            Assert.True(second.IsSuccess, second.Message);
+            Assert.NotEqual(first.BackupFilePath, second.BackupFilePath);
+            Assert.True(File.Exists(first.BackupFilePath));
+            Assert.True(File.Exists(second.BackupFilePath));
+        }
+        finally
+        {
+            DeleteTestDirectory(testDirectory);
         }
     }
 
@@ -491,6 +758,29 @@ public sealed class SqliteDatabaseSafetyServiceTests
             value);
 
         command.ExecuteNonQuery();
+    }
+
+    private static SqliteBackupResult CreateVerifiedTestBackup(
+        string testDirectory,
+        string value)
+    {
+        var sourcePath =
+            Path.Combine(testDirectory, "source.db");
+        var backupDirectory =
+            Path.Combine(testDirectory, "backups");
+
+        CreateDatabaseWithRow(sourcePath, value);
+
+        var result =
+            new SqliteDatabaseSafetyService()
+                .CreateVerifiedBackup(
+                    sourcePath,
+                    backupDirectory,
+                    BackupUtcNow);
+
+        Assert.True(result.IsSuccess, result.Message);
+
+        return result;
     }
 
     private static SqliteConnection OpenReadWriteConnection(

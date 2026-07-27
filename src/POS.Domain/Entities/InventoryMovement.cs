@@ -208,6 +208,7 @@ public sealed class InventoryMovement : Entity
         {
             case InventoryMovementType.StockIn:
             case InventoryMovementType.Refund:
+            case InventoryMovementType.CustomerReturn:
                 if (quantityDelta <= 0)
                 {
                     throw new DomainException(

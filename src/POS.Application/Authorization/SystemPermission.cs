@@ -22,5 +22,7 @@ public enum SystemPermission
 
     ViewReports = 7,
 
-    ManageUsers = 8
+    ManageUsers = 8,
+
+    ProcessReturns = 9
 }

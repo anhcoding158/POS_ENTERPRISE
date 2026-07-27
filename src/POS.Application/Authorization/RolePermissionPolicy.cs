@@ -33,7 +33,8 @@ public static class RolePermissionPolicy
                     SystemPermission.ViewInventoryHistory or
                     SystemPermission.AdjustInventory or
                     SystemPermission.UseCheckout or
-                    SystemPermission.ViewReports,
+                    SystemPermission.ViewReports or
+                    SystemPermission.ProcessReturns,
 
             Role.Cashier =>
                 permission is
@@ -82,6 +83,9 @@ public static class RolePermissionPolicy
 
             SystemPermission.ManageUsers =>
                 "quản lý tài khoản",
+
+            SystemPermission.ProcessReturns =>
+                "xử lý trả hàng và hoàn tiền",
 
             _ =>
                 throw new ArgumentOutOfRangeException(

@@ -416,6 +416,13 @@ public partial class App :
         services.AddSingleton<
             IOrderHistoryWindowService,
             OrderHistoryWindowService>();
+
+        services.AddSingleton<
+            IOrderReturnWindowService,
+            OrderReturnWindowService>();
+        services.AddSingleton<
+            IOrderReturnConfirmationService,
+            OrderReturnConfirmationService>();
     }
 
     private static void ConfigureViewModelsAndWindows(

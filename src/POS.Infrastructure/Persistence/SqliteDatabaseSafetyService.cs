@@ -234,6 +234,23 @@ public sealed class SqliteDatabaseSafetyService
                     "File backup tạm không vượt qua kiểm tra toàn vẹn.");
             }
 
+            NormalizeBackupJournalMode(
+                temporaryFilePath);
+
+            var normalizedTemporaryIntegrity =
+                CheckIntegrity(
+                    temporaryFilePath);
+
+            if (!normalizedTemporaryIntegrity.IsSuccess)
+            {
+                return BackupFailure(
+                    "File backup tạm sau journal normalization " +
+                    "không vượt qua kiểm tra toàn vẹn.");
+            }
+
+            DeleteBackupSidecars(
+                temporaryFilePath);
+
             File.Move(
                 temporaryFilePath,
                 finalFilePath,
@@ -257,6 +274,9 @@ public sealed class SqliteDatabaseSafetyService
                 return BackupFailure(
                     "File backup cuối không vượt qua xác minh.");
             }
+
+            DeleteBackupSidecars(
+                finalFilePath);
 
             finalFileVerified = true;
 
@@ -297,13 +317,13 @@ public sealed class SqliteDatabaseSafetyService
         }
         finally
         {
-            DeleteFileBestEffort(
+            DeleteBackupArtifactsBestEffort(
                 temporaryFilePath);
 
             if (finalFileCreated &&
                 !finalFileVerified)
             {
-                DeleteFileBestEffort(
+                DeleteBackupArtifactsBestEffort(
                     finalFilePath);
             }
         }
@@ -346,6 +366,46 @@ public sealed class SqliteDatabaseSafetyService
 
         sourceConnection.BackupDatabase(
             destinationConnection);
+    }
+
+    private static void NormalizeBackupJournalMode(
+        string backupFilePath)
+    {
+        var connectionString =
+            new SqliteConnectionStringBuilder
+            {
+                DataSource = backupFilePath,
+                Mode = SqliteOpenMode.ReadWrite,
+                Cache = SqliteCacheMode.Private,
+                Pooling = false
+            }
+            .ToString();
+
+        using var connection =
+            new SqliteConnection(
+                connectionString);
+
+        connection.Open();
+
+        using var command =
+            connection.CreateCommand();
+
+        command.CommandText =
+            "PRAGMA journal_mode=DELETE;";
+
+        var journalMode =
+            Convert.ToString(
+                command.ExecuteScalar(),
+                CultureInfo.InvariantCulture);
+
+        if (!string.Equals(
+                journalMode,
+                "delete",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "Không thể chuyển backup SQLite sang journal_mode DELETE.");
+        }
     }
 
     private static string GetAvailableBackupFilePath(
@@ -449,5 +509,43 @@ public sealed class SqliteDatabaseSafetyService
         {
             // Cleanup best-effort không được che lấp kết quả chính.
         }
+    }
+
+    private static void DeleteBackupSidecars(
+        string backupFilePath)
+    {
+        DeleteFile(
+            backupFilePath + "-wal");
+
+        DeleteFile(
+            backupFilePath + "-shm");
+    }
+
+    private static void DeleteFile(
+        string filePath)
+    {
+        if (File.Exists(filePath))
+        {
+            File.Delete(filePath);
+        }
+    }
+
+    private static void DeleteBackupArtifactsBestEffort(
+        string? backupFilePath)
+    {
+        if (string.IsNullOrWhiteSpace(
+                backupFilePath))
+        {
+            return;
+        }
+
+        DeleteFileBestEffort(
+            backupFilePath);
+
+        DeleteFileBestEffort(
+            backupFilePath + "-wal");
+
+        DeleteFileBestEffort(
+            backupFilePath + "-shm");
     }
 }

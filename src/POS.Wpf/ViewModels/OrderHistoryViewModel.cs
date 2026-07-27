@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using Microsoft.Extensions.Logging;
+using POS.Application.Abstractions.Authorization;
 using POS.Application.Abstractions.Services;
+using POS.Application.Authorization;
 using POS.Application.DTOs.Orders;
 using POS.Domain.Enums;
 using POS.Wpf.Commands;
@@ -21,6 +23,8 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
     private readonly IOrderHistoryService _service;
     private readonly IReceiptPreviewService _preview;
     private readonly ILogger<OrderHistoryViewModel> _logger;
+    private readonly IOrderReturnWindowService? _returnWindow;
+    private readonly IPermissionService? _permissions;
     private CancellationTokenSource? _loadSource;
     private CancellationTokenSource? _detailsSource;
     private CancellationTokenSource? _receiptSource;
@@ -44,11 +48,15 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
     public OrderHistoryViewModel(
         IOrderHistoryService service,
         IReceiptPreviewService preview,
-        ILogger<OrderHistoryViewModel> logger)
+        ILogger<OrderHistoryViewModel> logger,
+        IOrderReturnWindowService? returnWindow = null,
+        IPermissionService? permissions = null)
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));
         _preview = preview ?? throw new ArgumentNullException(nameof(preview));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _returnWindow = returnWindow;
+        _permissions = permissions;
         StatusFilters =
         [
             new("Tất cả trạng thái", null),
@@ -78,6 +86,7 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
         NextPageCommand = new AsyncRelayCommand(NextPageAsync, () => CanGoNext, OnCommandError);
         RefreshCommand = new AsyncRelayCommand(LoadAsync, () => !IsLoading, OnCommandError);
         OpenReceiptCommand = new AsyncRelayCommand(OpenReceiptAsync, () => CanOpenReceipt, OnCommandError);
+        OpenReturnCommand = new AsyncRelayCommand(OpenReturnAsync, () => CanOpenReturn, OnCommandError);
     }
 
     public ObservableCollection<OrderHistoryRowViewModel> Orders { get; } = [];
@@ -91,6 +100,7 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
     public AsyncRelayCommand NextPageCommand { get; }
     public AsyncRelayCommand RefreshCommand { get; }
     public AsyncRelayCommand OpenReceiptCommand { get; }
+    public AsyncRelayCommand OpenReturnCommand { get; }
     public int PageSize => 25;
 
     public OrderHistoryRowViewModel? SelectedOrder
@@ -220,6 +230,13 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
         HasReceiptSnapshot &&
         !IsLoadingDetails &&
         !_isOpeningReceipt;
+    public bool CanOpenReturn =>
+        _returnWindow is not null &&
+        _permissions?.HasPermission(SystemPermission.ProcessReturns) == true &&
+        _selectedDetails?.OrderId == SelectedOrder?.OrderId &&
+        _selectedDetails?.Status == OrderStatus.Completed &&
+        _selectedDetails.Lines.Any(line => line.Quantity > 0) &&
+        !IsLoading && !IsLoadingDetails;
     public string ReceiptAvailabilityMessage =>
         HasSelectedOrder && !IsLoadingDetails && !HasReceiptSnapshot
             ? "Đơn cũ chưa có snapshot hóa đơn để in lại."
@@ -433,6 +450,16 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
         }
     }
 
+    private async Task OpenReturnAsync()
+    {
+        var selected = SelectedOrder;
+        if (selected is null || !CanOpenReturn || _returnWindow is null)
+            return;
+
+        if (await _returnWindow.ShowAsync(selected.OrderId))
+            await LoadDetailsAsync(selected);
+    }
+
     private static CancellationTokenSource ReplaceSource(
         ref CancellationTokenSource? target)
     {
@@ -455,8 +482,10 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(HasSelectedOrder));
         OnPropertyChanged(nameof(HasReceiptSnapshot));
         OnPropertyChanged(nameof(CanOpenReceipt));
+        OnPropertyChanged(nameof(CanOpenReturn));
         OnPropertyChanged(nameof(ReceiptAvailabilityMessage));
         OpenReceiptCommand.NotifyCanExecuteChanged();
+        OpenReturnCommand.NotifyCanExecuteChanged();
     }
 
     private void NotifyCommands()

@@ -47,5 +47,10 @@ public enum InventoryMovementType
     /// <summary>
     /// Tồn đầu kỳ khi tạo hoặc chuyển đổi dữ liệu sản phẩm.
     /// </summary>
-    OpeningBalance = 7
+    OpeningBalance = 7,
+
+    /// <summary>
+    /// Nhập lại kho từ chứng từ trả hàng của khách.
+    /// </summary>
+    CustomerReturn = 8
 }

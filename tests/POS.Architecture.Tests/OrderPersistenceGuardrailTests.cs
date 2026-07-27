@@ -461,6 +461,9 @@ public sealed class
                 typeof(OrderItem),
                 typeof(OrderItemModifier),
                 typeof(OrderReceiptSnapshot),
+                typeof(OrderReturn),
+                typeof(OrderReturnBalance),
+                typeof(OrderReturnItem),
                 typeof(Product),
                 typeof(User)
             }

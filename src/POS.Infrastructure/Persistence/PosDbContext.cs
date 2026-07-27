@@ -52,6 +52,10 @@ public sealed class PosDbContext :
         OrderReceiptSnapshots =>
             Set<OrderReceiptSnapshot>();
 
+    public DbSet<OrderReturn> OrderReturns => Set<OrderReturn>();
+    public DbSet<OrderReturnItem> OrderReturnItems => Set<OrderReturnItem>();
+    public DbSet<OrderReturnBalance> OrderReturnBalances => Set<OrderReturnBalance>();
+
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {
