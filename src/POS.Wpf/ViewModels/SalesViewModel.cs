@@ -938,6 +938,9 @@ public sealed class SalesViewModel :
                     isActive:
                         true,
 
+                    isArchived:
+                        false,
+
                     isLowStock:
                         null,
 

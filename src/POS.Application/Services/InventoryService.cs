@@ -88,6 +88,15 @@ public sealed class InventoryService : IInventoryService
                     "Không tìm thấy sản phẩm cần điều chỉnh kho."));
         }
 
+        if (product.IsArchived)
+        {
+            return Result.Failure<
+                InventoryAdjustmentResultDto>(
+                new Error(
+                    ErrorCodes.Products.Archived,
+                    "Không thể điều chỉnh kho cho sản phẩm đã lưu trữ."));
+        }
+
         if (!product.TrackInventory)
         {
             return Result.Failure<

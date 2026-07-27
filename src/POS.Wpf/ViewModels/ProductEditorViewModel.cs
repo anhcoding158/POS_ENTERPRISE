@@ -94,6 +94,7 @@ public sealed class ProductEditorViewModel :
     private bool _trackInventory = true;
     private bool _allowNegativeStock;
     private bool _isActive = true;
+    private bool _isArchived;
 
     private bool _isBusy;
     private bool _suppressValidation;
@@ -120,7 +121,7 @@ public sealed class ProductEditorViewModel :
         SaveCommand =
             new AsyncRelayCommand(
                 SaveAsync,
-                CanExecuteCommand,
+                CanSave,
                 HandleCommandException);
 
         CancelCommand =
@@ -165,6 +166,30 @@ public sealed class ProductEditorViewModel :
 
     public bool IsEditMode =>
         ProductId.HasValue;
+
+    public bool IsArchived
+    {
+        get => _isArchived;
+
+        private set
+        {
+            if (!SetProperty(
+                    ref _isArchived,
+                    value))
+            {
+                return;
+            }
+
+            OnPropertyChanged(
+                nameof(CanEdit));
+
+            SaveCommand
+                .NotifyCanExecuteChanged();
+        }
+    }
+
+    public bool CanEdit =>
+        !IsArchived;
 
     public string WindowTitle =>
         IsEditMode
@@ -627,9 +652,17 @@ public sealed class ProductEditorViewModel :
     {
         get => _isActive;
 
-        set => SetProperty(
-            ref _isActive,
-            value);
+        set
+        {
+            if (!CanEdit)
+            {
+                return;
+            }
+
+            SetProperty(
+                ref _isActive,
+                value);
+        }
     }
 
     public bool IsBusy
@@ -824,6 +857,7 @@ public sealed class ProductEditorViewModel :
 
         ClearAllErrors();
 
+        IsArchived = false;
         ProductId = productId;
 
         IsBusy = true;
@@ -945,6 +979,11 @@ public sealed class ProductEditorViewModel :
 
     private async Task SaveAsync()
     {
+        if (!CanEdit)
+        {
+            return;
+        }
+
         ValidateAll();
 
         if (HasErrors)
@@ -1261,8 +1300,14 @@ public sealed class ProductEditorViewModel :
             IsActive =
                 product.IsActive;
 
+            IsArchived =
+                product.IsArchived;
+
             StatusMessage =
-                string.Empty;
+                IsArchived
+                    ? "Sản phẩm đã được lưu trữ. " +
+                      "Hãy khôi phục sản phẩm trước khi chỉnh sửa."
+                    : string.Empty;
 
             IsStatusError =
                 false;
@@ -1593,6 +1638,12 @@ public sealed class ProductEditorViewModel :
     private bool CanExecuteCommand()
     {
         return !IsBusy;
+    }
+
+    private bool CanSave()
+    {
+        return !IsBusy &&
+               CanEdit;
     }
 
     private void HandleCommandException(

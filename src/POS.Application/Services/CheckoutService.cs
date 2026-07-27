@@ -213,6 +213,14 @@ public sealed class CheckoutService :
                         $"{requestedProduct.Key}.");
                 }
 
+                if (product.IsArchived)
+                {
+                    return Failure(
+                        ErrorCodes.Products.Archived,
+                        $"Sản phẩm '{product.Name}' đã được lưu trữ " +
+                        "và không thể thanh toán.");
+                }
+
                 if (!product.IsActive)
                 {
                     return Failure(

@@ -473,6 +473,16 @@ public sealed class ProductService :
                 ProductDetailsDto>();
         }
 
+        if (product.IsArchived)
+        {
+            return Result.Failure<
+                ProductDetailsDto>(
+                new Error(
+                    ErrorCodes.Products.Archived,
+                    "Sản phẩm đã được lưu trữ. " +
+                    "Hãy khôi phục trước khi chỉnh sửa."));
+        }
+
         /*
          * Tạo entity tạm để Domain kiểm tra toàn bộ request
          * trước khi thay đổi entity thật đang được EF theo dõi.

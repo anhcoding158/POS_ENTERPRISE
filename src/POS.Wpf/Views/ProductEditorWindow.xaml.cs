@@ -90,6 +90,11 @@ public partial class ProductEditorWindow :
         object sender,
         global::System.Windows.RoutedEventArgs e)
     {
+        if (!_viewModel.CanEdit)
+        {
+            return;
+        }
+
         var dialog =
             new OpenFileDialog
             {
@@ -204,6 +209,11 @@ public partial class ProductEditorWindow :
         object sender,
         global::System.Windows.RoutedEventArgs e)
     {
+        if (!_viewModel.CanEdit)
+        {
+            return;
+        }
+
         TryDeleteManagedImage(
             _stagedImagePath);
 

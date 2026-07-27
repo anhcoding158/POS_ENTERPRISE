@@ -355,6 +355,7 @@
 
         <ScrollViewer
             Grid.Row="1"
+            IsEnabled="{Binding CanEdit}"
             VerticalScrollBarVisibility="Auto"
             HorizontalScrollBarVisibility="Disabled">
 
@@ -593,6 +594,7 @@
                                                 <Button
                                                     Content="Chọn ảnh"
                                                     Click="OnChooseProductImage"
+                                                    IsEnabled="{Binding CanEdit}"
                                                     MinWidth="92">
 
                                                     <Button.Style>
@@ -618,6 +620,7 @@
                                                     x:Name="ClearProductImageButton"
                                                     Content="Xóa ảnh"
                                                     Click="OnClearProductImage"
+                                                    IsEnabled="{Binding CanEdit}"
                                                     MinWidth="86"
                                                     Margin="8,0,0,0">
 
@@ -968,6 +971,7 @@
 
                                         <CheckBox
                                             Content="Đang bán"
+                                            IsEnabled="{Binding CanEdit}"
                                             IsChecked="{Binding IsActive,
                                                 Mode=TwoWay}"
                                             Style="{StaticResource EditorCheckBoxStyle}" />

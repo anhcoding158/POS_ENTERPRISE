@@ -82,6 +82,9 @@ public static class ErrorCodes
         public const string Inactive =
             "PRODUCT.INACTIVE";
 
+        public const string Archived =
+            "PRODUCT.ARCHIVED";
+
         public const string InsufficientStock =
             "PRODUCT.INSUFFICIENT_STOCK";
     }
