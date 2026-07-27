@@ -127,8 +127,7 @@ public sealed class VietQrPaymentDialogService :
 
     private static readonly TimeSpan
         CustomerDisplayCompletionDelay =
-            TimeSpan.FromMilliseconds(
-                1400);
+            TimeSpan.FromSeconds(4);
 
     private readonly StoredVietQrService?
         _storedService;
