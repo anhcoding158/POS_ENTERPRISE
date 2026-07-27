@@ -878,7 +878,11 @@ public sealed class ProductService :
             product.AllowNegativeStock,
             product.IsLowStock,
             product.IsOutOfStock,
-            product.IsActive);
+            product.IsActive)
+        {
+            ImagePath =
+                product.ImagePath
+        };
     }
 
     private static ProductDetailsDto

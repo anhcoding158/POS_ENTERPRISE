@@ -21,4 +21,11 @@ public sealed record ProductListItemDto(
     bool AllowNegativeStock,
     bool IsLowStock,
     bool IsOutOfStock,
-    bool IsActive);
+    bool IsActive)
+{
+    public string? ImagePath
+    {
+        get;
+        init;
+    }
+}

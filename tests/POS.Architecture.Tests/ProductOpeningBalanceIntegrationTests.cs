@@ -121,6 +121,59 @@ public sealed class ProductOpeningBalanceIntegrationTests
     }
 
     [Fact]
+    public async Task Search_must_return_saved_product_image_path()
+    {
+        const string imagePath =
+            @"C:\POS-Test-Images\product-001.png";
+
+        await using var database =
+            await OpeningBalanceTestDatabase
+                .CreateAsync();
+
+        await using var context =
+            database.CreateContext();
+
+        var service =
+            CreateService(
+                context,
+                new EfUnitOfWork(context));
+
+        var cancellationToken =
+            TestContext.Current.CancellationToken;
+
+        var createResult =
+            await service.CreateAsync(
+                CreateRequest(
+                    code: "IMAGE-001",
+                    initialStock: 0,
+                    allowNegativeStock: false,
+                    imagePath),
+                cancellationToken);
+
+        Assert.True(
+            createResult.IsSuccess,
+            createResult.Error.ToString());
+
+        var searchResult =
+            await service.SearchAsync(
+                new ProductSearchRequest(
+                    searchTerm: "IMAGE-001"),
+                cancellationToken);
+
+        Assert.True(
+            searchResult.IsSuccess,
+            searchResult.Error.ToString());
+
+        var item =
+            Assert.Single(
+                searchResult.Value.Items);
+
+        Assert.Equal(
+            imagePath,
+            item.ImagePath);
+    }
+
+    [Fact]
     public async Task Create_with_negative_stock_must_work_when_allowed()
     {
         await using var database =
@@ -497,7 +550,8 @@ public sealed class ProductOpeningBalanceIntegrationTests
         CreateRequest(
             string code,
             int initialStock,
-            bool allowNegativeStock)
+            bool allowNegativeStock,
+            string? imagePath = null)
     {
         return new CreateProductRequest(
             categoryId: 1,
@@ -510,7 +564,8 @@ public sealed class ProductOpeningBalanceIntegrationTests
                 initialStock,
             minimumStock: 2,
             trackInventory: true,
-            allowNegativeStock);
+            allowNegativeStock,
+            imagePath: imagePath);
     }
 
     private sealed class FixedClock :
