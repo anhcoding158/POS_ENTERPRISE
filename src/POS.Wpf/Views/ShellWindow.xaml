@@ -1158,6 +1158,41 @@
                                 Style="{StaticResource SecondaryButtonStyle}"
                                 MinWidth="104"
                                 Margin="9,0,0,0" />
+
+                            <Button
+                                x:Name="MoreProductActionsButton"
+                                Content="⋮"
+                                Click="OnMoreProductActionsClick"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Width="42"
+                                MinWidth="42"
+                                Margin="9,0,0,0"
+                                ToolTip="Thao tác sản phẩm khác">
+
+                                <Button.ContextMenu>
+
+                                    <ContextMenu
+                                        Placement="Bottom"
+                                        HorizontalOffset="-126"
+                                        StaysOpen="False"
+                                        DataContext="{Binding PlacementTarget.DataContext,
+                                            RelativeSource={RelativeSource Self}}">
+
+                                        <MenuItem
+                                            x:Name="AdjustInventoryMenuItem"
+                                            Header="Điều chỉnh kho"
+                                            Command="{Binding AdjustInventoryCommand}"
+                                            ToolTip="{Binding InventoryActionHint}"
+                                            ToolTipService.ShowOnDisabled="True" />
+
+                                        <MenuItem
+                                            x:Name="InventoryHistoryMenuItem"
+                                            Header="Lịch sử kho"
+                                            Command="{Binding ViewInventoryHistoryCommand}"
+                                            ToolTip="{Binding InventoryHistoryActionHint}" />
+                                    </ContextMenu>
+                                </Button.ContextMenu>
+                            </Button>
                         </StackPanel>
                     </Grid>
 
@@ -1167,8 +1202,9 @@
 
                     <Border
                         Grid.Row="1"
-                        Margin="20,0,20,13"
-                        Padding="13"
+                        Height="64"
+                        Margin="20,0,20,12"
+                        Padding="12,8"
                         Background="{StaticResource SurfaceMutedBrush}"
                         BorderBrush="{StaticResource BorderBrush}"
                         BorderThickness="1"
@@ -1179,12 +1215,11 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
                             <Border
-                                Width="40"
-                                Height="40"
+                                Width="38"
+                                Height="38"
                                 Background="{StaticResource GoldSoftBrush}"
                                 BorderBrush="{StaticResource GoldBorderBrush}"
                                 BorderThickness="1"
@@ -1202,7 +1237,7 @@
 
                             <StackPanel
                                 Grid.Column="1"
-                                Margin="12,0,16,0"
+                                Margin="12,0,0,0"
                                 VerticalAlignment="Center">
 
                                 <TextBlock
@@ -1212,11 +1247,14 @@
                                     FontWeight="SemiBold"
                                     TextTrimming="CharacterEllipsis" />
 
-                                <WrapPanel Margin="0,7,0,0">
+                                <WrapPanel
+                                    Margin="0,4,0,0"
+                                    Visibility="{Binding HasSelectedProduct,
+                                        Converter={StaticResource BooleanToVisibilityConverter}}">
 
                                     <Border
-                                        Padding="8,4"
-                                        Margin="0,0,7,4"
+                                        Padding="7,2"
+                                        Margin="0,0,7,0"
                                         Background="{StaticResource SurfaceBrush}"
                                         BorderBrush="{StaticResource BorderStrongBrush}"
                                         BorderThickness="1"
@@ -1238,8 +1276,8 @@
                                     </Border>
 
                                     <Border
-                                        Padding="8,4"
-                                        Margin="0,0,7,4"
+                                        Padding="7,2"
+                                        Margin="0,0,7,0"
                                         Background="{StaticResource SurfaceBrush}"
                                         BorderBrush="{StaticResource BorderStrongBrush}"
                                         BorderThickness="1"
@@ -1261,8 +1299,8 @@
                                     </Border>
 
                                     <Border
-                                        Padding="8,4"
-                                        Margin="0,0,7,4"
+                                        Padding="7,2"
+                                        Margin="0,0,7,0"
                                         Background="{StaticResource WarningSoftBrush}"
                                         BorderBrush="{StaticResource GoldBorderBrush}"
                                         BorderThickness="1"
@@ -1276,8 +1314,8 @@
                                     </Border>
 
                                     <Border
-                                        Padding="8,4"
-                                        Margin="0,0,0,4"
+                                        Padding="7,2"
+                                        Margin="0,0,7,0"
                                         Background="{StaticResource SurfaceBrush}"
                                         BorderBrush="{StaticResource BorderStrongBrush}"
                                         BorderThickness="1"
@@ -1289,57 +1327,41 @@
                                             FontSize="10.5"
                                             FontWeight="SemiBold" />
                                     </Border>
+
+                                    <Border
+                                        Padding="7,2"
+                                        Margin="0,0,7,0"
+                                        Background="{StaticResource SurfaceBrush}"
+                                        BorderBrush="{StaticResource BorderStrongBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="7">
+
+                                        <TextBlock
+                                            Text="{Binding SelectedProduct.StatusText}"
+                                            Foreground="{StaticResource TextSecondaryBrush}"
+                                            FontSize="10.5"
+                                            FontWeight="SemiBold" />
+                                    </Border>
+
+                                    <Border
+                                        Padding="7,2"
+                                        Margin="0"
+                                        Background="{StaticResource SurfaceBrush}"
+                                        BorderBrush="{StaticResource BorderStrongBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="7">
+
+                                        <TextBlock
+                                            Text="{Binding SelectedProduct.CategoryName}"
+                                            Foreground="{StaticResource TextSecondaryBrush}"
+                                            FontSize="10.5"
+                                            FontWeight="SemiBold"
+                                            MaxWidth="150"
+                                            TextTrimming="CharacterEllipsis" />
+                                    </Border>
                                 </WrapPanel>
                             </StackPanel>
 
-                            <StackPanel
-                                Grid.Column="2"
-                                Orientation="Horizontal"
-                                VerticalAlignment="Center">
-
-                                <Button
-                                    Command="{Binding AdjustInventoryCommand}"
-                                    Style="{StaticResource InventoryActionButtonStyle}"
-                                    ToolTip="{Binding InventoryActionHint}"
-                                    ToolTipService.ShowOnDisabled="True">
-
-                                    <StackPanel Orientation="Horizontal">
-
-                                        <TextBlock
-                                            Text="±"
-                                            FontFamily="Georgia"
-                                            FontSize="17"
-                                            FontWeight="Bold"
-                                            Margin="0,0,7,0"
-                                            VerticalAlignment="Center" />
-
-                                        <TextBlock
-                                            Text="Điều chỉnh kho"
-                                            VerticalAlignment="Center" />
-                                    </StackPanel>
-                                </Button>
-
-                                <Button
-                                    Command="{Binding ViewInventoryHistoryCommand}"
-                                    Style="{StaticResource InventoryHistoryButtonStyle}"
-                                    Margin="9,0,0,0"
-                                    ToolTip="{Binding InventoryHistoryActionHint}">
-
-                                    <StackPanel Orientation="Horizontal">
-
-                                        <TextBlock
-                                            Text="&#xE81C;"
-                                            FontFamily="Segoe MDL2 Assets"
-                                            FontSize="14"
-                                            Margin="0,0,7,0"
-                                            VerticalAlignment="Center" />
-
-                                        <TextBlock
-                                            Text="Lịch sử kho"
-                                            VerticalAlignment="Center" />
-                                    </StackPanel>
-                                </Button>
-                            </StackPanel>
                         </Grid>
                     </Border>
 
@@ -1356,13 +1378,19 @@
 
                         <Grid>
 
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
                             <Grid
-                                Width="420"
+                                MaxWidth="520"
+                                Margin="0,0,12,0"
                                 HorizontalAlignment="Left">
 
                                 <TextBox
@@ -1431,38 +1459,6 @@
                                 Grid.Column="1"
                                 Orientation="Horizontal">
 
-                                <ComboBox
-                                    ItemsSource="{Binding ProductStatusFilters}"
-                                    SelectedItem="{Binding SelectedProductStatusFilter,
-                                        Mode=TwoWay}"
-                                    DisplayMemberPath="DisplayName"
-                                    MinWidth="155"
-                                    Height="42"
-                                    Margin="0,0,9,0"
-                                    ToolTip="Lọc sản phẩm theo trạng thái bán"
-                                    Background="{StaticResource SurfaceBrush}"
-                                    BorderBrush="{StaticResource BorderStrongBrush}"
-                                    BorderThickness="1"
-                                    Padding="11,6"
-                                    FontSize="13"
-                                    VerticalContentAlignment="Center" />
-
-                                <ComboBox
-                                    ItemsSource="{Binding StockFilterOptions}"
-                                    SelectedItem="{Binding SelectedStockFilter,
-                                        Mode=TwoWay}"
-                                    DisplayMemberPath="DisplayName"
-                                    Width="210"
-                                    Height="42"
-                                    Margin="0,0,9,0"
-                                    ToolTip="Lọc sản phẩm theo tình trạng tồn kho"
-                                    Background="{StaticResource SurfaceBrush}"
-                                    BorderBrush="{StaticResource BorderStrongBrush}"
-                                    BorderThickness="1"
-                                    Padding="11,6"
-                                    FontSize="13"
-                                    VerticalContentAlignment="Center" />
-
                                 <Button
                                     Command="{Binding SearchCommand}"
                                     Style="{StaticResource PrimaryButtonStyle}"
@@ -1485,14 +1481,172 @@
                                 </Button>
 
                                 <Button
+                                    x:Name="FilterButton"
+                                    Click="OnFilterButtonClick"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    MinWidth="94"
+                                    Margin="9,0,0,0">
+
+                                    <StackPanel Orientation="Horizontal">
+
+                                        <TextBlock
+                                            Text="&#xE71C;"
+                                            FontFamily="Segoe MDL2 Assets"
+                                            FontSize="12"
+                                            Margin="0,0,7,0"
+                                            VerticalAlignment="Center" />
+
+                                        <TextBlock
+                                            Text="Bộ lọc"
+                                            VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+
+                                <Button
                                     Content="Tải lại"
                                     Command="{Binding RefreshCommand}"
                                     Style="{StaticResource SecondaryButtonStyle}"
                                     MinWidth="88"
                                     Margin="9,0,0,0" />
                             </StackPanel>
+
+                            <WrapPanel
+                                Grid.Row="1"
+                                Grid.ColumnSpan="2"
+                                Margin="0,8,0,0"
+                                Visibility="{Binding HasProductFilters,
+                                    Converter={StaticResource BooleanToVisibilityConverter}}">
+
+                                <Button
+                                    Command="{Binding ResetProductStatusFilterCommand}"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Height="30"
+                                    MinWidth="0"
+                                    Padding="10,0"
+                                    Margin="0,0,8,0"
+                                    Visibility="{Binding HasProductStatusFilter,
+                                        Converter={StaticResource BooleanToVisibilityConverter}}">
+
+                                    <StackPanel Orientation="Horizontal">
+
+                                        <TextBlock
+                                            Text="{Binding ProductStatusFilterText}"
+                                            VerticalAlignment="Center" />
+
+                                        <TextBlock
+                                            Text=" ×"
+                                            Margin="5,0,0,0"
+                                            VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+
+                                <Button
+                                    Command="{Binding ResetStockFilterCommand}"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Height="30"
+                                    MinWidth="0"
+                                    Padding="10,0"
+                                    Visibility="{Binding HasStockFilter,
+                                        Converter={StaticResource BooleanToVisibilityConverter}}">
+
+                                    <StackPanel Orientation="Horizontal">
+
+                                        <TextBlock
+                                            Text="{Binding StockFilterText}"
+                                            VerticalAlignment="Center" />
+
+                                        <TextBlock
+                                            Text=" ×"
+                                            Margin="5,0,0,0"
+                                            VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                            </WrapPanel>
                         </Grid>
                     </Border>
+
+                    <Popup
+                        x:Name="ProductFilterPopup"
+                        Grid.Row="2"
+                        PlacementTarget="{Binding ElementName=FilterButton}"
+                        Placement="Bottom"
+                        HorizontalOffset="-206"
+                        VerticalOffset="5"
+                        StaysOpen="False"
+                        AllowsTransparency="True"
+                        DataContext="{Binding PlacementTarget.DataContext,
+                            RelativeSource={RelativeSource Self}}">
+
+                        <Border
+                            Width="300"
+                            Padding="16"
+                            Background="{StaticResource SurfaceBrush}"
+                            BorderBrush="{StaticResource BorderStrongBrush}"
+                            BorderThickness="1"
+                            CornerRadius="10">
+
+                            <StackPanel>
+
+                                <TextBlock
+                                    Text="TRẠNG THÁI"
+                                    Style="{StaticResource ShellCaptionTextStyle}"
+                                    FontWeight="SemiBold" />
+
+                                <ComboBox
+                                    ItemsSource="{Binding ProductStatusFilters}"
+                                    SelectedItem="{Binding SelectedProductStatusFilter,
+                                        Mode=TwoWay}"
+                                    DisplayMemberPath="DisplayName"
+                                    Height="40"
+                                    Margin="0,6,0,14"
+                                    ToolTip="Lọc sản phẩm theo trạng thái bán"
+                                    Background="{StaticResource SurfaceBrush}"
+                                    BorderBrush="{StaticResource BorderStrongBrush}"
+                                    BorderThickness="1"
+                                    Padding="11,6"
+                                    FontSize="13"
+                                    VerticalContentAlignment="Center" />
+
+                                <TextBlock
+                                    Text="TỒN KHO"
+                                    Style="{StaticResource ShellCaptionTextStyle}"
+                                    FontWeight="SemiBold" />
+
+                                <ComboBox
+                                    ItemsSource="{Binding StockFilterOptions}"
+                                    SelectedItem="{Binding SelectedStockFilter,
+                                        Mode=TwoWay}"
+                                    DisplayMemberPath="DisplayName"
+                                    Height="40"
+                                    Margin="0,6,0,14"
+                                    ToolTip="Lọc sản phẩm theo tình trạng tồn kho"
+                                    Background="{StaticResource SurfaceBrush}"
+                                    BorderBrush="{StaticResource BorderStrongBrush}"
+                                    BorderThickness="1"
+                                    Padding="11,6"
+                                    FontSize="13"
+                                    VerticalContentAlignment="Center" />
+
+                                <StackPanel
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Right">
+
+                                    <Button
+                                        Content="Xóa bộ lọc"
+                                        Command="{Binding ResetProductFiltersCommand}"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        MinWidth="104" />
+
+                                    <Button
+                                        Content="Đóng"
+                                        Click="OnCloseProductFilterClick"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        MinWidth="70"
+                                        Margin="8,0,0,0" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Popup>
 
                     <!-- =================================================
                          ROW 3: PRODUCT DATA TABLE
