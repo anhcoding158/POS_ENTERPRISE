@@ -17,7 +17,8 @@ public sealed class ProductSearchRequest
         bool? isActive = null,
         bool? isLowStock = null,
         int pageNumber = 1,
-        int pageSize = DefaultPageSize)
+        int pageSize = DefaultPageSize,
+        bool? isArchived = false)
     {
         if (categoryId.HasValue &&
             categoryId.Value <= 0)
@@ -49,6 +50,7 @@ public sealed class ProductSearchRequest
         IsLowStock = isLowStock;
         PageNumber = pageNumber;
         PageSize = pageSize;
+        IsArchived = isArchived;
     }
 
     /// <summary>
@@ -65,6 +67,8 @@ public sealed class ProductSearchRequest
     public int PageNumber { get; }
 
     public int PageSize { get; }
+
+    public bool? IsArchived { get; }
 
     private static string? NormalizeSearchTerm(
         string? searchTerm)

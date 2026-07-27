@@ -98,6 +98,7 @@ public sealed class ProductService :
                 request.IsLowStock,
                 request.PageNumber,
                 request.PageSize,
+                request.IsArchived,
                 cancellationToken);
 
         var categoryNames =
@@ -878,7 +879,8 @@ public sealed class ProductService :
             product.AllowNegativeStock,
             product.IsLowStock,
             product.IsOutOfStock,
-            product.IsActive)
+            product.IsActive,
+            product.IsArchived)
         {
             ImagePath =
                 product.ImagePath
@@ -911,7 +913,10 @@ public sealed class ProductService :
             product.IsOutOfStock,
             product.IsActive,
             product.CreatedAtUtc,
-            product.UpdatedAtUtc);
+            product.UpdatedAtUtc,
+            product.IsArchived,
+            product.ArchivedAtUtc,
+            product.ArchivedByUserId);
     }
 
     private static Result<TValue>

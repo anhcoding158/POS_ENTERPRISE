@@ -24,4 +24,7 @@ public sealed record ProductDetailsDto(
     bool IsOutOfStock,
     bool IsActive,
     DateTimeOffset CreatedAtUtc,
-    DateTimeOffset UpdatedAtUtc);
+    DateTimeOffset UpdatedAtUtc,
+    bool IsArchived = false,
+    DateTimeOffset? ArchivedAtUtc = null,
+    int? ArchivedByUserId = null);

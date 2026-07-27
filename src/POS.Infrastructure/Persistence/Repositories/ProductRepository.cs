@@ -98,6 +98,27 @@ public sealed class ProductRepository :
         int pageSize,
         CancellationToken cancellationToken = default)
     {
+        return await SearchAsync(
+            searchTerm,
+            categoryId,
+            isActive,
+            isLowStock,
+            pageNumber,
+            pageSize,
+            isArchived: false,
+            cancellationToken);
+    }
+
+    public async Task<PagedResult<Product>> SearchAsync(
+        string? searchTerm,
+        int? categoryId,
+        bool? isActive,
+        bool? isLowStock,
+        int pageNumber,
+        int pageSize,
+        bool? isArchived,
+        CancellationToken cancellationToken = default)
+    {
         var skip =
             CalculateSkip(
                 pageNumber,
@@ -158,6 +179,14 @@ public sealed class ProductRepository :
                 product =>
                     product.IsActive ==
                     isActive.Value);
+        }
+
+        if (isArchived.HasValue)
+        {
+            query = query.Where(
+                product =>
+                    product.IsArchived ==
+                    isArchived.Value);
         }
 
         if (isLowStock.HasValue)

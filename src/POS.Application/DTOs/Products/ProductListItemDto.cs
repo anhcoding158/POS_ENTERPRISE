@@ -21,7 +21,8 @@ public sealed record ProductListItemDto(
     bool AllowNegativeStock,
     bool IsLowStock,
     bool IsOutOfStock,
-    bool IsActive)
+    bool IsActive,
+    bool IsArchived = false)
 {
     public string? ImagePath
     {

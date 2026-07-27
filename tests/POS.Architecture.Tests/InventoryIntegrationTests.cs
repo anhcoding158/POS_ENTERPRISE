@@ -706,6 +706,20 @@ public sealed class InventoryIntegrationTests
                 "Integration test này không dùng tìm kiếm Product.");
         }
 
+        public Task<PagedResult<Product>> SearchAsync(
+            string? searchTerm,
+            int? categoryId,
+            bool? isActive,
+            bool? isLowStock,
+            int pageNumber,
+            int pageSize,
+            bool? isArchived,
+            CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException(
+                "Integration test này không dùng tìm kiếm Product.");
+        }
+
         public Task<bool> CodeExistsAsync(
             string code,
             int? excludeProductId = null,

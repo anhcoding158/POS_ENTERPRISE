@@ -48,6 +48,16 @@ public interface IProductRepository
         int pageSize,
         CancellationToken cancellationToken = default);
 
+    Task<PagedResult<Product>> SearchAsync(
+        string? searchTerm,
+        int? categoryId,
+        bool? isActive,
+        bool? isLowStock,
+        int pageNumber,
+        int pageSize,
+        bool? isArchived,
+        CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Kiểm tra mã sản phẩm đã tồn tại hay chưa.
     /// </summary>
