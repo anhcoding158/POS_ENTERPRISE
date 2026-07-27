@@ -8,6 +8,7 @@ using POS.Application.DTOs.Products;
 using POS.Application.Services;
 using POS.Domain.Common;
 using POS.Domain.Enums;
+using POS.Infrastructure.Authentication;
 using POS.Infrastructure.Persistence;
 using POS.Infrastructure.Persistence.Repositories;
 using Xunit;
@@ -543,7 +544,9 @@ public sealed class ProductOpeningBalanceIntegrationTests
             unitOfWork,
 
             new FixedClock(
-                CreatedAtUtc));
+                CreatedAtUtc),
+
+            new CurrentUserService());
     }
 
     private static CreateProductRequest

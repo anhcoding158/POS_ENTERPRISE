@@ -8,6 +8,7 @@ using POS.Application.Services;
 using POS.Domain.Common;
 using POS.Domain.Entities;
 using POS.Domain.Enums;
+using POS.Infrastructure.Authentication;
 using POS.Infrastructure.Persistence;
 using POS.Infrastructure.Persistence.Repositories;
 using Xunit;
@@ -294,7 +295,9 @@ public sealed class ProductArchiveSearchTests
             new EfUnitOfWork(
                 context),
 
-            new FixedClock());
+            new FixedClock(),
+
+            new CurrentUserService());
     }
 
     private sealed class FixedClock :

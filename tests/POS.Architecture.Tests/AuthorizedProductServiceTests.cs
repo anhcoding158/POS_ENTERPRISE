@@ -148,6 +148,132 @@ public sealed class AuthorizedProductServiceTests
                 .SetActiveStateCallCount);
     }
 
+    [Fact]
+    public async Task
+        Archive_must_require_manage_products_permission()
+    {
+        var innerService =
+            new RecordingProductService();
+
+        var service =
+            CreateService(
+                Role.Cashier,
+                innerService);
+
+        var result =
+            await service.ArchiveAsync(
+                productId: 10,
+                TestContext
+                    .Current
+                    .CancellationToken);
+
+        Assert.True(result.IsFailure);
+
+        Assert.Equal(
+            ErrorCodes.General.Forbidden,
+            result.Error.Code);
+
+        Assert.Equal(
+            0,
+            innerService.ArchiveCallCount);
+    }
+
+    [Fact]
+    public async Task
+        Restore_must_require_manage_products_permission()
+    {
+        var innerService =
+            new RecordingProductService();
+
+        var service =
+            CreateService(
+                Role.Cashier,
+                innerService);
+
+        var result =
+            await service.RestoreAsync(
+                productId: 10,
+                TestContext
+                    .Current
+                    .CancellationToken);
+
+        Assert.True(result.IsFailure);
+
+        Assert.Equal(
+            ErrorCodes.General.Forbidden,
+            result.Error.Code);
+
+        Assert.Equal(
+            0,
+            innerService.RestoreCallCount);
+    }
+
+    [Fact]
+    public async Task
+        Authorized_archive_must_delegate_once_and_forward_cancellation_token()
+    {
+        var innerService =
+            new RecordingProductService();
+
+        var service =
+            CreateService(
+                Role.Manager,
+                innerService);
+
+        using var cancellationSource =
+            new CancellationTokenSource();
+
+        var result =
+            await service.ArchiveAsync(
+                productId: 10,
+                cancellationSource.Token);
+
+        Assert.True(
+            result.IsSuccess,
+            result.Error.ToString());
+
+        Assert.Equal(
+            1,
+            innerService.ArchiveCallCount);
+
+        Assert.Equal(
+            cancellationSource.Token,
+            innerService.LastCancellationToken);
+    }
+
+    [Fact]
+    public async Task
+        Authorized_restore_must_delegate_once_and_forward_cancellation_token()
+    {
+        var innerService =
+            new RecordingProductService();
+
+        var service =
+            CreateService(
+                Role.Manager,
+                innerService);
+
+        using var cancellationSource =
+            new CancellationTokenSource();
+
+        var result =
+            await service.RestoreAsync(
+                productId: 10,
+                cancellationSource.Token);
+
+        Assert.True(
+            result.IsSuccess,
+            result.Error.ToString());
+
+        Assert.Equal(
+            1,
+            innerService.RestoreCallCount);
+
+        Assert.Equal(
+            cancellationSource.Token,
+            innerService.LastCancellationToken);
+    }
+
     private static AuthorizedProductService
         CreateService(
             Role? role,
@@ -194,6 +320,16 @@ public sealed class AuthorizedProductServiceTests
         public int CreateCallCount { get; private set; }
 
         public int SetActiveStateCallCount
+        {
+            get;
+            private set;
+        }
+
+        public int ArchiveCallCount { get; private set; }
+
+        public int RestoreCallCount { get; private set; }
+
+        public CancellationToken LastCancellationToken
         {
             get;
             private set;
@@ -266,6 +402,30 @@ public sealed class AuthorizedProductServiceTests
                 .ThrowIfCancellationRequested();
 
             SetActiveStateCallCount++;
+
+            return Task.FromResult(
+                Result.Success());
+        }
+
+        public Task<Result> ArchiveAsync(
+            int productId,
+            CancellationToken cancellationToken = default)
+        {
+            ArchiveCallCount++;
+            LastCancellationToken =
+                cancellationToken;
+
+            return Task.FromResult(
+                Result.Success());
+        }
+
+        public Task<Result> RestoreAsync(
+            int productId,
+            CancellationToken cancellationToken = default)
+        {
+            RestoreCallCount++;
+            LastCancellationToken =
+                cancellationToken;
 
             return Task.FromResult(
                 Result.Success());

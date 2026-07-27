@@ -145,4 +145,44 @@ public sealed class AuthorizedProductService :
             isActive,
             cancellationToken);
     }
+
+    public Task<Result> ArchiveAsync(
+        int productId,
+        CancellationToken cancellationToken = default)
+    {
+        var authorization =
+            _permissionService.Authorize(
+                SystemPermission.ManageProducts);
+
+        if (authorization.IsFailure)
+        {
+            return Task.FromResult(
+                Result.Failure(
+                    authorization.Error));
+        }
+
+        return _innerService.ArchiveAsync(
+            productId,
+            cancellationToken);
+    }
+
+    public Task<Result> RestoreAsync(
+        int productId,
+        CancellationToken cancellationToken = default)
+    {
+        var authorization =
+            _permissionService.Authorize(
+                SystemPermission.ManageProducts);
+
+        if (authorization.IsFailure)
+        {
+            return Task.FromResult(
+                Result.Failure(
+                    authorization.Error));
+        }
+
+        return _innerService.RestoreAsync(
+            productId,
+            cancellationToken);
+    }
 }

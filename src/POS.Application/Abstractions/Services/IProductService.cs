@@ -31,4 +31,12 @@ public interface IProductService
         int productId,
         bool isActive,
         CancellationToken cancellationToken = default);
+
+    Task<Result> ArchiveAsync(
+        int productId,
+        CancellationToken cancellationToken = default);
+
+    Task<Result> RestoreAsync(
+        int productId,
+        CancellationToken cancellationToken = default);
 }

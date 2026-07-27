@@ -1,4 +1,5 @@
-﻿using POS.Application.Abstractions.DateTime;
+﻿using POS.Application.Abstractions.Authentication;
+using POS.Application.Abstractions.DateTime;
 using POS.Application.Abstractions.Persistence;
 using POS.Application.Abstractions.Services;
 using POS.Application.Common;
@@ -45,12 +46,16 @@ public sealed class ProductService :
     private readonly IClock
         _clock;
 
+    private readonly ICurrentUserService
+        _currentUserService;
+
     public ProductService(
         IProductRepository productRepository,
         ICategoryRepository categoryRepository,
         IInventoryMovementRepository inventoryMovementRepository,
         IUnitOfWork unitOfWork,
-        IClock clock)
+        IClock clock,
+        ICurrentUserService currentUserService)
     {
         _productRepository =
             productRepository ??
@@ -76,6 +81,11 @@ public sealed class ProductService :
             clock ??
             throw new ArgumentNullException(
                 nameof(clock));
+
+        _currentUserService =
+            currentUserService ??
+            throw new ArgumentNullException(
+                nameof(currentUserService));
     }
 
     public async Task<
@@ -647,26 +657,140 @@ public sealed class ProductService :
         var utcNow =
             _clock.UtcNow;
 
-        if (isActive)
+        try
         {
-            var categoryResult =
-                await GetActiveCategoryAsync(
-                    product.CategoryId,
-                    cancellationToken);
-
-            if (categoryResult.IsFailure)
+            if (isActive)
             {
-                return Result.Failure(
-                    categoryResult.Error);
-            }
+                var categoryResult =
+                    await GetActiveCategoryAsync(
+                        product.CategoryId,
+                        cancellationToken);
 
-            product.Activate(
-                utcNow);
+                if (categoryResult.IsFailure)
+                {
+                    return Result.Failure(
+                        categoryResult.Error);
+                }
+
+                product.Activate(
+                    utcNow);
+            }
+            else
+            {
+                product.Deactivate(
+                    utcNow);
+            }
         }
-        else
+        catch (DomainException exception)
         {
-            product.Deactivate(
-                utcNow);
+            return Result.Failure(
+                new Error(
+                    exception.Code,
+                    exception.Message));
+        }
+
+        return await SaveChangesSafelyAsync(
+            cancellationToken);
+    }
+
+    public async Task<Result> ArchiveAsync(
+        int productId,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken
+            .ThrowIfCancellationRequested();
+
+        if (productId <= 0)
+        {
+            return Result.Failure(
+                new Error(
+                    ErrorCodes.General.Validation,
+                    "Mã sản phẩm phải lớn hơn 0."));
+        }
+
+        var currentUserId =
+            _currentUserService.UserId;
+
+        if (!currentUserId.HasValue ||
+            currentUserId.Value <= 0)
+        {
+            return Result.Failure(
+                new Error(
+                    ErrorCodes.Authentication
+                        .CurrentUserNotFound,
+                    "Không tìm thấy người dùng hiện tại."));
+        }
+
+        var product =
+            await _productRepository.GetByIdAsync(
+                productId,
+                cancellationToken);
+
+        if (product is null)
+        {
+            return Result.Failure(
+                new Error(
+                    ErrorCodes.Products.NotFound,
+                    "Không tìm thấy sản phẩm."));
+        }
+
+        try
+        {
+            product.Archive(
+                currentUserId.Value,
+                _clock.UtcNow);
+        }
+        catch (DomainException exception)
+        {
+            return Result.Failure(
+                new Error(
+                    exception.Code,
+                    exception.Message));
+        }
+
+        return await SaveChangesSafelyAsync(
+            cancellationToken);
+    }
+
+    public async Task<Result> RestoreAsync(
+        int productId,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken
+            .ThrowIfCancellationRequested();
+
+        if (productId <= 0)
+        {
+            return Result.Failure(
+                new Error(
+                    ErrorCodes.General.Validation,
+                    "Mã sản phẩm phải lớn hơn 0."));
+        }
+
+        var product =
+            await _productRepository.GetByIdAsync(
+                productId,
+                cancellationToken);
+
+        if (product is null)
+        {
+            return Result.Failure(
+                new Error(
+                    ErrorCodes.Products.NotFound,
+                    "Không tìm thấy sản phẩm."));
+        }
+
+        try
+        {
+            product.Restore(
+                _clock.UtcNow);
+        }
+        catch (DomainException exception)
+        {
+            return Result.Failure(
+                new Error(
+                    exception.Code,
+                    exception.Message));
         }
 
         return await SaveChangesSafelyAsync(
