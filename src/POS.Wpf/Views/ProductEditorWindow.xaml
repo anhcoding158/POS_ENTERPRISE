@@ -527,15 +527,139 @@
                                 <StackPanel Grid.Column="2">
 
                                     <TextBlock
-                                        Text="Đường dẫn ảnh"
+                                        Text="Ảnh sản phẩm"
                                         Style="{StaticResource EditorLabelStyle}" />
 
-                                    <TextBox
-                                        Text="{Binding ImagePath,
-                                            UpdateSourceTrigger=PropertyChanged,
-                                            ValidatesOnNotifyDataErrors=True}"
-                                        Style="{StaticResource EditorTextBoxStyle}"
-                                        MaxLength="500" />
+                                    <Grid>
+
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="96" />
+                                            <ColumnDefinition Width="13" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Border
+                                            x:Name="ProductImagePreview"
+                                            Width="96"
+                                            Height="96"
+                                            Background="{StaticResource SurfaceMutedBrush}"
+                                            BorderBrush="{StaticResource GoldBorderBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="12"
+                                            ClipToBounds="True">
+
+                                            <StackPanel
+                                                x:Name="ProductImagePlaceholder"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center">
+
+                                                <TextBlock
+                                                    Text="&#xEB9F;"
+                                                    FontFamily="Segoe MDL2 Assets"
+                                                    Foreground="{StaticResource GoldBrush}"
+                                                    FontSize="24"
+                                                    HorizontalAlignment="Center" />
+
+                                                <TextBlock
+                                                    Text="Chưa chọn ảnh"
+                                                    Foreground="{StaticResource TextSecondaryBrush}"
+                                                    FontSize="9"
+                                                    Margin="0,7,0,0" />
+                                            </StackPanel>
+                                        </Border>
+
+                                        <StackPanel
+                                            Grid.Column="2"
+                                            VerticalAlignment="Center">
+
+                                            <TextBlock
+                                                x:Name="ProductImageFileNameText"
+                                                Text="Chưa chọn ảnh"
+                                                Foreground="{StaticResource TextPrimaryBrush}"
+                                                FontSize="12"
+                                                FontWeight="SemiBold"
+                                                TextTrimming="CharacterEllipsis" />
+
+                                            <TextBlock
+                                                Text="PNG, JPG hoặc BMP · tối đa 5 MB"
+                                                Style="{StaticResource CaptionTextStyle}"
+                                                TextWrapping="Wrap"
+                                                Margin="0,5,0,0" />
+
+                                            <StackPanel
+                                                Orientation="Horizontal"
+                                                Margin="0,11,0,0">
+
+                                                <Button
+                                                    Content="Chọn ảnh"
+                                                    Click="OnChooseProductImage"
+                                                    MinWidth="92">
+
+                                                    <Button.Style>
+                                                        <Style
+                                                            TargetType="{x:Type Button}"
+                                                            BasedOn="{StaticResource SecondaryButtonStyle}">
+
+                                                            <Style.Triggers>
+                                                                <DataTrigger
+                                                                    Binding="{Binding IsBusy}"
+                                                                    Value="True">
+
+                                                                    <Setter
+                                                                        Property="IsEnabled"
+                                                                        Value="False" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+
+                                                <Button
+                                                    x:Name="ClearProductImageButton"
+                                                    Content="Xóa ảnh"
+                                                    Click="OnClearProductImage"
+                                                    MinWidth="86"
+                                                    Margin="8,0,0,0">
+
+                                                    <Button.Style>
+                                                        <Style
+                                                            TargetType="{x:Type Button}"
+                                                            BasedOn="{StaticResource SecondaryButtonStyle}">
+
+                                                            <Style.Triggers>
+                                                                <DataTrigger
+                                                                    Binding="{Binding ImagePath}"
+                                                                    Value="">
+
+                                                                    <Setter
+                                                                        Property="IsEnabled"
+                                                                        Value="False" />
+                                                                </DataTrigger>
+
+                                                                <DataTrigger
+                                                                    Binding="{Binding ImagePath}"
+                                                                    Value="{x:Null}">
+
+                                                                    <Setter
+                                                                        Property="IsEnabled"
+                                                                        Value="False" />
+                                                                </DataTrigger>
+
+                                                                <DataTrigger
+                                                                    Binding="{Binding IsBusy}"
+                                                                    Value="True">
+
+                                                                    <Setter
+                                                                        Property="IsEnabled"
+                                                                        Value="False" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Grid>
 
                                     <TextBlock
                                         Text="{Binding ImagePathError}"
