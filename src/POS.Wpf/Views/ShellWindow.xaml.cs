@@ -154,6 +154,11 @@ public partial class ShellWindow :
             permissionState.CanManageProducts,
             SystemPermission.ManageProducts);
 
+        ApplyMenuItemPermission(
+            ToggleProductArchiveMenuItem,
+            permissionState.CanManageProducts,
+            SystemPermission.ManageProducts);
+
         if (!permissionState.CanManageProducts)
         {
             ToggleProductActiveButton.IsEnabled =
@@ -659,6 +664,67 @@ public partial class ShellWindow :
 
         button.ContextMenu.IsOpen =
             true;
+    }
+
+    private void OnToggleProductArchiveClick(
+        object sender,
+        global::System.Windows.RoutedEventArgs e)
+    {
+        var command =
+            _viewModel.ToggleProductArchiveCommand;
+
+        if (!command.CanExecute(
+                parameter: null))
+        {
+            return;
+        }
+
+        var selectedProduct =
+            _viewModel.SelectedProduct;
+
+        if (selectedProduct is null)
+        {
+            return;
+        }
+
+        var confirmation =
+            selectedProduct.IsArchived
+                ? global::System.Windows.MessageBox.Show(
+                    this,
+                    $"Khôi phục sản phẩm “{selectedProduct.Name}”?\n\n" +
+                    "Sau khi khôi phục, sản phẩm vẫn ở trạng thái ngừng bán.\n" +
+                    "Bạn cần bấm “Bán lại” riêng nếu muốn đưa sản phẩm ra quầy.",
+                    "Khôi phục sản phẩm",
+                    global::System.Windows
+                        .MessageBoxButton.YesNo,
+                    global::System.Windows
+                        .MessageBoxImage.Question,
+                    global::System.Windows
+                        .MessageBoxResult.No)
+                : global::System.Windows.MessageBox.Show(
+                    this,
+                    $"Bạn có chắc muốn lưu trữ sản phẩm\n" +
+                    $"“{selectedProduct.Name}” không?\n\n" +
+                    "Sản phẩm sẽ bị ngừng bán và ẩn khỏi danh sách thông thường.\n" +
+                    "Tồn kho, hình ảnh và toàn bộ lịch sử vẫn được giữ nguyên.\n" +
+                    "Bạn có thể khôi phục sản phẩm sau này.",
+                    "Lưu trữ sản phẩm",
+                    global::System.Windows
+                        .MessageBoxButton.YesNo,
+                    global::System.Windows
+                        .MessageBoxImage.Warning,
+                    global::System.Windows
+                        .MessageBoxResult.No);
+
+        if (confirmation !=
+            global::System.Windows
+                .MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        command.Execute(
+            parameter: null);
     }
 
     private void OnFilterButtonClick(

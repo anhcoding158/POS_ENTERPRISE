@@ -16,7 +16,8 @@ public sealed record ProductStockFilterOption(
 
 public sealed record ProductStatusFilterOption(
     string DisplayName,
-    bool? IsActive);
+    bool? IsActive,
+    bool? IsArchived);
 
 /// <summary>
 /// Điều khiển màn hình sản phẩm và tồn kho.
@@ -142,15 +143,23 @@ public sealed class ShellViewModel :
             [
                 new(
                     "Tất cả trạng thái",
-                    null),
+                    null,
+                    false),
 
                 new(
                     "Đang bán",
-                    true),
+                    true,
+                    false),
 
                 new(
                     "Ngừng bán",
-                    false)
+                    false,
+                    false),
+
+                new(
+                    "Đã lưu trữ",
+                    null,
+                    true)
             ]);
 
         _selectedProductStatusFilter =
@@ -214,6 +223,12 @@ public sealed class ShellViewModel :
             new AsyncRelayCommand(
                 ToggleProductActiveAsync,
                 CanEditSelectedProduct,
+                HandleCommandException);
+
+        ToggleProductArchiveCommand =
+            new AsyncRelayCommand(
+                ToggleProductArchiveAsync,
+                CanArchiveSelectedProduct,
                 HandleCommandException);
 
         ResetProductStatusFilterCommand =
@@ -281,6 +296,11 @@ public sealed class ShellViewModel :
         get;
     }
 
+    public AsyncRelayCommand ToggleProductArchiveCommand
+    {
+        get;
+    }
+
     public AsyncRelayCommand
         ResetProductStatusFilterCommand
     { get; }
@@ -339,7 +359,9 @@ public sealed class ShellViewModel :
     }
 
     public bool HasProductStatusFilter =>
-        SelectedProductStatusFilter?.IsActive is not null;
+        !ReferenceEquals(
+            SelectedProductStatusFilter,
+            ProductStatusFilters[0]);
 
     public bool HasStockFilter =>
         SelectedStockFilter?.IsLowStock is not null;
@@ -378,6 +400,12 @@ public sealed class ShellViewModel :
     public bool HasSelectedProduct =>
         SelectedProduct is not null;
 
+    public bool CanModifySelectedProduct =>
+        SelectedProduct is
+        {
+            IsArchived: false
+        };
+
     public bool SelectedProductTracksInventory =>
         SelectedProduct?.TrackInventory == true;
 
@@ -385,6 +413,11 @@ public sealed class ShellViewModel :
         SelectedProduct?.IsActive == true
             ? "Ngừng bán"
             : "Bán lại";
+
+    public string ToggleProductArchiveButtonText =>
+        SelectedProduct?.IsArchived == true
+            ? "Khôi phục"
+            : "Lưu trữ";
 
     public string SelectedProductHint
     {
@@ -809,7 +842,8 @@ public sealed class ShellViewModel :
         var selectedProduct =
             SelectedProduct;
 
-        if (selectedProduct is null)
+        if (selectedProduct is null ||
+            selectedProduct.IsArchived)
         {
             return;
         }
@@ -844,6 +878,7 @@ public sealed class ShellViewModel :
             SelectedProduct;
 
         if (selectedProduct is null ||
+            selectedProduct.IsArchived ||
             !selectedProduct.TrackInventory)
         {
             return;
@@ -911,7 +946,8 @@ public sealed class ShellViewModel :
         var selectedProduct =
             SelectedProduct;
 
-        if (selectedProduct is null)
+        if (selectedProduct is null ||
+            selectedProduct.IsArchived)
         {
             return;
         }
@@ -963,6 +999,71 @@ public sealed class ShellViewModel :
                 targetState
                     ? "Sản phẩm đã được bật bán."
                     : "Sản phẩm đã được ngừng bán.";
+        }
+    }
+
+    private async Task ToggleProductArchiveAsync()
+    {
+        var selectedProduct =
+            SelectedProduct;
+
+        if (selectedProduct is null)
+        {
+            return;
+        }
+
+        var productId =
+            selectedProduct.Id;
+
+        var isRestore =
+            selectedProduct.IsArchived;
+
+        IsLoading = true;
+
+        try
+        {
+            await using var scope =
+                _scopeFactory.CreateAsyncScope();
+
+            var productService =
+                scope.ServiceProvider
+                    .GetRequiredService<
+                        IProductService>();
+
+            var result =
+                isRestore
+                    ? await productService
+                        .RestoreAsync(
+                            productId,
+                            CancellationToken.None)
+                    : await productService
+                        .ArchiveAsync(
+                            productId,
+                            CancellationToken.None);
+
+            if (result.IsFailure)
+            {
+                StatusMessage =
+                    result.Error.Message;
+
+                return;
+            }
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+
+        var reloaded =
+            await LoadProductsAsync();
+
+        if (reloaded)
+        {
+            StatusMessage =
+                isRestore
+                    ? "Đã khôi phục sản phẩm. " +
+                      "Sản phẩm vẫn đang ở trạng thái ngừng bán."
+                    : "Đã lưu trữ sản phẩm.";
         }
     }
 
@@ -1044,6 +1145,10 @@ public sealed class ShellViewModel :
                     isLowStock:
                         SelectedStockFilter?
                             .IsLowStock,
+
+                    isArchived:
+                        SelectedProductStatusFilter?
+                            .IsArchived,
 
                     pageNumber:
                         PageNumber,
@@ -1223,13 +1328,26 @@ public sealed class ShellViewModel :
     private bool CanEditSelectedProduct()
     {
         return !IsLoading &&
-               SelectedProduct is not null;
+               SelectedProduct is
+               {
+                   IsArchived: false
+               };
     }
 
     private bool CanAdjustSelectedProduct()
     {
         return !IsLoading &&
-               SelectedProduct?.TrackInventory == true;
+               SelectedProduct is
+               {
+                   TrackInventory: true,
+                   IsArchived: false
+               };
+    }
+
+    private bool CanArchiveSelectedProduct()
+    {
+        return !IsLoading &&
+               SelectedProduct is not null;
     }
 
     private bool CanGoToPreviousPage()
@@ -1265,11 +1383,19 @@ public sealed class ShellViewModel :
 
         OnPropertyChanged(
             nameof(
+                CanModifySelectedProduct));
+
+        OnPropertyChanged(
+            nameof(
                 SelectedProductTracksInventory));
 
         OnPropertyChanged(
             nameof(
                 ToggleProductButtonText));
+
+        OnPropertyChanged(
+            nameof(
+                ToggleProductArchiveButtonText));
 
         OnPropertyChanged(
             nameof(
@@ -1330,6 +1456,9 @@ public sealed class ShellViewModel :
             .NotifyCanExecuteChanged();
 
         ToggleProductActiveCommand
+            .NotifyCanExecuteChanged();
+
+        ToggleProductArchiveCommand
             .NotifyCanExecuteChanged();
 
         ResetProductStatusFilterCommand

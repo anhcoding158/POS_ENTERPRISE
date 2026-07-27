@@ -40,6 +40,7 @@ public sealed class ProductRowViewModel
         IsLowStock = product.IsLowStock;
         IsOutOfStock = product.IsOutOfStock;
         IsActive = product.IsActive;
+        IsArchived = product.IsArchived;
     }
 
     public int Id { get; }
@@ -76,6 +77,8 @@ public sealed class ProductRowViewModel
 
     public bool IsActive { get; }
 
+    public bool IsArchived { get; }
+
     public string SalePriceText =>
         $"{SalePrice.ToString("N0", VietnameseCulture)} ₫";
 
@@ -109,7 +112,9 @@ public sealed class ProductRowViewModel
     }
 
     public string StatusText =>
-        IsActive
+        IsArchived
+            ? "Đã lưu trữ"
+            : IsActive
             ? "Đang bán"
             : "Ngừng bán";
 }

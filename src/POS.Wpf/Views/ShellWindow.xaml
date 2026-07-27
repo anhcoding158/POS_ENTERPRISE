@@ -1154,7 +1154,7 @@
                                 x:Name="ToggleProductActiveButton"
                                 Content="{Binding ToggleProductButtonText}"
                                 Click="OnToggleProductActiveClick"
-                                IsEnabled="{Binding HasSelectedProduct}"
+                                IsEnabled="{Binding CanModifySelectedProduct}"
                                 Style="{StaticResource SecondaryButtonStyle}"
                                 MinWidth="104"
                                 Margin="9,0,0,0" />
@@ -1190,6 +1190,14 @@
                                             Header="Lịch sử kho"
                                             Command="{Binding ViewInventoryHistoryCommand}"
                                             ToolTip="{Binding InventoryHistoryActionHint}" />
+
+                                        <Separator />
+
+                                        <MenuItem
+                                            x:Name="ToggleProductArchiveMenuItem"
+                                            Header="{Binding ToggleProductArchiveButtonText}"
+                                            Click="OnToggleProductArchiveClick"
+                                            IsEnabled="{Binding HasSelectedProduct}" />
                                     </ContextMenu>
                                 </Button.ContextMenu>
                             </Button>
