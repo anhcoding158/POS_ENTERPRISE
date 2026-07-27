@@ -4,10 +4,10 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Language="vi-VN"
     Title="POS Enterprise - Xem trước hóa đơn"
-    Width="1380"
-    Height="900"
-    MinWidth="1100"
-    MinHeight="720"
+    Width="1220"
+    Height="740"
+    MinWidth="820"
+    MinHeight="430"
     WindowStartupLocation="CenterOwner"
     ResizeMode="CanResize"
     ShowInTaskbar="False"
@@ -156,11 +156,11 @@
 
             <Setter
                 Property="Height"
-                Value="50" />
+                Value="44" />
 
             <Setter
                 Property="MinWidth"
-                Value="142" />
+                Value="110" />
 
             <Setter
                 Property="Padding"
@@ -181,11 +181,11 @@
 
             <Setter
                 Property="Height"
-                Value="50" />
+                Value="44" />
 
             <Setter
                 Property="MinWidth"
-                Value="204" />
+                Value="160" />
 
             <Setter
                 Property="Padding"
@@ -289,9 +289,9 @@
     <Grid>
 
         <Grid.RowDefinitions>
-            <RowDefinition Height="102" />
+            <RowDefinition Height="82" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="86" />
+            <RowDefinition Height="72" />
         </Grid.RowDefinitions>
 
         <!-- =====================================================
@@ -406,11 +406,11 @@
 
         <Grid
             Grid.Row="1"
-            Margin="20">
+            Margin="14">
 
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="390" />
-                <ColumnDefinition Width="18" />
+                <ColumnDefinition Width="300" />
+                <ColumnDefinition Width="14" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
@@ -424,7 +424,7 @@
                 BorderBrush="#6B5137"
                 BorderThickness="1"
                 CornerRadius="18"
-                Padding="24">
+                Padding="17">
 
                 <Border.Effect>
 
@@ -436,7 +436,11 @@
                         Opacity="0.18" />
                 </Border.Effect>
 
-                <Grid>
+                <ScrollViewer
+                    VerticalScrollBarVisibility="Auto"
+                    HorizontalScrollBarVisibility="Disabled">
+
+                    <Grid>
 
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -476,7 +480,7 @@
                     <Border
                         Grid.Row="1"
                         Style="{StaticResource PreviewMetricCardStyle}"
-                        Margin="0,20,0,0">
+                        Margin="0,14,0,0">
 
                         <StackPanel>
 
@@ -499,7 +503,7 @@
                     <Border
                         Grid.Row="2"
                         Style="{StaticResource PreviewMetricCardStyle}"
-                        Margin="0,11,0,0">
+                        Margin="0,9,0,0">
 
                         <Grid>
 
@@ -548,7 +552,7 @@
                     <Border
                         Grid.Row="3"
                         Style="{StaticResource PreviewMetricCardStyle}"
-                        Margin="0,11,0,0">
+                        Margin="0,9,0,0">
 
                         <Grid>
 
@@ -595,7 +599,7 @@
 
                     <Border
                         Grid.Row="4"
-                        Margin="0,14,0,0"
+                        Margin="0,11,0,0"
                         Padding="17,15"
                         Background="{StaticResource ReceiptPreviewTotalBrush}"
                         BorderBrush="#803138"
@@ -633,12 +637,12 @@
 
                     <StackPanel
                         Grid.Row="6"
-                        Margin="0,18,0,0">
+                        Margin="0,13,0,0">
 
                         <Border
                             Height="1"
                             Background="#4E433A"
-                            Margin="0,0,0,15" />
+                            Margin="0,0,0,11" />
 
                         <Grid>
 
@@ -676,7 +680,8 @@
                                 VerticalAlignment="Center" />
                         </Grid>
                     </StackPanel>
-                </Grid>
+                    </Grid>
+                </ScrollViewer>
             </Border>
 
             <!-- =================================================
@@ -689,7 +694,7 @@
                 BorderBrush="#D4C7B6"
                 BorderThickness="1"
                 CornerRadius="18"
-                Padding="24">
+                Padding="15">
 
                 <Border.Effect>
 
@@ -756,8 +761,8 @@
 
                     <Border
                         Grid.Row="1"
-                        Width="510"
-                        MaxWidth="570"
+                        Width="400"
+                        MaxWidth="400"
                         HorizontalAlignment="Center"
                         Background="White"
                         BorderBrush="#D1C8BD"
@@ -777,6 +782,7 @@
 
                         <FlowDocumentScrollViewer
                             x:Name="ReceiptViewer"
+                            HorizontalContentAlignment="Center"
                             Background="White"
                             BorderThickness="0"
                             IsToolBarVisible="False"
@@ -801,7 +807,7 @@
             BorderBrush="#DED3C5"
             BorderThickness="0,1,0,0">
 
-            <Grid Margin="28,0">
+            <Grid Margin="18,0">
 
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -810,9 +816,10 @@
 
                 <Border
                     x:Name="StatusBorder"
-                    MaxWidth="680"
-                    HorizontalAlignment="Left"
+                    MinWidth="0"
+                    HorizontalAlignment="Stretch"
                     VerticalAlignment="Center"
+                    Margin="0,0,14,0"
                     Padding="13,10"
                     Background="{StaticResource GoldSoftBrush}"
                     BorderBrush="{StaticResource GoldBorderBrush}"

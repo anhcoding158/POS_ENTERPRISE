@@ -124,7 +124,83 @@ public partial class ReceiptPreviewWindow :
         Loaded -=
             OnWindowLoaded;
 
+        FitToAvailableArea();
+
         PrintButton.Focus();
+    }
+
+    private void FitToAvailableArea()
+    {
+        var owner =
+            Owner;
+
+        var hasUsableOwner =
+            owner is not null &&
+            owner.IsLoaded &&
+            owner.ActualWidth > 0 &&
+            owner.ActualHeight > 0;
+
+        var availableWidth =
+            hasUsableOwner
+                ? owner!.ActualWidth
+                : SystemParameters.WorkArea.Width;
+
+        var availableHeight =
+            hasUsableOwner
+                ? owner!.ActualHeight
+                : SystemParameters.WorkArea.Height;
+
+        const double safetyMargin =
+            24;
+
+        var maximumWidth =
+            Math.Max(
+                MinWidth,
+                availableWidth -
+                safetyMargin);
+
+        var maximumHeight =
+            Math.Max(
+                MinHeight,
+                availableHeight -
+                safetyMargin);
+
+        MaxWidth =
+            maximumWidth;
+
+        MaxHeight =
+            maximumHeight;
+
+        Width =
+            Math.Min(
+                Width,
+                maximumWidth);
+
+        Height =
+            Math.Min(
+                Height,
+                maximumHeight);
+
+        if (!hasUsableOwner)
+        {
+            return;
+        }
+
+        Left =
+            owner!.Left +
+            Math.Max(
+                0,
+                (owner.ActualWidth -
+                 Width) /
+                2);
+
+        Top =
+            owner.Top +
+            Math.Max(
+                0,
+                (owner.ActualHeight -
+                 Height) /
+                2);
     }
 
     private async void OnPrintClick(
