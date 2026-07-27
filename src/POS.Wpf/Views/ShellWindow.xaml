@@ -1151,8 +1151,10 @@
                             </Button>
 
                             <Button
+                                x:Name="ToggleProductActiveButton"
                                 Content="{Binding ToggleProductButtonText}"
-                                Command="{Binding ToggleProductActiveCommand}"
+                                Click="OnToggleProductActiveClick"
+                                IsEnabled="{Binding HasSelectedProduct}"
                                 Style="{StaticResource SecondaryButtonStyle}"
                                 MinWidth="104"
                                 Margin="9,0,0,0" />
@@ -1428,6 +1430,22 @@
                             <StackPanel
                                 Grid.Column="1"
                                 Orientation="Horizontal">
+
+                                <ComboBox
+                                    ItemsSource="{Binding ProductStatusFilters}"
+                                    SelectedItem="{Binding SelectedProductStatusFilter,
+                                        Mode=TwoWay}"
+                                    DisplayMemberPath="DisplayName"
+                                    MinWidth="155"
+                                    Height="42"
+                                    Margin="0,0,9,0"
+                                    ToolTip="Lọc sản phẩm theo trạng thái bán"
+                                    Background="{StaticResource SurfaceBrush}"
+                                    BorderBrush="{StaticResource BorderStrongBrush}"
+                                    BorderThickness="1"
+                                    Padding="11,6"
+                                    FontSize="13"
+                                    VerticalContentAlignment="Center" />
 
                                 <ComboBox
                                     ItemsSource="{Binding StockFilterOptions}"

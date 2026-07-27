@@ -14,6 +14,10 @@ public sealed record ProductStockFilterOption(
     string DisplayName,
     bool? IsLowStock);
 
+public sealed record ProductStatusFilterOption(
+    string DisplayName,
+    bool? IsActive);
+
 /// <summary>
 /// Điều khiển màn hình sản phẩm và tồn kho.
 ///
@@ -51,6 +55,12 @@ public sealed class ShellViewModel :
 
     private ProductStockFilterOption?
         _selectedStockFilter;
+
+    private ProductStatusFilterOption?
+        _selectedProductStatusFilter;
+
+    private bool
+        _productStatusFilterReloadPending;
 
     private bool _isLoading;
     private bool _isInitialized;
@@ -126,6 +136,26 @@ public sealed class ShellViewModel :
         _selectedStockFilter =
             StockFilterOptions[0];
 
+        ProductStatusFilters =
+            Array.AsReadOnly<
+                ProductStatusFilterOption>(
+            [
+                new(
+                    "Tất cả trạng thái",
+                    null),
+
+                new(
+                    "Đang bán",
+                    true),
+
+                new(
+                    "Ngừng bán",
+                    false)
+            ]);
+
+        _selectedProductStatusFilter =
+            ProductStatusFilters[0];
+
         SearchCommand =
             new AsyncRelayCommand(
                 SearchAsync,
@@ -197,6 +227,11 @@ public sealed class ShellViewModel :
         StockFilterOptions
     { get; }
 
+    public IReadOnlyList<
+        ProductStatusFilterOption>
+        ProductStatusFilters
+    { get; }
+
     public AsyncRelayCommand SearchCommand { get; }
 
     public AsyncRelayCommand RefreshCommand { get; }
@@ -247,6 +282,34 @@ public sealed class ShellViewModel :
             value);
     }
 
+    public ProductStatusFilterOption?
+        SelectedProductStatusFilter
+    {
+        get => _selectedProductStatusFilter;
+
+        set
+        {
+            if (!SetProperty(
+                    ref _selectedProductStatusFilter,
+                    value))
+            {
+                return;
+            }
+
+            PageNumber = 1;
+
+            if (IsLoading)
+            {
+                _productStatusFilterReloadPending =
+                    true;
+
+                return;
+            }
+
+            _ = LoadProductsAsync();
+        }
+    }
+
     public ProductRowViewModel?
         SelectedProduct
     {
@@ -275,7 +338,7 @@ public sealed class ShellViewModel :
     public string ToggleProductButtonText =>
         SelectedProduct?.IsActive == true
             ? "Ngừng bán"
-            : "Bật bán";
+            : "Bán lại";
 
     public string SelectedProductHint
     {
@@ -877,7 +940,8 @@ public sealed class ShellViewModel :
                         null,
 
                     isActive:
-                        null,
+                        SelectedProductStatusFilter?
+                            .IsActive,
 
                     isLowStock:
                         SelectedStockFilter?
@@ -1007,6 +1071,16 @@ public sealed class ShellViewModel :
         finally
         {
             IsLoading = false;
+
+            if (_productStatusFilterReloadPending)
+            {
+                _productStatusFilterReloadPending =
+                    false;
+
+                PageNumber = 1;
+
+                _ = LoadProductsAsync();
+            }
         }
     }
 

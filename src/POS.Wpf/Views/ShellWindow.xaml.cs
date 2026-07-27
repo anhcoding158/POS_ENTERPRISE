@@ -154,6 +154,28 @@ public partial class ShellWindow :
             permissionState.CanManageProducts,
             SystemPermission.ManageProducts);
 
+        if (!permissionState.CanManageProducts)
+        {
+            ToggleProductActiveButton.IsEnabled =
+                false;
+
+            ToggleProductActiveButton.Opacity =
+                0.48;
+
+            ToggleProductActiveButton.Cursor =
+                global::System.Windows.Input
+                    .Cursors.Arrow;
+
+            ToggleProductActiveButton.ToolTip =
+                "Tài khoản hiện tại không có quyền quản lý sản phẩm.";
+
+            global::System.Windows.Controls
+                .ToolTipService
+                .SetShowOnDisabled(
+                    ToggleProductActiveButton,
+                    true);
+        }
+
         ApplyCommandPermission(
             _viewModel.OpenCategoryManagementCommand,
             permissionState.CanManageCategories,
@@ -527,6 +549,57 @@ public partial class ShellWindow :
         global::System.Windows.RoutedEventArgs e)
     {
         await RequestLogoutAsync();
+    }
+
+    private void OnToggleProductActiveClick(
+        object sender,
+        global::System.Windows.RoutedEventArgs e)
+    {
+        var command =
+            _viewModel.ToggleProductActiveCommand;
+
+        if (!command.CanExecute(
+                parameter: null))
+        {
+            return;
+        }
+
+        var selectedProduct =
+            _viewModel.SelectedProduct;
+
+        if (selectedProduct is null)
+        {
+            return;
+        }
+
+        if (selectedProduct.IsActive)
+        {
+            var confirmation =
+                global::System.Windows.MessageBox.Show(
+                    this,
+                    $"Bạn có chắc muốn ngừng bán sản phẩm\n" +
+                    $"“{selectedProduct.Name}” không?\n\n" +
+                    "Sản phẩm sẽ không còn xuất hiện tại quầy bán hàng, " +
+                    "nhưng tồn kho, hình ảnh và lịch sử giao dịch " +
+                    "vẫn được giữ nguyên.",
+                    "Ngừng bán sản phẩm",
+                    global::System.Windows
+                        .MessageBoxButton.YesNo,
+                    global::System.Windows
+                        .MessageBoxImage.Warning,
+                    global::System.Windows
+                        .MessageBoxResult.No);
+
+            if (confirmation !=
+                global::System.Windows
+                    .MessageBoxResult.Yes)
+            {
+                return;
+            }
+        }
+
+        command.Execute(
+            parameter: null);
     }
 
     private async void OnPreviewKeyDown(
