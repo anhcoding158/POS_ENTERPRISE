@@ -56,6 +56,9 @@ public sealed class PosDbContext :
     public DbSet<OrderReturnItem> OrderReturnItems => Set<OrderReturnItem>();
     public DbSet<OrderReturnBalance> OrderReturnBalances => Set<OrderReturnBalance>();
 
+    public DbSet<CheckoutRequestJournal> CheckoutRequestJournals =>
+        Set<CheckoutRequestJournal>();
+
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {

@@ -46,6 +46,14 @@ public sealed class ProductRepository :
                 cancellationToken);
     }
 
+    public Task ReloadTrackedAsync(
+        Product product,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(product);
+        return _dbContext.Entry(product).ReloadAsync(cancellationToken);
+    }
+
     public Task<Product?> GetByCodeAsync(
         string code,
         CancellationToken cancellationToken = default)

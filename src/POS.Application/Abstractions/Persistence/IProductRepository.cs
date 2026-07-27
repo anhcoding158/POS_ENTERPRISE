@@ -15,6 +15,11 @@ public interface IProductRepository
         int productId,
         CancellationToken cancellationToken = default);
 
+    Task ReloadTrackedAsync(
+        Product product,
+        CancellationToken cancellationToken = default) =>
+        Task.CompletedTask;
+
     /// <summary>
     /// Lấy sản phẩm theo mã sản phẩm.
     ///

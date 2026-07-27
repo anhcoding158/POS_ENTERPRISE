@@ -18,7 +18,8 @@ public sealed class CheckoutRequest
         int? restaurantTableId = null,
         string? discountCode = null,
         string? notes = null,
-        long confirmedPaymentAmount = 0)
+        long confirmedPaymentAmount = 0,
+        Guid clientRequestId = default)
     {
         Lines =
             lines?
@@ -35,6 +36,9 @@ public sealed class CheckoutRequest
 
         ConfirmedPaymentAmount =
             confirmedPaymentAmount;
+
+        ClientRequestId =
+            clientRequestId;
 
         CustomerId =
             customerId;
@@ -58,6 +62,8 @@ public sealed class CheckoutRequest
     {
         get;
     }
+
+    public Guid ClientRequestId { get; }
 
     public PaymentMethod PaymentMethod
     {

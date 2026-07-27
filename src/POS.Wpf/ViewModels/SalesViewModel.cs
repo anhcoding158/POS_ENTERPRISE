@@ -61,6 +61,9 @@ public sealed class SalesViewModel :
     private readonly ISalesPaymentFlowService
         _paymentFlowService;
 
+    private readonly ICheckoutRecoveryConfirmationService
+        _recoveryConfirmation;
+
     private readonly ILogger<SalesViewModel>
         _logger;
 
@@ -98,6 +101,11 @@ public sealed class SalesViewModel :
 
     private long _orderSessionVersion;
     private bool _isDisposed;
+    private Guid? _checkoutClientRequestId;
+    private CheckoutRecoveryItemViewModel? _selectedRecovery;
+    private bool _isLoadingRecovery;
+    private bool _isProcessingRecovery;
+    private CancellationTokenSource? _recoveryLoadSource;
 
     /*
      * Bốn mệnh giá gợi ý được tính lại theo:
@@ -118,7 +126,8 @@ public sealed class SalesViewModel :
         ICurrentUserService currentUserService,
         IReceiptPreviewService receiptPreviewService,
         ISalesPaymentFlowService paymentFlowService,
-        ILogger<SalesViewModel> logger)
+        ILogger<SalesViewModel> logger,
+        ICheckoutRecoveryConfirmationService recoveryConfirmation)
     {
         _scopeFactory =
             scopeFactory ??
@@ -139,6 +148,11 @@ public sealed class SalesViewModel :
             paymentFlowService ??
             throw new ArgumentNullException(
                 nameof(paymentFlowService));
+
+        _recoveryConfirmation =
+            recoveryConfirmation ??
+            throw new ArgumentNullException(
+                nameof(recoveryConfirmation));
 
         _logger =
             logger ??
@@ -209,6 +223,30 @@ public sealed class SalesViewModel :
                 CheckoutAsync,
                 CanCheckout,
                 HandleCommandException);
+
+        RetryRecoveryCommand =
+            new AsyncRelayCommand(
+                RetryRecoveryAsync,
+                () => SelectedRecovery?.CanRetry == true && !IsRecoveryBusy,
+                HandleCommandException);
+
+        AbandonRecoveryCommand =
+            new AsyncRelayCommand(
+                AbandonRecoveryAsync,
+                () => SelectedRecovery?.CanAbandon == true && !IsRecoveryBusy,
+                HandleCommandException);
+
+        AcknowledgeRecoveryCommand =
+            new AsyncRelayCommand(
+                AcknowledgeRecoveryAsync,
+                () => SelectedRecovery?.IsCompleted == true && !IsRecoveryBusy,
+                HandleCommandException);
+
+        OpenRecoveryReceiptCommand =
+            new AsyncRelayCommand(
+                OpenRecoveryReceiptAsync,
+                () => SelectedRecovery?.CanOpenReceipt == true && !IsRecoveryBusy,
+                HandleCommandException);
     }
 
     public ObservableCollection<
@@ -231,6 +269,64 @@ public sealed class SalesViewModel :
     {
         get;
     } = [];
+
+    public ObservableCollection<CheckoutRecoveryItemViewModel>
+        CheckoutRecoveries
+    {
+        get;
+    } = [];
+
+    public CheckoutRecoveryItemViewModel? SelectedRecovery
+    {
+        get => _selectedRecovery;
+        set
+        {
+            if (!SetProperty(ref _selectedRecovery, value))
+            {
+                return;
+            }
+
+            NotifyRecoveryPresentation();
+        }
+    }
+
+    public bool HasCheckoutRecovery => CheckoutRecoveries.Count > 0;
+
+    public bool IsRecoveryBusy => IsLoadingRecovery || IsProcessingRecovery;
+
+    public bool IsLoadingRecovery
+    {
+        get => _isLoadingRecovery;
+        private set
+        {
+            if (SetProperty(ref _isLoadingRecovery, value))
+            {
+                OnPropertyChanged(nameof(IsRecoveryBusy));
+                NotifyRecoveryCommands();
+            }
+        }
+    }
+
+    public bool IsProcessingRecovery
+    {
+        get => _isProcessingRecovery;
+        private set
+        {
+            if (SetProperty(ref _isProcessingRecovery, value))
+            {
+                OnPropertyChanged(nameof(IsRecoveryBusy));
+                NotifyRecoveryCommands();
+            }
+        }
+    }
+
+    public AsyncRelayCommand RetryRecoveryCommand { get; }
+
+    public AsyncRelayCommand AbandonRecoveryCommand { get; }
+
+    public AsyncRelayCommand AcknowledgeRecoveryCommand { get; }
+
+    public AsyncRelayCommand OpenRecoveryReceiptCommand { get; }
 
     public AsyncRelayCommand SearchCommand { get; }
 
@@ -398,7 +494,8 @@ public sealed class SalesViewModel :
         _pendingVietQrAuthorization is not null;
 
     public bool IsOrderLocked =>
-        HasPendingVietQrAuthorization;
+        HasPendingVietQrAuthorization ||
+        HasCheckoutRecovery;
 
     public bool CanEditOrder =>
         !IsBusy &&
@@ -789,6 +886,75 @@ public sealed class SalesViewModel :
         await LoadProductsAsync(
             autoAddExactMatch:
                 false);
+
+        await LoadCheckoutRecoveryAsync();
+    }
+
+    private async Task LoadCheckoutRecoveryAsync()
+    {
+        _recoveryLoadSource?.Cancel();
+        _recoveryLoadSource?.Dispose();
+        var source = new CancellationTokenSource();
+        _recoveryLoadSource = source;
+        IsLoadingRecovery = true;
+
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var service = scope.ServiceProvider.GetRequiredService<ICheckoutService>();
+            var result = await service.GetCheckoutRecoveryAsync(
+                limit: 25,
+                source.Token);
+
+            if (_isDisposed ||
+                source.IsCancellationRequested ||
+                !ReferenceEquals(_recoveryLoadSource, source))
+            {
+                return;
+            }
+
+            if (result.IsFailure)
+            {
+                _logger.LogWarning(
+                    "Không thể tải checkout recovery: {Code} - {Message}",
+                    result.Error.Code,
+                    result.Error.Message);
+                ShowError(
+                    "Không thể kiểm tra giao dịch dang dở. Bạn vẫn có thể tiếp tục bán hàng.");
+                return;
+            }
+
+            CheckoutRecoveries.Clear();
+            foreach (var recovery in result.Value)
+            {
+                CheckoutRecoveries.Add(new CheckoutRecoveryItemViewModel(recovery));
+            }
+
+            SelectedRecovery = CheckoutRecoveries.FirstOrDefault();
+            OnPropertyChanged(nameof(HasCheckoutRecovery));
+            NotifyPaymentPresentation();
+        }
+        catch (OperationCanceledException) when (source.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Không thể tải checkout recovery.");
+            if (!_isDisposed)
+            {
+                ShowError(
+                    "Không thể kiểm tra giao dịch dang dở. Bạn vẫn có thể tiếp tục bán hàng.");
+            }
+        }
+        finally
+        {
+            if (ReferenceEquals(_recoveryLoadSource, source))
+            {
+                _recoveryLoadSource = null;
+                IsLoadingRecovery = false;
+                source.Dispose();
+            }
+        }
     }
 
     private async Task LoadCategoriesAsync()
@@ -1911,7 +2077,11 @@ public sealed class SalesViewModel :
 
                     confirmedPaymentAmount:
                         authorization
-                            .ConfirmedPaymentAmount);
+                            .ConfirmedPaymentAmount,
+
+                    clientRequestId:
+                        _checkoutClientRequestId ??=
+                            Guid.NewGuid());
 
             ShowNeutral(
                 authorization.IsVietQr
@@ -1945,6 +2115,8 @@ public sealed class SalesViewModel :
                 await LoadProductsAsync(
                     autoAddExactMatch:
                         false);
+
+                await LoadCheckoutRecoveryAsync();
 
                 ShowCheckoutFailure(
                     result.Error,
@@ -2013,6 +2185,22 @@ public sealed class SalesViewModel :
 
             ShowSuccess(
                 successMessage);
+
+            var acknowledgment =
+                await checkoutService
+                    .AcknowledgeCheckoutAsync(
+                        request.ClientRequestId);
+
+            if (acknowledgment.IsFailure)
+            {
+                _logger.LogWarning(
+                    "Checkout {OrderCode} đã hoàn tất nhưng acknowledgment thất bại: {ErrorCode}",
+                    completedOrder.OrderCode,
+                    acknowledgment.Error.Code);
+            }
+
+            _checkoutClientRequestId =
+                null;
         }
         catch (OperationCanceledException)
         {
@@ -2081,6 +2269,182 @@ public sealed class SalesViewModel :
                 successMessage,
                 completedOrderSessionVersion);
         }
+    }
+
+    private async Task RetryRecoveryAsync()
+    {
+        var recovery = SelectedRecovery?.Recovery;
+        if (recovery?.PreparedRequest is null || !recovery.CanRetry)
+        {
+            return;
+        }
+
+        IsProcessingRecovery = true;
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var service = scope.ServiceProvider.GetRequiredService<ICheckoutService>();
+            var result = await service.CheckoutAsync(recovery.PreparedRequest);
+            if (result.IsFailure)
+            {
+                ShowError(
+                    result.Error.Code == "CHECKOUT.PREPARATION_STALE"
+                        ? "Giá hoặc dữ liệu bán hàng đã thay đổi. Hãy bỏ giao dịch dang dở, kiểm tra lại và tạo đơn mới."
+                        : result.Error.Message);
+                return;
+            }
+
+            var completed = result.Value;
+            LastOrderCode = completed.OrderCode;
+            LastOrderSummary =
+                $"{FormatPaymentMethod(completed.PaymentMethod)} • " +
+                $"{completed.TotalAmount.ToString("N0", VietnameseCulture)} ₫";
+            ShowSuccess(
+                $"Giao dịch {completed.OrderCode} đã hoàn tất và được phục hồi an toàn.");
+
+            if (completed.ReceiptSnapshot is not null)
+            {
+                await ShowReceiptPreviewAsync(completed.ReceiptSnapshot);
+            }
+
+            var acknowledgment =
+                await service.AcknowledgeCheckoutAsync(recovery.ClientRequestId);
+            if (acknowledgment.IsFailure)
+            {
+                _logger.LogWarning(
+                    "Checkout recovery {ClientRequestId} đã hoàn tất nhưng acknowledgment thất bại: {Code}",
+                    recovery.ClientRequestId,
+                    acknowledgment.Error.Code);
+            }
+
+            RemoveSelectedRecovery();
+            await LoadProductsAsync(autoAddExactMatch: false);
+        }
+        finally
+        {
+            IsProcessingRecovery = false;
+        }
+    }
+
+    private async Task AbandonRecoveryAsync()
+    {
+        var recovery = SelectedRecovery?.Recovery;
+        if (recovery is null ||
+            !recovery.CanAbandon ||
+            !_recoveryConfirmation.ConfirmAbandon())
+        {
+            return;
+        }
+
+        IsProcessingRecovery = true;
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var service = scope.ServiceProvider.GetRequiredService<ICheckoutService>();
+            var result = await service.AbandonCheckoutAsync(recovery.ClientRequestId);
+            if (result.IsFailure)
+            {
+                ShowError(result.Error.Message);
+                return;
+            }
+
+            if (_checkoutClientRequestId == recovery.ClientRequestId)
+            {
+                _checkoutClientRequestId = null;
+            }
+
+            RemoveSelectedRecovery();
+            ShowNeutral("Đã bỏ giao dịch dang dở. Có thể bắt đầu một đơn mới.");
+        }
+        finally
+        {
+            IsProcessingRecovery = false;
+        }
+    }
+
+    private async Task AcknowledgeRecoveryAsync()
+    {
+        var recovery = SelectedRecovery?.Recovery;
+        if (recovery is null || recovery.Status != CheckoutRequestStatus.Completed)
+        {
+            return;
+        }
+
+        IsProcessingRecovery = true;
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var service = scope.ServiceProvider.GetRequiredService<ICheckoutService>();
+            var result = await service.AcknowledgeCheckoutAsync(recovery.ClientRequestId);
+            if (result.IsFailure)
+            {
+                ShowError(result.Error.Message);
+                return;
+            }
+
+            RemoveSelectedRecovery();
+            ShowNeutral("Đã xác nhận giao dịch hoàn tất.");
+        }
+        finally
+        {
+            IsProcessingRecovery = false;
+        }
+    }
+
+    private async Task OpenRecoveryReceiptAsync()
+    {
+        if (SelectedRecovery?.Recovery.OrderId is not int orderId)
+        {
+            return;
+        }
+
+        IsProcessingRecovery = true;
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var history = scope.ServiceProvider.GetRequiredService<IOrderHistoryService>();
+            var receipt = await history.GetReprintReceiptAsync(orderId);
+            if (receipt.IsFailure)
+            {
+                ShowError(receipt.Error.Message);
+                return;
+            }
+
+            await ShowReceiptPreviewAsync(receipt.Value);
+        }
+        finally
+        {
+            IsProcessingRecovery = false;
+        }
+    }
+
+    private void RemoveSelectedRecovery()
+    {
+        var selected = SelectedRecovery;
+        if (selected is not null)
+        {
+            CheckoutRecoveries.Remove(selected);
+        }
+
+        SelectedRecovery = CheckoutRecoveries.FirstOrDefault();
+        OnPropertyChanged(nameof(HasCheckoutRecovery));
+        NotifyPaymentPresentation();
+        NotifyRecoveryPresentation();
+    }
+
+    private void NotifyRecoveryPresentation()
+    {
+        OnPropertyChanged(nameof(SelectedRecovery));
+        OnPropertyChanged(nameof(HasCheckoutRecovery));
+        NotifyRecoveryCommands();
+    }
+
+    private void NotifyRecoveryCommands()
+    {
+        RetryRecoveryCommand.NotifyCanExecuteChanged();
+        AbandonRecoveryCommand.NotifyCanExecuteChanged();
+        AcknowledgeRecoveryCommand.NotifyCanExecuteChanged();
+        OpenRecoveryReceiptCommand.NotifyCanExecuteChanged();
     }
 
     private bool TryBuildCheckoutNotes(
@@ -2860,6 +3224,14 @@ public sealed class SalesViewModel :
             true;
 
         CancelLastOrderAutoDismiss();
+
+        var recoverySource = _recoveryLoadSource;
+        _recoveryLoadSource = null;
+        if (recoverySource is not null)
+        {
+            recoverySource.Cancel();
+            recoverySource.Dispose();
+        }
 
         _pendingVietQrAuthorization =
             null;

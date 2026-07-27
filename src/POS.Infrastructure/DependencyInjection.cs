@@ -294,6 +294,14 @@ public static class DependencyInjection
             IOrderReceiptSnapshotRepository,
             OrderReceiptSnapshotRepository>();
 
+        services.AddScoped<
+            ICheckoutRequestJournalRepository,
+            CheckoutRequestJournalRepository>();
+
+        services.AddSingleton<
+            ICheckoutRequestCanonicalizer,
+            CheckoutRequestCanonicalizer>();
+
         services.AddScoped<OrderHistoryService>();
 
         services.AddScoped<IOrderHistoryService>(

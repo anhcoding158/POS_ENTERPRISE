@@ -55,4 +55,40 @@ public sealed class AuthorizedCheckoutService :
             request,
             cancellationToken);
     }
+
+    public Task<Result<CheckoutPreparationDto>> PrepareCheckoutAsync(
+        CheckoutRequest request, CancellationToken cancellationToken = default)
+    {
+        var authorization = _permissionService.Authorize(SystemPermission.UseCheckout);
+        return authorization.IsFailure
+            ? Task.FromResult(Result.Failure<CheckoutPreparationDto>(authorization.Error))
+            : _innerService.PrepareCheckoutAsync(request, cancellationToken);
+    }
+
+    public Task<Result<IReadOnlyList<CheckoutRecoveryDto>>> GetCheckoutRecoveryAsync(
+        int limit = 25, CancellationToken cancellationToken = default)
+    {
+        var authorization = _permissionService.Authorize(SystemPermission.UseCheckout);
+        return authorization.IsFailure
+            ? Task.FromResult(Result.Failure<IReadOnlyList<CheckoutRecoveryDto>>(authorization.Error))
+            : _innerService.GetCheckoutRecoveryAsync(limit, cancellationToken);
+    }
+
+    public Task<Result> AcknowledgeCheckoutAsync(
+        Guid clientRequestId, CancellationToken cancellationToken = default)
+    {
+        var authorization = _permissionService.Authorize(SystemPermission.UseCheckout);
+        return authorization.IsFailure
+            ? Task.FromResult(Result.Failure(authorization.Error))
+            : _innerService.AcknowledgeCheckoutAsync(clientRequestId, cancellationToken);
+    }
+
+    public Task<Result> AbandonCheckoutAsync(
+        Guid clientRequestId, CancellationToken cancellationToken = default)
+    {
+        var authorization = _permissionService.Authorize(SystemPermission.UseCheckout);
+        return authorization.IsFailure
+            ? Task.FromResult(Result.Failure(authorization.Error))
+            : _innerService.AbandonCheckoutAsync(clientRequestId, cancellationToken);
+    }
 }

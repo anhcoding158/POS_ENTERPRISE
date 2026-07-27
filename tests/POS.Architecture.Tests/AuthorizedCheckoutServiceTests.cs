@@ -107,6 +107,41 @@ public sealed class AuthorizedCheckoutServiceTests
             inner.CallCount);
     }
 
+    [Fact]
+    public async Task Denied_idempotency_operations_must_not_delegate()
+    {
+        var inner = new RecordingCheckoutService();
+        var service = new AuthorizedCheckoutService(
+            inner,
+            new PermissionService(new CurrentUserService()));
+        var request = CreateRequest();
+
+        Assert.True((await service.PrepareCheckoutAsync(request)).IsFailure);
+        Assert.True((await service.GetCheckoutRecoveryAsync()).IsFailure);
+        Assert.True((await service.AcknowledgeCheckoutAsync(Guid.NewGuid())).IsFailure);
+        Assert.True((await service.AbandonCheckoutAsync(Guid.NewGuid())).IsFailure);
+        Assert.Equal(0, inner.IdempotencyCallCount);
+    }
+
+    [Fact]
+    public async Task Authorized_idempotency_operations_delegate_once_and_forward_cancellation()
+    {
+        var inner = new RecordingCheckoutService();
+        var service = new AuthorizedCheckoutService(
+            inner,
+            new PermissionService(CreateCurrentUser(Role.Cashier)));
+        using var source = new CancellationTokenSource();
+        var token = source.Token;
+
+        await service.PrepareCheckoutAsync(CreateRequest(), token);
+        await service.GetCheckoutRecoveryAsync(7, token);
+        await service.AcknowledgeCheckoutAsync(Guid.NewGuid(), token);
+        await service.AbandonCheckoutAsync(Guid.NewGuid(), token);
+
+        Assert.Equal(4, inner.IdempotencyCallCount);
+        Assert.All(inner.Tokens, observed => Assert.Equal(token, observed));
+    }
+
     private static CurrentUserService CreateCurrentUser(
         Role role)
     {
@@ -144,6 +179,8 @@ public sealed class AuthorizedCheckoutServiceTests
         ICheckoutService
     {
         public int CallCount { get; private set; }
+        public int IdempotencyCallCount { get; private set; }
+        public List<CancellationToken> Tokens { get; } = [];
 
         public Task<Result<CheckoutResultDto>> CheckoutAsync(
             CheckoutRequest request,
@@ -176,6 +213,41 @@ public sealed class AuthorizedCheckoutServiceTests
             return Task.FromResult(
                 Result.Success(
                     result));
+        }
+
+        public Task<Result<CheckoutPreparationDto>> PrepareCheckoutAsync(
+            CheckoutRequest request, CancellationToken cancellationToken = default)
+        {
+            Record(cancellationToken);
+            return Task.FromResult(Result.Failure<CheckoutPreparationDto>(
+                new Error("TEST", "Recorded")));
+        }
+
+        public Task<Result<IReadOnlyList<CheckoutRecoveryDto>>> GetCheckoutRecoveryAsync(
+            int limit = 25, CancellationToken cancellationToken = default)
+        {
+            Record(cancellationToken);
+            return Task.FromResult(Result.Success<IReadOnlyList<CheckoutRecoveryDto>>([]));
+        }
+
+        public Task<Result> AcknowledgeCheckoutAsync(
+            Guid clientRequestId, CancellationToken cancellationToken = default)
+        {
+            Record(cancellationToken);
+            return Task.FromResult(Result.Success());
+        }
+
+        public Task<Result> AbandonCheckoutAsync(
+            Guid clientRequestId, CancellationToken cancellationToken = default)
+        {
+            Record(cancellationToken);
+            return Task.FromResult(Result.Success());
+        }
+
+        private void Record(CancellationToken token)
+        {
+            IdempotencyCallCount++;
+            Tokens.Add(token);
         }
     }
 }

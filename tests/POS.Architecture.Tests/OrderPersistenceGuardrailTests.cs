@@ -456,6 +456,7 @@ public sealed class
             new[]
             {
                 typeof(Category),
+                typeof(CheckoutRequestJournal),
                 typeof(InventoryMovement),
                 typeof(Order),
                 typeof(OrderItem),

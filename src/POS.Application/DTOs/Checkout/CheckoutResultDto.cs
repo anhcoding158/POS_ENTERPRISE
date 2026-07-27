@@ -48,4 +48,6 @@ public sealed record CheckoutResultDto(
         get;
         init;
     }
+
+    public bool IsIdempotentReplay { get; init; }
 }

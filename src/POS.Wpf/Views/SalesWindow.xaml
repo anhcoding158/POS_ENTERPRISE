@@ -2012,6 +2012,7 @@
                                     Grid.Row="1"
                                     Grid.ColumnSpan="2"
                                     Text="{Binding OrderNotes,
+                                        Mode=TwoWay,
                                         UpdateSourceTrigger=PropertyChanged}"
                                     IsEnabled="{Binding CanEditOrder}"
                                     Style="{StaticResource SearchTextBoxStyle}"
@@ -2191,6 +2192,7 @@
                                         <TextBox
                                             x:Name="CashReceivedTextBox"
                                             Text="{Binding CashReceivedText,
+                                                Mode=TwoWay,
                                                 UpdateSourceTrigger=PropertyChanged}"
                                             IsEnabled="{Binding IsCashInputEnabled}"
                                             PreviewTextInput="OnCashPreviewTextInput"
@@ -2618,6 +2620,171 @@
                 </Grid>
             </Border>
         </Grid>
+
+        <!-- Durable checkout recovery -->
+
+        <Border
+            Grid.RowSpan="2"
+            Panel.ZIndex="998"
+            Background="{StaticResource AppBackgroundBrush}"
+            Visibility="{Binding HasCheckoutRecovery,
+                Mode=OneWay,
+                Converter={StaticResource BooleanToVisibilityConverter}}">
+
+            <Border
+                Width="720"
+                MaxHeight="560"
+                Padding="24"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource GoldBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="16">
+
+                <Grid>
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel>
+
+                        <TextBlock
+                            Text="KHÔI PHỤC GIAO DỊCH"
+                            Foreground="{StaticResource GoldBrush}"
+                            FontFamily="Georgia"
+                            FontSize="19"
+                            FontWeight="SemiBold" />
+
+                        <TextBlock
+                            Text="Hệ thống tìm thấy giao dịch cần xử lý từ phiên trước. Không tạo đơn mới cho đến khi bạn chọn hành động."
+                            Foreground="{StaticResource TextSecondaryBrush}"
+                            FontSize="11"
+                            TextWrapping="Wrap"
+                            Margin="0,6,0,0" />
+                    </StackPanel>
+
+                    <ComboBox
+                        Grid.Row="1"
+                        Margin="0,14,0,10"
+                        ItemsSource="{Binding CheckoutRecoveries, Mode=OneWay}"
+                        SelectedItem="{Binding SelectedRecovery, Mode=TwoWay}"
+                        DisplayMemberPath="OrderDisplay"
+                        MinHeight="36" />
+
+                    <ScrollViewer
+                        Grid.Row="2"
+                        VerticalScrollBarVisibility="Auto"
+                        HorizontalScrollBarVisibility="Disabled">
+
+                        <StackPanel>
+
+                            <TextBlock
+                                Text="{Binding SelectedRecovery.StateTitle, Mode=OneWay}"
+                                Foreground="{StaticResource TextPrimaryBrush}"
+                                FontFamily="Georgia"
+                                FontSize="17"
+                                FontWeight="SemiBold" />
+
+                            <TextBlock
+                                Text="{Binding SelectedRecovery.StateDescription, Mode=OneWay}"
+                                Foreground="{StaticResource TextSecondaryBrush}"
+                                TextWrapping="Wrap"
+                                Margin="0,5,0,12" />
+
+                            <Grid>
+
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel>
+                                    <TextBlock Text="Thời gian" Style="{StaticResource CaptionTextStyle}" />
+                                    <TextBlock
+                                        Text="{Binding SelectedRecovery.CreatedAtText, Mode=OneWay}"
+                                        Foreground="{StaticResource TextPrimaryBrush}"
+                                        Margin="0,3,0,0" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Phương thức" Style="{StaticResource CaptionTextStyle}" />
+                                    <TextBlock
+                                        Text="{Binding SelectedRecovery.PaymentMethodText, Mode=OneWay}"
+                                        Foreground="{StaticResource TextPrimaryBrush}"
+                                        Margin="0,3,0,0" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Tổng tiền" Style="{StaticResource CaptionTextStyle}" />
+                                    <TextBlock
+                                        Text="{Binding SelectedRecovery.TotalText, Mode=OneWay}"
+                                        Foreground="{StaticResource AccentBrush}"
+                                        FontWeight="Bold"
+                                        Margin="0,3,0,0" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Border
+                                Margin="0,14,0,0"
+                                Padding="12"
+                                Background="{StaticResource SurfaceMutedBrush}"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="9">
+
+                                <TextBlock
+                                    Text="{Binding SelectedRecovery.LineSummary, Mode=OneWay}"
+                                    Foreground="{StaticResource TextSecondaryBrush}"
+                                    TextWrapping="Wrap" />
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <Grid Grid.Row="3" Margin="0,18,0,0">
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="10" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="10" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Button
+                            Grid.Column="0"
+                            Content="BỎ GIAO DỊCH"
+                            Command="{Binding AbandonRecoveryCommand}"
+                            MinHeight="40" />
+
+                        <Button
+                            Grid.Column="2"
+                            Content="MỞ HÓA ĐƠN"
+                            Command="{Binding OpenRecoveryReceiptCommand}"
+                            MinHeight="40" />
+
+                        <StackPanel Grid.Column="4">
+
+                            <Button
+                                Content="THỬ LẠI"
+                                Command="{Binding RetryRecoveryCommand}"
+                                MinHeight="40" />
+
+                            <Button
+                                Content="ĐÃ XEM"
+                                Command="{Binding AcknowledgeRecoveryCommand}"
+                                MinHeight="40"
+                                Margin="0,6,0,0" />
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Border>
 
         <!-- Checkout transaction lock -->
 

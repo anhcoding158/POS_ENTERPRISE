@@ -423,6 +423,10 @@ public partial class App :
         services.AddSingleton<
             IOrderReturnConfirmationService,
             OrderReturnConfirmationService>();
+
+        services.AddSingleton<
+            ICheckoutRecoveryConfirmationService,
+            CheckoutRecoveryConfirmationService>();
     }
 
     private static void ConfigureViewModelsAndWindows(

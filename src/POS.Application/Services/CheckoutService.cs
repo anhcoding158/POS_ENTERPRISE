@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
+using System.Collections.Concurrent;
+using System.Text.Json;
 using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.DateTime;
 using POS.Application.Abstractions.Orders;
@@ -41,6 +43,12 @@ namespace POS.Application.Services;
 public sealed class CheckoutService :
     ICheckoutService
 {
+    private static readonly ConcurrentDictionary<Guid, SemaphoreSlim>
+        ProcessLocks = new();
+
+    private static readonly ConcurrentDictionary<Guid, SemaphoreSlim>
+        PrepareLocks = new();
+
     private const int
         MaximumOrderCodeAttempts = 10;
 
@@ -80,6 +88,12 @@ public sealed class CheckoutService :
     private readonly IReceiptSnapshotSerializer
         _receiptSnapshotSerializer;
 
+    private readonly ICheckoutRequestJournalRepository?
+        _checkoutJournals;
+
+    private readonly ICheckoutRequestCanonicalizer
+        _canonicalizer;
+
     public CheckoutService(
         IProductRepository productRepository,
         IOrderRepository orderRepository,
@@ -94,7 +108,11 @@ public sealed class CheckoutService :
         IReceiptSnapshotSerializer
             receiptSnapshotSerializer,
         IReceiptStoreSnapshotProvider?
-            receiptStoreSnapshotProvider = null)
+            receiptStoreSnapshotProvider = null,
+        ICheckoutRequestJournalRepository?
+            checkoutJournals = null,
+        ICheckoutRequestCanonicalizer?
+            canonicalizer = null)
     {
         _productRepository =
             productRepository ??
@@ -146,6 +164,9 @@ public sealed class CheckoutService :
             throw new ArgumentNullException(
                 nameof(receiptSnapshotSerializer));
 
+        _checkoutJournals = checkoutJournals;
+        _canonicalizer = canonicalizer ?? new CheckoutRequestCanonicalizer();
+
         /*
          * Nullable tạm thời để các unit test cũ đang tự tạo
          * CheckoutService không bị vỡ constructor.
@@ -158,6 +179,33 @@ public sealed class CheckoutService :
     }
 
     public async Task<Result<CheckoutResultDto>> CheckoutAsync(
+        CheckoutRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.ClientRequestId == Guid.Empty)
+            return await CheckoutCoreAsync(request, cancellationToken);
+
+        var gate = ProcessLocks.GetOrAdd(
+            request.ClientRequestId,
+            static _ => new SemaphoreSlim(1, 1));
+        await gate.WaitAsync(cancellationToken);
+        try
+        {
+            return await CheckoutCoreAsync(request, cancellationToken);
+        }
+        finally
+        {
+            gate.Release();
+            if (gate.CurrentCount == 1)
+                ProcessLocks.TryRemove(
+                    new KeyValuePair<Guid, SemaphoreSlim>(
+                        request.ClientRequestId,
+                        gate));
+        }
+    }
+
+    private async Task<Result<CheckoutResultDto>> CheckoutCoreAsync(
         CheckoutRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -193,6 +241,36 @@ public sealed class CheckoutService :
                 "Không tìm thấy phiên đăng nhập hợp lệ.");
         }
 
+        CheckoutRequestJournal? checkoutJournal = null;
+        if (request.ClientRequestId != Guid.Empty &&
+            _checkoutJournals is not null)
+        {
+            var canonical = _canonicalizer.Canonicalize(request);
+            checkoutJournal = await _checkoutJournals.GetTrackedAsync(
+                request.ClientRequestId, cancellationToken);
+
+            if (checkoutJournal is null)
+            {
+                var preparation = await PrepareCheckoutAsync(request, cancellationToken);
+                if (preparation.IsFailure)
+                    return Result.Failure<CheckoutResultDto>(preparation.Error);
+                checkoutJournal = await _checkoutJournals.GetTrackedAsync(
+                    request.ClientRequestId, cancellationToken);
+            }
+
+            if (checkoutJournal is null)
+                return Failure("CHECKOUT.JOURNAL_MISSING", "Không thể tải checkout đã chuẩn bị.");
+            if (checkoutJournal.PreparedByUserId != cashierUserId.Value)
+                return Failure(ErrorCodes.General.Unauthorized, "Checkout không thuộc phiên người dùng hiện tại.");
+            if (!string.Equals(
+                checkoutJournal.RequestFingerprint, canonical.Fingerprint, StringComparison.Ordinal))
+                return Failure("CHECKOUT.IDEMPOTENCY_CONFLICT", "ClientRequestId đã được dùng cho payload khác.");
+            if (checkoutJournal.Status == CheckoutRequestStatus.Abandoned)
+                return Failure("CHECKOUT.ABANDONED", "Checkout này đã bị bỏ và không thể dùng lại.");
+            if (checkoutJournal.Status == CheckoutRequestStatus.Completed)
+                return await ReplayAsync(checkoutJournal, cancellationToken);
+        }
+
         var utcNow =
             _clock.UtcNow.ToUniversalTime();
 
@@ -202,6 +280,29 @@ public sealed class CheckoutService :
 
         try
         {
+            if (checkoutJournal is not null)
+            {
+                await _checkoutJournals!.ReloadTrackedAsync(
+                    checkoutJournal,
+                    cancellationToken);
+
+                if (checkoutJournal.PreparedByUserId != cashierUserId.Value)
+                    return Failure(ErrorCodes.General.Unauthorized, "Checkout không thuộc phiên người dùng hiện tại.");
+                if (checkoutJournal.Status == CheckoutRequestStatus.Completed)
+                {
+                    await transaction.RollbackAsync(CancellationToken.None);
+                    return await ReplayAsync(checkoutJournal, cancellationToken);
+                }
+                if (checkoutJournal.Status != CheckoutRequestStatus.Prepared)
+                    return Failure("CHECKOUT.ABANDONED", "Checkout này không còn có thể xử lý.");
+                var transactionCanonical = _canonicalizer.Canonicalize(request);
+                if (!string.Equals(
+                    checkoutJournal.RequestFingerprint,
+                    transactionCanonical.Fingerprint,
+                    StringComparison.Ordinal))
+                    return Failure("CHECKOUT.IDEMPOTENCY_CONFLICT", "ClientRequestId đã được dùng cho payload khác.");
+            }
+
             /*
              * Gom tổng số lượng theo ProductId trước khi
              * thay đổi entity để xử lý đúng các dòng trùng sản phẩm.
@@ -224,6 +325,14 @@ public sealed class CheckoutService :
                         .GetByIdAsync(
                             requestedProduct.Key,
                             cancellationToken);
+
+                if (product is not null &&
+                    checkoutJournal is not null)
+                {
+                    await _productRepository.ReloadTrackedAsync(
+                        product,
+                        cancellationToken);
+                }
 
                 if (product is null)
                 {
@@ -261,6 +370,18 @@ public sealed class CheckoutService :
                 products.Add(
                     product.Id,
                     product);
+            }
+
+            if (checkoutJournal is not null)
+            {
+                var currentQuote = CreatePreparedQuote(request, products);
+                if (!string.Equals(
+                    checkoutJournal.PreparedQuoteFingerprint,
+                    CheckoutRequestCanonicalizer.Hash(currentQuote),
+                    StringComparison.Ordinal))
+                    return Failure(
+                        "CHECKOUT.PREPARATION_STALE",
+                        "Giá hoặc kết quả checkout đã thay đổi. Vui lòng kiểm tra và tạo giao dịch mới.");
             }
 
             var orderCodeResult =
@@ -537,6 +658,10 @@ public sealed class CheckoutService :
                     persistedSnapshot,
                     cancellationToken);
 
+            checkoutJournal?.Complete(
+                order.Id,
+                utcNow);
+
             await _unitOfWork.SaveChangesAsync(
                 cancellationToken);
 
@@ -587,6 +712,274 @@ public sealed class CheckoutService :
                 "Không thể lưu giao dịch bán hàng. " +
                 "Không có dữ liệu dở dang được ghi nhận.");
         }
+    }
+
+    public async Task<Result<CheckoutPreparationDto>> PrepareCheckoutAsync(
+        CheckoutRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.ClientRequestId == Guid.Empty)
+            return await PrepareCoreAsync(request, cancellationToken);
+        var gate = PrepareLocks.GetOrAdd(
+            request.ClientRequestId,
+            static _ => new SemaphoreSlim(1, 1));
+        await gate.WaitAsync(cancellationToken);
+        try
+        {
+            return await PrepareCoreAsync(request, cancellationToken);
+        }
+        finally
+        {
+            gate.Release();
+            if (gate.CurrentCount == 1)
+                PrepareLocks.TryRemove(
+                    new KeyValuePair<Guid, SemaphoreSlim>(
+                        request.ClientRequestId,
+                        gate));
+        }
+    }
+
+    private async Task<Result<CheckoutPreparationDto>> PrepareCoreAsync(
+        CheckoutRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var validation = CheckoutValidator.Validate(request);
+        if (validation.IsFailure)
+            return Result.Failure<CheckoutPreparationDto>(validation.Error);
+        if (request.ClientRequestId == Guid.Empty)
+            return Result.Failure<CheckoutPreparationDto>(
+                new Error("CHECKOUT.REQUEST_ID_REQUIRED", "ClientRequestId không hợp lệ."));
+        if (_checkoutJournals is null)
+            return Result.Failure<CheckoutPreparationDto>(
+                new Error("CHECKOUT.JOURNAL_UNAVAILABLE", "Durable checkout journal chưa được cấu hình."));
+        if (_currentUserService.UserId is not int actorId || actorId <= 0)
+            return Result.Failure<CheckoutPreparationDto>(
+                new Error(ErrorCodes.General.Unauthorized, "Không tìm thấy phiên đăng nhập hợp lệ."));
+
+        var canonical = _canonicalizer.Canonicalize(request);
+        var existing = await _checkoutJournals.GetTrackedAsync(request.ClientRequestId, cancellationToken);
+        if (existing is not null)
+            return MapPreparation(existing, canonical.Fingerprint);
+
+        var products = new Dictionary<int, Product>();
+        foreach (var productId in request.Lines.Select(line => line.ProductId).Distinct().Order())
+        {
+            var product = await _productRepository.GetByIdAsync(productId, cancellationToken);
+            if (product is null || product.IsArchived || !product.IsActive)
+                return Result.Failure<CheckoutPreparationDto>(
+                    new Error(ErrorCodes.Checkout.ProductNotFound, $"Sản phẩm {productId} không khả dụng."));
+            products.Add(productId, product);
+        }
+
+        var quoteJson = CreatePreparedQuote(request, products);
+        var journal = new CheckoutRequestJournal(
+            request.ClientRequestId, canonical.Fingerprint, canonical.Json,
+            CheckoutRequestCanonicalizer.Hash(quoteJson), quoteJson, actorId, _clock.UtcNow);
+        try
+        {
+            await using var transaction =
+                await _unitOfWork.BeginTransactionAsync(cancellationToken);
+            await _checkoutJournals.AddAsync(journal, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return Result.Success(ToPreparation(journal));
+        }
+        catch (PersistenceConflictException)
+        {
+            var winner = await _checkoutJournals.GetReadOnlyAsync(request.ClientRequestId, cancellationToken);
+            return winner is null
+                ? Result.Failure<CheckoutPreparationDto>(
+                    new Error("CHECKOUT.PREPARE_CONFLICT", "Không thể chuẩn bị checkout."))
+                : MapPreparation(winner, canonical.Fingerprint);
+        }
+    }
+
+    public async Task<Result<IReadOnlyList<CheckoutRecoveryDto>>> GetCheckoutRecoveryAsync(
+        int limit = 25,
+        CancellationToken cancellationToken = default)
+    {
+        if (_checkoutJournals is null || _currentUserService.UserId is not int actorId || actorId <= 0)
+            return Result.Failure<IReadOnlyList<CheckoutRecoveryDto>>(
+                new Error(ErrorCodes.General.Unauthorized, "Không tìm thấy phiên đăng nhập hợp lệ."));
+        var journals = await _checkoutJournals.GetActiveRecoveryAsync(actorId, limit, cancellationToken);
+        return Result.Success<IReadOnlyList<CheckoutRecoveryDto>>(
+            journals.Select(MapRecovery).ToArray());
+    }
+
+    public Task<Result> AcknowledgeCheckoutAsync(
+        Guid clientRequestId, CancellationToken cancellationToken = default) =>
+        ChangeJournalWithLockAsync(clientRequestId, abandon: false, cancellationToken);
+
+    public Task<Result> AbandonCheckoutAsync(
+        Guid clientRequestId, CancellationToken cancellationToken = default) =>
+        ChangeJournalWithLockAsync(clientRequestId, abandon: true, cancellationToken);
+
+    private async Task<Result> ChangeJournalWithLockAsync(
+        Guid clientRequestId,
+        bool abandon,
+        CancellationToken cancellationToken)
+    {
+        if (clientRequestId == Guid.Empty)
+            return Result.Failure(new Error(
+                "CHECKOUT.REQUEST_ID_REQUIRED",
+                "ClientRequestId không hợp lệ."));
+        var gate = ProcessLocks.GetOrAdd(
+            clientRequestId,
+            static _ => new SemaphoreSlim(1, 1));
+        await gate.WaitAsync(cancellationToken);
+        try
+        {
+            return await ChangeJournalAsync(
+                clientRequestId,
+                abandon,
+                cancellationToken);
+        }
+        finally
+        {
+            gate.Release();
+            if (gate.CurrentCount == 1)
+                ProcessLocks.TryRemove(
+                    new KeyValuePair<Guid, SemaphoreSlim>(
+                        clientRequestId,
+                        gate));
+        }
+    }
+
+    private async Task<Result> ChangeJournalAsync(
+        Guid clientRequestId, bool abandon, CancellationToken cancellationToken)
+    {
+        if (_checkoutJournals is null || _currentUserService.UserId is not int actorId || actorId <= 0)
+            return Result.Failure(new Error(ErrorCodes.General.Unauthorized, "Không tìm thấy phiên đăng nhập hợp lệ."));
+        if (clientRequestId == Guid.Empty)
+            return Result.Failure(new Error("CHECKOUT.REQUEST_ID_REQUIRED", "ClientRequestId không hợp lệ."));
+        await using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            var journal = await _checkoutJournals.GetTrackedAsync(clientRequestId, cancellationToken);
+            if (journal is null || journal.PreparedByUserId != actorId)
+                return Result.Failure(new Error("CHECKOUT.JOURNAL_NOT_FOUND", "Không tìm thấy checkout."));
+            if (abandon)
+                journal.Abandon(actorId, _clock.UtcNow);
+            else
+                journal.Acknowledge(_clock.UtcNow);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return Result.Success();
+        }
+        catch (DomainException exception)
+        {
+            return Result.Failure(new Error(exception.Code, exception.Message));
+        }
+    }
+
+    private static Result<CheckoutPreparationDto> MapPreparation(
+        CheckoutRequestJournal journal, string fingerprint)
+    {
+        if (!string.Equals(journal.RequestFingerprint, fingerprint, StringComparison.Ordinal))
+            return Result.Failure<CheckoutPreparationDto>(
+                new Error("CHECKOUT.IDEMPOTENCY_CONFLICT", "ClientRequestId đã được dùng cho payload khác."));
+        if (journal.Status == CheckoutRequestStatus.Abandoned)
+            return Result.Failure<CheckoutPreparationDto>(
+                new Error("CHECKOUT.ABANDONED", "Checkout này đã bị bỏ và không thể dùng lại."));
+        return Result.Success(ToPreparation(journal));
+    }
+
+    private static CheckoutPreparationDto ToPreparation(CheckoutRequestJournal journal) =>
+        new(journal.ClientRequestId, journal.Status, journal.RequestFingerprint,
+            journal.PreparedQuoteFingerprint, journal.PreparedQuoteJson, journal.OrderId);
+
+    private CheckoutRecoveryDto MapRecovery(CheckoutRequestJournal journal)
+    {
+        using var quote = JsonDocument.Parse(journal.PreparedQuoteJson);
+        var root = quote.RootElement;
+        var lines = root.GetProperty("lines").EnumerateArray().Select(line =>
+            new CheckoutRecoveryLineDto(
+                line.GetProperty("productId").GetInt32(),
+                line.GetProperty("productCode").GetString() ?? string.Empty,
+                line.GetProperty("productName").GetString() ?? string.Empty,
+                line.GetProperty("unitName").GetString() ?? string.Empty,
+                line.GetProperty("quantity").GetInt32(),
+                line.GetProperty("unitSalePrice").GetInt64(),
+                line.GetProperty("lineTotal").GetInt64())).ToArray();
+        var prepared = journal.Status == CheckoutRequestStatus.Prepared;
+        return new CheckoutRecoveryDto(
+            journal.ClientRequestId,
+            journal.Status,
+            journal.CreatedAtUtc,
+            journal.OrderId,
+            journal.Order?.OrderCode,
+            root.GetProperty("total").GetInt64(),
+            root.GetProperty("paymentMethod").Deserialize<PaymentMethod>(),
+            lines,
+            prepared
+                ? _canonicalizer.Deserialize(
+                    journal.CanonicalRequestJson,
+                    journal.ClientRequestId)
+                : null,
+            prepared,
+            prepared);
+    }
+
+    private static string CreatePreparedQuote(
+        CheckoutRequest request, IReadOnlyDictionary<int, Product> products)
+    {
+        var lines = request.Lines.Select(line =>
+        {
+            var product = products[line.ProductId];
+            return new
+            {
+                productId = product.Id,
+                productCode = product.Code,
+                productName = product.Name,
+                unitName = product.UnitName,
+                quantity = line.Quantity,
+                unitSalePrice = product.SalePrice,
+                lineDiscountAmount = line.LineDiscountAmount,
+                lineTotal = checked(product.SalePrice * line.Quantity - line.LineDiscountAmount),
+                notes = line.Notes,
+                trackInventory = product.TrackInventory,
+                modifiers = line.Modifiers.OrderBy(x => x.ModifierId).ThenBy(x => x.Quantity)
+            };
+        }).OrderBy(line => line.productId).ThenBy(line => line.quantity).ToArray();
+        var subtotal = lines.Sum(line => checked(line.unitSalePrice * line.quantity));
+        var total = lines.Sum(line => line.lineTotal);
+        return JsonSerializer.Serialize(new
+        {
+            version = 1,
+            paymentMethod = request.PaymentMethod,
+            cashReceived = request.CashReceived,
+            confirmedPaymentAmount = request.ConfirmedPaymentAmount,
+            discountCode = request.DiscountCode,
+            subtotal,
+            discountAmount = subtotal - total,
+            total,
+            change = request.PaymentMethod == PaymentMethod.Cash ? Math.Max(0, request.CashReceived - total) : 0,
+            lines
+        });
+    }
+
+    private async Task<Result<CheckoutResultDto>> ReplayAsync(
+        CheckoutRequestJournal journal,
+        CancellationToken cancellationToken)
+    {
+        if (journal.OrderId is not int orderId)
+            return Failure("CHECKOUT.REPLAY_INVALID", "Checkout đã hoàn tất nhưng thiếu Order.");
+
+        var order = await _orderRepository.GetByIdReadOnlyAsync(orderId, cancellationToken);
+        var snapshot = await _orderReceiptSnapshotRepository.GetByOrderIdAsync(orderId, cancellationToken);
+        if (order is null || snapshot is null)
+            return Failure("CHECKOUT.REPLAY_INVALID", "Không thể phục hồi dữ liệu checkout đã hoàn tất.");
+
+        var result = CreateResult(
+            order,
+            order.CashierUser?.FullName ?? $"#{order.CashierUserId}") with
+        {
+            ReceiptSnapshot = _receiptSnapshotSerializer.Deserialize(snapshot.PayloadJson),
+            IsIdempotentReplay = true
+        };
+        return Result.Success(result);
     }
 
     private ReceiptRequest CreateReceiptSnapshot(

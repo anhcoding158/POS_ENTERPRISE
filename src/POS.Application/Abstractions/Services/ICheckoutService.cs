@@ -14,8 +14,32 @@ namespace POS.Application.Abstractions.Services;
 /// </summary>
 public interface ICheckoutService
 {
+    Task<Result<CheckoutPreparationDto>> PrepareCheckoutAsync(
+        CheckoutRequest request,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult(Result.Failure<CheckoutPreparationDto>(
+            new Error("CHECKOUT.IDEMPOTENCY_NOT_SUPPORTED", "Service chưa hỗ trợ durable checkout.")));
+
     Task<Result<CheckoutResultDto>> CheckoutAsync(
         CheckoutRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<Result<IReadOnlyList<CheckoutRecoveryDto>>> GetCheckoutRecoveryAsync(
+        int limit = 25,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult(Result.Failure<IReadOnlyList<CheckoutRecoveryDto>>(
+            new Error("CHECKOUT.IDEMPOTENCY_NOT_SUPPORTED", "Service chưa hỗ trợ recovery checkout.")));
+
+    Task<Result> AcknowledgeCheckoutAsync(
+        Guid clientRequestId,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult(Result.Failure(
+            new Error("CHECKOUT.IDEMPOTENCY_NOT_SUPPORTED", "Service chưa hỗ trợ acknowledgment checkout.")));
+
+    Task<Result> AbandonCheckoutAsync(
+        Guid clientRequestId,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult(Result.Failure(
+            new Error("CHECKOUT.IDEMPOTENCY_NOT_SUPPORTED", "Service chưa hỗ trợ abandon checkout.")));
 }
 
