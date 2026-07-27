@@ -81,7 +81,27 @@ public sealed record VietQrPaymentPresentation(
     long Amount,
     string PaymentReference,
     string TransferContent,
-    byte[] QrPngBytes);
+    byte[] QrPngBytes)
+{
+    public string? BankName
+    {
+        get;
+        init;
+    }
+
+    public string? AccountName
+    {
+        get;
+        init;
+    }
+
+    public string RecipientInformationMessage
+    {
+        get;
+        init;
+    } =
+        "Thông tin người nhận chưa khả dụng.";
+}
 
 public interface IVietQrPaymentDialogService
 {
@@ -135,6 +155,9 @@ public sealed class VietQrPaymentDialogService :
     private readonly IVietQrPayloadStore?
         _payloadStore;
 
+    private readonly IVietQrRecipientMetadataStore?
+        _recipientMetadataStore;
+
     private readonly ILogger<
         VietQrPaymentDialogService>?
         _logger;
@@ -157,6 +180,7 @@ public sealed class VietQrPaymentDialogService :
     public VietQrPaymentDialogService(
         StoredVietQrService storedService,
         IVietQrPayloadStore payloadStore,
+        IVietQrRecipientMetadataStore recipientMetadataStore,
         ILogger<VietQrPaymentDialogService> logger)
     {
         _storedService =
@@ -168,6 +192,11 @@ public sealed class VietQrPaymentDialogService :
             payloadStore ??
             throw new ArgumentNullException(
                 nameof(payloadStore));
+
+        _recipientMetadataStore =
+            recipientMetadataStore ??
+            throw new ArgumentNullException(
+                nameof(recipientMetadataStore));
 
         _logger =
             logger ??
@@ -204,6 +233,9 @@ public sealed class VietQrPaymentDialogService :
                 nameof(options));
 
         _legacyOptions.Validate();
+
+        _recipientMetadataStore =
+            null;
 
         _displayPreferenceStore =
             new VietQrDisplayPreferenceStore();
@@ -298,6 +330,54 @@ public sealed class VietQrPaymentDialogService :
                     transferContentResult.Error);
         }
 
+        string?
+            bankName =
+                null;
+
+        string?
+            accountName =
+                null;
+
+        var recipientInformationMessage =
+            "Thông tin người nhận chưa khả dụng.";
+
+        if (_recipientMetadataStore is not null)
+        {
+            var metadataResult =
+                _recipientMetadataStore
+                    .Load();
+
+            if (metadataResult.IsSuccess)
+            {
+                bankName =
+                    metadataResult
+                        .Value
+                        .BankName;
+
+                accountName =
+                    metadataResult
+                        .Value
+                        .AccountName;
+
+                recipientInformationMessage =
+                    string.Empty;
+            }
+            else if (metadataResult.Error.Code ==
+                     ErrorCodes.Payments
+                         .VietQrNotConfigured)
+            {
+                recipientInformationMessage =
+                    "Thông tin người nhận chưa cấu hình.";
+            }
+            else
+            {
+                _logger?.LogWarning(
+                    "Không thể đọc metadata người nhận VietQR. " +
+                    "Mã lỗi: {ErrorCode}.",
+                    metadataResult.Error.Code);
+            }
+        }
+
         var presentation =
             new VietQrPaymentPresentation(
                 Amount:
@@ -310,7 +390,17 @@ public sealed class VietQrPaymentDialogService :
                     transferContentResult.Value,
 
                 QrPngBytes:
-                    pngResult.Value);
+                    pngResult.Value)
+            {
+                BankName =
+                    bankName,
+
+                AccountName =
+                    accountName,
+
+                RecipientInformationMessage =
+                    recipientInformationMessage
+            };
 
         var application =
             global::System.Windows

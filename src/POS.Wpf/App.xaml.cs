@@ -375,6 +375,10 @@ public partial class App :
 
                         serviceProvider
                             .GetRequiredService<
+                                IVietQrRecipientMetadataStore>(),
+
+                        serviceProvider
+                            .GetRequiredService<
                                 ILogger<
                                     VietQrPaymentDialogService>>()));
 

@@ -25,6 +25,116 @@ public sealed class VietQrPaymentDialogServiceTests
 {
     [Fact]
     public void
+        Presentation_preserves_four_parameter_constructor()
+    {
+        var qrBytes =
+            CreateMinimalPngSignature();
+
+        var presentation =
+            new VietQrPaymentPresentation(
+                Amount:
+                    125_000,
+
+                PaymentReference:
+                    "QR-PRESENTATION-001",
+
+                TransferContent:
+                    "POS QR PRESENTATION 001",
+
+                QrPngBytes:
+                    qrBytes);
+
+        Assert.Equal(
+            125_000,
+            presentation.Amount);
+
+        Assert.Equal(
+            "QR-PRESENTATION-001",
+            presentation.PaymentReference);
+
+        Assert.Equal(
+            "POS QR PRESENTATION 001",
+            presentation.TransferContent);
+
+        Assert.Same(
+            qrBytes,
+            presentation.QrPngBytes);
+
+        Assert.Null(
+            presentation.BankName);
+
+        Assert.Null(
+            presentation.AccountName);
+
+        Assert.Equal(
+            "Thông tin người nhận chưa khả dụng.",
+            presentation
+                .RecipientInformationMessage);
+    }
+
+    [Fact]
+    public void
+        Presentation_accepts_recipient_metadata()
+    {
+        var qrBytes =
+            CreateMinimalPngSignature();
+
+        var presentation =
+            new VietQrPaymentPresentation(
+                Amount:
+                    250_000,
+
+                PaymentReference:
+                    "QR-PRESENTATION-002",
+
+                TransferContent:
+                    "POS QR PRESENTATION 002",
+
+                QrPngBytes:
+                    qrBytes)
+            {
+                BankName =
+                    "Ngân hàng TMCP Quân đội",
+
+                AccountName =
+                    "NGUYEN VAN A",
+
+                RecipientInformationMessage =
+                    string.Empty
+            };
+
+        Assert.Equal(
+            250_000,
+            presentation.Amount);
+
+        Assert.Equal(
+            "QR-PRESENTATION-002",
+            presentation.PaymentReference);
+
+        Assert.Equal(
+            "POS QR PRESENTATION 002",
+            presentation.TransferContent);
+
+        Assert.Same(
+            qrBytes,
+            presentation.QrPngBytes);
+
+        Assert.Equal(
+            "Ngân hàng TMCP Quân đội",
+            presentation.BankName);
+
+        Assert.Equal(
+            "NGUYEN VAN A",
+            presentation.AccountName);
+
+        Assert.Equal(
+            string.Empty,
+            presentation
+                .RecipientInformationMessage);
+    }
+
+    [Fact]
+    public void
         Dialog_request_must_trim_reference_and_transfer_content()
     {
         var request =
