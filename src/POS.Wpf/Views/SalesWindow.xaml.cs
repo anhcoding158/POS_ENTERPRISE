@@ -84,6 +84,18 @@ public partial class SalesWindow :
 
         Closed +=
             OnWindowClosed;
+
+        _viewModel.ScanFocusRequested +=
+            OnScanFocusRequested;
+    }
+
+    private void OnScanFocusRequested(
+        object? sender,
+        EventArgs e)
+    {
+        _ = Dispatcher.InvokeAsync(
+            () => FocusAndSelectAll(ProductScanBox),
+            global::System.Windows.Threading.DispatcherPriority.Input);
     }
 
     private async void OnWindowLoaded(
@@ -907,6 +919,9 @@ public partial class SalesWindow :
 
         Closed -=
             OnWindowClosed;
+
+        _viewModel.ScanFocusRequested -=
+            OnScanFocusRequested;
 
         global::System.Windows.DataObject
             .RemovePastingHandler(

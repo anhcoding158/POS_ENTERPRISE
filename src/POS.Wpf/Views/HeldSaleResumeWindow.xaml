@@ -1,0 +1,50 @@
+<Window x:Class="POS.Wpf.Views.HeldSaleResumeWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Mở lại đơn giữ" Width="1040" Height="640"
+        MinWidth="820" MinHeight="520" MaxWidth="1280" MaxHeight="730"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource AppBackgroundBrush}">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <StackPanel>
+            <TextBlock Text="KIỂM TRA ĐƠN GIỮ" Style="{StaticResource PageTitleTextStyle}"/>
+            <TextBlock Margin="0,5,0,0" Text="{Binding Header, Mode=OneWay}"/>
+        </StackPanel>
+        <TextBlock Grid.Row="1" Margin="0,12,0,8" TextWrapping="Wrap"
+                   Foreground="{StaticResource TextSecondaryBrush}"
+                   Text="Giá và tồn kho bên dưới là dữ liệu hiện tại. Giá cũ chỉ dùng để đối chiếu."/>
+        <DataGrid Grid.Row="2" ItemsSource="{Binding Lines, Mode=OneWay}"
+                  AutoGenerateColumns="False" CanUserAddRows="False"
+                  HorizontalScrollBarVisibility="Disabled">
+            <DataGrid.Columns>
+                <DataGridCheckBoxColumn Header="Dùng" Binding="{Binding Include, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                <DataGridTextColumn Header="Mã" Binding="{Binding ProductCode, Mode=OneWay}" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Sản phẩm" Binding="{Binding ProductName, Mode=OneWay}" Width="*" IsReadOnly="True"/>
+                <DataGridTextColumn Header="SL giữ" Binding="{Binding HeldQuantity, Mode=OneWay}" IsReadOnly="True"/>
+                <DataGridTextColumn Header="SL dùng" Binding="{Binding Quantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                <DataGridTextColumn Header="Giá giữ" Binding="{Binding SnapshotPriceText, Mode=OneWay}" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Giá hiện tại" Binding="{Binding CurrentPriceText, Mode=OneWay}" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Tồn" Binding="{Binding CurrentStockText, Mode=OneWay}" IsReadOnly="True"/>
+                <DataGridCheckBoxColumn Header="Dùng giá hiện tại"
+                                        Binding="{Binding CurrentPriceAccepted, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                <DataGridTextColumn Header="Cảnh báo" Binding="{Binding Warning, Mode=OneWay}" Width="1.3*" IsReadOnly="True"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <TextBlock Grid.Row="3" Margin="0,12,0,0" TextWrapping="Wrap"
+                   Foreground="{StaticResource TextSecondaryBrush}"
+                   Text="{Binding ValidationMessage, Mode=OneWay}"/>
+        <StackPanel Grid.Row="4" Margin="0,16,0,0" Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+            <Button Width="90" Margin="0,0,10,0" Content="Hủy" IsCancel="True"/>
+            <Button Width="130" Content="Đưa vào giỏ" IsDefault="True"
+                    IsEnabled="{Binding CanSubmit, Mode=OneWay}" Click="OnSubmit"/>
+        </StackPanel>
+    </Grid>
+</Window>

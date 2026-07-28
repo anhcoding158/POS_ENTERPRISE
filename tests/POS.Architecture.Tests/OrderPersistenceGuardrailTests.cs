@@ -457,6 +457,8 @@ public sealed class
             {
                 typeof(Category),
                 typeof(CheckoutRequestJournal),
+                typeof(HeldSale),
+                typeof(HeldSaleLine),
                 typeof(InventoryMovement),
                 typeof(Order),
                 typeof(OrderItem),

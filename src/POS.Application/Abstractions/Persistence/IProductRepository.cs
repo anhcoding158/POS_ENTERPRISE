@@ -15,6 +15,11 @@ public interface IProductRepository
         int productId,
         CancellationToken cancellationToken = default);
 
+    Task<Product?> GetByIdReadOnlyAsync(
+        int productId,
+        CancellationToken cancellationToken = default) =>
+        GetByIdAsync(productId, cancellationToken);
+
     Task ReloadTrackedAsync(
         Product product,
         CancellationToken cancellationToken = default) =>

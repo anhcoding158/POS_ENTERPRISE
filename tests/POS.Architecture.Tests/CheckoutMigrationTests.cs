@@ -15,7 +15,7 @@ public sealed class CheckoutMigrationTests
         new(2026, 7, 27, 10, 0, 0, TimeSpan.Zero);
 
     [Fact]
-    public async Task Existing_sales_receipts_and_returns_survive_checkout_journal_migration()
+    public async Task Existing_sales_receipts_returns_and_checkout_journals_survive_held_sales_migration()
     {
         await using var connection = new SqliteConnection(
             "Data Source=:memory:;Foreign Keys=True");
@@ -31,8 +31,14 @@ public sealed class CheckoutMigrationTests
         await using (var oldSchema = new PosDbContext(options))
         {
             var migrations = oldSchema.Database.GetMigrations().ToArray();
-            Assert.EndsWith("AddCheckoutIdempotencyJournal", migrations[^1], StringComparison.Ordinal);
-            await oldSchema.GetService<IMigrator>().MigrateAsync(migrations[^2]);
+            var heldSaleMigrationIndex = Array.FindIndex(
+                migrations,
+                migration => migration.EndsWith(
+                    "AddHeldSales",
+                    StringComparison.Ordinal));
+            Assert.True(heldSaleMigrationIndex > 0);
+            await oldSchema.GetService<IMigrator>().MigrateAsync(
+                migrations[heldSaleMigrationIndex - 1]);
 
             var category = new Category("Migration preservation", 1, Now);
             var user = new User($"migration.{Guid.NewGuid():N}", "hash", "Thu ngân", Role.Cashier, Now);
@@ -67,6 +73,16 @@ public sealed class CheckoutMigrationTests
             var balance = new OrderReturnBalance(item.Id);
             balance.Register(1, item.NetAmount, item.Quantity, item.NetAmount);
             oldSchema.OrderReturnBalances.Add(balance);
+            var preparedJournal = new CheckoutRequestJournal(
+                Guid.NewGuid(), new string('A', 64), "{\"version\":1}",
+                new string('B', 64), "{\"total\":30000,\"lines\":[],\"paymentMethod\":1}",
+                user.Id, Now.AddMinutes(2));
+            var completedJournal = new CheckoutRequestJournal(
+                Guid.NewGuid(), new string('C', 64), "{\"version\":1}",
+                new string('D', 64), "{\"total\":30000,\"lines\":[],\"paymentMethod\":1}",
+                user.Id, Now.AddMinutes(3));
+            completedJournal.Complete(order.Id, Now.AddMinutes(4));
+            oldSchema.CheckoutRequestJournals.AddRange(preparedJournal, completedJournal);
             await oldSchema.SaveChangesAsync();
             productId = product.Id;
             orderId = order.Id;
@@ -77,7 +93,9 @@ public sealed class CheckoutMigrationTests
         {
             await latest.Database.MigrateAsync();
             Assert.Equal(before, await SnapshotAsync(latest, productId, orderId));
-            Assert.Empty(await latest.CheckoutRequestJournals.ToArrayAsync());
+            Assert.Equal(2, await latest.CheckoutRequestJournals.CountAsync());
+            Assert.Empty(await latest.HeldSales.ToArrayAsync());
+            Assert.Empty(await latest.HeldSaleLines.ToArrayAsync());
             await using var command = connection.CreateCommand();
             command.CommandText = "PRAGMA integrity_check;";
             Assert.Equal("ok", (string?)await command.ExecuteScalarAsync());
@@ -86,11 +104,18 @@ public sealed class CheckoutMigrationTests
         await using (var down = new PosDbContext(options))
         {
             var migrations = down.Database.GetMigrations().ToArray();
-            await down.GetService<IMigrator>().MigrateAsync(migrations[^2]);
+            var heldSaleMigrationIndex = Array.FindIndex(
+                migrations,
+                migration => migration.EndsWith(
+                    "AddHeldSales",
+                    StringComparison.Ordinal));
+            await down.GetService<IMigrator>().MigrateAsync(
+                migrations[heldSaleMigrationIndex - 1]);
             Assert.Equal(before, await SnapshotAsync(down, productId, orderId));
+            Assert.Equal(2, await down.CheckoutRequestJournals.CountAsync());
             await using var command = connection.CreateCommand();
             command.CommandText =
-                "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='CheckoutRequestJournals';";
+                "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='HeldSales';";
             Assert.Equal(0L, (long)(await command.ExecuteScalarAsync())!);
         }
     }
@@ -116,6 +141,21 @@ public sealed class CheckoutMigrationTests
             .Where(x => x.OrderId == orderId)
             .Select(x => x.PayloadJson)
             .SingleAsync();
+        var journals = await context.CheckoutRequestJournals.AsNoTracking()
+            .OrderBy(x => x.Status)
+            .Select(x => new
+            {
+                x.ClientRequestId,
+                x.RequestFingerprint,
+                x.CanonicalRequestJson,
+                x.PreparedQuoteFingerprint,
+                x.PreparedQuoteJson,
+                x.Status,
+                x.PreparedByUserId,
+                x.OrderId,
+                x.CompletedAtUtc
+            })
+            .ToArrayAsync();
         return System.Text.Json.JsonSerializer.Serialize(new
         {
             product,
@@ -125,7 +165,8 @@ public sealed class CheckoutMigrationTests
             movements = await context.InventoryMovements.CountAsync(),
             returns = await context.OrderReturns.CountAsync(),
             returnItems = await context.OrderReturnItems.CountAsync(),
-            balances = await context.OrderReturnBalances.CountAsync()
+            balances = await context.OrderReturnBalances.CountAsync(),
+            journals
         });
     }
 }

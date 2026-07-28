@@ -6,6 +6,7 @@ using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.Services;
 using POS.Application.Common;
 using POS.Application.DTOs.Checkout;
+using POS.Application.DTOs.HeldSales;
 using POS.Application.DTOs.Printing;
 using POS.Application.DTOs.Products;
 using POS.Domain.Constants;
@@ -109,6 +110,11 @@ public sealed class SalesViewModel :
     private CancellationTokenSource? _recoveryLoadSource;
     private readonly SemaphoreSlim _scanGate = new(1, 1);
     private SalesCartLineViewModel? _selectedCartLine;
+    private readonly IHeldSaleDialogService _heldSaleDialogs;
+    private Guid? _holdClientRequestId;
+    private int? _activeHeldSaleId;
+    private int _activeHeldSaleCount;
+    private bool _isHeldSaleBusy;
 
     /*
      * Bốn mệnh giá gợi ý được tính lại theo:
@@ -130,7 +136,8 @@ public sealed class SalesViewModel :
         IReceiptPreviewService receiptPreviewService,
         ISalesPaymentFlowService paymentFlowService,
         ILogger<SalesViewModel> logger,
-        ICheckoutRecoveryConfirmationService recoveryConfirmation)
+        ICheckoutRecoveryConfirmationService recoveryConfirmation,
+        IHeldSaleDialogService? heldSaleDialogs = null)
     {
         _scopeFactory =
             scopeFactory ??
@@ -162,6 +169,8 @@ public sealed class SalesViewModel :
             throw new ArgumentNullException(
                 nameof(logger));
 
+        _heldSaleDialogs = heldSaleDialogs ?? new NullHeldSaleDialogService();
+
         if (!_currentUserService
             .IsAuthenticated)
         {
@@ -186,6 +195,16 @@ public sealed class SalesViewModel :
                 ClearCartAsync,
                 CanClearCart,
                 HandleCommandException);
+
+        HoldSaleCommand = new AsyncRelayCommand(
+            HoldSaleAsync,
+            CanHoldSale,
+            HandleCommandException);
+
+        OpenHeldSalesCommand = new AsyncRelayCommand(
+            OpenHeldSalesAsync,
+            () => !IsBusy && !_isHeldSaleBusy,
+            HandleCommandException);
 
         ExactCashCommand =
             new AsyncRelayCommand(
@@ -342,6 +361,10 @@ public sealed class SalesViewModel :
     public AsyncRelayCommand RefreshCommand { get; }
 
     public AsyncRelayCommand ClearCartCommand { get; }
+
+    public AsyncRelayCommand HoldSaleCommand { get; }
+
+    public AsyncRelayCommand OpenHeldSalesCommand { get; }
 
     public AsyncRelayCommand ExactCashCommand { get; }
 
@@ -743,6 +766,30 @@ public sealed class SalesViewModel :
     public bool HasCartItems =>
         CartLines.Count > 0;
 
+    public int? ActiveHeldSaleId
+    {
+        get => _activeHeldSaleId;
+        private set
+        {
+            if (SetProperty(ref _activeHeldSaleId, value))
+                NotifyCommandStates();
+        }
+    }
+
+    public int ActiveHeldSaleCount
+    {
+        get => _activeHeldSaleCount;
+        private set
+        {
+            if (SetProperty(ref _activeHeldSaleCount, value))
+                OnPropertyChanged(nameof(ActiveHeldSaleCountText));
+        }
+    }
+
+    public string ActiveHeldSaleCountText => ActiveHeldSaleCount.ToString("N0");
+
+    public event EventHandler? ScanFocusRequested;
+
     public bool HasLastOrder =>
         !string.IsNullOrWhiteSpace(
             LastOrderCode);
@@ -903,6 +950,7 @@ public sealed class SalesViewModel :
             cancellationToken: default);
 
         await LoadCheckoutRecoveryAsync();
+        await RefreshHeldSaleCountAsync();
     }
 
     private async Task LoadCheckoutRecoveryAsync()
@@ -1393,6 +1441,191 @@ public sealed class SalesViewModel :
             $"Đã xóa '{line.ProductName}' khỏi đơn.");
     }
 
+    private async Task HoldSaleAsync()
+    {
+        if (!CanHoldSale())
+            return;
+
+        _holdClientRequestId ??= Guid.NewGuid();
+        var dialog = _heldSaleDialogs.ShowHold(
+            CartLineCount,
+            CartItemCount,
+            checked((long)EstimatedTotal),
+            _holdClientRequestId.Value);
+        if (dialog is null)
+            return;
+
+        _isHeldSaleBusy = true;
+        NotifyCommandStates();
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var service = scope.ServiceProvider.GetRequiredService<IHeldSaleService>();
+            var request = new CreateHeldSaleRequest(
+                dialog.ClientRequestId,
+                dialog.Label,
+                dialog.Notes,
+                CartLines.Select(line =>
+                    new CreateHeldSaleLineRequest(line.ProductId, line.Quantity)).ToArray());
+            var result = await service.CreateHeldSaleAsync(request);
+            if (result.IsFailure)
+            {
+                ShowError(result.Error.Message);
+                return;
+            }
+
+            CartLines.Clear();
+            SelectedCartLine = null;
+            CashReceivedText = string.Empty;
+            OrderNotes = string.Empty;
+            ActiveHeldSaleId = null;
+            _checkoutClientRequestId = null;
+            _holdClientRequestId = null;
+            _orderSessionVersion++;
+            ResetPaymentState(resetSelectedMethod: true);
+            NotifyCartPresentation();
+            await RefreshHeldSaleCountAsync();
+            ShowSuccess($"Đã giữ đơn {result.Value.DisplayCode}.");
+            ScanFocusRequested?.Invoke(this, EventArgs.Empty);
+        }
+        finally
+        {
+            _isHeldSaleBusy = false;
+            NotifyCommandStates();
+        }
+    }
+
+    private async Task OpenHeldSalesAsync()
+    {
+        if (_isHeldSaleBusy || IsBusy)
+            return;
+        _isHeldSaleBusy = true;
+        NotifyCommandStates();
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var service = scope.ServiceProvider.GetRequiredService<IHeldSaleService>();
+            var list = await service.GetActiveHeldSalesAsync();
+            if (list.IsFailure)
+            {
+                ShowError(list.Error.Message);
+                return;
+            }
+            ActiveHeldSaleCount = list.Value.Count;
+            OnPropertyChanged(nameof(ActiveHeldSaleCountText));
+            var action = _heldSaleDialogs.ShowActiveList(list.Value);
+            if (action is null)
+                return;
+            if (action.Action == HeldSaleListAction.Cancel)
+            {
+                if (!_heldSaleDialogs.ConfirmCancel())
+                    return;
+                var cancelled = await service.CancelHeldSaleAsync(action.HeldSaleId);
+                if (cancelled.IsFailure)
+                {
+                    ShowError(cancelled.Error.Message);
+                    return;
+                }
+                await RefreshHeldSaleCountAsync();
+                ShowSuccess("Đã hủy đơn giữ.");
+                return;
+            }
+
+            if (HasCartItems)
+            {
+                ShowError("Đơn hiện tại đang có sản phẩm. Hãy giữ hoặc làm trống đơn hiện tại trước khi mở đơn khác.");
+                return;
+            }
+
+            var resume = await service.GetHeldSaleForResumeAsync(action.HeldSaleId);
+            if (resume.IsFailure)
+            {
+                ShowError(resume.Error.Message);
+                return;
+            }
+            var selection = _heldSaleDialogs.ShowResumeReview(resume.Value);
+            if (selection is null)
+                return;
+            ApplyResumedSale(resume.Value, selection);
+        }
+        finally
+        {
+            _isHeldSaleBusy = false;
+            NotifyCommandStates();
+        }
+    }
+
+    private void ApplyResumedSale(
+        HeldSaleResumeDto heldSale,
+        HeldSaleResumeDialogResult selection)
+    {
+        var selected = selection.Lines.Where(value => value.Include).ToDictionary(value => value.ProductId);
+        foreach (var live in heldSale.Lines.Where(value => selected.ContainsKey(value.ProductId)))
+        {
+            var choice = selected[live.ProductId];
+            if (live.CurrentUnitPrice is null ||
+                string.IsNullOrWhiteSpace(live.CurrentProductCode) ||
+                string.IsNullOrWhiteSpace(live.CurrentProductName) ||
+                string.IsNullOrWhiteSpace(live.CurrentUnitName) ||
+                choice.Quantity <= 0 ||
+                live.CurrentUnitPrice != live.UnitPriceSnapshot && !choice.CurrentPriceAccepted)
+                throw new InvalidOperationException("Kết quả review đơn giữ không hợp lệ.");
+
+            CartLines.Add(new SalesCartLineViewModel(
+                live.ProductId,
+                live.CurrentProductCode,
+                live.CurrentProductName,
+                live.CurrentUnitName,
+                live.CurrentUnitPrice.Value,
+                live.CurrentStock ?? 0,
+                live.TrackInventory,
+                live.AllowNegativeStock,
+                choice.Quantity,
+                OnCartLineChanged,
+                RemoveCartLine,
+                () => CanMutateCart(showStatus: false),
+                () => CanMutateCart(showStatus: true)));
+        }
+        if (CartLines.Count == 0)
+            return;
+        BeginNewOrderSession();
+        ActiveHeldSaleId = heldSale.Id;
+        OrderNotes = heldSale.Notes ?? string.Empty;
+        SelectedCartLine = CartLines[0];
+        NotifyCartPresentation();
+        ShowSuccess($"Đã mở lại {heldSale.DisplayCode} bằng giá và tồn kho hiện tại.");
+        ScanFocusRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private async Task RefreshHeldSaleCountAsync()
+    {
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var service = scope.ServiceProvider.GetRequiredService<IHeldSaleService>();
+            var result = await service.GetActiveHeldSalesAsync();
+            if (result.IsSuccess)
+            {
+                ActiveHeldSaleCount = result.Value.Count;
+                OnPropertyChanged(nameof(ActiveHeldSaleCountText));
+            }
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(exception, "Không thể cập nhật số đơn đang giữ.");
+        }
+    }
+
+    private bool CanHoldSale() =>
+        !_isHeldSaleBusy &&
+        !IsBusy &&
+        HasCartItems &&
+        ActiveHeldSaleId is null &&
+        !HasCheckoutRecovery &&
+        !IsRecoveryBusy &&
+        !HasPendingVietQrAuthorization &&
+        _checkoutClientRequestId is null;
+
     private Task ClearCartAsync()
     {
         if (!CanMutateCart(showStatus: true))
@@ -1413,6 +1646,9 @@ public sealed class SalesViewModel :
         ClearLastOrderPresentation();
 
         CartLines.Clear();
+        SelectedCartLine = null;
+        ActiveHeldSaleId = null;
+        _holdClientRequestId = null;
 
         CashReceivedText =
             string.Empty;
@@ -2131,7 +2367,10 @@ public sealed class SalesViewModel :
 
                     clientRequestId:
                         _checkoutClientRequestId ??=
-                            Guid.NewGuid());
+                            Guid.NewGuid(),
+
+                    heldSaleId:
+                        ActiveHeldSaleId);
 
             ShowNeutral(
                 authorization.IsVietQr
@@ -2211,6 +2450,8 @@ public sealed class SalesViewModel :
                     true);
 
             CartLines.Clear();
+            SelectedCartLine = null;
+            ActiveHeldSaleId = null;
 
             CashReceivedText =
                 string.Empty;
@@ -2249,6 +2490,8 @@ public sealed class SalesViewModel :
 
             _checkoutClientRequestId =
                 null;
+
+            await RefreshHeldSaleCountAsync();
         }
         catch (OperationCanceledException)
         {
@@ -3233,6 +3476,9 @@ public sealed class SalesViewModel :
 
         ClearCartCommand
             .NotifyCanExecuteChanged();
+
+        HoldSaleCommand.NotifyCanExecuteChanged();
+        OpenHeldSalesCommand.NotifyCanExecuteChanged();
 
         ExactCashCommand
             .NotifyCanExecuteChanged();

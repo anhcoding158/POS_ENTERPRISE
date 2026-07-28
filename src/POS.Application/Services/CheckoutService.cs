@@ -94,6 +94,9 @@ public sealed class CheckoutService :
     private readonly ICheckoutRequestCanonicalizer
         _canonicalizer;
 
+    private readonly IHeldSaleRepository?
+        _heldSales;
+
     public CheckoutService(
         IProductRepository productRepository,
         IOrderRepository orderRepository,
@@ -112,7 +115,9 @@ public sealed class CheckoutService :
         ICheckoutRequestJournalRepository?
             checkoutJournals = null,
         ICheckoutRequestCanonicalizer?
-            canonicalizer = null)
+            canonicalizer = null,
+        IHeldSaleRepository?
+            heldSales = null)
     {
         _productRepository =
             productRepository ??
@@ -166,6 +171,7 @@ public sealed class CheckoutService :
 
         _checkoutJournals = checkoutJournals;
         _canonicalizer = canonicalizer ?? new CheckoutRequestCanonicalizer();
+        _heldSales = heldSales;
 
         /*
          * Nullable tạm thời để các unit test cũ đang tự tạo
@@ -225,6 +231,16 @@ public sealed class CheckoutService :
                 validation.Error);
         }
 
+        if (request.HeldSaleId.HasValue &&
+            (request.HeldSaleId.Value <= 0 ||
+             request.ClientRequestId == Guid.Empty ||
+             _heldSales is null))
+        {
+            return Failure(
+                "CHECKOUT.HELD_SALE_INVALID",
+                "Checkout đơn giữ yêu cầu HeldSaleId và durable ClientRequestId hợp lệ.");
+        }
+
         var cashierUserId =
             _currentUserService.UserId;
 
@@ -280,6 +296,7 @@ public sealed class CheckoutService :
 
         try
         {
+            HeldSale? heldSale = null;
             if (checkoutJournal is not null)
             {
                 await _checkoutJournals!.ReloadTrackedAsync(
@@ -301,6 +318,34 @@ public sealed class CheckoutService :
                     transactionCanonical.Fingerprint,
                     StringComparison.Ordinal))
                     return Failure("CHECKOUT.IDEMPOTENCY_CONFLICT", "ClientRequestId đã được dùng cho payload khác.");
+            }
+
+            if (request.HeldSaleId is int heldSaleId)
+            {
+                heldSale = await _heldSales!.GetByIdAsync(
+                    heldSaleId,
+                    tracked: true,
+                    cancellationToken);
+
+                if (heldSale is null ||
+                    heldSale.CreatedByUserId != cashierUserId.Value)
+                {
+                    return Failure(
+                        "CHECKOUT.HELD_SALE_NOT_FOUND",
+                        "Không tìm thấy đơn đang giữ thuộc phiên người dùng hiện tại.");
+                }
+
+                await _heldSales.ReloadTrackedAsync(
+                    heldSale,
+                    cancellationToken);
+
+                if (heldSale.Status != HeldSaleStatus.Active ||
+                    heldSale.CompletedOrderId.HasValue)
+                {
+                    return Failure(
+                        "CHECKOUT.HELD_SALE_NOT_ACTIVE",
+                        "Đơn giữ đã được hoàn tất hoặc hủy bởi phiên khác.");
+                }
             }
 
             /*
@@ -659,6 +704,10 @@ public sealed class CheckoutService :
                     cancellationToken);
 
             checkoutJournal?.Complete(
+                order.Id,
+                utcNow);
+
+            heldSale?.Complete(
                 order.Id,
                 utcNow);
 

@@ -27,7 +27,7 @@ public sealed class CheckoutRequestCanonicalizer : ICheckoutRequestCanonicalizer
     {
         var document = JsonSerializer.Deserialize<CanonicalDocument>(canonicalJson, Options) ??
             throw new InvalidOperationException("Canonical checkout request không hợp lệ.");
-        if (document.Version != 1)
+        if (document.Version is not (1 or 2))
             throw new InvalidOperationException("Canonical checkout request version không được hỗ trợ.");
         return new CheckoutRequest(
             document.Lines.Select(line => new CheckoutLineRequest(
@@ -36,22 +36,15 @@ public sealed class CheckoutRequestCanonicalizer : ICheckoutRequestCanonicalizer
                 line.LineDiscountAmount, line.Notes)),
             document.PaymentMethod, document.CashReceived, document.CustomerId,
             document.RestaurantTableId, document.DiscountCode, document.Notes,
-            document.ConfirmedPaymentAmount, clientRequestId);
+            document.ConfirmedPaymentAmount, clientRequestId, document.HeldSaleId);
     }
 
     public static string Hash(string value) =>
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
 
-    private static CanonicalDocument ToDocument(CheckoutRequest request) => new(
-        1,
-        request.PaymentMethod,
-        request.CashReceived,
-        request.ConfirmedPaymentAmount,
-        request.CustomerId,
-        request.RestaurantTableId,
-        NormalizeCode(request.DiscountCode),
-        NormalizeText(request.Notes),
-        request.Lines
+    private static object ToDocument(CheckoutRequest request)
+    {
+        var lines = request.Lines
             .Select(line => new CanonicalLine(
                 line.ProductId,
                 line.Quantity,
@@ -67,7 +60,34 @@ public sealed class CheckoutRequestCanonicalizer : ICheckoutRequestCanonicalizer
             .ThenBy(line => line.LineDiscountAmount)
             .ThenBy(line => line.Notes, StringComparer.Ordinal)
             .ThenBy(line => JsonSerializer.Serialize(line.Modifiers, Options), StringComparer.Ordinal)
-            .ToArray());
+            .ToArray();
+
+        if (request.HeldSaleId is null)
+        {
+            return new LegacyCanonicalDocument(
+                1,
+                request.PaymentMethod,
+                request.CashReceived,
+                request.ConfirmedPaymentAmount,
+                request.CustomerId,
+                request.RestaurantTableId,
+                NormalizeCode(request.DiscountCode),
+                NormalizeText(request.Notes),
+                lines);
+        }
+
+        return new CanonicalDocument(
+            2,
+            request.PaymentMethod,
+            request.CashReceived,
+            request.ConfirmedPaymentAmount,
+            request.CustomerId,
+            request.RestaurantTableId,
+            NormalizeCode(request.DiscountCode),
+            NormalizeText(request.Notes),
+            request.HeldSaleId,
+            lines);
+    }
 
     private static string? NormalizeText(string? value) =>
         string.IsNullOrWhiteSpace(value)
@@ -78,6 +98,18 @@ public sealed class CheckoutRequestCanonicalizer : ICheckoutRequestCanonicalizer
         NormalizeText(value)?.ToUpperInvariant();
 
     private sealed record CanonicalDocument(
+        int Version,
+        PaymentMethod PaymentMethod,
+        long CashReceived,
+        long ConfirmedPaymentAmount,
+        int? CustomerId,
+        int? RestaurantTableId,
+        string? DiscountCode,
+        string? Notes,
+        int? HeldSaleId,
+        IReadOnlyList<CanonicalLine> Lines);
+
+    private sealed record LegacyCanonicalDocument(
         int Version,
         PaymentMethod PaymentMethod,
         long CashReceived,

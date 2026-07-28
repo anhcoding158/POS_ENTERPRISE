@@ -312,6 +312,14 @@ public partial class App :
                         serviceProvider
                             .GetRequiredService<
                                 IPermissionService>()));
+
+        services.AddScoped<HeldSaleService>();
+
+        services.AddScoped<IHeldSaleService>(
+            serviceProvider =>
+                new AuthorizedHeldSaleService(
+                    serviceProvider.GetRequiredService<HeldSaleService>(),
+                    serviceProvider.GetRequiredService<IPermissionService>()));
     }
 
     private static void ConfigureDialogServices(
@@ -341,6 +349,10 @@ public partial class App :
         services.AddSingleton<
             IInventoryDialogService,
             InventoryDialogService>();
+
+        services.AddSingleton<
+            IHeldSaleDialogService,
+            HeldSaleDialogService>();
 
         /*
          * ReceiptPreviewService chỉ thuộc Presentation:

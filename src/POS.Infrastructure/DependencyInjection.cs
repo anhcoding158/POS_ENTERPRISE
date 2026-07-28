@@ -298,9 +298,17 @@ public static class DependencyInjection
             ICheckoutRequestJournalRepository,
             CheckoutRequestJournalRepository>();
 
+        services.AddScoped<
+            IHeldSaleRepository,
+            HeldSaleRepository>();
+
         services.AddSingleton<
             ICheckoutRequestCanonicalizer,
             CheckoutRequestCanonicalizer>();
+
+        services.AddSingleton<
+            IHeldSaleRequestCanonicalizer,
+            HeldSaleRequestCanonicalizer>();
 
         services.AddScoped<OrderHistoryService>();
 

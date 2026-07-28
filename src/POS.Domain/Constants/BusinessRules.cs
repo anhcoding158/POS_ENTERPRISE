@@ -124,6 +124,15 @@ public static class BusinessRules
         public const long MaximumOrderAmount = 999_999_999_999;
     }
 
+    public static class HeldSales
+    {
+        public const int DisplayCodeMaxLength = 50;
+        public const int LabelMaxLength = 150;
+        public const int NotesMaxLength = 2_000;
+        public const int FingerprintLength = 64;
+        public const int MaximumLines = Orders.MaximumLinesPerOrder;
+    }
+
     public static class Outbox
     {
         public const int AggregateTypeMaxLength = 200;

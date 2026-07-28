@@ -46,6 +46,23 @@ public sealed class ProductRepository :
                 cancellationToken);
     }
 
+    public Task<Product?> GetByIdReadOnlyAsync(
+        int productId,
+        CancellationToken cancellationToken = default)
+    {
+        if (productId <= 0)
+        {
+            return Task.FromResult<Product?>(null);
+        }
+
+        return _dbContext.Products
+            .AsNoTracking()
+            .Include(product => product.Category)
+            .SingleOrDefaultAsync(
+                product => product.Id == productId,
+                cancellationToken);
+    }
+
     public Task ReloadTrackedAsync(
         Product product,
         CancellationToken cancellationToken = default)

@@ -59,6 +59,9 @@ public sealed class PosDbContext :
     public DbSet<CheckoutRequestJournal> CheckoutRequestJournals =>
         Set<CheckoutRequestJournal>();
 
+    public DbSet<HeldSale> HeldSales => Set<HeldSale>();
+    public DbSet<HeldSaleLine> HeldSaleLines => Set<HeldSaleLine>();
+
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {

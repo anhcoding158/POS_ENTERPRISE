@@ -91,6 +91,42 @@ public sealed class SalesCartLineViewModel :
                 _canMutate);
     }
 
+    public SalesCartLineViewModel(
+        int productId,
+        string productCode,
+        string productName,
+        string unitName,
+        long unitSalePrice,
+        int stockQuantity,
+        bool trackInventory,
+        bool allowNegativeStock,
+        int quantity,
+        Action<SalesCartLineViewModel> changed,
+        Action<SalesCartLineViewModel> remove,
+        Func<bool> canMutate,
+        Action mutationBlocked)
+    {
+        if (productId <= 0) throw new ArgumentOutOfRangeException(nameof(productId));
+        ProductId = productId;
+        ProductCode = productCode ?? throw new ArgumentNullException(nameof(productCode));
+        ProductName = productName ?? throw new ArgumentNullException(nameof(productName));
+        UnitName = unitName ?? throw new ArgumentNullException(nameof(unitName));
+        UnitSalePrice = unitSalePrice;
+        StockQuantity = stockQuantity;
+        TrackInventory = trackInventory;
+        AllowNegativeStock = allowNegativeStock;
+        _changed = changed ?? throw new ArgumentNullException(nameof(changed));
+        _remove = remove ?? throw new ArgumentNullException(nameof(remove));
+        _canMutate = canMutate ?? throw new ArgumentNullException(nameof(canMutate));
+        _mutationBlocked = mutationBlocked ?? throw new ArgumentNullException(nameof(mutationBlocked));
+        if (quantity <= 0 || quantity > MaximumQuantity)
+            throw new ArgumentOutOfRangeException(nameof(quantity));
+        _quantity = quantity;
+        IncreaseCommand = new AsyncRelayCommand(IncreaseAsync, () => CanIncrease && _canMutate());
+        DecreaseCommand = new AsyncRelayCommand(DecreaseAsync, () => CanDecrease && _canMutate());
+        RemoveCommand = new AsyncRelayCommand(RemoveAsync, _canMutate);
+    }
+
     public int ProductId { get; }
 
     public string ProductCode { get; }

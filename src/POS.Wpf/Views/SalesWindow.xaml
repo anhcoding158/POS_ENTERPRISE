@@ -1456,14 +1456,21 @@
                                 </StackPanel>
                             </StackPanel>
 
-                            <Button
-                                Grid.Column="1"
-                                Command="{Binding ClearCartCommand}"
-                                Content="Làm trống"
-                                Style="{StaticResource SecondaryButtonStyle}"
-                                Height="36"
-                                Padding="11,0"
-                                VerticalAlignment="Center" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Command="{Binding OpenHeldSalesCommand}"
+                                        Content="{Binding ActiveHeldSaleCountText, StringFormat=Đơn đang giữ ({0})}"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Height="36" Padding="10,0" Margin="0,0,6,0"/>
+                                <Button Command="{Binding HoldSaleCommand}"
+                                        Content="Giữ đơn"
+                                        ToolTip="Giữ giỏ hiện tại để phục vụ khách tiếp theo"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Height="36" Padding="10,0" Margin="0,0,6,0"/>
+                                <Button Command="{Binding ClearCartCommand}"
+                                        Content="Làm trống"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Height="36" Padding="10,0"/>
+                            </StackPanel>
                         </Grid>
                     </Border>
 
