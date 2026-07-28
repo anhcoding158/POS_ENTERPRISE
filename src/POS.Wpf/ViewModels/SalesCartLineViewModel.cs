@@ -26,12 +26,17 @@ public sealed class SalesCartLineViewModel :
         SalesCartLineViewModel>
         _remove;
 
+    private readonly Func<bool> _canMutate;
+    private readonly Action _mutationBlocked;
+
     private int _quantity = 1;
 
     public SalesCartLineViewModel(
         SalesProductCardViewModel product,
         Action<SalesCartLineViewModel> changed,
-        Action<SalesCartLineViewModel> remove)
+        Action<SalesCartLineViewModel> remove,
+        Func<bool> canMutate,
+        Action mutationBlocked)
     {
         ArgumentNullException.ThrowIfNull(
             product);
@@ -45,6 +50,11 @@ public sealed class SalesCartLineViewModel :
             remove ??
             throw new ArgumentNullException(
                 nameof(remove));
+
+        _canMutate = canMutate ??
+            throw new ArgumentNullException(nameof(canMutate));
+        _mutationBlocked = mutationBlocked ??
+            throw new ArgumentNullException(nameof(mutationBlocked));
 
         ProductId = product.ProductId;
         ProductCode = product.Code;
@@ -67,17 +77,18 @@ public sealed class SalesCartLineViewModel :
             new AsyncRelayCommand(
                 IncreaseAsync,
                 () =>
-                    CanIncrease);
+                    CanIncrease && _canMutate());
 
         DecreaseCommand =
             new AsyncRelayCommand(
                 DecreaseAsync,
                 () =>
-                    CanDecrease);
+                    CanDecrease && _canMutate());
 
         RemoveCommand =
             new AsyncRelayCommand(
-                RemoveAsync);
+                RemoveAsync,
+                _canMutate);
     }
 
     public int ProductId { get; }
@@ -207,6 +218,12 @@ public sealed class SalesCartLineViewModel :
 
     public bool TryIncrease()
     {
+        if (!_canMutate())
+        {
+            _mutationBlocked();
+            return false;
+        }
+
         if (!CanIncrease)
         {
             return false;
@@ -226,6 +243,12 @@ public sealed class SalesCartLineViewModel :
 
     private Task DecreaseAsync()
     {
+        if (!_canMutate())
+        {
+            _mutationBlocked();
+            return Task.CompletedTask;
+        }
+
         if (CanDecrease)
         {
             Quantity--;
@@ -236,6 +259,12 @@ public sealed class SalesCartLineViewModel :
 
     private Task RemoveAsync()
     {
+        if (!_canMutate())
+        {
+            _mutationBlocked();
+            return Task.CompletedTask;
+        }
+
         _remove(this);
 
         return Task.CompletedTask;

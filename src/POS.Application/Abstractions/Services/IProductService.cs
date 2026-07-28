@@ -11,6 +11,15 @@ namespace POS.Application.Abstractions.Services;
 /// </summary>
 public interface IProductService
 {
+    Task<Result<SalesCatalogProductDto>> FindSalesExactAsync(
+        string scanOrCode,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult(
+            Result.Failure<SalesCatalogProductDto>(
+                new Error(
+                    ErrorCodes.Products.NotFound,
+                    "Không tìm thấy sản phẩm.")));
+
     Task<Result<PagedResult<ProductListItemDto>>> SearchAsync(
         ProductSearchRequest request,
         CancellationToken cancellationToken = default);

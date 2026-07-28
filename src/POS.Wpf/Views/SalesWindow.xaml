@@ -626,12 +626,12 @@
                         <StackPanel>
 
                             <TextBlock
-                                Text="F2 Tìm kiếm  •  F4 Tiền đủ  •  F6 Nhập tiền  •  F8 Thanh toán"
+                                Text="F2 Quét/Tìm  •  F4 Tiền đủ  •  F6 Thanh toán  •  F8 Hoàn tất"
                                 Foreground="{StaticResource SidebarMutedBrush}"
                                 FontSize="10" />
 
                             <TextBlock
-                                Text="ESC đóng quầy"
+                                Text="ESC xóa ô quét/tìm  •  Delete xóa dòng"
                                 Foreground="#9F958B"
                                 FontSize="9.5"
                                 Margin="0,2,0,0"
@@ -730,7 +730,7 @@
                                         IsHitTestVisible="False" />
 
                                     <TextBlock
-                                        Text="Mã, tên hoặc quét barcode..."
+                                    Text="Quét mã hoặc nhập tên sản phẩm"
                                         Foreground="{StaticResource TextMutedBrush}"
                                         FontSize="10.5"
                                         Margin="42,0,0,0"
@@ -1385,11 +1385,24 @@
                             HorizontalScrollBarVisibility="Disabled"
                             Padding="12,10">
 
-                            <ItemsControl
+                            <ListBox
+                                x:Name="CartListBox"
                                 ItemsSource="{Binding CartLines}"
+                                SelectedItem="{Binding SelectedCartLine,
+                                    Mode=TwoWay}"
+                                Background="Transparent"
+                                BorderThickness="0"
                                 IsEnabled="{Binding CanEditOrder}">
 
-                                <ItemsControl.ItemTemplate>
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="{x:Type ListBoxItem}">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Setter Property="Padding" Value="0" />
+                                        <Setter Property="Margin" Value="0" />
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+
+                                <ListBox.ItemTemplate>
 
                                     <DataTemplate>
 
@@ -1527,8 +1540,8 @@
                                             </Grid>
                                         </Border>
                                     </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
                         </ScrollViewer>
 
                         <!-- Empty cart -->

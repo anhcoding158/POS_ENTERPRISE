@@ -88,6 +88,43 @@ public sealed class ProductService :
                 nameof(currentUserService));
     }
 
+    public async Task<Result<SalesCatalogProductDto>>
+        FindSalesExactAsync(
+            string scanOrCode,
+            CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(scanOrCode))
+        {
+            return ProductNotFound<SalesCatalogProductDto>();
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var normalized = scanOrCode.Trim();
+        var product =
+            await _productRepository.GetByBarcodeAsync(
+                normalized,
+                cancellationToken)
+            ?? await _productRepository.GetByCodeAsync(
+                normalized,
+                cancellationToken);
+
+        if (product is null)
+        {
+            return ProductNotFound<SalesCatalogProductDto>();
+        }
+
+        var categoryNames =
+            await ResolveCategoryNamesAsync(
+                [product],
+                cancellationToken);
+
+        return Result.Success(
+            MapToSalesCatalog(
+                product,
+                categoryNames[product.CategoryId]));
+    }
+
     public async Task<
         Result<PagedResult<ProductListItemDto>>>
         SearchAsync(
@@ -1018,6 +1055,33 @@ public sealed class ProductService :
         {
             ImagePath =
                 product.ImagePath
+        };
+    }
+
+    private static SalesCatalogProductDto
+        MapToSalesCatalog(
+            Product product,
+            string categoryName)
+    {
+        return new SalesCatalogProductDto(
+            product.Id,
+            product.CategoryId,
+            categoryName,
+            product.Code,
+            product.Barcode,
+            product.Name,
+            product.UnitName,
+            product.SalePrice,
+            product.StockQuantity,
+            product.MinimumStock,
+            product.TrackInventory,
+            product.AllowNegativeStock,
+            product.IsLowStock,
+            product.IsOutOfStock,
+            product.IsActive,
+            product.IsArchived)
+        {
+            ImagePath = product.ImagePath
         };
     }
 

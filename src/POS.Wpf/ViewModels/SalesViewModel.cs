@@ -106,6 +106,8 @@ public sealed class SalesViewModel :
     private bool _isLoadingRecovery;
     private bool _isProcessingRecovery;
     private CancellationTokenSource? _recoveryLoadSource;
+    private readonly SemaphoreSlim _scanGate = new(1, 1);
+    private SalesCartLineViewModel? _selectedCartLine;
 
     /*
      * Bốn mệnh giá gợi ý được tính lại theo:
@@ -275,6 +277,12 @@ public sealed class SalesViewModel :
     {
         get;
     } = [];
+
+    public SalesCartLineViewModel? SelectedCartLine
+    {
+        get => _selectedCartLine;
+        set => SetProperty(ref _selectedCartLine, value);
+    }
 
     public CheckoutRecoveryItemViewModel? SelectedRecovery
     {
@@ -1062,6 +1070,95 @@ public sealed class SalesViewModel :
                 true);
     }
 
+    public async Task<bool> ProcessScanOrSearchAsync(
+        string? input,
+        CancellationToken cancellationToken = default)
+    {
+        var normalized = input?.Trim();
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return false;
+        }
+
+        await _scanGate.WaitAsync(cancellationToken);
+        try
+        {
+            if (!CanMutateCart(showStatus: true))
+            {
+                return false;
+            }
+
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var productService =
+                scope.ServiceProvider.GetRequiredService<IProductService>();
+            var exact =
+                await productService.FindSalesExactAsync(
+                    normalized,
+                    cancellationToken);
+
+            if (exact.IsSuccess)
+            {
+                var product =
+                    new SalesProductCardViewModel(
+                        exact.Value,
+                        AddProductAsync);
+
+                if (product.IsArchived)
+                {
+                    ShowError("Sản phẩm đã ngừng bán.");
+                    return false;
+                }
+
+                if (!product.IsActive)
+                {
+                    ShowError("Sản phẩm đã ngừng bán.");
+                    return false;
+                }
+
+                var before = CartItemCount;
+                await AddProductAsync(product);
+                if (CartItemCount > before)
+                {
+                    SearchTerm = string.Empty;
+                    return true;
+                }
+
+                return false;
+            }
+
+            SearchTerm = normalized;
+            var loaded =
+                await LoadProductsAsync(
+                    autoAddExactMatch: false);
+
+            if (!loaded)
+            {
+                return false;
+            }
+
+            if (ProductCards.Count == 1)
+            {
+                var before = CartItemCount;
+                await AddProductAsync(ProductCards[0]);
+                if (CartItemCount > before)
+                {
+                    SearchTerm = string.Empty;
+                    return true;
+                }
+            }
+            else if (ProductCards.Count == 0)
+            {
+                ShowError($"Không tìm thấy mã sản phẩm “{normalized}”.");
+            }
+
+            return false;
+        }
+        finally
+        {
+            _scanGate.Release();
+        }
+    }
+
     private Task RefreshAsync()
     {
         return LoadProductsAsync(
@@ -1240,17 +1337,24 @@ public sealed class SalesViewModel :
         ArgumentNullException.ThrowIfNull(
             product);
 
-        if (HasPendingVietQrAuthorization)
+        if (!CanMutateCart(showStatus: true))
         {
-            ShowPendingVietQrLockError();
+            return Task.CompletedTask;
+        }
 
+        if (product.IsArchived || !product.IsActive)
+        {
+            ShowError("Sản phẩm đã ngừng bán.");
             return Task.CompletedTask;
         }
 
         if (!product.CanSell)
         {
             ShowError(
-                $"'{product.Name}' hiện không thể bán.");
+                product.TrackInventory &&
+                !product.AllowNegativeStock
+                    ? "Số lượng trong giỏ đã đạt tồn kho hiện có."
+                    : $"'{product.Name}' hiện không thể bán.");
 
             return Task.CompletedTask;
         }
@@ -1276,8 +1380,10 @@ public sealed class SalesViewModel :
             if (!existingLine.TryIncrease())
             {
                 ShowError(
-                    $"'{product.Name}' đã đạt số lượng " +
-                    "tối đa có thể bán.");
+                    existingLine.TrackInventory &&
+                    !existingLine.AllowNegativeStock
+                        ? "Số lượng trong giỏ đã đạt tồn kho hiện có."
+                        : $"'{product.Name}' đã đạt số lượng tối đa có thể bán.");
             }
             else
             {
@@ -1292,10 +1398,13 @@ public sealed class SalesViewModel :
             new SalesCartLineViewModel(
                 product,
                 OnCartLineChanged,
-                RemoveCartLine);
+                RemoveCartLine,
+                () => CanMutateCart(showStatus: false),
+                () => CanMutateCart(showStatus: true));
 
         CartLines.Add(
             line);
+        SelectedCartLine = line;
 
         NotifyCartPresentation();
 
@@ -1311,7 +1420,7 @@ public sealed class SalesViewModel :
         ArgumentNullException.ThrowIfNull(
             line);
 
-        if (HasPendingVietQrAuthorization)
+        if (!CanMutateCart(showStatus: true))
         {
             /*
              * XAML ở checkpoint kế tiếp sẽ phủ lớp khóa lên giỏ.
@@ -1337,18 +1446,23 @@ public sealed class SalesViewModel :
         ArgumentNullException.ThrowIfNull(
             line);
 
-        if (HasPendingVietQrAuthorization)
+        if (!CanMutateCart(showStatus: true))
         {
             ShowPendingVietQrLockError();
 
             return;
         }
 
+        var removedIndex = CartLines.IndexOf(line);
         if (!CartLines.Remove(
                 line))
         {
             return;
         }
+
+        SelectedCartLine = CartLines.Count == 0
+            ? null
+            : CartLines[Math.Min(removedIndex, CartLines.Count - 1)];
 
         NotifyCartPresentation();
 
@@ -1358,10 +1472,15 @@ public sealed class SalesViewModel :
 
     private Task ClearCartAsync()
     {
-        if (HasPendingVietQrAuthorization)
+        if (!CanMutateCart(showStatus: true))
         {
             ShowPendingVietQrLockError();
 
+            return Task.CompletedTask;
+        }
+
+        if (!_recoveryConfirmation.ConfirmClearCart())
+        {
             return Task.CompletedTask;
         }
 
@@ -1388,6 +1507,14 @@ public sealed class SalesViewModel :
             "Đã làm trống đơn hàng.");
 
         return Task.CompletedTask;
+    }
+
+    public void RemoveSelectedCartLine()
+    {
+        if (SelectedCartLine is not null)
+        {
+            RemoveCartLine(SelectedCartLine);
+        }
     }
 
     private Task SetExactCashAsync()
@@ -2966,11 +3093,47 @@ public sealed class SalesViewModel :
         return !IsBusy;
     }
 
+    private bool CanMutateCart(bool showStatus)
+    {
+        if (IsCheckingOut)
+        {
+            if (showStatus)
+            {
+                ShowError("Đang xử lý thanh toán, không thể sửa giỏ.");
+            }
+
+            return false;
+        }
+
+        if (HasCheckoutRecovery || IsRecoveryBusy)
+        {
+            if (showStatus)
+            {
+                ShowError(
+                    "Giao dịch đang chờ khôi phục, hãy xử lý trước khi sửa giỏ.");
+            }
+
+            return false;
+        }
+
+        if (HasPendingVietQrAuthorization)
+        {
+            if (showStatus)
+            {
+                ShowPendingVietQrLockError();
+            }
+
+            return false;
+        }
+
+        return !IsLoadingProducts;
+    }
+
     private bool CanClearCart()
     {
         return
             !IsBusy &&
-            !HasPendingVietQrAuthorization &&
+            CanMutateCart(showStatus: false) &&
             HasCartItems;
     }
 

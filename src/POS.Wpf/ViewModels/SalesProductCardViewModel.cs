@@ -67,6 +67,8 @@ public sealed class SalesProductCardViewModel
 
         IsActive =
             product.IsActive;
+        IsArchived =
+            product.IsArchived;
 
         AddToCartCommand =
             new AsyncRelayCommand(
@@ -75,6 +77,36 @@ public sealed class SalesProductCardViewModel
 
                 () =>
                     CanSell);
+    }
+
+    public SalesProductCardViewModel(
+        SalesCatalogProductDto product,
+        Func<SalesProductCardViewModel, Task> addToCartAsync)
+        : this(
+            new ProductListItemDto(
+                product.Id,
+                product.CategoryId,
+                product.CategoryName,
+                product.Code,
+                product.Barcode,
+                product.Name,
+                product.UnitName,
+                0,
+                product.SalePrice,
+                0,
+                product.StockQuantity,
+                product.MinimumStock,
+                product.TrackInventory,
+                product.AllowNegativeStock,
+                product.IsLowStock,
+                product.IsOutOfStock,
+                product.IsActive,
+                product.IsArchived)
+            {
+                ImagePath = product.ImagePath
+            },
+            addToCartAsync)
+    {
     }
 
     public int ProductId { get; }
@@ -113,6 +145,7 @@ public sealed class SalesProductCardViewModel
     public bool IsOutOfStock { get; }
 
     public bool IsActive { get; }
+    public bool IsArchived { get; }
 
     public AsyncRelayCommand
         AddToCartCommand
@@ -122,6 +155,7 @@ public sealed class SalesProductCardViewModel
 
     public bool CanSell =>
         IsActive &&
+        !IsArchived &&
         (
             !TrackInventory ||
             AllowNegativeStock ||

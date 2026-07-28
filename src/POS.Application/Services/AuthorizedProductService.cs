@@ -38,6 +38,24 @@ public sealed class AuthorizedProductService :
                 nameof(permissionService));
     }
 
+    public Task<Result<SalesCatalogProductDto>>
+        FindSalesExactAsync(
+            string scanOrCode,
+            CancellationToken cancellationToken = default)
+    {
+        var authorization =
+            _permissionService.Authorize(
+                SystemPermission.ViewProductCatalog);
+
+        return authorization.IsFailure
+            ? Task.FromResult(
+                Result.Failure<SalesCatalogProductDto>(
+                    authorization.Error))
+            : _innerService.FindSalesExactAsync(
+                scanOrCode,
+                cancellationToken);
+    }
+
     public Task<
         Result<PagedResult<ProductListItemDto>>>
         SearchAsync(

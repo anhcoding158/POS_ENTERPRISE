@@ -17,7 +17,7 @@ namespace POS.Wpf.Views;
 /// - Enter:
 ///     + tại ô tìm kiếm: thực hiện tìm kiếm;
 ///     + tại ô tiền khách đưa: thực hiện thanh toán;
-/// - Esc: đóng quầy khi không có giao dịch đang xử lý.
+/// - Esc: xóa nội dung quét/tìm và giữ nguyên giỏ.
 ///
 /// Nguyên tắc an toàn:
 /// - không cho đóng cửa sổ khi checkout đang chạy;
@@ -132,7 +132,7 @@ public partial class SalesWindow :
         }
     }
 
-    private void OnPreviewKeyDown(
+    private async void OnPreviewKeyDown(
         object sender,
         global::System.Windows.Input
             .KeyEventArgs e)
@@ -149,6 +149,14 @@ public partial class SalesWindow :
             e.Handled =
                 true;
 
+            return;
+        }
+
+        if (_viewModel.HasCheckoutRecovery ||
+            _viewModel.IsRecoveryBusy)
+        {
+            e.Handled = true;
+            SystemSounds.Beep.Play();
             return;
         }
 
@@ -263,33 +271,53 @@ public partial class SalesWindow :
             case global::System.Windows
                 .Input.Key.Enter:
 
-                HandleEnterKey(
-                    e);
+                await HandleEnterKeyAsync(e);
+
+                break;
+
+            case global::System.Windows
+                .Input.Key.Delete:
+
+                if (!ProductSearchBox.IsKeyboardFocusWithin &&
+                    !CashReceivedTextBox.IsKeyboardFocusWithin)
+                {
+                    _viewModel.RemoveSelectedCartLine();
+                    e.Handled = true;
+                }
 
                 break;
 
             case global::System.Windows
                 .Input.Key.Escape:
 
-                Close();
+                _viewModel.SearchTerm = string.Empty;
+                FocusAndSelectAll(ProductSearchBox);
 
                 e.Handled =
                     true;
 
                 break;
         }
+
+        if ((global::System.Windows.Input.Keyboard.Modifiers &
+             global::System.Windows.Input.ModifierKeys.Control) != 0 &&
+            e.Key == global::System.Windows.Input.Key.L)
+        {
+            ExecuteCommand(_viewModel.ClearCartCommand);
+            e.Handled = true;
+        }
     }
 
-    private void HandleEnterKey(
+    private async Task HandleEnterKeyAsync(
         global::System.Windows.Input
             .KeyEventArgs e)
     {
         if (ProductSearchBox
             .IsKeyboardFocusWithin)
         {
-            ExecuteCommand(
-                _viewModel
-                    .SearchCommand);
+            var input = ProductSearchBox.Text;
+            await _viewModel.ProcessScanOrSearchAsync(input);
+            FocusAndSelectAll(ProductSearchBox);
 
             e.Handled =
                 true;
@@ -297,18 +325,7 @@ public partial class SalesWindow :
             return;
         }
 
-        if (CashReceivedTextBox
-                .IsKeyboardFocusWithin &&
-            _viewModel
-                .IsCashPaymentSelected)
-        {
-            ExecuteCommand(
-                _viewModel
-                    .CheckoutCommand);
-
-            e.Handled =
-                true;
-        }
+        // Enter tại ô tiền không được phép bypass guard/xác nhận checkout.
     }
 
     /// <summary>
