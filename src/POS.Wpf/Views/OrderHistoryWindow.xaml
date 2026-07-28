@@ -128,6 +128,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
@@ -143,8 +144,37 @@
                             Foreground="{StaticResource TextSecondaryBrush}"
                             Text="{Binding ReceiptAvailabilityMessage}" />
                     </StackPanel>
-                    <DataGrid
+                    <Border
                         Grid.Row="2"
+                        Margin="0,0,0,10"
+                        Padding="10"
+                        Background="{StaticResource SurfaceMutedBrush}"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4">
+                        <Border.Style>
+                            <Style TargetType="{x:Type Border}">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasSelectedOrderNotes}" Value="False">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <StackPanel>
+                            <TextBlock
+                                Text="Ghi chú đơn hàng"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource TextSecondaryBrush}" />
+                            <TextBlock
+                                Margin="0,4,0,0"
+                                Text="{Binding SelectedOrderNotes, Mode=OneWay}"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                    <DataGrid
+                        Grid.Row="3"
                         ItemsSource="{Binding SelectedOrderLines}"
                         AutoGenerateColumns="False"
                         IsReadOnly="True">
@@ -153,11 +183,46 @@
                             <DataGridTextColumn Header="SL" Binding="{Binding Quantity}" Width="45" />
                             <DataGridTextColumn Header="Đơn giá" Binding="{Binding FinalUnitPriceText}" Width="100" />
                             <DataGridTextColumn Header="Thành tiền" Binding="{Binding NetAmountText}" Width="105" />
-                            <DataGridTextColumn Header="Modifier / ghi chú" Binding="{Binding ModifierSummary}" Width="*" />
+                            <DataGridTemplateColumn Header="Chi tiết dòng" Width="*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="4,2">
+                                            <TextBlock TextWrapping="Wrap">
+                                                <Run Text="Tùy chọn: " FontWeight="SemiBold" />
+                                                <Run Text="{Binding ModifierSummary, Mode=OneWay}" />
+                                                <TextBlock.Style>
+                                                    <Style TargetType="{x:Type TextBlock}">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding HasModifiers}" Value="False">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <TextBlock TextWrapping="Wrap" Margin="0,2,0,0">
+                                                <Run Text="Ghi chú dòng: " FontWeight="SemiBold" />
+                                                <Run Text="{Binding Notes, Mode=OneWay}" />
+                                                <TextBlock.Style>
+                                                    <Style TargetType="{x:Type TextBlock}">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding HasNotes}" Value="False">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                     <StackPanel
-                        Grid.Row="3"
+                        Grid.Row="4"
                         Margin="0,12,0,0"
                         HorizontalAlignment="Right"
                         Orientation="Horizontal">

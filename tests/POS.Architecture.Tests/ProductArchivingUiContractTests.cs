@@ -14,6 +14,30 @@ namespace POS.Architecture.Tests;
 public sealed class ProductArchivingUiContractTests
 {
     [Fact]
+    public void Product_more_actions_entry_point_is_labeled_and_keeps_commands()
+    {
+        var source = File.ReadAllText(
+            Path.Combine(
+                FindRepositoryRoot(),
+                "src",
+                "POS.Wpf",
+                "Views",
+                "ShellWindow.xaml"));
+
+        Assert.Contains("Kho &amp; lưu trữ", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("Thao tác khác", source, StringComparison.Ordinal);
+        Assert.Contains(
+            "Điều chỉnh tồn, xem lịch sử kho, lưu trữ hoặc khôi phục sản phẩm",
+            source,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Content=\"⋮\"", source, StringComparison.Ordinal);
+        Assert.Contains("Text=\"&#xE7B8;\"", source, StringComparison.Ordinal);
+        Assert.Contains("AdjustInventoryCommand", source, StringComparison.Ordinal);
+        Assert.Contains("ViewInventoryHistoryCommand", source, StringComparison.Ordinal);
+        Assert.Contains("OnToggleProductArchiveClick", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Status_filter_must_map_archived_to_is_archived_true()
     {
         var context = CreateContext();
@@ -182,6 +206,20 @@ public sealed class ProductArchivingUiContractTests
         return new TestContext(
             viewModel,
             service);
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+
+        while (directory is not null &&
+               !File.Exists(Path.Combine(directory.FullName, "POS.Enterprise.slnx")))
+        {
+            directory = directory.Parent;
+        }
+
+        return directory?.FullName ??
+            throw new DirectoryNotFoundException("Không tìm thấy repository root.");
     }
 
     private sealed class FakeOrderHistoryWindowService :

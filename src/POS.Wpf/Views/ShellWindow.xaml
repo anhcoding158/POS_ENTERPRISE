@@ -1162,13 +1162,28 @@
 
                             <Button
                                 x:Name="MoreProductActionsButton"
-                                Content="⋮"
                                 Click="OnMoreProductActionsClick"
                                 Style="{StaticResource SecondaryButtonStyle}"
-                                Width="42"
-                                MinWidth="42"
+                                MinWidth="154"
+                                Padding="12,0"
                                 Margin="9,0,0,0"
-                                ToolTip="Thao tác sản phẩm khác">
+                                ToolTip="Điều chỉnh tồn, xem lịch sử kho, lưu trữ hoặc khôi phục sản phẩm">
+
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock
+                                        Text="&#xE7B8;"
+                                        FontFamily="Segoe MDL2 Assets"
+                                        FontSize="13"
+                                        Margin="0,0,7,0"
+                                        VerticalAlignment="Center" />
+                                    <TextBlock Text="Kho &amp; lưu trữ" />
+                                    <TextBlock
+                                        Text="&#xE70D;"
+                                        FontFamily="Segoe MDL2 Assets"
+                                        FontSize="10"
+                                        Margin="7,0,0,0"
+                                        VerticalAlignment="Center" />
+                                </StackPanel>
 
                                 <Button.ContextMenu>
 

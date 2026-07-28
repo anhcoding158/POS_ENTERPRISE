@@ -32,6 +32,8 @@ public sealed class OrderHistoryLineViewModel
     public long NetAmount { get; }
     public string? Notes { get; }
     public string ModifierSummary { get; }
+    public bool HasNotes => !string.IsNullOrWhiteSpace(Notes);
+    public bool HasModifiers => !string.IsNullOrWhiteSpace(ModifierSummary);
     public string FinalUnitPriceText =>
         FinalUnitPrice.ToString("N0", VietnameseCulture) + " ₫";
     public string NetAmountText =>

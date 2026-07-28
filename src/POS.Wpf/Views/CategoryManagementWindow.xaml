@@ -214,7 +214,7 @@
 
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="18" />
+                        <ColumnDefinition Width="24" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
@@ -224,9 +224,9 @@
 
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="2*" />
-                            <ColumnDefinition Width="14" />
+                            <ColumnDefinition Width="12" />
                             <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="14" />
+                            <ColumnDefinition Width="12" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
@@ -237,8 +237,11 @@
                                 Style="{StaticResource CategoryFilterLabelStyle}" />
 
                             <TextBox
+                                x:Name="CategorySearchBox"
                                 Text="{Binding SearchTerm,
                                     UpdateSourceTrigger=PropertyChanged}"
+                                TextChanged="OnSearchTextChanged"
+                                KeyDown="OnSearchKeyDown"
                                 Style="{StaticResource SearchTextBoxStyle}"
                                 Height="42"
                                 Padding="13,0"
@@ -255,6 +258,7 @@
                                 ItemsSource="{Binding StatusFilters}"
                                 SelectedItem="{Binding SelectedStatusFilter,
                                     Mode=TwoWay}"
+                                SelectionChanged="OnStatusFilterChanged"
                                 DisplayMemberPath="DisplayName"
                                 Style="{StaticResource CategoryFilterComboBoxStyle}" />
                         </StackPanel>
@@ -265,28 +269,13 @@
                             VerticalAlignment="Bottom">
 
                             <Button
-                                Command="{Binding SearchCommand}"
-                                Style="{StaticResource PrimaryButtonStyle}"
-                                MinWidth="110">
-
-                                <StackPanel Orientation="Horizontal">
-
-                                    <TextBlock
-                                        Text="&#xE721;"
-                                        FontFamily="Segoe MDL2 Assets"
-                                        FontSize="12"
-                                        Margin="0,0,7,0" />
-
-                                    <TextBlock Text="Tìm kiếm" />
-                                </StackPanel>
-                            </Button>
-
-                            <Button
-                                Content="Đặt lại"
+                                Content="Xóa lọc"
                                 Command="{Binding ResetFiltersCommand}"
+                                Click="OnClearFiltersClick"
                                 Style="{StaticResource SecondaryButtonStyle}"
-                                MinWidth="92"
-                                Margin="8,0,0,0" />
+                                Height="42"
+                                MinWidth="84"
+                                Padding="12,0" />
                         </StackPanel>
                     </Grid>
 
@@ -298,28 +287,25 @@
                         VerticalAlignment="Bottom">
 
                         <Button
-                            Content="Tải lại"
-                            Command="{Binding RefreshCommand}"
-                            Style="{StaticResource SecondaryButtonStyle}"
-                            MinWidth="88" />
-
-                        <Button
                             Content="Sửa"
                             Command="{Binding EditCommand}"
                             Style="{StaticResource SecondaryButtonStyle}"
+                            Height="42"
                             MinWidth="82"
-                            Margin="8,0,0,0" />
+                            Margin="0" />
 
                         <Button
                             Content="{Binding ToggleActiveButtonText}"
                             Command="{Binding ToggleActiveCommand}"
                             Style="{StaticResource SecondaryButtonStyle}"
+                            Height="42"
                             MinWidth="126"
                             Margin="8,0,0,0" />
 
                         <Button
                             Command="{Binding AddCommand}"
                             Style="{StaticResource PrimaryButtonStyle}"
+                            Height="42"
                             MinWidth="142"
                             Margin="8,0,0,0">
 
@@ -650,11 +636,6 @@
 
                 <Grid>
 
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-
                     <StackPanel>
 
                         <TextBlock
@@ -671,24 +652,6 @@
                             Margin="0,6,20,0" />
                     </StackPanel>
 
-                    <StackPanel
-                        Grid.Column="1"
-                        Orientation="Horizontal"
-                        VerticalAlignment="Center">
-
-                        <Button
-                            Content="Sửa danh mục"
-                            Command="{Binding EditCommand}"
-                            Style="{StaticResource SecondaryButtonStyle}"
-                            MinWidth="108" />
-
-                        <Button
-                            Content="{Binding ToggleActiveButtonText}"
-                            Command="{Binding ToggleActiveCommand}"
-                            Style="{StaticResource SecondaryButtonStyle}"
-                            MinWidth="126"
-                            Margin="8,0,0,0" />
-                    </StackPanel>
                 </Grid>
             </Border>
 

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Reflection;
 using System.Xml.Linq;
 using Microsoft.Extensions.DependencyInjection;
@@ -261,11 +262,11 @@ public sealed class SalesBarcodeCartUxTests
     }
 
     [Theory]
-    [InlineData("F2_focuses_scan_search_input", "Key.F2", "ProductSearchBox")]
-    [InlineData("Unknown_barcode_keeps_scan_focus_ready", "ProcessScanOrSearchAsync", "FocusAndSelectAll(ProductSearchBox)")]
-    [InlineData("Successful_add_clears_input_and_restores_focus", "SearchTerm = string.Empty", "FocusAndSelectAll(ProductSearchBox)")]
-    [InlineData("Unknown_code_does_not_move_focus_to_cash", "ProcessScanOrSearchAsync", "ProductSearchBox.Text")]
-    [InlineData("Escape_clears_search_without_clearing_cart", "Input.Key.Escape", "SearchTerm = string.Empty")]
+    [InlineData("F2_focuses_scan_input", "Key.F2", "ProductScanBox")]
+    [InlineData("Unknown_barcode_keeps_scan_focus_ready", "ProcessScanOrSearchAsync", "FocusAndSelectAll(ProductScanBox)")]
+    [InlineData("Successful_add_restores_scan_focus", "ProcessScanOrSearchAsync", "FocusAndSelectAll(ProductScanBox)")]
+    [InlineData("Unknown_code_does_not_move_focus_to_cash", "ProcessScanOrSearchAsync", "ProductScanBox.Text")]
+    [InlineData("Escape_requests_guarded_window_close", "Input.Key.Escape", "Close();")]
     [InlineData("Enter_scan_does_not_trigger_checkout", "HandleEnterKeyAsync", "ProcessScanOrSearchAsync")]
     [InlineData("Delete_removes_selected_line", "Input.Key.Delete", "RemoveSelectedCartLine")]
     [InlineData("Existing_F4_F6_F8_shortcuts_are_preserved", "Input.Key.F4", "Input.Key.F8")]
@@ -274,6 +275,264 @@ public sealed class SalesBarcodeCartUxTests
         var source = Read("src", "POS.Wpf", "Views", "SalesWindow.xaml.cs");
         Assert.Contains(first, source, StringComparison.Ordinal);
         Assert.Contains(second, source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Displayed_shortcuts_match_actual_keyboard_behavior()
+    {
+        var xaml = Read("src", "POS.Wpf", "Views", "SalesWindow.xaml");
+        var codeBehind = Read("src", "POS.Wpf", "Views", "SalesWindow.xaml.cs");
+
+        Assert.Contains(
+            "F2 Quét mã · Ctrl+F Tìm sản phẩm · F4 Đủ tiền · F6 Tiền khách đưa · F8 Thanh toán",
+            xaml,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Esc Đóng quầy · Delete Xóa dòng",
+            xaml,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("F6 Thanh toán", xaml, StringComparison.Ordinal);
+        Assert.DoesNotContain("F8 Hoàn tất", xaml, StringComparison.Ordinal);
+        Assert.Contains("Input.Key.F6", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("CashReceivedTextBox", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("Input.Key.F8", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("CheckoutCommand", codeBehind, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Manual_scanner_helper_explains_keyboard_entry()
+    {
+        var xaml = Read("src", "POS.Wpf", "Views", "SalesWindow.xaml");
+
+        Assert.Contains(
+            "Barcode hoặc mã sản phẩm",
+            xaml,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Không có máy quét? Nhập Barcode/ProductCode rồi nhấn Enter.",
+            xaml,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("camera", xaml, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Sales_search_and_scan_must_be_visually_separate_groups()
+    {
+        var document = XDocument.Load(
+            PathOf("src", "POS.Wpf", "Views", "SalesWindow.xaml"));
+        XNamespace presentation =
+            "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+
+        Assert.Contains(
+            document.Descendants(presentation + "TextBlock"),
+            element => (string?)element.Attribute("Text") == "TÌM SẢN PHẨM");
+        Assert.Contains(
+            document.Descendants(presentation + "TextBlock"),
+            element => (string?)element.Attribute("Text") == "QUÉT MÃ");
+    }
+
+    [Fact]
+    public void Sales_header_must_use_stretched_grid_not_centered_toolbar()
+    {
+        var header = NamedElement("SalesCatalogHeaderGrid");
+        Assert.Equal("Grid", header.Name.LocalName);
+        Assert.Equal("Stretch", Attribute(header, "HorizontalAlignment"));
+        Assert.NotEqual("Center", Attribute(NamedElement("SalesSearchGroup"), "HorizontalAlignment"));
+        Assert.DoesNotContain(
+            header.AncestorsAndSelf(),
+            element => Attribute(element, "HorizontalAlignment") == "Center");
+    }
+
+    [Fact]
+    public void Sales_title_must_remain_left_aligned()
+    {
+        var title = NamedElement("SalesTitleBlock");
+        Assert.Equal("0", Attribute(title, "Grid.Column") ?? "0");
+        Assert.Equal("Left", Attribute(title, "HorizontalAlignment"));
+        Assert.Equal("Center", Attribute(title, "VerticalAlignment"));
+    }
+
+    [Fact]
+    public void Sales_search_and_scan_toolbar_must_align_to_right_side()
+    {
+        var header = NamedElement("SalesCatalogHeaderGrid");
+        var columns = GridColumnWidths(header);
+        Assert.Equal(["Auto", "20", "*", "14", "230"], columns);
+        Assert.Equal("2", Attribute(NamedElement("SalesSearchGroup"), "Grid.Column"));
+        Assert.Equal("4", Attribute(NamedElement("SalesScanGroup"), "Grid.Column"));
+    }
+
+    [Fact]
+    public void Sales_header_must_not_have_large_dead_space_between_title_and_tools()
+    {
+        var columns = GridColumnWidths(NamedElement("SalesCatalogHeaderGrid"));
+        Assert.Equal("20", columns[1]);
+        Assert.Equal("*", columns[2]);
+        Assert.DoesNotContain(columns, width => width.EndsWith('*') && width != "*");
+    }
+
+    [Fact]
+    public void Sales_search_group_must_expand_more_than_scan_group()
+    {
+        var search = NamedElement("SalesSearchGroup");
+        var scan = NamedElement("SalesScanGroup");
+        Assert.Equal("Stretch", Attribute(search, "HorizontalAlignment"));
+        Assert.Equal("280", Attribute(search, "MinWidth"));
+        Assert.Equal("230", Attribute(scan, "MinWidth"));
+        Assert.Equal("300", Attribute(scan, "MaxWidth"));
+    }
+
+    [Fact]
+    public void Sales_search_button_must_align_with_search_textbox()
+    {
+        var search = NamedElement("SalesSearchGroup");
+        var searchBox = NamedElement("ProductSearchBox");
+        var button = NamedElement("ProductSearchButton");
+        Assert.Equal("44", Attribute(searchBox, "Height") ?? StyleSetter("SalesSearchTextBoxStyle", "Height"));
+        Assert.Equal("44", Attribute(button, "Height"));
+        Assert.Same(
+            searchBox.Ancestors().First(element => element.Name.LocalName == "Grid" && Attribute(element, "Grid.Row") == "2"),
+            button.Parent);
+    }
+
+    [Fact]
+    public void Sales_scan_icon_must_be_embedded_inside_scan_input()
+    {
+        var scanInput = NamedElement("SalesScanInput");
+        var scanBox = NamedElement("ProductScanBox");
+        var icon = NamedElement("SalesScannerIcon");
+        Assert.Same(scanInput, scanBox.Parent);
+        Assert.Same(scanInput, icon.Parent);
+        Assert.False(string.IsNullOrWhiteSpace((string?)icon.Attribute("Data")));
+        Assert.Equal("{StaticResource GoldBrush}", Attribute(icon, "Fill"));
+        Assert.Equal("43,0,13,0", Attribute(scanBox, "Padding"));
+    }
+
+    [Fact]
+    public void Sales_scan_icon_must_not_be_a_button_or_focusable_control()
+    {
+        var icon = NamedElement("SalesScannerIcon");
+        Assert.Equal("Path", icon.Name.LocalName);
+        Assert.Equal("False", Attribute(icon, "Focusable"));
+        Assert.Equal("False", Attribute(icon, "IsHitTestVisible"));
+        Assert.Null(Attribute(icon, "Command"));
+        Assert.DoesNotContain(icon.Ancestors(), element => element.Name.LocalName == "Button");
+    }
+
+    [Fact]
+    public void Sales_scan_input_must_not_have_double_border()
+    {
+        var scanInput = NamedElement("SalesScanInput");
+        Assert.Equal("Grid", scanInput.Name.LocalName);
+        Assert.Empty(scanInput.Elements(Presentation + "Border"));
+        Assert.Single(scanInput.Elements(Presentation + "TextBox"));
+    }
+
+    [Fact]
+    public void Sales_search_and_scan_labels_must_share_vertical_alignment()
+    {
+        var labels = new List<string> { "TÌM SẢN PHẨM", "QUÉT MÃ" }
+            .Select(text => Document.Descendants(Presentation + "TextBlock")
+                .Single(element => Attribute(element, "Text") == text))
+            .ToArray();
+        Assert.All(labels, label => Assert.Equal("Bottom", Attribute(label, "VerticalAlignment")));
+        Assert.All(labels, label => Assert.Equal("10.5", Attribute(label, "FontSize")));
+        Assert.Equal(
+            labels[0].Ancestors(Presentation + "Grid").First().Elements(Presentation + "RowDefinition").Count(),
+            labels[1].Ancestors(Presentation + "Grid").First().Elements(Presentation + "RowDefinition").Count());
+    }
+
+    [Fact]
+    public void Sales_search_textbox_scan_textbox_and_button_must_share_height()
+    {
+        Assert.Equal("44", StyleSetter("SalesSearchTextBoxStyle", "Height"));
+        Assert.Equal("44", Attribute(NamedElement("ProductSearchButton"), "Height"));
+        Assert.Equal(
+            Attribute(NamedElement("ProductSearchBox"), "Style"),
+            Attribute(NamedElement("ProductScanBox"), "Style"));
+    }
+
+    [Fact]
+    public void Sales_scan_placeholder_must_have_sufficient_width()
+    {
+        var scan = NamedElement("SalesScanGroup");
+        Assert.True(double.Parse(
+            Attribute(scan, "MinWidth")!,
+            CultureInfo.InvariantCulture) >= 230);
+        Assert.Equal(
+            "Barcode hoặc mã sản phẩm",
+            Document.Descendants(Presentation + "TextBlock")
+                .Single(element => Attribute(element, "Text") == "Barcode hoặc mã sản phẩm")
+                .Attribute("Text")?.Value);
+    }
+
+    [Fact]
+    public void Sales_toolbar_must_not_use_negative_margins_or_canvas_positioning()
+    {
+        var header = NamedElement("SalesCatalogHeaderGrid");
+        Assert.Empty(header.Descendants(Presentation + "Canvas"));
+        Assert.DoesNotContain(
+            header.DescendantsAndSelf().Attributes("Margin"),
+            margin => margin.Value.Split(',').Any(part =>
+                double.TryParse(part, out var value) && value < 0));
+    }
+
+    [Fact]
+    public void Sales_scan_helper_must_not_create_full_width_extra_row()
+    {
+        var helper = Document.Descendants()
+            .Single(element =>
+                ((string?)element.Attribute("ToolTip"))?.Contains(
+                    "Không có máy quét?",
+                    StringComparison.Ordinal) == true);
+
+        Assert.Equal("Grid", helper.Name.LocalName);
+        Assert.DoesNotContain(
+            Document.Descendants(Presentation + "TextBlock"),
+            element =>
+                ((string?)element.Attribute("Text"))?.Contains(
+                    "Không có máy quét?",
+                    StringComparison.Ordinal) == true);
+    }
+
+    [Fact]
+    public void Search_and_scan_enter_handlers_must_not_be_cross_wired()
+    {
+        var codeBehind = Read(
+            "src", "POS.Wpf", "Views", "SalesWindow.xaml.cs");
+        var handlerStart = codeBehind.IndexOf(
+            "private async Task HandleEnterKeyAsync",
+            StringComparison.Ordinal);
+        var searchBranch = codeBehind[
+            codeBehind.IndexOf(
+                "if (ProductSearchBox",
+                handlerStart,
+                StringComparison.Ordinal)..
+            codeBehind.IndexOf(
+                "if (ProductScanBox",
+                handlerStart,
+                StringComparison.Ordinal)];
+        var scanBranchStart = codeBehind.IndexOf(
+            "if (ProductScanBox",
+            handlerStart,
+            StringComparison.Ordinal);
+        var scanBranch = codeBehind[
+            scanBranchStart..
+            codeBehind.IndexOf(
+                "// Enter tại ô tiền",
+                scanBranchStart,
+                StringComparison.Ordinal)];
+
+        Assert.Contains("SearchCommand", searchBranch, StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "ProcessScanOrSearchAsync",
+            searchBranch,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ProcessScanOrSearchAsync",
+            scanBranch,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("SearchCommand", scanBranch, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -301,20 +560,163 @@ public sealed class SalesBarcodeCartUxTests
     }
 
     [Fact]
-    public void No_new_hex_colors()
+    public void Sales_toolbar_must_not_add_new_hex_colors()
     {
         var diff = RunGitDiff();
         Assert.DoesNotContain(
-            diff.Split('\n').Where(x => x.StartsWith('+') && !x.StartsWith("+++")),
+            diff.Split('\n').Where(x =>
+                x.Length > 0 &&
+                x[0] == '+' &&
+                !x.StartsWith("+++", StringComparison.Ordinal)),
             x => System.Text.RegularExpressions.Regex.IsMatch(x, "#[0-9A-Fa-f]{6,8}"));
     }
 
     [Fact]
-    public void Sales_layout_fits_1366x768_at_contract_level()
+    public void Sales_toolbar_must_fit_1366x768()
     {
-        var source = Read("src", "POS.Wpf", "Views", "SalesWindow.xaml");
-        Assert.DoesNotContain("MinWidth=\"1367", source, StringComparison.Ordinal);
-        Assert.DoesNotContain("MinHeight=\"769", source, StringComparison.Ordinal);
+        var window = Document.Root!;
+        Assert.True(double.Parse(
+            Attribute(window, "MinWidth")!,
+            CultureInfo.InvariantCulture) <= 1366);
+        Assert.True(double.Parse(
+            Attribute(window, "MinHeight")!,
+            CultureInfo.InvariantCulture) <= 768);
+        var fixedHeaderWidth = GridColumnWidths(NamedElement("SalesCatalogHeaderGrid"))
+            .Where(width => double.TryParse(
+                width,
+                CultureInfo.InvariantCulture,
+                out _))
+            .Sum(width => double.Parse(
+                width,
+                CultureInfo.InvariantCulture));
+        Assert.True(fixedHeaderWidth <= 264);
+        Assert.DoesNotContain(
+            Document.Descendants(Presentation + "ScrollViewer"),
+            element => NamedElement("SalesCatalogHeaderGrid")
+                .AncestorsAndSelf()
+                .Contains(element));
+    }
+
+    [Fact]
+    public void F2_must_still_focus_scan()
+    {
+        var source = Read("src", "POS.Wpf", "Views", "SalesWindow.xaml.cs");
+        var f2Branch = source[
+            source.IndexOf("Input.Key.F2", StringComparison.Ordinal)..
+            source.IndexOf("Input.Key.F4", StringComparison.Ordinal)];
+        Assert.Contains("ProductScanBox", f2Branch, StringComparison.Ordinal);
+        Assert.Contains("FocusAndSelectAll", f2Branch, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Ctrl_F_must_still_focus_search()
+    {
+        var source = Read("src", "POS.Wpf", "Views", "SalesWindow.xaml.cs");
+        Assert.Contains("Input.ModifierKeys.Control", source, StringComparison.Ordinal);
+        Assert.Contains("Input.Key.F)", source, StringComparison.Ordinal);
+        Assert.Contains("FocusAndSelectAll(ProductSearchBox)", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Search_enter_must_still_filter_only()
+    {
+        var searchBranch = EnterHandlerBranch("ProductSearchBox", "ProductScanBox");
+        Assert.Contains("SearchCommand", searchBranch, StringComparison.Ordinal);
+        Assert.DoesNotContain("ProcessScanOrSearchAsync", searchBranch, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Scan_enter_must_still_add_exact_product()
+    {
+        var scanBranch = EnterHandlerBranch("ProductScanBox", "// Enter tại ô tiền");
+        Assert.Contains("ProcessScanOrSearchAsync", scanBranch, StringComparison.Ordinal);
+        Assert.DoesNotContain("SearchCommand", scanBranch, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Search_single_result_must_not_auto_add()
+    {
+        var context = CreateContext(Product("ONLY"));
+        context.ViewModel.SearchTerm = "Sản phẩm 1";
+        context.ViewModel.SearchCommand.Execute(null);
+        await Task.Yield();
+        Assert.Empty(context.ViewModel.CartLines);
+    }
+
+    [Fact]
+    public async Task Scan_must_not_change_search_or_cash()
+    {
+        var context = CreateContext(Product("SCAN"));
+        context.ViewModel.SearchTerm = "catalog filter";
+        context.ViewModel.CashReceivedText = "50000";
+        Assert.True(await context.ViewModel.ProcessScanOrSearchAsync("SCAN"));
+        Assert.Equal("catalog filter", context.ViewModel.SearchTerm);
+        Assert.Equal("50000", context.ViewModel.CashReceivedText);
+    }
+
+    [Fact]
+    public void Checkout_and_recovery_guards_must_remain()
+    {
+        var source = Read("src", "POS.Wpf", "ViewModels", "SalesViewModel.cs");
+        Assert.Contains("IsCheckingOut", source, StringComparison.Ordinal);
+        Assert.Contains("HasCheckoutRecovery", source, StringComparison.Ordinal);
+        Assert.Contains("HasPendingVietQrAuthorization", source, StringComparison.Ordinal);
+    }
+
+    private static readonly XNamespace Presentation =
+        "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+
+    private static readonly XNamespace Xaml =
+        "http://schemas.microsoft.com/winfx/2006/xaml";
+
+    private static readonly XDocument Document =
+        XDocument.Load(PathOf("src", "POS.Wpf", "Views", "SalesWindow.xaml"));
+
+    private static XElement NamedElement(string name) =>
+        Document.Descendants().Single(element =>
+            Attribute(element, "Name") == name);
+
+    private static string? Attribute(XElement element, string name)
+    {
+        var attributeName = name switch
+        {
+            "Name" => Xaml + "Name",
+            _ when name.Contains('.', StringComparison.Ordinal) => name,
+            _ => name
+        };
+        return (string?)element.Attribute(attributeName);
+    }
+
+    private static string[] GridColumnWidths(XElement grid) =>
+        grid.Element(Presentation + "Grid.ColumnDefinitions")!
+            .Elements(Presentation + "ColumnDefinition")
+            .Select(column => Attribute(column, "Width")!)
+            .ToArray();
+
+    private static string StyleSetter(string key, string property) =>
+        Document.Descendants(Presentation + "Style")
+            .Single(style => (string?)style.Attribute(Xaml + "Key") == key)
+            .Elements(Presentation + "Setter")
+            .Single(setter => Attribute(setter, "Property") == property)
+            .Attribute("Value")!.Value;
+
+    private static string EnterHandlerBranch(string startMarker, string endMarker)
+    {
+        var source = Read("src", "POS.Wpf", "Views", "SalesWindow.xaml.cs");
+        var handlerStart = source.IndexOf(
+            "private async Task HandleEnterKeyAsync",
+            StringComparison.Ordinal);
+        var branchStart = source.IndexOf(
+            $"if ({startMarker}",
+            handlerStart,
+            StringComparison.Ordinal);
+        var branchEnd = source.IndexOf(
+            endMarker.StartsWith("//", StringComparison.Ordinal)
+                ? endMarker
+                : $"if ({endMarker}",
+            branchStart + 1,
+            StringComparison.Ordinal);
+        return source[branchStart..branchEnd];
     }
 
     private static TestContext CreateContext(params SalesCatalogProductDto[] products) =>

@@ -10,14 +10,15 @@ namespace POS.Wpf.Views;
 /// Màn hình quầy bán hàng.
 ///
 /// Phím tắt:
-/// - F2: chuyển tới ô tìm sản phẩm hoặc barcode;
+/// - F2: chuyển tới ô quét barcode/mã sản phẩm;
+/// - Ctrl+F: chuyển tới ô tìm sản phẩm;
 /// - F4: đặt tiền khách đưa bằng đúng tổng đơn;
 /// - F6: chuyển tới ô tiền khách đưa;
 /// - F8: thanh toán;
 /// - Enter:
 ///     + tại ô tìm kiếm: thực hiện tìm kiếm;
 ///     + tại ô tiền khách đưa: thực hiện thanh toán;
-/// - Esc: xóa nội dung quét/tìm và giữ nguyên giỏ.
+/// - Esc: đóng quầy qua close guard hiện hữu.
 ///
 /// Nguyên tắc an toàn:
 /// - không cho đóng cửa sổ khi checkout đang chạy;
@@ -106,7 +107,7 @@ public partial class SalesWindow :
                 () =>
                 {
                     FocusAndSelectAll(
-                        ProductSearchBox);
+                        ProductScanBox);
                 },
                 global::System.Windows.Threading
                     .DispatcherPriority.Input);
@@ -201,7 +202,7 @@ public partial class SalesWindow :
                 .Input.Key.F2:
 
                 FocusAndSelectAll(
-                    ProductSearchBox);
+                    ProductScanBox);
 
                 e.Handled =
                     true;
@@ -279,6 +280,7 @@ public partial class SalesWindow :
                 .Input.Key.Delete:
 
                 if (!ProductSearchBox.IsKeyboardFocusWithin &&
+                    !ProductScanBox.IsKeyboardFocusWithin &&
                     !CashReceivedTextBox.IsKeyboardFocusWithin)
                 {
                     _viewModel.RemoveSelectedCartLine();
@@ -290,13 +292,21 @@ public partial class SalesWindow :
             case global::System.Windows
                 .Input.Key.Escape:
 
-                _viewModel.SearchTerm = string.Empty;
-                FocusAndSelectAll(ProductSearchBox);
+                Close();
 
                 e.Handled =
                     true;
 
                 break;
+        }
+
+        if ((global::System.Windows.Input.Keyboard.Modifiers &
+             global::System.Windows.Input.ModifierKeys.Control) != 0 &&
+            e.Key == global::System.Windows.Input.Key.F)
+        {
+            FocusAndSelectAll(ProductSearchBox);
+            e.Handled = true;
+            return;
         }
 
         if ((global::System.Windows.Input.Keyboard.Modifiers &
@@ -315,9 +325,17 @@ public partial class SalesWindow :
         if (ProductSearchBox
             .IsKeyboardFocusWithin)
         {
-            var input = ProductSearchBox.Text;
+            ExecuteCommand(_viewModel.SearchCommand);
+            e.Handled = true;
+            return;
+        }
+
+        if (ProductScanBox
+            .IsKeyboardFocusWithin)
+        {
+            var input = ProductScanBox.Text;
             await _viewModel.ProcessScanOrSearchAsync(input);
-            FocusAndSelectAll(ProductSearchBox);
+            FocusAndSelectAll(ProductScanBox);
 
             e.Handled =
                 true;

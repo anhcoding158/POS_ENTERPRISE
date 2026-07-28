@@ -222,6 +222,13 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
     public bool CanGoPrevious => !IsLoading && CurrentPage > 1;
     public bool CanGoNext => !IsLoading && CurrentPage < TotalPages;
     public bool HasSelectedOrder => SelectedOrder is not null;
+    public string? SelectedOrderNotes =>
+        _selectedDetails is not null &&
+        _selectedDetails.OrderId == SelectedOrder?.OrderId
+            ? _selectedDetails.Notes
+            : null;
+    public bool HasSelectedOrderNotes =>
+        !string.IsNullOrWhiteSpace(SelectedOrderNotes);
     public bool HasReceiptSnapshot =>
         _selectedDetails?.OrderId == SelectedOrder?.OrderId &&
         _selectedDetails?.HasReceiptSnapshot == true;
@@ -361,6 +368,8 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
         _detailsSource?.Cancel();
         SelectedOrderLines.Clear();
         _selectedDetails = null;
+        OnPropertyChanged(nameof(SelectedOrderNotes));
+        OnPropertyChanged(nameof(HasSelectedOrderNotes));
         NotifySelectionState();
         if (row is null || _disposed)
         {
@@ -382,6 +391,8 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
                 return;
             }
             _selectedDetails = result.Value;
+            OnPropertyChanged(nameof(SelectedOrderNotes));
+            OnPropertyChanged(nameof(HasSelectedOrderNotes));
             foreach (var line in result.Value.Lines)
             {
                 SelectedOrderLines.Add(new OrderHistoryLineViewModel(line));
@@ -474,6 +485,8 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
         SelectedOrder = null;
         SelectedOrderLines.Clear();
         _selectedDetails = null;
+        OnPropertyChanged(nameof(SelectedOrderNotes));
+        OnPropertyChanged(nameof(HasSelectedOrderNotes));
         NotifySelectionState();
     }
 

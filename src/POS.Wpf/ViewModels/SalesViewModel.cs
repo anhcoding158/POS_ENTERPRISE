@@ -68,6 +68,7 @@ public sealed class SalesViewModel :
         _logger;
 
     private string? _searchTerm;
+    private string? _scanCode;
     private string _cashReceivedText =
         string.Empty;
 
@@ -391,6 +392,15 @@ public sealed class SalesViewModel :
             value);
     }
 
+    public string? ScanCode
+    {
+        get => _scanCode;
+
+        set => SetProperty(
+            ref _scanCode,
+            value);
+    }
+
     public string CashReceivedText
     {
         get => _cashReceivedText;
@@ -575,9 +585,7 @@ public sealed class SalesViewModel :
     public string CheckoutButtonSubtitle =>
         HasPendingVietQrAuthorization
             ? "Không mở mã mới • Giữ nguyên xác nhận cũ"
-            : IsVietQrPaymentSelected
-                ? "F8 • Quét mã và xác nhận thủ công"
-                : "F8 • Xác nhận giá và tồn kho";
+            : "F8 · Thanh toán";
 
     public string PendingVietQrReferenceText =>
         _pendingVietQrAuthorization?
@@ -892,8 +900,7 @@ public sealed class SalesViewModel :
 
         await LoadCategoriesAsync();
         await LoadProductsAsync(
-            autoAddExactMatch:
-                false);
+            cancellationToken: default);
 
         await LoadCheckoutRecoveryAsync();
     }
@@ -1059,15 +1066,12 @@ public sealed class SalesViewModel :
             selectedCategory.CategoryId;
 
         await LoadProductsAsync(
-            autoAddExactMatch:
-                false);
+            cancellationToken: default);
     }
 
     private Task SearchAsync()
     {
-        return LoadProductsAsync(
-            autoAddExactMatch:
-                true);
+        return LoadProductsAsync();
     }
 
     public async Task<bool> ProcessScanOrSearchAsync(
@@ -1119,38 +1123,14 @@ public sealed class SalesViewModel :
                 await AddProductAsync(product);
                 if (CartItemCount > before)
                 {
-                    SearchTerm = string.Empty;
+                    ScanCode = string.Empty;
                     return true;
                 }
 
                 return false;
             }
 
-            SearchTerm = normalized;
-            var loaded =
-                await LoadProductsAsync(
-                    autoAddExactMatch: false);
-
-            if (!loaded)
-            {
-                return false;
-            }
-
-            if (ProductCards.Count == 1)
-            {
-                var before = CartItemCount;
-                await AddProductAsync(ProductCards[0]);
-                if (CartItemCount > before)
-                {
-                    SearchTerm = string.Empty;
-                    return true;
-                }
-            }
-            else if (ProductCards.Count == 0)
-            {
-                ShowError($"Không tìm thấy mã sản phẩm “{normalized}”.");
-            }
-
+            ShowError($"Không tìm thấy mã sản phẩm “{normalized}”.");
             return false;
         }
         finally
@@ -1161,13 +1141,11 @@ public sealed class SalesViewModel :
 
     private Task RefreshAsync()
     {
-        return LoadProductsAsync(
-            autoAddExactMatch:
-                false);
+        return LoadProductsAsync();
     }
 
     private async Task<bool> LoadProductsAsync(
-        bool autoAddExactMatch)
+        CancellationToken cancellationToken = default)
     {
         if (IsLoadingProducts)
         {
@@ -1216,7 +1194,8 @@ public sealed class SalesViewModel :
             var result =
                 await productService
                     .SearchAsync(
-                        request);
+                        request,
+                        cancellationToken);
 
             if (result.IsFailure)
             {
@@ -1252,12 +1231,6 @@ public sealed class SalesViewModel :
                     ? "Không tìm thấy sản phẩm phù hợp."
                     : $"Đã tải {products.Length:N0} sản phẩm.");
 
-            if (autoAddExactMatch)
-            {
-                await TryAutoAddExactMatchAsync(
-                    products);
-            }
-
             return true;
         }
         catch (Exception exception)
@@ -1280,56 +1253,6 @@ public sealed class SalesViewModel :
         }
     }
 
-    /// <summary>
-    /// Hỗ trợ máy quét barcode:
-    /// khi từ khóa trùng chính xác mã hoặc barcode
-    /// và chỉ tìm thấy một sản phẩm, tự thêm vào giỏ.
-    /// </summary>
-    private async Task
-        TryAutoAddExactMatchAsync(
-            IReadOnlyList<
-                SalesProductCardViewModel>
-                products)
-    {
-        var search =
-            SearchTerm?.Trim();
-
-        if (string.IsNullOrWhiteSpace(
-                search) ||
-            products.Count != 1)
-        {
-            return;
-        }
-
-        var product =
-            products[0];
-
-        var exactMatch =
-            string.Equals(
-                product.Code,
-                search,
-                StringComparison
-                    .OrdinalIgnoreCase)
-
-            ||
-
-            string.Equals(
-                product.Barcode,
-                search,
-                StringComparison
-                    .OrdinalIgnoreCase);
-
-        if (!exactMatch)
-        {
-            return;
-        }
-
-        await AddProductAsync(
-            product);
-
-        SearchTerm =
-            string.Empty;
-    }
 
     private Task AddProductAsync(
         SalesProductCardViewModel product)
@@ -2240,8 +2163,7 @@ public sealed class SalesViewModel :
                  * Lần thử sau không mở QR mới.
                  */
                 await LoadProductsAsync(
-                    autoAddExactMatch:
-                        false);
+                    cancellationToken: default);
 
                 await LoadCheckoutRecoveryAsync();
 
@@ -2299,8 +2221,7 @@ public sealed class SalesViewModel :
             NotifyCartPresentation();
 
             await LoadProductsAsync(
-                autoAddExactMatch:
-                    false);
+                cancellationToken: default);
 
             successMessage =
                 $"Thanh toán {FormatPaymentMethod(
@@ -2445,7 +2366,7 @@ public sealed class SalesViewModel :
             }
 
             RemoveSelectedRecovery();
-            await LoadProductsAsync(autoAddExactMatch: false);
+            await LoadProductsAsync();
         }
         finally
         {
