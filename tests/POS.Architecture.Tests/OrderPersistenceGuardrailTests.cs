@@ -460,13 +460,16 @@ public sealed class
                 typeof(HeldSale),
                 typeof(HeldSaleLine),
                 typeof(InventoryMovement),
-                typeof(Order),
-                typeof(OrderItem),
+            typeof(Order),
+            typeof(OrderDiscountSnapshot),
+            typeof(OrderItem),
                 typeof(OrderItemModifier),
                 typeof(OrderReceiptSnapshot),
                 typeof(OrderReturn),
                 typeof(OrderReturnBalance),
                 typeof(OrderReturnItem),
+                typeof(PaymentIntent),
+                typeof(PaymentIntentManualResolution),
                 typeof(Product),
                 typeof(User)
             }

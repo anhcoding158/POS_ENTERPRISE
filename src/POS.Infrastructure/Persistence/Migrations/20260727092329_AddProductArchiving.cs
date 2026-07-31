@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -7,6 +7,8 @@ namespace POS.Infrastructure.Persistence.Migrations
     /// <inheritdoc />
     public partial class AddProductArchiving : Migration
     {
+        private static readonly string[] IndexColumns1 = ["IsArchived", "IsActive", "Name"];
+
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -32,7 +34,7 @@ namespace POS.Infrastructure.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Products_Archived_Active_Name",
                 table: "Products",
-                columns: new[] { "IsArchived", "IsActive", "Name" });
+                columns: IndexColumns1);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Products_ArchivedByUserId",

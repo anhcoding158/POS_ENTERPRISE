@@ -43,12 +43,12 @@ public sealed class SalesWindowService :
     {
         var authorization =
             _permissionService.Authorize(
-                SystemPermission.UseCheckout);
+                SystemCapability.UseCheckout);
 
         if (authorization.IsFailure)
         {
             global::System.Windows.MessageBox.Show(
-                authorization.Error.Message,
+                authorization.AppError.Message,
                 "Không có quyền bán hàng",
                 global::System.Windows
                     .MessageBoxButton.OK,

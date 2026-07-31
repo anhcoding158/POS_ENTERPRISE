@@ -41,7 +41,7 @@ public sealed class ReceiptSnapshotPersistenceTests
         var result = await CreateService(context, seed, serializer: serializer)
             .CheckoutAsync(CreateRequest(seed.ProductId));
 
-        Assert.True(result.IsSuccess, result.Error.ToString());
+        Assert.True(result.IsSuccess, result.AppError.ToString());
         await using var verify = database.CreateContext();
         var persisted = await verify.OrderReceiptSnapshots.SingleAsync();
         Assert.Equal(result.Value.OrderId, persisted.OrderId);
@@ -60,7 +60,7 @@ public sealed class ReceiptSnapshotPersistenceTests
         var result = await CreateService(context, seed, serializer: serializer)
             .CheckoutAsync(CreateRequest(seed.ProductId));
 
-        Assert.True(result.IsSuccess, result.Error.ToString());
+        Assert.True(result.IsSuccess, result.AppError.ToString());
         await using var verify = database.CreateContext();
         var payload = await verify.OrderReceiptSnapshots
             .Select(snapshot => snapshot.PayloadJson)
@@ -92,7 +92,7 @@ public sealed class ReceiptSnapshotPersistenceTests
         {
             var result = await CreateService(context, seed, serializer: serializer)
                 .CheckoutAsync(CreateRequest(seed.ProductId));
-            Assert.True(result.IsSuccess, result.Error.ToString());
+            Assert.True(result.IsSuccess, result.AppError.ToString());
         }
 
         await using (var update = database.CreateContext())
@@ -151,7 +151,7 @@ public sealed class ReceiptSnapshotPersistenceTests
         {
             var result = await CreateService(context, seed)
                 .CheckoutAsync(CreateRequest(seed.ProductId));
-            Assert.True(result.IsSuccess, result.Error.ToString());
+            Assert.True(result.IsSuccess, result.AppError.ToString());
             orderId = result.Value.OrderId;
         }
 
@@ -207,7 +207,7 @@ public sealed class ReceiptSnapshotPersistenceTests
         {
             var result = await CreateService(context, seed)
                 .CheckoutAsync(CreateRequest(seed.ProductId));
-            Assert.True(result.IsSuccess, result.Error.ToString());
+            Assert.True(result.IsSuccess, result.AppError.ToString());
             orderId = result.Value.OrderId;
         }
 
@@ -232,7 +232,7 @@ public sealed class ReceiptSnapshotPersistenceTests
         {
             var result = await CreateService(checkout, seed)
                 .CheckoutAsync(CreateRequest(seed.ProductId));
-            Assert.True(result.IsSuccess, result.Error.ToString());
+            Assert.True(result.IsSuccess, result.AppError.ToString());
             orderId = result.Value.OrderId;
         }
 
@@ -250,7 +250,7 @@ public sealed class ReceiptSnapshotPersistenceTests
         await using var context = database.CreateContext();
         var result = await CreateService(context, seed)
             .CheckoutAsync(CreateRequest(seed.ProductId));
-        Assert.True(result.IsSuccess, result.Error.ToString());
+        Assert.True(result.IsSuccess, result.AppError.ToString());
 
         await using var verify = database.CreateContext();
         var payload = await verify.OrderReceiptSnapshots
@@ -326,7 +326,7 @@ public sealed class ReceiptSnapshotPersistenceTests
             var result = await serviceFactory(context, seed)
                 .CheckoutAsync(CreateRequest(seed.ProductId));
             Assert.True(result.IsFailure);
-            Assert.Equal(ErrorCodes.Checkout.SaveFailed, result.Error.Code);
+            Assert.Equal(ErrorCodes.Checkout.SaveFailed, result.AppError.Code);
         }
 
         await using var verify = database.CreateContext();

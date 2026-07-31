@@ -14,7 +14,7 @@ public interface IPermissionService
     /// Phiên chưa đăng nhập luôn trả về false.
     /// </summary>
     bool HasPermission(
-        SystemPermission permission);
+        SystemCapability permission);
 
     /// <summary>
     /// Trả về:
@@ -23,5 +23,5 @@ public interface IPermissionService
     /// - Success khi được phép.
     /// </summary>
     Result Authorize(
-        SystemPermission permission);
+        SystemCapability permission);
 }

@@ -551,6 +551,13 @@ public sealed class ReceiptRequest
 
     public IReadOnlyList<ReceiptLineDto> Lines { get; }
 
+    public SalesDiscountType SalesDiscountType { get; init; }
+    public int? PaymentIntentId { get; init; }
+    public string? PaymentIntentDisplayCode { get; init; }
+    public DateTimeOffset? PaymentConfirmedAtUtc { get; init; }
+    public long RequestedDiscountValue { get; init; }
+    public string? DiscountReason { get; init; }
+
     private static void ValidatePaymentAmounts(
         PaymentMethod paymentMethod,
         long totalAmount,

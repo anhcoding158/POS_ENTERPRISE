@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -8,6 +8,8 @@ namespace POS.Infrastructure.Persistence.Migrations
     /// <inheritdoc />
     public partial class AddOrderReturnsFoundation : Migration
     {
+        private static readonly string[] IndexColumns1 = ["OrderId", "CreatedAtUtc"];
+
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -148,7 +150,7 @@ namespace POS.Infrastructure.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_OrderReturns_Order_CreatedAtUtc",
                 table: "OrderReturns",
-                columns: new[] { "OrderId", "CreatedAtUtc" });
+                columns: IndexColumns1);
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrderReturns_ProcessedByUserId",

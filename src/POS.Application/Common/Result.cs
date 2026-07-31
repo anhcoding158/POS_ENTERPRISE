@@ -1,4 +1,4 @@
-﻿namespace POS.Application.Common;
+namespace POS.Application.Common;
 
 /// <summary>
 /// Kết quả của một thao tác không cần trả dữ liệu.
@@ -7,7 +7,7 @@ public class Result
 {
     protected internal Result(
         bool isSuccess,
-        Error error)
+        AppError error)
     {
         ArgumentNullException.ThrowIfNull(error);
 
@@ -26,7 +26,7 @@ public class Result
         }
 
         IsSuccess = isSuccess;
-        Error = error;
+        AppError = error;
     }
 
     public bool IsSuccess { get; }
@@ -34,16 +34,16 @@ public class Result
     public bool IsFailure =>
         !IsSuccess;
 
-    public Error Error { get; }
+    public AppError AppError { get; }
 
     public static Result Success()
     {
         return new Result(
             true,
-            Error.None);
+            AppError.None);
     }
 
-    public static Result Failure(Error error)
+    public static Result Failure(AppError error)
     {
         ArgumentNullException.ThrowIfNull(error);
 
@@ -55,13 +55,16 @@ public class Result
     public static Result<TValue> Success<TValue>(
         TValue value)
     {
-        return Result<TValue>.Success(value);
+        return value is null
+            ? Failure<TValue>(AppError.NullValue)
+            : new Result<TValue>(value, true, AppError.None);
     }
 
     public static Result<TValue> Failure<TValue>(
-        Error error)
+        AppError error)
     {
-        return Result<TValue>.Failure(error);
+        ArgumentNullException.ThrowIfNull(error);
+        return new Result<TValue>(default, false, error);
     }
 
     /// <summary>
@@ -70,14 +73,14 @@ public class Result
     /// </summary>
     public TResult Match<TResult>(
         Func<TResult> onSuccess,
-        Func<Error, TResult> onFailure)
+        Func<AppError, TResult> onFailure)
     {
         ArgumentNullException.ThrowIfNull(onSuccess);
         ArgumentNullException.ThrowIfNull(onFailure);
 
         return IsSuccess
             ? onSuccess()
-            : onFailure(Error);
+            : onFailure(AppError);
     }
 
     /// <summary>
@@ -104,6 +107,6 @@ public class Result
 
         return IsSuccess
             ? next()
-            : Failure<TValue>(Error);
+            : Failure<TValue>(AppError);
     }
 }

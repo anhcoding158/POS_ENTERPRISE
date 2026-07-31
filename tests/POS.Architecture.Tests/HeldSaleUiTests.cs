@@ -194,7 +194,7 @@ public sealed class HeldSaleUiTests
 
     private static T RunOnSta<T>(Func<T> action)
     {
-        var completion = new TaskCompletionSource<(T? Result, Exception? Error)>(
+        var completion = new TaskCompletionSource<(T? Result, Exception? AppError)>(
             TaskCreationOptions.RunContinuationsAsynchronously);
         var thread = new Thread(() =>
         {
@@ -218,9 +218,9 @@ public sealed class HeldSaleUiTests
         thread.Start();
         var outcome = completion.Task.GetAwaiter().GetResult();
         thread.Join();
-        if (outcome.Error is not null)
+        if (outcome.AppError is not null)
             throw new Xunit.Sdk.XunitException(
-                $"STA construction failed: {outcome.Error}");
+                $"STA construction failed: {outcome.AppError}");
         return outcome.Result!;
     }
 

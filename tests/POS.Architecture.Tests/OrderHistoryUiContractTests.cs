@@ -45,7 +45,7 @@ public sealed class OrderHistoryUiContractTests
         Assert.True(
             RolePermissionPolicy.HasPermission(
                 POS.Domain.Enums.Role.Administrator,
-                SystemPermission.ViewReports));
+                SystemCapability.ViewReports));
     }
 
     [Fact]
@@ -143,7 +143,7 @@ public sealed class OrderHistoryUiContractTests
         var service = new FakeHistoryService
         {
             SearchResult = Result.Failure<PagedResult<OrderHistoryListItemDto>>(
-                new Error("TEST.LOAD", "Không thể tải dữ liệu."))
+                new AppError("TEST.LOAD", "Không thể tải dữ liệu."))
         };
         using var viewModel = CreateViewModel(service);
 
@@ -915,15 +915,15 @@ public sealed class OrderHistoryUiContractTests
     private sealed class FakePermissionService(
         bool hasViewReports) : IPermissionService
     {
-        public bool HasPermission(SystemPermission permission) =>
-            permission != SystemPermission.ViewReports ||
+        public bool HasPermission(SystemCapability permission) =>
+            permission != SystemCapability.ViewReports ||
             hasViewReports;
 
-        public Result Authorize(SystemPermission permission) =>
+        public Result Authorize(SystemCapability permission) =>
             HasPermission(permission)
                 ? Result.Success()
                 : Result.Failure(
-                    new Error("TEST.FORBIDDEN", "Không có quyền."));
+                    new AppError("TEST.FORBIDDEN", "Không có quyền."));
     }
 
     private sealed class FakeProductDialogService :
@@ -976,7 +976,7 @@ public sealed class OrderHistoryUiContractTests
             SuccessDetails(false);
         public Result<ReceiptRequest> ReprintResult { get; init; } =
             Result.Failure<ReceiptRequest>(
-                new Error("TEST.REPRINT", "Không có hóa đơn."));
+                new AppError("TEST.REPRINT", "Không có hóa đơn."));
 
         public Task<Result<PagedResult<OrderHistoryListItemDto>>> SearchAsync(
             OrderHistorySearchRequest request,

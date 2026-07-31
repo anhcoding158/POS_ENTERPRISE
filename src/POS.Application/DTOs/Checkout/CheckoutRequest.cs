@@ -20,7 +20,9 @@ public sealed class CheckoutRequest
         string? notes = null,
         long confirmedPaymentAmount = 0,
         Guid clientRequestId = default,
-        int? heldSaleId = null)
+        int? heldSaleId = null,
+        SalesDiscountRequest? salesDiscount = null,
+        int? paymentIntentId = null)
     {
         Lines =
             lines?
@@ -42,6 +44,8 @@ public sealed class CheckoutRequest
             clientRequestId;
 
         HeldSaleId = heldSaleId;
+        PaymentIntentId = paymentIntentId;
+        SalesDiscount = salesDiscount ?? SalesDiscountRequest.None;
 
         CustomerId =
             customerId;
@@ -69,6 +73,10 @@ public sealed class CheckoutRequest
     public Guid ClientRequestId { get; }
 
     public int? HeldSaleId { get; }
+
+    public int? PaymentIntentId { get; }
+
+    public SalesDiscountRequest SalesDiscount { get; }
 
     public PaymentMethod PaymentMethod
     {

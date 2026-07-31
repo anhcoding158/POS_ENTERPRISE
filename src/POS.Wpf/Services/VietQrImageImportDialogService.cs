@@ -479,7 +479,7 @@ public sealed class VietQrImageImportDialogService
             persistedMetadata is not null);
 
         if (metadataLoadResult.IsFailure &&
-            metadataLoadResult.Error.Code !=
+            metadataLoadResult.AppError.Code !=
                 POS.Application.Common.ErrorCodes
                     .Payments.VietQrNotConfigured)
         {
@@ -487,7 +487,7 @@ public sealed class VietQrImageImportDialogService
                 danger;
 
             statusText.Text =
-                metadataLoadResult.Error.Message;
+                metadataLoadResult.AppError.Message;
         }
 
         UpdateSaveButtonState();
@@ -568,7 +568,7 @@ public sealed class VietQrImageImportDialogService
                             danger;
 
                         statusText.Text =
-                            result.Error.Message;
+                            result.AppError.Message;
 
                         return;
                     }
@@ -660,7 +660,7 @@ public sealed class VietQrImageImportDialogService
                         danger;
 
                     statusText.Text =
-                        metadataSaveResult.Error.Message;
+                        metadataSaveResult.AppError.Message;
 
                     return;
                 }
@@ -684,14 +684,14 @@ public sealed class VietQrImageImportDialogService
                             danger;
 
                         statusText.Text =
-                            payloadSaveResult.Error.Message;
+                            payloadSaveResult.AppError.Message;
 
                         if (rollbackResult.IsFailure)
                         {
                             statusText.Text +=
                                 "\nKhông thể khôi phục thông tin người nhận; " +
                                 "cấu hình cần được kiểm tra lại. " +
-                                rollbackResult.Error.Message;
+                                rollbackResult.AppError.Message;
                         }
 
                         return;
@@ -745,7 +745,7 @@ public sealed class VietQrImageImportDialogService
                         danger;
 
                     statusText.Text =
-                        result.Error.Message;
+                        result.AppError.Message;
 
                     return;
                 }
@@ -769,7 +769,7 @@ public sealed class VietQrImageImportDialogService
                     statusText.Text =
                         "Cấu hình QR đã bị vô hiệu hóa nhưng dữ liệu hiển thị " +
                         "chưa được dọn hoàn toàn. " +
-                        metadataDeleteResult.Error.Message;
+                        metadataDeleteResult.AppError.Message;
 
                     UpdateSaveButtonState();
 

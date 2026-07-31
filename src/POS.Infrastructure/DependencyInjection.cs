@@ -202,6 +202,10 @@ public static class DependencyInjection
             VietQrService>();
 
         services.AddSingleton<
+            IVietQrPaymentGateway,
+            VietQrPaymentGateway>();
+
+        services.AddSingleton<
             IVietQrImageDecoder,
             VietQrImageDecoder>();
 
@@ -232,15 +236,9 @@ public static class DependencyInjection
                                 InfrastructureOptions>>()
                         .Value;
 
-                var pathResolver =
-                    serviceProvider
-                        .GetRequiredService<
-                            DatabasePathResolver>();
-
                 var connectionString =
-                    pathResolver
-                        .CreateConnectionString(
-                            infrastructureOptions);
+                    DatabasePathResolver.CreateConnectionString(
+                        infrastructureOptions);
 
                 var auditableEntityInterceptor =
                     serviceProvider
@@ -301,6 +299,10 @@ public static class DependencyInjection
         services.AddScoped<
             IHeldSaleRepository,
             HeldSaleRepository>();
+
+        services.AddScoped<
+            IPaymentIntentRepository,
+            PaymentIntentRepository>();
 
         services.AddSingleton<
             ICheckoutRequestCanonicalizer,

@@ -49,7 +49,7 @@ public sealed class ArchitectureDependencyTests
     {
         var references =
             GetReferencedAssemblyNames(
-                typeof(Error).Assembly);
+                typeof(AppError).Assembly);
 
         Assert.Contains(
             "POS.Domain",
@@ -121,7 +121,7 @@ public sealed class ArchitectureDependencyTests
             entityFrameworkAttributes);
     }
 
-    private static IReadOnlySet<string>
+    private static HashSet<string>
         GetReferencedAssemblyNames(
             Assembly assembly)
     {

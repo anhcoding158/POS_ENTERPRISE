@@ -1,0 +1,50 @@
+<Window x:Class="POS.Wpf.Views.PaymentIntentManualResolutionHistoryWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Lịch sử xử lý thủ công VietQR" Width="980" Height="620"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource AppBackgroundBrush}">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Text="LỊCH SỬ XỬ LÝ THỦ CÔNG VIETQR" FontSize="20" FontWeight="Bold"/>
+        <WrapPanel Grid.Row="1" Margin="0,14">
+            <DatePicker x:Name="FromDateInput" Width="140" Margin="0,0,8,0"
+                        SelectedDateChanged="OnFilterChanged"
+                        AutomationProperties.Name="Từ ngày"/>
+            <DatePicker x:Name="ToDateInput" Width="140" Margin="0,0,8,0"
+                        SelectedDateChanged="OnFilterChanged"
+                        AutomationProperties.Name="Đến ngày"/>
+            <ComboBox x:Name="ResolutionTypeInput" Width="210" SelectedIndex="0"
+                      Margin="0,0,8,0" SelectionChanged="OnFilterChanged">
+                <ComboBoxItem Tag="" Content="Tất cả loại xử lý"/>
+                <ComboBoxItem Tag="1" Content="Liên kết hóa đơn"/>
+                <ComboBoxItem Tag="2" Content="Giao dịch thử nghiệm"/>
+                <ComboBoxItem Tag="3" Content="Hoàn tiền bên ngoài"/>
+            </ComboBox>
+            <TextBox x:Name="ReferenceSearchInput" Width="220"
+                     TextChanged="OnFilterChanged"
+                     AutomationProperties.Name="Tìm mã tham chiếu"/>
+        </WrapPanel>
+        <DataGrid x:Name="HistoryGrid" Grid.Row="2" IsReadOnly="True"
+                  CanUserAddRows="False" CanUserDeleteRows="False"
+                  AutoGenerateColumns="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Tham chiếu" Binding="{Binding DisplayCode}" Width="*"/>
+                <DataGridTextColumn Header="Loại xử lý" Binding="{Binding ResolutionTypeText}" Width="160"/>
+                <DataGridTextColumn Header="Thời gian" Binding="{Binding ResolvedAtLocalText}" Width="145"/>
+                <DataGridTextColumn Header="Người xử lý" Binding="{Binding ResolvedByText}" Width="100"/>
+                <DataGridTextColumn Header="Lý do" Binding="{Binding Reason}" Width="2*"/>
+                <DataGridTextColumn Header="Tham chiếu ngoài" Binding="{Binding ExternalReference}" Width="140"/>
+                <DataGridTextColumn Header="Hóa đơn" Binding="{Binding LinkedOrderText}" Width="110"/>
+                <DataGridTextColumn Header="Số tiền" Binding="{Binding AmountText}" Width="110"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <Button Grid.Row="3" Margin="0,14,0,0" Padding="18,8"
+                HorizontalAlignment="Right" Content="ĐÓNG" IsCancel="True"/>
+    </Grid>
+</Window>

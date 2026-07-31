@@ -1,4 +1,4 @@
-﻿using System.Security.Cryptography;
+using System.Security.Cryptography;
 using System.Text;
 using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.DateTime;
@@ -201,7 +201,7 @@ public sealed class AuthService :
             {
                 return Result.Failure<
                     AuthenticatedUserDto>(
-                        saveResult.Error);
+                        saveResult.AppError);
             }
 
             if (user.IsLocked(
@@ -229,7 +229,7 @@ public sealed class AuthService :
         {
             return Result.Failure<
                 AuthenticatedUserDto>(
-                    successfulLoginSaveResult.Error);
+                    successfulLoginSaveResult.AppError);
         }
 
         var rememberedLoginResult =
@@ -242,7 +242,7 @@ public sealed class AuthService :
         {
             return Result.Failure<
                 AuthenticatedUserDto>(
-                    rememberedLoginResult.Error);
+                    rememberedLoginResult.AppError);
         }
 
         var authenticatedUser =
@@ -334,7 +334,7 @@ public sealed class AuthService :
                 .TryDelete();
 
             return Result.Failure<bool>(
-                saveResult.Error);
+                saveResult.AppError);
         }
 
         var authenticatedUser =
@@ -361,7 +361,7 @@ public sealed class AuthService :
             .TryDelete())
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     ErrorCodes.General.Unexpected,
                     "Không thể xóa phiên đăng nhập đã ghi nhớ. " +
                     "Vui lòng đóng các tiến trình đang sử dụng " +
@@ -384,7 +384,7 @@ public sealed class AuthService :
                 .TryDelete())
             {
                 return Result.Failure(
-                    new Error(
+                    new AppError(
                         ErrorCodes.General.Unexpected,
                         "Không thể xóa phiên đăng nhập cũ " +
                         "trên máy hiện tại."));
@@ -417,7 +417,7 @@ public sealed class AuthService :
                 credential))
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     ErrorCodes.General.Unexpected,
                     "Đăng nhập thành công nhưng không thể " +
                     "lưu phiên 30 ngày trên máy này. " +
@@ -443,7 +443,7 @@ public sealed class AuthService :
             PersistenceConflictException)
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     ErrorCodes.General.Conflict,
                     "Trạng thái tài khoản vừa được thay đổi " +
                     "bởi một thao tác khác. Vui lòng thử lại."));
@@ -563,7 +563,7 @@ public sealed class AuthService :
             string errorMessage)
     {
         return Result.Failure<TValue>(
-            new Error(
+            new AppError(
                 errorCode,
                 errorMessage));
     }

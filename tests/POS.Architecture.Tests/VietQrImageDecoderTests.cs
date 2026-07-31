@@ -51,7 +51,7 @@ public sealed class VietQrImageDecoderTests
 
         Assert.True(
             result.IsSuccess,
-            result.Error.Message);
+            result.AppError.Message);
 
         Assert.Equal(
             ValidVietQrPayload,
@@ -75,7 +75,7 @@ public sealed class VietQrImageDecoderTests
         Assert.Equal(
             ErrorCodes.Payments
                 .VietQrInvalidPayload,
-            result.Error.Code);
+            result.AppError.Code);
     }
 
     [Fact]
@@ -100,11 +100,11 @@ public sealed class VietQrImageDecoderTests
         Assert.Equal(
             ErrorCodes.Payments
                 .VietQrInvalidPayload,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Contains(
             "ảnh",
-            result.Error.Message,
+            result.AppError.Message,
             StringComparison.OrdinalIgnoreCase);
     }
 
@@ -129,11 +129,11 @@ public sealed class VietQrImageDecoderTests
         Assert.Equal(
             ErrorCodes.Payments
                 .VietQrInvalidPayload,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Contains(
             "không phải",
-            result.Error.Message,
+            result.AppError.Message,
             StringComparison.OrdinalIgnoreCase);
     }
 
@@ -158,11 +158,11 @@ public sealed class VietQrImageDecoderTests
         Assert.Equal(
             ErrorCodes.Payments
                 .VietQrInvalidPayload,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Contains(
             "định danh VietQR",
-            result.Error.Message,
+            result.AppError.Message,
             StringComparison.OrdinalIgnoreCase);
     }
 
@@ -188,11 +188,11 @@ public sealed class VietQrImageDecoderTests
         Assert.Equal(
             ErrorCodes.Payments
                 .VietQrInvalidPayload,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Contains(
             "15 MB",
-            result.Error.Message,
+            result.AppError.Message,
             StringComparison.Ordinal);
     }
 

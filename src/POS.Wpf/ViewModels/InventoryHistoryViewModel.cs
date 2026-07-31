@@ -610,7 +610,7 @@ public sealed class InventoryHistoryViewModel :
         }
         catch (Exception exception)
         {
-            _logger.LogError(
+            global::POS.Application.Common.PosLog.Error(_logger,
                 exception,
                 "Không thể khởi tạo cửa sổ lịch sử kho.");
 
@@ -633,7 +633,7 @@ public sealed class InventoryHistoryViewModel :
         await LoadMovementsAsync();
     }
 
-    private Task RefreshAsync()
+    private Task<bool> RefreshAsync()
     {
         return LoadMovementsAsync();
     }
@@ -808,13 +808,13 @@ public sealed class InventoryHistoryViewModel :
             if (result.IsFailure)
             {
                 ErrorMessage =
-                    result.Error.Message;
+                    result.AppError.Message;
 
-                _logger.LogWarning(
+                global::POS.Application.Common.PosLog.Warning(_logger,
                     "Tải lịch sử kho thất bại: " +
                     "{ErrorCode} - {ErrorMessage}",
-                    result.Error.Code,
-                    result.Error.Message);
+                    result.AppError.Code,
+                    result.AppError.Message);
 
                 return false;
             }
@@ -887,7 +887,7 @@ public sealed class InventoryHistoryViewModel :
         }
         catch (Exception exception)
         {
-            _logger.LogError(
+            global::POS.Application.Common.PosLog.Error(_logger,
                 exception,
                 "Không thể tải lịch sử tồn kho.");
 
@@ -940,7 +940,7 @@ public sealed class InventoryHistoryViewModel :
             if (searchResult.IsFailure)
             {
                 ErrorMessage =
-                    searchResult.Error.Message;
+                    searchResult.AppError.Message;
 
                 return false;
             }
@@ -1003,7 +1003,7 @@ public sealed class InventoryHistoryViewModel :
         }
         catch (Exception exception)
         {
-            _logger.LogError(
+            global::POS.Application.Common.PosLog.Error(_logger,
                 exception,
                 "Không thể tải danh sách sản phẩm cho bộ lọc kho.");
 
@@ -1134,7 +1134,7 @@ public sealed class InventoryHistoryViewModel :
     private void HandleCommandException(
         Exception exception)
     {
-        _logger.LogError(
+        global::POS.Application.Common.PosLog.Error(_logger,
             exception,
             "Một lệnh lịch sử kho không thể hoàn thành.");
 

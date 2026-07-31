@@ -371,7 +371,7 @@ public sealed class FirstRunSetupViewModel :
             if (result.IsFailure)
             {
                 ShowError(
-                    result.Error.Message);
+                    result.AppError.Message);
 
                 return;
             }
@@ -386,7 +386,7 @@ public sealed class FirstRunSetupViewModel :
         }
         catch (Exception exception)
         {
-            _logger.LogError(
+            global::POS.Application.Common.PosLog.Error(_logger,
                 exception,
                 "Không thể tạo Administrator đầu tiên.");
 
@@ -556,7 +556,7 @@ public sealed class FirstRunSetupViewModel :
     private void HandleCommandException(
         Exception exception)
     {
-        _logger.LogError(
+        global::POS.Application.Common.PosLog.Error(_logger,
             exception,
             "Lệnh thiết lập Administrator thất bại.");
 

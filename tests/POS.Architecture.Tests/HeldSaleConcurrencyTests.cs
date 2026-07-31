@@ -51,7 +51,7 @@ public sealed class HeldSaleConcurrencyTests
             Task.Run(() => RunAsync(3)));
         Assert.Single(results, result => result.IsSuccess);
         Assert.Single(results, result =>
-            result.IsFailure && result.Error.Code == "HELD_SALE.IDEMPOTENCY_CONFLICT");
+            result.IsFailure && result.AppError.Code == "HELD_SALE.IDEMPOTENCY_CONFLICT");
         await using var verify = database.Context();
         Assert.Equal(1, await verify.HeldSales.CountAsync());
     }

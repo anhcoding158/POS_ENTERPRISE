@@ -62,7 +62,7 @@ public sealed class OrderReturnUiTests
         var requestId = viewModel.ClientRequestId;
 
         service.ProcessResult = Result.Failure<OrderReturnResultDto>(
-            new Error("TEST", "Thử lại"));
+            new AppError("TEST", "Thử lại"));
         await ExecuteAndWaitAsync(viewModel, service);
         service.ProcessResult = StubService.Success(requestId);
         await ExecuteAndWaitAsync(viewModel, service);
@@ -444,7 +444,7 @@ public sealed class OrderReturnUiTests
         public TaskCompletionSource ProcessCompleted { get; private set; } =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
         public Result<OrderReturnResultDto> ProcessResult { get; set; } =
-            Result.Failure<OrderReturnResultDto>(new Error("TEST", "test"));
+            Result.Failure<OrderReturnResultDto>(new AppError("TEST", "test"));
 
         public Task<Result<OrderReturnResultDto>> ProcessAsync(
             OrderReturnRequest request, CancellationToken cancellationToken = default)

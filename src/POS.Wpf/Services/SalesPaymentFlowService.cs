@@ -437,7 +437,7 @@ public sealed class SalesPaymentFlowService :
         {
             return Result.Failure<
                 SalesPaymentAuthorizationOutcome>(
-                    validation.Error);
+                    validation.AppError);
         }
 
         return request.PaymentMethod switch
@@ -476,7 +476,7 @@ public sealed class SalesPaymentFlowService :
                 request.PaymentMethod))
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     ErrorCodes.Checkout
                         .InvalidPaymentMethod,
 
@@ -489,7 +489,7 @@ public sealed class SalesPaymentFlowService :
                 .MaximumOrderAmount)
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     ErrorCodes.Payments
                         .InvalidAmount,
 
@@ -502,7 +502,7 @@ public sealed class SalesPaymentFlowService :
                 .MaximumOrderAmount)
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     ErrorCodes.Payments
                         .InvalidAmount,
 
@@ -592,7 +592,7 @@ public sealed class SalesPaymentFlowService :
             {
                 return Result.Failure<
                     SalesPaymentAuthorizationOutcome>(
-                        existingValidation.Error);
+                        existingValidation.AppError);
             }
 
             return Result.Success(
@@ -635,7 +635,7 @@ public sealed class SalesPaymentFlowService :
         {
             return Result.Failure<
                 SalesPaymentAuthorizationOutcome>(
-                    dialogResult.Error);
+                    dialogResult.AppError);
         }
 
         if (!dialogResult.Value.Confirmed)
@@ -695,7 +695,7 @@ public sealed class SalesPaymentFlowService :
             PaymentMethod.VietQr)
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     ErrorCodes.General.Validation,
 
                     "Authorization đang chờ không phải " +
@@ -706,7 +706,7 @@ public sealed class SalesPaymentFlowService :
             0)
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     ErrorCodes.General.Validation,
 
                     "Authorization VietQR không được có " +
@@ -717,7 +717,7 @@ public sealed class SalesPaymentFlowService :
             0)
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     ErrorCodes.Payments.InvalidAmount,
 
                     "Authorization VietQR thiếu số tiền " +
@@ -728,7 +728,7 @@ public sealed class SalesPaymentFlowService :
             expectedTotalAmount)
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     ErrorCodes.Payments
                         .VietQrAmountMismatch,
 
@@ -748,7 +748,7 @@ public sealed class SalesPaymentFlowService :
                 authorization.TransferContent))
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     ErrorCodes.Payments
                         .VietQrInvalidPayload,
 
@@ -827,7 +827,7 @@ public sealed class SalesPaymentFlowService :
     {
         return Result.Failure<
             SalesPaymentAuthorizationOutcome>(
-                new Error(
+                new AppError(
                     code,
                     message));
     }

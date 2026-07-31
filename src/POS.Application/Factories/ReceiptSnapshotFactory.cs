@@ -40,7 +40,15 @@ public static class ReceiptSnapshotFactory
             original.RestaurantTableName,
             original.DiscountCode,
             original.Notes,
-            original.PaidAtUtc);
+            original.PaidAtUtc)
+        {
+            SalesDiscountType = original.SalesDiscountType,
+            RequestedDiscountValue = original.RequestedDiscountValue,
+            DiscountReason = original.DiscountReason,
+            PaymentIntentId = original.PaymentIntentId,
+            PaymentIntentDisplayCode = original.PaymentIntentDisplayCode,
+            PaymentConfirmedAtUtc = original.PaymentConfirmedAtUtc
+        };
     }
 
     /// <summary>
@@ -166,7 +174,15 @@ public static class ReceiptSnapshotFactory
                 receiptNotes,
 
             paidAtUtc:
-                checkoutResult.PaidAtUtc);
+                checkoutResult.PaidAtUtc)
+        {
+            SalesDiscountType = checkoutResult.SalesDiscountType,
+            RequestedDiscountValue = checkoutResult.RequestedDiscountValue,
+            DiscountReason = checkoutResult.DiscountReason,
+            PaymentIntentId = checkoutResult.PaymentIntentId,
+            PaymentIntentDisplayCode = checkoutResult.PaymentIntentDisplayCode,
+            PaymentConfirmedAtUtc = checkoutResult.PaymentConfirmedAtUtc
+        };
     }
 
     private static ReceiptLineDto MapLine(

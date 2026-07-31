@@ -101,7 +101,8 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
     public AsyncRelayCommand RefreshCommand { get; }
     public AsyncRelayCommand OpenReceiptCommand { get; }
     public AsyncRelayCommand OpenReturnCommand { get; }
-    public int PageSize => 25;
+    private readonly int _pageSize = 25;
+    public int PageSize => _pageSize;
 
     public OrderHistoryRowViewModel? SelectedOrder
     {
@@ -229,6 +230,49 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
             : null;
     public bool HasSelectedOrderNotes =>
         !string.IsNullOrWhiteSpace(SelectedOrderNotes);
+    public bool HasSelectedVietQrReference
+    {
+        get
+        {
+            var details = _selectedDetails;
+            return details is not null &&
+                   details.OrderId == SelectedOrder?.OrderId &&
+                   !string.IsNullOrWhiteSpace(details.PaymentIntentDisplayCode);
+        }
+    }
+    public string SelectedVietQrReferenceText =>
+        HasSelectedVietQrReference
+            ? $"{_selectedDetails!.PaymentIntentDisplayCode} · " +
+              $"{_selectedDetails.PaymentConfirmedAtUtc?.ToLocalTime():dd/MM/yyyy HH:mm}"
+            : string.Empty;
+
+    public bool HasSelectedOrderDiscount
+    {
+        get
+        {
+            var details = _selectedDetails;
+            return details is not null &&
+                   details.OrderId == SelectedOrder?.OrderId &&
+                   details.SalesDiscountType != POS.Domain.Enums.SalesDiscountType.None;
+        }
+    }
+
+    public string SelectedOrderDiscountText
+    {
+        get
+        {
+            var details = _selectedDetails;
+            if (!HasSelectedOrderDiscount || details is null)
+                return string.Empty;
+
+            return $"{(details.SalesDiscountType == POS.Domain.Enums.SalesDiscountType.FixedAmount ? "Giảm theo số tiền" : "Giảm theo phần trăm")}: " +
+                   $"{SalesDiscountPresentationFormatter.FormatRequestedValue(details.SalesDiscountType, details.RequestedDiscountValue)}\n" +
+                   $"Số tiền giảm: {SalesDiscountPresentationFormatter.FormatMoney(details.DiscountAmount)}\n" +
+                   $"Lý do: {details.DiscountReason}\n" +
+                   $"Người thực hiện: {details.DiscountAppliedBy} · " +
+                   $"{SalesDiscountPresentationFormatter.FormatLocalTime(details.DiscountAppliedAtUtc)}";
+        }
+    }
     public bool HasReceiptSnapshot =>
         _selectedDetails?.OrderId == SelectedOrder?.OrderId &&
         _selectedDetails?.HasReceiptSnapshot == true;
@@ -239,7 +283,7 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
         !_isOpeningReceipt;
     public bool CanOpenReturn =>
         _returnWindow is not null &&
-        _permissions?.HasPermission(SystemPermission.ProcessReturns) == true &&
+        _permissions?.HasPermission(SystemCapability.ProcessReturns) == true &&
         _selectedDetails?.OrderId == SelectedOrder?.OrderId &&
         _selectedDetails?.Status == OrderStatus.Completed &&
         _selectedDetails.Lines.Any(line => line.Quantity > 0) &&
@@ -339,7 +383,7 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
             }
             if (result.IsFailure)
             {
-                ErrorMessage = result.Error.Message;
+                ErrorMessage = result.AppError.Message;
                 return;
             }
             Orders.Clear();
@@ -370,6 +414,10 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
         _selectedDetails = null;
         OnPropertyChanged(nameof(SelectedOrderNotes));
         OnPropertyChanged(nameof(HasSelectedOrderNotes));
+        OnPropertyChanged(nameof(HasSelectedOrderDiscount));
+        OnPropertyChanged(nameof(SelectedOrderDiscountText));
+        OnPropertyChanged(nameof(HasSelectedVietQrReference));
+        OnPropertyChanged(nameof(SelectedVietQrReferenceText));
         NotifySelectionState();
         if (row is null || _disposed)
         {
@@ -387,12 +435,16 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
             }
             if (result.IsFailure)
             {
-                ErrorMessage = result.Error.Message;
+                ErrorMessage = result.AppError.Message;
                 return;
             }
             _selectedDetails = result.Value;
             OnPropertyChanged(nameof(SelectedOrderNotes));
             OnPropertyChanged(nameof(HasSelectedOrderNotes));
+            OnPropertyChanged(nameof(HasSelectedOrderDiscount));
+            OnPropertyChanged(nameof(SelectedOrderDiscountText));
+            OnPropertyChanged(nameof(HasSelectedVietQrReference));
+            OnPropertyChanged(nameof(SelectedVietQrReferenceText));
             foreach (var line in result.Value.Lines)
             {
                 SelectedOrderLines.Add(new OrderHistoryLineViewModel(line));
@@ -403,7 +455,7 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "Không thể tải chi tiết đơn hàng.");
+            global::POS.Application.Common.PosLog.Error(_logger, exception, "Không thể tải chi tiết đơn hàng.");
             ErrorMessage = "Không thể tải chi tiết đơn hàng.";
         }
         finally
@@ -438,7 +490,7 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
             }
             if (result.IsFailure)
             {
-                ErrorMessage = result.Error.Message;
+                ErrorMessage = result.AppError.Message;
                 return;
             }
             await _preview.ShowAsync(result.Value, source.Token);
@@ -448,7 +500,7 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "Không thể mở bản sao hóa đơn.");
+            global::POS.Application.Common.PosLog.Error(_logger, exception, "Không thể mở bản sao hóa đơn.");
             ErrorMessage = "Không thể mở bản sao hóa đơn.";
         }
         finally
@@ -515,7 +567,7 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
 
     private void OnCommandError(Exception exception)
     {
-        _logger.LogError(exception, "Lệnh lịch sử đơn hàng thất bại.");
+        global::POS.Application.Common.PosLog.Error(_logger, exception, "Lệnh lịch sử đơn hàng thất bại.");
         ErrorMessage = "Không thể hoàn thành thao tác lịch sử đơn hàng.";
     }
 

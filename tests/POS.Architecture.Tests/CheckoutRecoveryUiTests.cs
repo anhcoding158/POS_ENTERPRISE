@@ -29,7 +29,7 @@ public sealed class CheckoutRecoveryUiTests
         Assert.Contains("chưa hoàn tất", prepared.StateTitle, StringComparison.OrdinalIgnoreCase);
         Assert.True(completed.IsCompleted);
         Assert.False(completed.IsPrepared);
-        Assert.Contains("đã hoàn tất", completed.StateTitle, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("ĐƠN ĐÃ ĐƯỢC LƯU", completed.StateTitle);
         Assert.True(completed.CanOpenReceipt);
     }
 

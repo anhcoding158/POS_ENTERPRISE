@@ -1,7 +1,9 @@
-﻿using POS.Application.Common;
+using POS.Application.Common;
 using POS.Application.DTOs.Checkout;
 using POS.Domain.Constants;
 using POS.Domain.Enums;
+using POS.Domain.Common;
+using POS.Domain.Services;
 
 namespace POS.Application.Validation;
 
@@ -72,6 +74,13 @@ public static class CheckoutValidator
         switch (request.PaymentMethod)
         {
             case PaymentMethod.Cash:
+
+                if (request.PaymentIntentId.HasValue)
+                {
+                    return Failure(
+                        ErrorCodes.General.Validation,
+                        "Thanh toán tiền mặt không được có PaymentIntentId.");
+                }
 
                 if (request.CashReceived < 0 ||
                     request.CashReceived >
@@ -160,6 +169,29 @@ public static class CheckoutValidator
                     .DiscountNotSupported,
                 "Mã giảm giá chưa được hỗ trợ " +
                 "trong phiên bản Checkout này.");
+        }
+
+        try
+        {
+            if (request.SalesDiscount.Type == SalesDiscountType.None)
+            {
+                if (request.SalesDiscount.Value != 0 ||
+                    request.SalesDiscount.Reason is not null)
+                    return Failure("SALES_DISCOUNT.INVALID_NONE", "Không giảm giá có payload không hợp lệ.");
+            }
+            else
+            {
+                _ = SalesDiscountCalculator.NormalizeReason(
+                    request.SalesDiscount.Type, request.SalesDiscount.Reason);
+                if (request.SalesDiscount.Value <= 0 ||
+                    request.SalesDiscount.Type == SalesDiscountType.Percentage &&
+                    request.SalesDiscount.Value > 10_000)
+                    return Failure("SALES_DISCOUNT.VALUE_INVALID", "Giá trị giảm giá không hợp lệ.");
+            }
+        }
+        catch (DomainException exception)
+        {
+            return Failure(exception.Code, exception.Message);
         }
 
         if (request.Notes?.Length >
@@ -261,7 +293,7 @@ public static class CheckoutValidator
         string message)
     {
         return Result.Failure(
-            new Error(
+            new AppError(
                 code,
                 message));
     }

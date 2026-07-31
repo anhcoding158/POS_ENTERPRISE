@@ -1,4 +1,4 @@
-﻿using POS.Application.Common;
+using POS.Application.Common;
 using POS.Application.DTOs.Products;
 
 namespace POS.Application.Abstractions.Services;
@@ -16,7 +16,7 @@ public interface IProductService
         CancellationToken cancellationToken = default) =>
         Task.FromResult(
             Result.Failure<SalesCatalogProductDto>(
-                new Error(
+                new AppError(
                     ErrorCodes.Products.NotFound,
                     "Không tìm thấy sản phẩm.")));
 

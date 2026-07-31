@@ -17,7 +17,7 @@ namespace POS.Architecture.Tests;
 /// </summary>
 public sealed class AuthorizedInventoryServiceTests
 {
-    private static readonly Error
+    private static readonly AppError
         InnerServiceError =
             new(
                 "TEST.INNER_SERVICE_REACHED",
@@ -119,11 +119,11 @@ public sealed class AuthorizedInventoryServiceTests
 
         Assert.Equal(
             InnerServiceError.Code,
-            adjustResult.Error.Code);
+            adjustResult.AppError.Code);
 
         Assert.Equal(
             InnerServiceError.Code,
-            searchResult.Error.Code);
+            searchResult.AppError.Code);
 
         Assert.Equal(
             1,
@@ -155,11 +155,11 @@ public sealed class AuthorizedInventoryServiceTests
 
         Assert.Equal(
             InnerServiceError.Code,
-            adjustResult.Error.Code);
+            adjustResult.AppError.Code);
 
         Assert.Equal(
             InnerServiceError.Code,
-            searchResult.Error.Code);
+            searchResult.AppError.Code);
 
         Assert.Equal(
             1,
@@ -191,11 +191,11 @@ public sealed class AuthorizedInventoryServiceTests
 
         Assert.Equal(
             InnerServiceError.Code,
-            adjustResult.Error.Code);
+            adjustResult.AppError.Code);
 
         Assert.Equal(
             InnerServiceError.Code,
-            searchResult.Error.Code);
+            searchResult.AppError.Code);
 
         Assert.Equal(
             1,

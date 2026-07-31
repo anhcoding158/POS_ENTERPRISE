@@ -26,6 +26,10 @@ public sealed class HeldSaleConfiguration : IEntityTypeConfiguration<HeldSale>
                 $"(\"Status\" = {(int)HeldSaleStatus.Completed} AND \"CompletedAtUtc\" IS NOT NULL AND \"CancelledAtUtc\" IS NULL AND \"CompletedOrderId\" IS NOT NULL) OR " +
                 $"(\"Status\" = {(int)HeldSaleStatus.Cancelled} AND \"CompletedAtUtc\" IS NULL AND \"CancelledAtUtc\" IS NOT NULL AND \"CompletedOrderId\" IS NULL)");
             table.HasCheckConstraint("CK_HeldSales_CreatedBy", "\"CreatedByUserId\" > 0");
+            table.HasCheckConstraint("CK_HeldSales_DiscountAmount",
+                "\"ResolvedDiscountAmountSnapshot\" >= 0 AND \"ResolvedDiscountAmountSnapshot\" <= \"SubtotalSnapshot\"");
+            table.HasCheckConstraint("CK_HeldSales_TotalEquation",
+                "\"TotalSnapshot\" = \"SubtotalSnapshot\" - \"ResolvedDiscountAmountSnapshot\"");
         });
         builder.ConfigureAuditableEntity();
         builder.Property(value => value.ClientRequestId).IsRequired();
@@ -37,7 +41,12 @@ public sealed class HeldSaleConfiguration : IEntityTypeConfiguration<HeldSale>
         builder.Property(value => value.Status).HasConversion<int>().IsRequired();
         builder.Property(value => value.CompletedAtUtc).HasConversion(NullableTime).HasColumnType("INTEGER");
         builder.Property(value => value.CancelledAtUtc).HasConversion(NullableTime).HasColumnType("INTEGER");
-        builder.Ignore(value => value.TotalSnapshot);
+        builder.Property(value => value.DiscountType).HasConversion<int>().IsRequired();
+        builder.Property(value => value.RequestedDiscountValue).HasColumnType("INTEGER").IsRequired();
+        builder.Property(value => value.DiscountReason).HasMaxLength(200);
+        builder.Property(value => value.ResolvedDiscountAmountSnapshot).HasColumnType("INTEGER").IsRequired();
+        builder.Property(value => value.SubtotalSnapshot).HasColumnType("INTEGER").IsRequired();
+        builder.Property(value => value.TotalSnapshot).HasColumnType("INTEGER").IsRequired();
         builder.HasIndex(value => value.ClientRequestId).IsUnique()
             .HasDatabaseName("UX_HeldSales_ClientRequestId");
         builder.HasIndex(value => value.DisplayCode).IsUnique()

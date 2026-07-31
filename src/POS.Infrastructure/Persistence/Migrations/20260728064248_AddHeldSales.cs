@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -8,6 +8,10 @@ namespace POS.Infrastructure.Persistence.Migrations
     /// <inheritdoc />
     public partial class AddHeldSales : Migration
     {
+        private static readonly string[] IndexColumns1 = ["HeldSaleId", "SortOrder"];
+        private static readonly string[] IndexColumns2 = ["CreatedByUserId", "Status", "UpdatedAtUtc"];
+        private static readonly string[] IndexColumns3 = ["Status", "UpdatedAtUtc"];
+
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -100,18 +104,18 @@ namespace POS.Infrastructure.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "UX_HeldSaleLines_HeldSale_SortOrder",
                 table: "HeldSaleLines",
-                columns: new[] { "HeldSaleId", "SortOrder" },
+                columns: IndexColumns1,
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_HeldSales_CreatedBy_Status_UpdatedAtUtc",
                 table: "HeldSales",
-                columns: new[] { "CreatedByUserId", "Status", "UpdatedAtUtc" });
+                columns: IndexColumns2);
 
             migrationBuilder.CreateIndex(
                 name: "IX_HeldSales_Status_UpdatedAtUtc",
                 table: "HeldSales",
-                columns: new[] { "Status", "UpdatedAtUtc" });
+                columns: IndexColumns3);
 
             migrationBuilder.CreateIndex(
                 name: "UX_HeldSales_ClientRequestId",

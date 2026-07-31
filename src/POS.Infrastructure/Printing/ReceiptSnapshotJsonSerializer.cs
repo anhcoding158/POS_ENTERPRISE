@@ -215,7 +215,25 @@ public sealed class ReceiptSnapshotJsonSerializer :
                 snapshot.Lines
                     .Select(
                         MapLineToPayload)
-                    .ToArray());
+                    .ToArray(),
+
+            SalesDiscountType:
+                (int)snapshot.SalesDiscountType,
+
+            RequestedDiscountValue:
+                snapshot.RequestedDiscountValue,
+
+            DiscountReason:
+                snapshot.DiscountReason,
+
+            PaymentIntentId:
+                snapshot.PaymentIntentId,
+
+            PaymentIntentDisplayCode:
+                snapshot.PaymentIntentDisplayCode,
+
+            PaymentConfirmedAtUtc:
+                snapshot.PaymentConfirmedAtUtc);
     }
 
     private static ReceiptLinePayload
@@ -395,7 +413,15 @@ public sealed class ReceiptSnapshotJsonSerializer :
                 payload.Notes,
 
             paidAtUtc:
-                payload.PaidAtUtc);
+                payload.PaidAtUtc)
+        {
+            SalesDiscountType = (SalesDiscountType)payload.SalesDiscountType,
+            RequestedDiscountValue = payload.RequestedDiscountValue,
+            DiscountReason = payload.DiscountReason,
+            PaymentIntentId = payload.PaymentIntentId,
+            PaymentIntentDisplayCode = payload.PaymentIntentDisplayCode,
+            PaymentConfirmedAtUtc = payload.PaymentConfirmedAtUtc
+        };
     }
 
     private static ReceiptStoreSnapshotDto
@@ -544,7 +570,13 @@ public sealed class ReceiptSnapshotJsonSerializer :
         long TotalAmount,
         long CashReceived,
         long ChangeAmount,
-        ReceiptLinePayload?[]? Lines);
+        ReceiptLinePayload?[]? Lines,
+        int SalesDiscountType = 0,
+        long RequestedDiscountValue = 0,
+        string? DiscountReason = null,
+        int? PaymentIntentId = null,
+        string? PaymentIntentDisplayCode = null,
+        DateTimeOffset? PaymentConfirmedAtUtc = null);
 
     private sealed record ReceiptStorePayload(
         string? Name,

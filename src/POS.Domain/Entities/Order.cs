@@ -100,6 +100,8 @@ public sealed class Order : AuditableEntity
     public IReadOnlyCollection<OrderItem> Items =>
         _items.AsReadOnly();
 
+    public OrderDiscountSnapshot? DiscountSnapshot { get; private set; }
+
     public int ActiveItemCount =>
         _items.Count(
             item => item.Status ==
@@ -333,6 +335,25 @@ public sealed class Order : AuditableEntity
         MarkUpdated(utcNow);
     }
 
+    public OrderDiscountSnapshot ApplySalesDiscount(
+        SalesDiscountType type,
+        long requestedValue,
+        string reason,
+        int appliedByUserId,
+        DateTimeOffset utcNow)
+    {
+        EnsureEditable();
+        if (DiscountSnapshot is not null || DiscountAmount != 0)
+            throw new DomainException("SALES_DISCOUNT.STACKING_NOT_ALLOWED", "Mỗi đơn chỉ được áp dụng một giảm giá.");
+        RecalculateSubtotal();
+        var resolved = Services.SalesDiscountCalculator.Resolve(
+            Subtotal, type, requestedValue, reason);
+        ApplyDiscount(null, null, resolved, utcNow);
+        DiscountSnapshot = new OrderDiscountSnapshot(
+            this, type, requestedValue, resolved, reason, appliedByUserId, utcNow);
+        return DiscountSnapshot;
+    }
+
     public void ClearDiscount(DateTimeOffset utcNow)
     {
         EnsureEditable();
@@ -527,9 +548,9 @@ public sealed class Order : AuditableEntity
         RecalculateSubtotal();
 
         if (DiscountAmount > Subtotal)
-        {
-            DiscountAmount = Subtotal;
-        }
+            throw new DomainException(
+                "ORDER.DISCOUNT_EXCEEDS_SUBTOTAL",
+                "Giảm giá không còn hợp lệ với tạm tính hiện tại.");
 
         RecalculateTotalAmount();
     }

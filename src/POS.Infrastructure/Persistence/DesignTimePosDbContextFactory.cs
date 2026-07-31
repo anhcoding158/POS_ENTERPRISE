@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using System.IO;
 using Microsoft.EntityFrameworkCore.Design;
@@ -27,7 +27,7 @@ public sealed class DesignTimePosDbContextFactory :
             new DatabasePathResolver();
 
         var connectionString =
-            pathResolver.CreateConnectionString(
+            DatabasePathResolver.CreateConnectionString(
                 infrastructureOptions);
 
         var optionsBuilder =

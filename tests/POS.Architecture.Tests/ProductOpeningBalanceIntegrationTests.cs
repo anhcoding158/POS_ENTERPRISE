@@ -63,7 +63,7 @@ public sealed class ProductOpeningBalanceIntegrationTests
 
             Assert.True(
                 result.IsSuccess,
-                result.Error.ToString());
+                result.AppError.ToString());
 
             Assert.True(
                 result.Value.Id > 0);
@@ -153,7 +153,7 @@ public sealed class ProductOpeningBalanceIntegrationTests
 
         Assert.True(
             createResult.IsSuccess,
-            createResult.Error.ToString());
+            createResult.AppError.ToString());
 
         var searchResult =
             await service.SearchAsync(
@@ -163,7 +163,7 @@ public sealed class ProductOpeningBalanceIntegrationTests
 
         Assert.True(
             searchResult.IsSuccess,
-            searchResult.Error.ToString());
+            searchResult.AppError.ToString());
 
         var item =
             Assert.Single(
@@ -199,7 +199,7 @@ public sealed class ProductOpeningBalanceIntegrationTests
 
             Assert.True(
                 result.IsSuccess,
-                result.Error.ToString());
+                result.AppError.ToString());
 
             Assert.Equal(
                 -4,
@@ -270,7 +270,7 @@ public sealed class ProductOpeningBalanceIntegrationTests
 
             Assert.True(
                 result.IsSuccess,
-                result.Error.ToString());
+                result.AppError.ToString());
 
             Assert.Equal(
                 0,
@@ -337,7 +337,7 @@ public sealed class ProductOpeningBalanceIntegrationTests
 
             Assert.Equal(
                 "GENERAL.VALIDATION",
-                result.Error.Code);
+                result.AppError.Code);
         }
 
         await using var verifyContext =
@@ -438,7 +438,7 @@ public sealed class ProductOpeningBalanceIntegrationTests
 
             Assert.True(
                 createResult.IsSuccess,
-                createResult.Error.ToString());
+                createResult.AppError.ToString());
 
             productId =
                 createResult.Value.Id;
@@ -477,7 +477,7 @@ public sealed class ProductOpeningBalanceIntegrationTests
 
             Assert.True(
                 updateResult.IsSuccess,
-                updateResult.Error.ToString());
+                updateResult.AppError.ToString());
 
             Assert.Equal(
                 18,

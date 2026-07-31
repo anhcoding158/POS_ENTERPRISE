@@ -27,8 +27,8 @@ public sealed class OrderReturnService(
         CancellationToken cancellationToken = default)
     {
         var validation = ValidateAndNormalize(request);
-        if (validation.Error is not null)
-            return Result.Failure<OrderReturnResultDto>(validation.Error);
+        if (validation.AppError is not null)
+            return Result.Failure<OrderReturnResultDto>(validation.AppError);
 
         if (currentUser.UserId is not int actorId || actorId <= 0)
             return Failure("ORDER_RETURN.UNAUTHORIZED", "Phiên người dùng không hợp lệ.");
@@ -154,7 +154,7 @@ public sealed class OrderReturnService(
     {
         if (orderId <= 0)
             return Result.Failure<IReadOnlyList<OrderReturnSummaryDto>>(
-                new Error(ErrorCodes.General.Validation, "OrderId không hợp lệ."));
+                new AppError(ErrorCodes.General.Validation, "OrderId không hợp lệ."));
         var documents = await returns.GetByOrderIdReadOnlyAsync(orderId, cancellationToken);
         return Result.Success<IReadOnlyList<OrderReturnSummaryDto>>(
             documents.Select(MapSummary).ToArray());
@@ -167,10 +167,10 @@ public sealed class OrderReturnService(
         var order = await orders.GetByIdReadOnlyAsync(orderId, cancellationToken);
         if (order is null)
             return Result.Failure<ReturnableOrderDto>(
-                new Error("ORDER_RETURN.NOT_FOUND", "Không tìm thấy đơn hàng."));
+                new AppError("ORDER_RETURN.NOT_FOUND", "Không tìm thấy đơn hàng."));
         if (order.Status != OrderStatus.Completed)
             return Result.Failure<ReturnableOrderDto>(
-                new Error("ORDER_RETURN.NOT_COMPLETED", "Đơn hàng không đủ điều kiện trả."));
+                new AppError("ORDER_RETURN.NOT_COMPLETED", "Đơn hàng không đủ điều kiện trả."));
 
         var balances = await returns.GetBalancesForOrderAsync(orderId, cancellationToken);
         var allocations = OrderReturnRefundAllocator.AllocateOrderTotal(
@@ -211,7 +211,7 @@ public sealed class OrderReturnService(
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical.ToString())));
     }
 
-    private static (OrderReturnRequest? Request, Error? Error) ValidateAndNormalize(OrderReturnRequest request)
+    private static (OrderReturnRequest? Request, AppError? AppError) ValidateAndNormalize(OrderReturnRequest request)
     {
         if (request is null || request.ClientRequestId == Guid.Empty ||
             request.OrderId <= 0 || string.IsNullOrWhiteSpace(request.Reason) ||
@@ -219,7 +219,7 @@ public sealed class OrderReturnService(
             request.Lines.Count == 0 || request.Lines.GroupBy(line => line.OrderItemId).Any(group => group.Count() > 1) ||
             request.Lines.Any(line => line.OrderItemId <= 0 || line.ReturnQuantity <= 0 ||
                 line.RestockQuantity < 0 || line.RestockQuantity > line.ReturnQuantity))
-            return (null, new Error(ErrorCodes.General.Validation, "Yêu cầu trả hàng không hợp lệ."));
+            return (null, new AppError(ErrorCodes.General.Validation, "Yêu cầu trả hàng không hợp lệ."));
 
         return (request with
         {
@@ -242,7 +242,7 @@ public sealed class OrderReturnService(
                 item.OrderItemId, item.ProductId, item.ProductCode, item.ProductName,
                 item.ReturnQuantity, item.RestockQuantity, item.RefundAmount)).ToArray());
     private static Result<OrderReturnResultDto> Failure(string code, string message) =>
-        Result.Failure<OrderReturnResultDto>(new Error(code, message));
+        Result.Failure<OrderReturnResultDto>(new AppError(code, message));
     private static async Task<Result<OrderReturnResultDto>> RollbackFailure(
         string code, string message, IApplicationTransaction transaction)
     {

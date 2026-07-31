@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -7,6 +7,10 @@ namespace POS.Infrastructure.Persistence.Migrations
     /// <inheritdoc />
     public partial class AddInventoryMovements : Migration
     {
+        private static readonly string[] IndexColumns1 = ["ProductId", "OccurredAtUtc"];
+        private static readonly string[] IndexColumns2 = ["ReferenceType", "ReferenceId"];
+        private static readonly string[] IndexColumns3 = ["MovementType", "OccurredAtUtc"];
+
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -59,17 +63,17 @@ namespace POS.Infrastructure.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_InventoryMovements_Product_OccurredAt",
                 table: "InventoryMovements",
-                columns: new[] { "ProductId", "OccurredAtUtc" });
+                columns: IndexColumns1);
 
             migrationBuilder.CreateIndex(
                 name: "IX_InventoryMovements_Reference",
                 table: "InventoryMovements",
-                columns: new[] { "ReferenceType", "ReferenceId" });
+                columns: IndexColumns2);
 
             migrationBuilder.CreateIndex(
                 name: "IX_InventoryMovements_Type_OccurredAt",
                 table: "InventoryMovements",
-                columns: new[] { "MovementType", "OccurredAtUtc" });
+                columns: IndexColumns3);
         }
 
         /// <inheritdoc />

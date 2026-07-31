@@ -76,7 +76,7 @@ public sealed class VietQrServiceTests
 
         Assert.True(
             result.IsSuccess,
-            result.Error.Message);
+            result.AppError.Message);
 
         Assert.Equal(
             ExpectedGoldenPayload,
@@ -107,7 +107,7 @@ public sealed class VietQrServiceTests
 
         Assert.True(
             result.IsSuccess,
-            result.Error.Message);
+            result.AppError.Message);
 
         Assert.Contains(
             "POS CA PHE SUA DA DON 42",
@@ -149,7 +149,7 @@ public sealed class VietQrServiceTests
 
         Assert.Equal(
             ErrorCodes.Payments.InvalidAmount,
-            result.Error.Code);
+            result.AppError.Code);
     }
 
     [Fact]
@@ -182,7 +182,7 @@ public sealed class VietQrServiceTests
 
         Assert.Equal(
             ErrorCodes.Payments.InvalidAmount,
-            result.Error.Code);
+            result.AppError.Code);
     }
 
     [Fact]
@@ -217,7 +217,7 @@ public sealed class VietQrServiceTests
         Assert.Equal(
             ErrorCodes.Payments
                 .VietQrNotConfigured,
-            result.Error.Code);
+            result.AppError.Code);
     }
 
     [Fact]
@@ -245,7 +245,7 @@ public sealed class VietQrServiceTests
         Assert.Equal(
             ErrorCodes.Payments
                 .VietQrInvalidPayload,
-            result.Error.Code);
+            result.AppError.Code);
     }
 
     [Fact]
@@ -278,11 +278,11 @@ public sealed class VietQrServiceTests
         Assert.Equal(
             ErrorCodes.Payments
                 .VietQrInvalidPayload,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Contains(
             "50",
-            result.Error.Message);
+            result.AppError.Message);
     }
 
     [Fact]
@@ -309,7 +309,7 @@ public sealed class VietQrServiceTests
 
         Assert.True(
             result.IsSuccess,
-            result.Error.Message);
+            result.AppError.Message);
 
         Assert.Contains(
             "POS HD PREFIX",
@@ -341,7 +341,7 @@ public sealed class VietQrServiceTests
 
         Assert.True(
             result.IsSuccess,
-            result.Error.Message);
+            result.AppError.Message);
 
         Assert.True(
             result.Value.Length >
@@ -381,11 +381,11 @@ public sealed class VietQrServiceTests
 
         Assert.True(
             firstResult.IsSuccess,
-            firstResult.Error.Message);
+            firstResult.AppError.Message);
 
         Assert.True(
             secondResult.IsSuccess,
-            secondResult.Error.Message);
+            secondResult.AppError.Message);
 
         Assert.Equal(
             firstResult.Value,

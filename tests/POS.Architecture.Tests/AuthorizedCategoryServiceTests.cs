@@ -48,7 +48,7 @@ public sealed class AuthorizedCategoryServiceTests
 
         Assert.Equal(
             ErrorCodes.General.Unauthorized,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Equal(
             0,
@@ -76,7 +76,7 @@ public sealed class AuthorizedCategoryServiceTests
         Assert.Equal(
             RecordingCategoryService
                 .InnerErrorCode,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Equal(
             1,
@@ -118,23 +118,23 @@ public sealed class AuthorizedCategoryServiceTests
 
         Assert.Equal(
             ErrorCodes.General.Forbidden,
-            searchResult.Error.Code);
+            searchResult.AppError.Code);
 
         Assert.Equal(
             ErrorCodes.General.Forbidden,
-            detailsResult.Error.Code);
+            detailsResult.AppError.Code);
 
         Assert.Equal(
             ErrorCodes.General.Forbidden,
-            createResult.Error.Code);
+            createResult.AppError.Code);
 
         Assert.Equal(
             ErrorCodes.General.Forbidden,
-            updateResult.Error.Code);
+            updateResult.AppError.Code);
 
         Assert.Equal(
             ErrorCodes.General.Forbidden,
-            activeResult.Error.Code);
+            activeResult.AppError.Code);
 
         Assert.Equal(
             0,
@@ -179,11 +179,11 @@ public sealed class AuthorizedCategoryServiceTests
         Assert.Equal(
             RecordingCategoryService
                 .InnerErrorCode,
-            listResult.Error.Code);
+            listResult.AppError.Code);
 
         Assert.Equal(
             ErrorCodes.General.Forbidden,
-            searchResult.Error.Code);
+            searchResult.AppError.Code);
 
         Assert.Equal(
             1,
@@ -260,27 +260,27 @@ public sealed class AuthorizedCategoryServiceTests
         Assert.Equal(
             RecordingCategoryService
                 .InnerErrorCode,
-            searchResult.Error.Code);
+            searchResult.AppError.Code);
 
         Assert.Equal(
             RecordingCategoryService
                 .InnerErrorCode,
-            detailsResult.Error.Code);
+            detailsResult.AppError.Code);
 
         Assert.Equal(
             RecordingCategoryService
                 .InnerErrorCode,
-            createResult.Error.Code);
+            createResult.AppError.Code);
 
         Assert.Equal(
             RecordingCategoryService
                 .InnerErrorCode,
-            updateResult.Error.Code);
+            updateResult.AppError.Code);
 
         Assert.Equal(
             RecordingCategoryService
                 .InnerErrorCode,
-            activeResult.Error.Code);
+            activeResult.AppError.Code);
     }
 
     private static void
@@ -342,7 +342,7 @@ public sealed class AuthorizedCategoryServiceTests
         public const string InnerErrorCode =
             "TEST.CATEGORY_INNER_REACHED";
 
-        private static readonly Error
+        private static readonly AppError
             InnerError =
                 new(
                     InnerErrorCode,

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using POS.Application.Abstractions.DateTime;
@@ -70,7 +70,7 @@ public sealed class DatabaseInitializer
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        _logger.LogInformation(
+        global::POS.Application.Common.PosLog.Information(_logger,
             "Bắt đầu khởi tạo database POS Enterprise.");
 
         if (_options.ApplyMigrationsOnStartup)
@@ -86,7 +86,7 @@ public sealed class DatabaseInitializer
 
         if (_options.SeedDemoProductCatalog)
         {
-            _logger.LogInformation(
+            global::POS.Application.Common.PosLog.Information(_logger,
                 "Môi trường hiện tại cho phép tạo dữ liệu demo.");
 
             await SeedProductCatalogAsync(
@@ -94,11 +94,11 @@ public sealed class DatabaseInitializer
         }
         else
         {
-            _logger.LogInformation(
+            global::POS.Application.Common.PosLog.Information(_logger,
                 "Đã bỏ qua dữ liệu demo vì " +
                 "SeedDemoProductCatalog đang tắt.");
         }
-        _logger.LogInformation(
+        global::POS.Application.Common.PosLog.Information(_logger,
             "Khởi tạo database POS Enterprise hoàn tất.");
     }
 
@@ -106,7 +106,7 @@ public sealed class DatabaseInitializer
         CancellationToken cancellationToken)
     {
         var databasePath =
-            _databasePathResolver.ResolveDatabasePath(
+            DatabasePathResolver.ResolveDatabasePath(
                 _options.DatabasePath);
 
         var databaseExistedBeforeMigrationCheck =
@@ -122,7 +122,7 @@ public sealed class DatabaseInitializer
 
         if (migrations.Length == 0)
         {
-            _logger.LogInformation(
+            global::POS.Application.Common.PosLog.Information(_logger,
                 "Database không có migration đang chờ.");
 
             return;
@@ -132,7 +132,7 @@ public sealed class DatabaseInitializer
 
         if (!databaseExistedBeforeMigrationCheck)
         {
-            _logger.LogInformation(
+            global::POS.Application.Common.PosLog.Information(_logger,
                 "Đang tạo database mới và áp dụng " +
                 "{MigrationCount} migration.",
                 migrations.Length);
@@ -140,12 +140,12 @@ public sealed class DatabaseInitializer
         else
         {
             var integrityResult =
-                _databaseSafetyService.CheckIntegrity(
+                SqliteDatabaseSafetyService.CheckIntegrity(
                     databasePath);
 
             if (!integrityResult.IsSuccess)
             {
-                _logger.LogError(
+                global::POS.Application.Common.PosLog.Error(_logger,
                     "Database không vượt qua kiểm tra toàn vẹn " +
                     "trước migration. Migration đã bị chặn.");
 
@@ -163,7 +163,7 @@ public sealed class DatabaseInitializer
                     "pre-migration");
 
             var backupResult =
-                _databaseSafetyService.CreateVerifiedBackup(
+                SqliteDatabaseSafetyService.CreateVerifiedBackup(
                     databasePath,
                     backupDirectory,
                     _clock.UtcNow);
@@ -172,7 +172,7 @@ public sealed class DatabaseInitializer
                 string.IsNullOrWhiteSpace(
                     backupResult.BackupFilePath))
             {
-                _logger.LogError(
+                global::POS.Application.Common.PosLog.Error(_logger,
                     "Không thể tạo verified backup trước migration. " +
                     "Migration đã bị chặn.");
 
@@ -183,7 +183,7 @@ public sealed class DatabaseInitializer
 
             backupPath = backupResult.BackupFilePath;
 
-            _logger.LogInformation(
+            global::POS.Application.Common.PosLog.Information(_logger,
                 "Sẵn sàng áp dụng {MigrationCount} migration. " +
                 "Verified backup: {BackupPath}",
                 migrations.Length,
@@ -205,14 +205,14 @@ public sealed class DatabaseInitializer
         {
             if (backupPath is null)
             {
-                _logger.LogCritical(
+                global::POS.Application.Common.PosLog.Critical(_logger,
                     exception,
                     "Migration database mới thất bại. " +
                     "Startup đã bị chặn.");
             }
             else
             {
-                _logger.LogCritical(
+                global::POS.Application.Common.PosLog.Critical(_logger,
                     exception,
                     "Migration thất bại. Startup đã bị chặn. " +
                     "Giữ verified backup tại {BackupPath} " +
@@ -224,20 +224,20 @@ public sealed class DatabaseInitializer
         }
 
         var postMigrationIntegrity =
-            _databaseSafetyService.CheckIntegrity(
+            SqliteDatabaseSafetyService.CheckIntegrity(
                 databasePath);
 
         if (!postMigrationIntegrity.IsSuccess)
         {
             if (backupPath is null)
             {
-                _logger.LogCritical(
+                global::POS.Application.Common.PosLog.Critical(_logger,
                     "Database không vượt qua kiểm tra toàn vẹn " +
                     "sau migration. Startup đã bị chặn.");
             }
             else
             {
-                _logger.LogCritical(
+                global::POS.Application.Common.PosLog.Critical(_logger,
                     "Database không vượt qua kiểm tra toàn vẹn " +
                     "sau migration. Startup đã bị chặn. " +
                     "Giữ verified backup tại {BackupPath} " +
@@ -250,7 +250,7 @@ public sealed class DatabaseInitializer
                 "sau migration nên startup đã bị chặn.");
         }
 
-        _logger.LogInformation(
+        global::POS.Application.Common.PosLog.Information(_logger,
             "Đã áp dụng thành công {MigrationCount} migration. " +
             "Verified backup: {BackupPath}",
             migrations.Length,
@@ -358,7 +358,7 @@ public sealed class DatabaseInitializer
             await _dbContext.SaveChangesAsync(
                 cancellationToken);
 
-            _logger.LogInformation(
+            global::POS.Application.Common.PosLog.Information(_logger,
                 "Đã tạo {CategoryCount} danh mục demo.",
                 newCategories.Length);
         }
@@ -552,7 +552,7 @@ public sealed class DatabaseInitializer
 
         if (products.Count == 0)
         {
-            _logger.LogInformation(
+            global::POS.Application.Common.PosLog.Information(_logger,
                 "Dữ liệu sản phẩm demo đã tồn tại.");
 
             return;
@@ -565,13 +565,13 @@ public sealed class DatabaseInitializer
         await _dbContext.SaveChangesAsync(
             cancellationToken);
 
-        _logger.LogInformation(
+        global::POS.Application.Common.PosLog.Information(_logger,
             "Đã tạo {ProductCount} sản phẩm demo.",
             products.Count);
     }
 
     private static void AddCategoryIfMissing(
-        IDictionary<string, Category> categories,
+        Dictionary<string, Category> categories,
         string name,
         string description,
         int displayOrder,
@@ -595,8 +595,8 @@ public sealed class DatabaseInitializer
     }
 
     private static void AddProductIfMissing(
-        ICollection<Product> products,
-        ISet<string> productCodes,
+        List<Product> products,
+        HashSet<string> productCodes,
         int categoryId,
         string code,
         string? barcode,

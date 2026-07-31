@@ -41,6 +41,9 @@ public sealed class PosDbContext :
     public DbSet<Order> Orders =>
         Set<Order>();
 
+    public DbSet<OrderDiscountSnapshot> OrderDiscountSnapshots =>
+        Set<OrderDiscountSnapshot>();
+
     public DbSet<OrderItem> OrderItems =>
         Set<OrderItem>();
 
@@ -61,6 +64,10 @@ public sealed class PosDbContext :
 
     public DbSet<HeldSale> HeldSales => Set<HeldSale>();
     public DbSet<HeldSaleLine> HeldSaleLines => Set<HeldSaleLine>();
+
+    public DbSet<PaymentIntent> PaymentIntents => Set<PaymentIntent>();
+    public DbSet<PaymentIntentManualResolution> PaymentIntentManualResolutions =>
+        Set<PaymentIntentManualResolution>();
 
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)

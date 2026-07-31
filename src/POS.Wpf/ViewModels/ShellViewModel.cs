@@ -759,7 +759,7 @@ public sealed class ShellViewModel :
         await LoadProductsAsync();
     }
 
-    private Task RefreshAsync()
+    private Task<bool> RefreshAsync()
     {
         return LoadProductsAsync();
     }
@@ -1010,7 +1010,7 @@ public sealed class ShellViewModel :
             if (result.IsFailure)
             {
                 StatusMessage =
-                    result.Error.Message;
+                    result.AppError.Message;
 
                 return;
             }
@@ -1075,7 +1075,7 @@ public sealed class ShellViewModel :
             if (result.IsFailure)
             {
                 StatusMessage =
-                    result.Error.Message;
+                    result.AppError.Message;
 
                 return;
             }
@@ -1202,13 +1202,13 @@ public sealed class ShellViewModel :
             if (result.IsFailure)
             {
                 StatusMessage =
-                    result.Error.Message;
+                    result.AppError.Message;
 
-                _logger.LogWarning(
+                global::POS.Application.Common.PosLog.Warning(_logger,
                     "Tải sản phẩm thất bại: " +
                     "{ErrorCode} - {ErrorMessage}",
-                    result.Error.Code,
-                    result.Error.Message);
+                    result.AppError.Code,
+                    result.AppError.Message);
 
                 return false;
             }
@@ -1290,7 +1290,7 @@ public sealed class ShellViewModel :
         }
         catch (Exception exception)
         {
-            _logger.LogError(
+            global::POS.Application.Common.PosLog.Error(_logger,
                 exception,
                 "Có lỗi khi tải danh sách sản phẩm.");
 
@@ -1402,13 +1402,13 @@ public sealed class ShellViewModel :
     {
         return !IsLoading &&
                _permissionService.HasPermission(
-                   SystemPermission.ViewReports);
+                   SystemCapability.ViewReports);
     }
 
     private void HandleCommandException(
         Exception exception)
     {
-        _logger.LogError(
+        global::POS.Application.Common.PosLog.Error(_logger,
             exception,
             "Một lệnh giao diện không thể hoàn thành.");
 

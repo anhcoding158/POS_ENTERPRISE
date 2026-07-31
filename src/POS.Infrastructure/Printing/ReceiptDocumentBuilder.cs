@@ -125,7 +125,7 @@ public sealed class ReceiptDocumentBuilder
     /// <summary>
     /// Dựng tài liệu hóa đơn K80 từ snapshot đã chốt.
     /// </summary>
-    public FlowDocument Build(
+    public static FlowDocument Build(
         ReceiptRequest request)
     {
         ArgumentNullException.ThrowIfNull(
@@ -541,6 +541,16 @@ public sealed class ReceiptDocumentBuilder
             FormatPaymentMethod(
                 request.PaymentMethod),
             "Receipt.PaymentMethod");
+
+        if (request.PaymentMethod == PaymentMethod.VietQr &&
+            !string.IsNullOrWhiteSpace(request.PaymentIntentDisplayCode))
+        {
+            AddInformationRow(
+                table,
+                "Mã tham chiếu:",
+                request.PaymentIntentDisplayCode,
+                "Receipt.PaymentIntentReference");
+        }
 
         document.Blocks.Add(
             table);
@@ -1169,7 +1179,7 @@ public sealed class ReceiptDocumentBuilder
 
         AddTotalRow(
             table,
-            "Tiền hàng",
+            "Tạm tính",
             FormatMoney(
                 request.Subtotal),
             FontWeights.Normal,

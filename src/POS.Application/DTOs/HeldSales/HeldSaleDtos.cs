@@ -9,7 +9,8 @@ public sealed record CreateHeldSaleRequest(
     Guid ClientRequestId,
     string? Label,
     string? Notes,
-    IReadOnlyList<CreateHeldSaleLineRequest> Lines);
+    IReadOnlyList<CreateHeldSaleLineRequest> Lines,
+    POS.Application.DTOs.Checkout.SalesDiscountRequest? SalesDiscount = null);
 
 public sealed record HeldSaleLineDto(
     int ProductId,
@@ -35,7 +36,12 @@ public sealed record HeldSaleDto(
     long TotalSnapshot,
     int TotalQuantity,
     IReadOnlyList<HeldSaleLineDto> Lines,
-    bool IsIdempotentReplay = false);
+    bool IsIdempotentReplay = false,
+    POS.Domain.Enums.SalesDiscountType DiscountType = POS.Domain.Enums.SalesDiscountType.None,
+    long RequestedDiscountValue = 0,
+    string? DiscountReason = null,
+    long ResolvedDiscountAmountSnapshot = 0,
+    long SubtotalSnapshot = 0);
 
 public enum HeldSaleResumeLineStatus
 {
@@ -67,4 +73,13 @@ public sealed record HeldSaleResumeDto(
     string DisplayCode,
     string Label,
     string? Notes,
-    IReadOnlyList<HeldSaleResumeLineDto> Lines);
+    IReadOnlyList<HeldSaleResumeLineDto> Lines,
+    POS.Domain.Enums.SalesDiscountType DiscountType = POS.Domain.Enums.SalesDiscountType.None,
+    long RequestedDiscountValue = 0,
+    string? DiscountReason = null,
+    long ResolvedDiscountAmountSnapshot = 0,
+    long SubtotalSnapshot = 0,
+    long TotalSnapshot = 0,
+    long CurrentResolvedDiscountAmount = 0,
+    long CurrentTotal = 0,
+    bool DiscountRequiresReview = false);

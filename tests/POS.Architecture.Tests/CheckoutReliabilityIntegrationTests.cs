@@ -72,7 +72,7 @@ public sealed class
 
         Assert.Equal(
             ErrorCodes.Checkout.DuplicateProduct,
-            result.Error.Code);
+            result.AppError.Code);
     }
 
     [Fact]
@@ -135,7 +135,7 @@ public sealed class
 
             Assert.True(
                 firstResult.IsSuccess,
-                firstResult.Error.ToString());
+                firstResult.AppError.ToString());
         }
 
         /*
@@ -167,7 +167,7 @@ public sealed class
 
         Assert.Equal(
             ErrorCodes.Checkout.ConcurrencyConflict,
-            staleResult.Error.Code);
+            staleResult.AppError.Code);
 
         await using var verifyContext =
             database.CreateContext();
@@ -251,7 +251,7 @@ public sealed class
 
             Assert.Equal(
                 ErrorCodes.Checkout.SaveFailed,
-                result.Error.Code);
+                result.AppError.Code);
         }
 
         await AssertDatabaseStateAsync(
@@ -414,7 +414,7 @@ public sealed class
 
             Assert.Equal(
                 ErrorCodes.Checkout.OrderCodeConflict,
-                result.Error.Code);
+                result.AppError.Code);
         }
 
         await AssertDatabaseStateAsync(
@@ -495,7 +495,7 @@ public sealed class
 
             Assert.Equal(
                 ErrorCodes.Checkout.InsufficientStock,
-                result.Error.Code);
+                result.AppError.Code);
         }
 
         await using var verifyContext =
@@ -579,7 +579,7 @@ public sealed class
 
             Assert.True(
                 result.IsSuccess,
-                result.Error.ToString());
+                result.AppError.ToString());
         }
 
         await AssertDatabaseStateAsync(
@@ -648,7 +648,7 @@ public sealed class
             Assert.True(
                 result.IsSuccess,
                 $"Giao dịch {index} lỗi: " +
-                $"{result.Error}");
+                $"{result.AppError}");
         }
 
         await AssertDatabaseStateAsync(

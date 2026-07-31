@@ -103,7 +103,7 @@ public partial class ReceiptPreviewWindow :
             _paperSize;
 
         ReceiptViewer.Document =
-            documentBuilder.Build(
+            ReceiptDocumentBuilder.Build(
                 _request);
 
         ApplyReceiptSummary();
@@ -274,7 +274,7 @@ public partial class ReceiptPreviewWindow :
                     .Play();
 
                 ShowErrorStatus(
-                    result.Error.Message);
+                    result.AppError.Message);
 
                 return;
             }

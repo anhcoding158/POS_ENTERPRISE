@@ -30,7 +30,7 @@ public sealed class ReceiptStoreSnapshotProviderTests
                         "  Cảm ơn quý khách và hẹn gặp lại!  "
                 });
 
-        IReceiptStoreSnapshotProvider provider =
+        var provider =
             new ReceiptStoreSnapshotProvider(
                 options);
 

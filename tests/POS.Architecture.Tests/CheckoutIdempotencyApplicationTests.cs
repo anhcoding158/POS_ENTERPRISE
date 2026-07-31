@@ -53,7 +53,7 @@ public sealed class CheckoutIdempotencyApplicationTests
             var conflict = await database.Service(different).PrepareCheckoutAsync(
                 database.Request(id, quantity: 2, cash: 100_000));
             Assert.True(conflict.IsFailure);
-            Assert.Equal("CHECKOUT.IDEMPOTENCY_CONFLICT", conflict.Error.Code);
+            Assert.Equal("CHECKOUT.IDEMPOTENCY_CONFLICT", conflict.AppError.Code);
         }
         await database.AssertStateAsync(1, 0, 10, 0, 0);
     }
@@ -85,7 +85,7 @@ public sealed class CheckoutIdempotencyApplicationTests
             database.Service(context2).PrepareCheckoutAsync(database.Request(id, quantity: 2, cash: 100_000)));
         Assert.Single(results, result => result.IsSuccess);
         var conflict = Assert.Single(results, result => result.IsFailure);
-        Assert.Equal("CHECKOUT.IDEMPOTENCY_CONFLICT", conflict.Error.Code);
+        Assert.Equal("CHECKOUT.IDEMPOTENCY_CONFLICT", conflict.AppError.Code);
         await database.AssertStateAsync(1, 0, 10, 0, 0);
     }
 
@@ -107,7 +107,7 @@ public sealed class CheckoutIdempotencyApplicationTests
         var result = await service.CheckoutAsync(request);
 
         Assert.True(result.IsFailure);
-        Assert.Equal("CHECKOUT.PREPARATION_STALE", result.Error.Code);
+        Assert.Equal("CHECKOUT.PREPARATION_STALE", result.AppError.Code);
         await database.AssertStateAsync(1, 0, 10, 0, 0);
         await using var verify = database.Context();
         Assert.Equal(CheckoutRequestStatus.Prepared,

@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using POS.Application.Abstractions.Printing;
 using POS.Application.Common;
@@ -150,7 +150,7 @@ public sealed class WpfReceiptService :
         }
         catch (UnauthorizedAccessException exception)
         {
-            _logger.LogError(
+            global::POS.Application.Common.PosLog.Error(_logger,
                 exception,
                 "Không có quyền truy cập máy in {PrinterName}.",
                 _printerOptions.PrinterName);
@@ -162,7 +162,7 @@ public sealed class WpfReceiptService :
         }
         catch (PrintQueueException exception)
         {
-            _logger.LogError(
+            global::POS.Application.Common.PosLog.Error(_logger,
                 exception,
                 "Lỗi hàng đợi máy in {PrinterName}.",
                 _printerOptions.PrinterName);
@@ -174,7 +174,7 @@ public sealed class WpfReceiptService :
         }
         catch (PrintSystemException exception)
         {
-            _logger.LogError(
+            global::POS.Application.Common.PosLog.Error(_logger,
                 exception,
                 "Windows Print System gặp lỗi với máy in " +
                 "{PrinterName}.",
@@ -187,7 +187,7 @@ public sealed class WpfReceiptService :
         }
         catch (Win32Exception exception)
         {
-            _logger.LogError(
+            global::POS.Application.Common.PosLog.Error(_logger,
                 exception,
                 "Windows trả về lỗi khi in hóa đơn qua " +
                 "{PrinterName}.",
@@ -199,7 +199,7 @@ public sealed class WpfReceiptService :
         }
         catch (Exception exception)
         {
-            _logger.LogError(
+            global::POS.Application.Common.PosLog.Error(_logger,
                 exception,
                 "Không thể in hóa đơn {OrderCode} qua " +
                 "{PrinterName}.",
@@ -279,7 +279,7 @@ public sealed class WpfReceiptService :
             };
 
         var document =
-            _documentBuilder.Build(
+            ReceiptDocumentBuilder.Build(
                 request);
 
         ConfigureDocumentPage(
@@ -308,7 +308,7 @@ public sealed class WpfReceiptService :
             paginator,
             $"Hóa đơn {request.OrderCode}");
 
-        _logger.LogInformation(
+        global::POS.Application.Common.PosLog.Information(_logger,
             "Đã gửi hóa đơn {OrderCode} đến máy in " +
             "{PrinterName}.",
             request.OrderCode,
@@ -358,7 +358,7 @@ public sealed class WpfReceiptService :
              * capabilities. PrintDocument vẫn dùng ticket
              * mặc định và FlowDocument K80.
              */
-            _logger.LogWarning(
+            global::POS.Application.Common.PosLog.Warning(_logger,
                 exception,
                 "Không đọc được khả năng khổ giấy của " +
                 "máy in {PrinterName}.",
@@ -506,7 +506,7 @@ public sealed class WpfReceiptService :
         return selectedQueue;
     }
 
-    private static Error? GetReadinessError(
+    private static AppError? GetReadinessError(
         PrintQueue printQueue)
     {
         var queueStatus =
@@ -514,14 +514,14 @@ public sealed class WpfReceiptService :
 
         if (printQueue.IsOffline)
         {
-            return new Error(
+            return new AppError(
                 ErrorCodes.General.Conflict,
                 $"Máy in '{printQueue.Name}' đang offline.");
         }
 
         if (printQueue.IsNotAvailable)
         {
-            return new Error(
+            return new AppError(
                 ErrorCodes.General.Conflict,
                 $"Máy in '{printQueue.Name}' hiện không khả dụng.");
         }
@@ -530,14 +530,14 @@ public sealed class WpfReceiptService :
                 queueStatus,
                 PrintQueueStatus.PaperOut))
         {
-            return new Error(
+            return new AppError(
                 ErrorCodes.General.Conflict,
                 $"Máy in '{printQueue.Name}' đang hết giấy.");
         }
 
         if (printQueue.IsPaused)
         {
-            return new Error(
+            return new AppError(
                 ErrorCodes.General.Conflict,
                 $"Hàng đợi máy in '{printQueue.Name}' " +
                 "đang bị tạm dừng.");
@@ -545,7 +545,7 @@ public sealed class WpfReceiptService :
 
         if (printQueue.NeedUserIntervention)
         {
-            return new Error(
+            return new AppError(
                 ErrorCodes.General.Conflict,
                 $"Máy in '{printQueue.Name}' cần người dùng " +
                 "kiểm tra.");
@@ -553,7 +553,7 @@ public sealed class WpfReceiptService :
 
         if (printQueue.IsInError)
         {
-            return new Error(
+            return new AppError(
                 ErrorCodes.General.Conflict,
                 $"Máy in '{printQueue.Name}' đang báo lỗi.");
         }
@@ -582,7 +582,7 @@ public sealed class WpfReceiptService :
         string message)
     {
         return Result.Failure(
-            new Error(
+            new AppError(
                 code,
                 message));
     }

@@ -1,4 +1,4 @@
-﻿namespace POS.Application.Common;
+namespace POS.Application.Common;
 
 /// <summary>
 /// Kết quả của một thao tác có trả dữ liệu.
@@ -7,10 +7,10 @@ public sealed class Result<TValue> : Result
 {
     private readonly TValue? _value;
 
-    private Result(
+    internal Result(
         TValue? value,
         bool isSuccess,
-        Error error)
+        AppError error)
         : base(isSuccess, error)
     {
         _value = value;
@@ -30,7 +30,7 @@ public sealed class Result<TValue> : Result
             {
                 throw new InvalidOperationException(
                     $"Không thể đọc Value của Result thất bại. " +
-                    $"Lỗi: {Error.Code}");
+                    $"Lỗi: {AppError.Code}");
             }
 
             return _value!;
@@ -43,31 +43,6 @@ public sealed class Result<TValue> : Result
     public TValue? ValueOrDefault =>
         _value;
 
-    public static Result<TValue> Success(
-        TValue value)
-    {
-        if (value is null)
-        {
-            return Failure(Error.NullValue);
-        }
-
-        return new Result<TValue>(
-            value,
-            true,
-            Error.None);
-    }
-
-    public new static Result<TValue> Failure(
-        Error error)
-    {
-        ArgumentNullException.ThrowIfNull(error);
-
-        return new Result<TValue>(
-            default,
-            false,
-            error);
-    }
-
     /// <summary>
     /// Chuyển dữ liệu thành công sang kiểu khác.
     /// Nếu Result thất bại, giữ nguyên lỗi.
@@ -79,7 +54,7 @@ public sealed class Result<TValue> : Result
 
         if (IsFailure)
         {
-            return Result.Failure<TOutput>(Error);
+            return Result.Failure<TOutput>(AppError);
         }
 
         var output = mapper(Value);
@@ -97,7 +72,7 @@ public sealed class Result<TValue> : Result
         ArgumentNullException.ThrowIfNull(binder);
 
         return IsFailure
-            ? Result.Failure<TOutput>(Error)
+            ? Result.Failure<TOutput>(AppError)
             : binder(Value);
     }
 
@@ -110,7 +85,7 @@ public sealed class Result<TValue> : Result
         ArgumentNullException.ThrowIfNull(binder);
 
         return IsFailure
-            ? Result.Failure(Error)
+            ? Result.Failure(AppError)
             : binder(Value);
     }
 
@@ -120,14 +95,14 @@ public sealed class Result<TValue> : Result
     /// </summary>
     public TResult Match<TResult>(
         Func<TValue, TResult> onSuccess,
-        Func<Error, TResult> onFailure)
+        Func<AppError, TResult> onFailure)
     {
         ArgumentNullException.ThrowIfNull(onSuccess);
         ArgumentNullException.ThrowIfNull(onFailure);
 
         return IsSuccess
             ? onSuccess(Value)
-            : onFailure(Error);
+            : onFailure(AppError);
     }
 
     /// <summary>
@@ -135,7 +110,7 @@ public sealed class Result<TValue> : Result
     /// </summary>
     public Result<TValue> Ensure(
         Func<TValue, bool> predicate,
-        Error error)
+        AppError error)
     {
         ArgumentNullException.ThrowIfNull(predicate);
         ArgumentNullException.ThrowIfNull(error);
@@ -147,7 +122,7 @@ public sealed class Result<TValue> : Result
 
         return predicate(Value)
             ? this
-            : Failure(error);
+            : Result.Failure<TValue>(error);
     }
 
     /// <summary>

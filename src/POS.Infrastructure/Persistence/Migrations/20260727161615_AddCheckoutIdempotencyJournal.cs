@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -8,6 +8,9 @@ namespace POS.Infrastructure.Persistence.Migrations
     /// <inheritdoc />
     public partial class AddCheckoutIdempotencyJournal : Migration
     {
+        private static readonly string[] IndexColumns1 = ["Status", "AcknowledgedAtUtc"];
+        private static readonly string[] IndexColumns2 = ["PreparedByUserId", "Status", "CreatedAtUtc"];
+
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -74,12 +77,12 @@ namespace POS.Infrastructure.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_CheckoutRequestJournals_Status_AcknowledgedAtUtc",
                 table: "CheckoutRequestJournals",
-                columns: new[] { "Status", "AcknowledgedAtUtc" });
+                columns: IndexColumns1);
 
             migrationBuilder.CreateIndex(
                 name: "IX_CheckoutRequestJournals_User_Status_CreatedAtUtc",
                 table: "CheckoutRequestJournals",
-                columns: new[] { "PreparedByUserId", "Status", "CreatedAtUtc" });
+                columns: IndexColumns2);
 
             migrationBuilder.CreateIndex(
                 name: "UX_CheckoutRequestJournals_ClientRequestId",

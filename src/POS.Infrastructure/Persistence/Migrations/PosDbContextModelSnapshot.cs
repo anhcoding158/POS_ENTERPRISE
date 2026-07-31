@@ -188,6 +188,13 @@ namespace POS.Infrastructure.Persistence.Migrations
                     b.Property<int>("CreatedByUserId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("DiscountReason")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DiscountType")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("DisplayCode")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -209,7 +216,19 @@ namespace POS.Infrastructure.Persistence.Migrations
                         .HasColumnType("TEXT")
                         .IsFixedLength();
 
+                    b.Property<long>("RequestedDiscountValue")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("ResolvedDiscountAmountSnapshot")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("SubtotalSnapshot")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("TotalSnapshot")
                         .HasColumnType("INTEGER");
 
                     b.Property<long>("UpdatedAtUtc")
@@ -240,11 +259,15 @@ namespace POS.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("CK_HeldSales_CreatedBy", "\"CreatedByUserId\" > 0");
 
+                            t.HasCheckConstraint("CK_HeldSales_DiscountAmount", "\"ResolvedDiscountAmountSnapshot\" >= 0 AND \"ResolvedDiscountAmountSnapshot\" <= \"SubtotalSnapshot\"");
+
                             t.HasCheckConstraint("CK_HeldSales_Fingerprint", "length(\"RequestFingerprint\") = 64 AND \"RequestFingerprint\" NOT GLOB '*[^0-9A-F]*'");
 
                             t.HasCheckConstraint("CK_HeldSales_State", "(\"Status\" = 1 AND \"CompletedAtUtc\" IS NULL AND \"CancelledAtUtc\" IS NULL AND \"CompletedOrderId\" IS NULL) OR (\"Status\" = 2 AND \"CompletedAtUtc\" IS NOT NULL AND \"CancelledAtUtc\" IS NULL AND \"CompletedOrderId\" IS NOT NULL) OR (\"Status\" = 3 AND \"CompletedAtUtc\" IS NULL AND \"CancelledAtUtc\" IS NOT NULL AND \"CompletedOrderId\" IS NULL)");
 
                             t.HasCheckConstraint("CK_HeldSales_Status", "\"Status\" IN (1, 2, 3)");
+
+                            t.HasCheckConstraint("CK_HeldSales_TotalEquation", "\"TotalSnapshot\" = \"SubtotalSnapshot\" - \"ResolvedDiscountAmountSnapshot\"");
                         });
                 });
 
@@ -536,6 +559,57 @@ namespace POS.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("CK_Orders_TotalAmount_Equation", "\"TotalAmount\" = \"Subtotal\" - \"DiscountAmount\"");
 
                             t.HasCheckConstraint("CK_Orders_TotalAmount_Range", "\"TotalAmount\" >= 0 AND \"TotalAmount\" <= 999999999999");
+                        });
+                });
+
+            modelBuilder.Entity("POS.Domain.Entities.OrderDiscountSnapshot", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("AppliedAtUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AppliedByUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("RequestedValue")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("ResolvedAmount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppliedByUserId");
+
+                    b.HasIndex("OrderId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_OrderDiscountSnapshots_OrderId");
+
+                    b.ToTable("OrderDiscountSnapshots", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_OrderDiscountSnapshots_AppliedByUserId", "\"AppliedByUserId\" > 0");
+
+                            t.HasCheckConstraint("CK_OrderDiscountSnapshots_Reason", "length(trim(\"Reason\")) > 0");
+
+                            t.HasCheckConstraint("CK_OrderDiscountSnapshots_RequestedValue", "\"RequestedValue\" > 0");
+
+                            t.HasCheckConstraint("CK_OrderDiscountSnapshots_ResolvedAmount", "\"ResolvedAmount\" > 0");
+
+                            t.HasCheckConstraint("CK_OrderDiscountSnapshots_Type", "\"Type\" IN (1, 2)");
                         });
                 });
 
@@ -851,6 +925,215 @@ namespace POS.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("POS.Domain.Entities.PaymentIntent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AccountNameSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AccountNumberSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("Amount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("BankCodeSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("CancelledAtUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CheckoutRequestJson")
+                        .IsRequired()
+                        .HasMaxLength(16384)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ClientRequestId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("CompletedAtUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("CompletedOrderId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("ConfirmedAtUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("ConfirmedByUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("CreatedAtUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("CreatedByUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("TEXT")
+                        .IsFixedLength();
+
+                    b.Property<string>("DisplayCode")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExpirationReason")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("ExpiredAtUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("ExpiresAtUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("HeldSaleId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT")
+                        .IsFixedLength();
+
+                    b.Property<string>("PayloadText")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("PresentedAtUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Provider")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("QuoteFingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT")
+                        .IsFixedLength();
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("TransferContent")
+                        .IsRequired()
+                        .HasMaxLength(99)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UpdatedAtUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientRequestId")
+                        .IsUnique();
+
+                    b.HasIndex("CompletedOrderId")
+                        .IsUnique()
+                        .HasFilter("\"CompletedOrderId\" IS NOT NULL");
+
+                    b.HasIndex("ConfirmedByUserId");
+
+                    b.HasIndex("DisplayCode")
+                        .IsUnique();
+
+                    b.HasIndex("HeldSaleId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_PaymentIntents_Active_HeldSaleOwner")
+                        .HasFilter("\"HeldSaleId\" IS NOT NULL AND \"Status\" IN (1,2,3)");
+
+                    b.HasIndex("PayloadHash");
+
+                    b.HasIndex("QuoteFingerprint");
+
+                    b.HasIndex("Status", "UpdatedAtUtc");
+
+                    b.HasIndex("CreatedByUserId", "Status", "UpdatedAtUtc");
+
+                    b.ToTable("PaymentIntents", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_PaymentIntents_Amount", "\"Amount\" > 0");
+
+                            t.HasCheckConstraint("CK_PaymentIntents_Currency", "\"Currency\" = 'VND'");
+
+                            t.HasCheckConstraint("CK_PaymentIntents_PayloadHash", "length(\"PayloadHash\") = 64 AND \"PayloadHash\" NOT GLOB '*[^0-9A-F]*'");
+
+                            t.HasCheckConstraint("CK_PaymentIntents_Provider", "\"Provider\" = 1");
+
+                            t.HasCheckConstraint("CK_PaymentIntents_QuoteFingerprint", "length(\"QuoteFingerprint\") = 64 AND \"QuoteFingerprint\" NOT GLOB '*[^0-9A-F]*'");
+
+                            t.HasCheckConstraint("CK_PaymentIntents_StateShape", "(\"Status\" = 1 AND \"PresentedAtUtc\" IS NULL AND \"ConfirmedAtUtc\" IS NULL AND \"CompletedAtUtc\" IS NULL AND \"CancelledAtUtc\" IS NULL AND \"CompletedOrderId\" IS NULL) OR (\"Status\" = 2 AND \"PresentedAtUtc\" IS NOT NULL AND \"ConfirmedAtUtc\" IS NULL AND \"CompletedAtUtc\" IS NULL AND \"CancelledAtUtc\" IS NULL AND \"CompletedOrderId\" IS NULL) OR (\"Status\" = 3 AND \"PresentedAtUtc\" IS NOT NULL AND \"ConfirmedAtUtc\" IS NOT NULL AND \"ConfirmedByUserId\" IS NOT NULL AND \"CompletedAtUtc\" IS NULL AND \"CancelledAtUtc\" IS NULL AND \"CompletedOrderId\" IS NULL) OR (\"Status\" = 4 AND \"ConfirmedAtUtc\" IS NOT NULL AND \"ConfirmedByUserId\" IS NOT NULL AND \"CompletedAtUtc\" IS NOT NULL AND \"CompletedOrderId\" IS NOT NULL AND \"CancelledAtUtc\" IS NULL) OR (\"Status\" = 5 AND \"CancelledAtUtc\" IS NOT NULL AND \"ConfirmedAtUtc\" IS NULL AND \"CompletedAtUtc\" IS NULL AND \"CompletedOrderId\" IS NULL) OR (\"Status\" = 6 AND \"ExpiredAtUtc\" IS NOT NULL AND \"ExpirationReason\" IS NOT NULL AND \"CompletedAtUtc\" IS NULL AND \"CompletedOrderId\" IS NULL AND \"CancelledAtUtc\" IS NULL)");
+
+                            t.HasCheckConstraint("CK_PaymentIntents_Status", "\"Status\" IN (1,2,3,4,5,6)");
+                        });
+                });
+
+            modelBuilder.Entity("POS.Domain.Entities.PaymentIntentManualResolution", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ExternalReference")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("LinkedOrderId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PaymentIntentId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ResolutionType")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("ResolvedAtUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ResolvedByUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LinkedOrderId")
+                        .IsUnique()
+                        .HasFilter("\"LinkedOrderId\" IS NOT NULL");
+
+                    b.HasIndex("PaymentIntentId")
+                        .IsUnique();
+
+                    b.HasIndex("ResolvedByUserId");
+
+                    b.ToTable("PaymentIntentManualResolutions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_PaymentIntentManualResolutions_Shape", "(\"ResolutionType\" = 1 AND \"LinkedOrderId\" IS NOT NULL) OR (\"ResolutionType\" = 2 AND \"LinkedOrderId\" IS NULL) OR (\"ResolutionType\" = 3 AND \"LinkedOrderId\" IS NULL AND length(trim(\"ExternalReference\")) > 0)");
+
+                            t.HasCheckConstraint("CK_PaymentIntentManualResolutions_Type", "\"ResolutionType\" IN (1,2,3)");
+                        });
+                });
+
             modelBuilder.Entity("POS.Domain.Entities.Product", b =>
                 {
                     b.Property<int>("Id")
@@ -1142,6 +1425,25 @@ namespace POS.Infrastructure.Persistence.Migrations
                     b.Navigation("CashierUser");
                 });
 
+            modelBuilder.Entity("POS.Domain.Entities.OrderDiscountSnapshot", b =>
+                {
+                    b.HasOne("POS.Domain.Entities.User", "AppliedByUser")
+                        .WithMany()
+                        .HasForeignKey("AppliedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("POS.Domain.Entities.Order", "Order")
+                        .WithOne("DiscountSnapshot")
+                        .HasForeignKey("POS.Domain.Entities.OrderDiscountSnapshot", "OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AppliedByUser");
+
+                    b.Navigation("Order");
+                });
+
             modelBuilder.Entity("POS.Domain.Entities.OrderItem", b =>
                 {
                     b.HasOne("POS.Domain.Entities.Order", "Order")
@@ -1236,6 +1538,64 @@ namespace POS.Infrastructure.Persistence.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("POS.Domain.Entities.PaymentIntent", b =>
+                {
+                    b.HasOne("POS.Domain.Entities.Order", "CompletedOrder")
+                        .WithMany()
+                        .HasForeignKey("CompletedOrderId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("POS.Domain.Entities.User", "ConfirmedByUser")
+                        .WithMany()
+                        .HasForeignKey("ConfirmedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("POS.Domain.Entities.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("POS.Domain.Entities.HeldSale", "HeldSale")
+                        .WithMany()
+                        .HasForeignKey("HeldSaleId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CompletedOrder");
+
+                    b.Navigation("ConfirmedByUser");
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("HeldSale");
+                });
+
+            modelBuilder.Entity("POS.Domain.Entities.PaymentIntentManualResolution", b =>
+                {
+                    b.HasOne("POS.Domain.Entities.Order", "LinkedOrder")
+                        .WithMany()
+                        .HasForeignKey("LinkedOrderId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("POS.Domain.Entities.PaymentIntent", "PaymentIntent")
+                        .WithMany()
+                        .HasForeignKey("PaymentIntentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("POS.Domain.Entities.User", "ResolvedByUser")
+                        .WithMany()
+                        .HasForeignKey("ResolvedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("LinkedOrder");
+
+                    b.Navigation("PaymentIntent");
+
+                    b.Navigation("ResolvedByUser");
+                });
+
             modelBuilder.Entity("POS.Domain.Entities.Product", b =>
                 {
                     b.HasOne("POS.Domain.Entities.User", "ArchivedByUser")
@@ -1266,6 +1626,8 @@ namespace POS.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("POS.Domain.Entities.Order", b =>
                 {
+                    b.Navigation("DiscountSnapshot");
+
                     b.Navigation("Items");
                 });
 

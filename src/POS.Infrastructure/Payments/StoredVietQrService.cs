@@ -143,7 +143,7 @@ public sealed class StoredVietQrService
         if (loadResult.IsFailure)
         {
             return Result.Failure<string>(
-                loadResult.Error);
+                loadResult.AppError);
         }
 
         var transferContentResult =
@@ -153,7 +153,7 @@ public sealed class StoredVietQrService
         if (transferContentResult.IsFailure)
         {
             return Result.Failure<string>(
-                transferContentResult.Error);
+                transferContentResult.AppError);
         }
 
         try
@@ -170,7 +170,7 @@ public sealed class StoredVietQrService
             if (fieldsResult.IsFailure)
             {
                 return Result.Failure<string>(
-                    fieldsResult.Error);
+                    fieldsResult.AppError);
             }
 
             var fields =
@@ -184,7 +184,7 @@ public sealed class StoredVietQrService
             if (validation.IsFailure)
             {
                 return Result.Failure<string>(
-                    validation.Error);
+                    validation.AppError);
             }
 
             var additionalFieldResult =
@@ -196,7 +196,7 @@ public sealed class StoredVietQrService
             if (additionalFieldResult.IsFailure)
             {
                 return Result.Failure<string>(
-                    additionalFieldResult.Error);
+                    additionalFieldResult.AppError);
             }
 
             var additionalDataResult =
@@ -210,7 +210,7 @@ public sealed class StoredVietQrService
             if (additionalDataResult.IsFailure)
             {
                 return Result.Failure<string>(
-                    additionalDataResult.Error);
+                    additionalDataResult.AppError);
             }
 
             /*
@@ -300,7 +300,7 @@ public sealed class StoredVietQrService
         }
         catch (Exception exception)
         {
-            _logger.LogError(
+            global::POS.Application.Common.PosLog.Error(_logger,
                 exception,
                 "Không thể dựng VietQR từ payload đã lưu " +
                 "cho mã tham chiếu {OrderCode}.",
@@ -324,7 +324,7 @@ public sealed class StoredVietQrService
         if (payloadResult.IsFailure)
         {
             return Result.Failure<byte[]>(
-                payloadResult.Error);
+                payloadResult.AppError);
         }
 
         try
@@ -365,7 +365,7 @@ public sealed class StoredVietQrService
         }
         catch (Exception exception)
         {
-            _logger.LogError(
+            global::POS.Application.Common.PosLog.Error(_logger,
                 exception,
                 "Không thể tạo PNG VietQR cho mã " +
                 "tham chiếu {OrderCode}.",
@@ -462,7 +462,7 @@ public sealed class StoredVietQrService
             if (nestedResult.IsFailure)
             {
                 return Result.Failure<string>(
-                    nestedResult.Error);
+                    nestedResult.AppError);
             }
 
             nestedFields.AddRange(
@@ -541,7 +541,7 @@ public sealed class StoredVietQrService
         if (formatResult.IsFailure)
         {
             return Result.Failure(
-                formatResult.Error);
+                formatResult.AppError);
         }
 
         if (!string.Equals(
@@ -565,7 +565,7 @@ public sealed class StoredVietQrService
         if (currencyResult.IsFailure)
         {
             return Result.Failure(
-                currencyResult.Error);
+                currencyResult.AppError);
         }
 
         if (!string.Equals(
@@ -589,7 +589,7 @@ public sealed class StoredVietQrService
         if (countryResult.IsFailure)
         {
             return Result.Failure(
-                countryResult.Error);
+                countryResult.AppError);
         }
 
         if (!string.Equals(
@@ -656,7 +656,7 @@ public sealed class StoredVietQrService
         if (crcResult.IsFailure)
         {
             return Result.Failure(
-                crcResult.Error);
+                crcResult.AppError);
         }
 
         if (!ReferenceEquals(
@@ -1045,7 +1045,7 @@ public sealed class StoredVietQrService
         string message)
     {
         return Result.Failure(
-            new Error(
+            new AppError(
                 code,
                 message));
     }
@@ -1056,7 +1056,7 @@ public sealed class StoredVietQrService
             string message)
     {
         return Result.Failure<TValue>(
-            new Error(
+            new AppError(
                 code,
                 message));
     }

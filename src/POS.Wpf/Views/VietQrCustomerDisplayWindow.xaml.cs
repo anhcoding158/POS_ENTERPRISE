@@ -174,11 +174,7 @@ public partial class VietQrCustomerDisplayWindow :
         ShowPaymentReceivedAndCloseAsync(
             TimeSpan visibleDuration)
     {
-        if (visibleDuration < TimeSpan.Zero)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(visibleDuration));
-        }
+        ArgumentOutOfRangeException.ThrowIfLessThan(visibleDuration, TimeSpan.Zero);
 
         try
         {
@@ -402,7 +398,7 @@ public partial class VietQrCustomerDisplayWindow :
                            cashierMonitor);
     }
 
-    private static IReadOnlyList<MonitorDescriptor>
+    private static List<MonitorDescriptor>
         EnumerateMonitors()
     {
         var monitors =

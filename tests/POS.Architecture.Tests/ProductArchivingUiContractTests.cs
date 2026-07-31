@@ -233,11 +233,11 @@ public sealed class ProductArchivingUiContractTests
         IPermissionService
     {
         public bool HasPermission(
-            SystemPermission permission) =>
+            SystemCapability permission) =>
             true;
 
         public Result Authorize(
-            SystemPermission permission) =>
+            SystemCapability permission) =>
             Result.Success();
     }
 
@@ -310,8 +310,8 @@ public sealed class ProductArchivingUiContractTests
 
             return Task.FromResult(
                 Result.Success(
-                    PagedResult<
-                        ProductListItemDto>.Empty(
+                    PagedResult.Empty<
+                        ProductListItemDto>(
                             request.PageNumber,
                             request.PageSize)));
         }

@@ -24,10 +24,10 @@ public sealed class PermissionServiceTests
                 0,
                 TimeSpan.Zero);
 
-    private static readonly SystemPermission[]
+    private static readonly SystemCapability[]
         AllPermissions =
             Enum.GetValues<
-                SystemPermission>();
+                SystemCapability>();
 
     [Fact]
     public void Administrator_must_have_every_permission()
@@ -52,16 +52,17 @@ public sealed class PermissionServiceTests
                 Role.Manager);
 
         var expected =
-            new HashSet<SystemPermission>
+            new HashSet<SystemCapability>
             {
-                SystemPermission.ViewProductCatalog,
-                SystemPermission.ManageProducts,
-                SystemPermission.ManageCategories,
-                SystemPermission.ViewInventoryHistory,
-                SystemPermission.AdjustInventory,
-                SystemPermission.UseCheckout,
-                SystemPermission.ViewReports,
-                SystemPermission.ProcessReturns
+                SystemCapability.ViewProductCatalog,
+                SystemCapability.ManageProducts,
+                SystemCapability.ManageCategories,
+                SystemCapability.ViewInventoryHistory,
+                SystemCapability.AdjustInventory,
+                SystemCapability.UseCheckout,
+            SystemCapability.ViewReports,
+            SystemCapability.ProcessReturns,
+            SystemCapability.ApplySalesDiscount
             };
 
         AssertPermissionSet(
@@ -77,10 +78,10 @@ public sealed class PermissionServiceTests
                 Role.Cashier);
 
         var expected =
-            new HashSet<SystemPermission>
+            new HashSet<SystemCapability>
             {
-                SystemPermission.ViewProductCatalog,
-                SystemPermission.UseCheckout
+                SystemCapability.ViewProductCatalog,
+                SystemCapability.UseCheckout
             };
 
         AssertPermissionSet(
@@ -96,11 +97,11 @@ public sealed class PermissionServiceTests
                 Role.InventoryStaff);
 
         var expected =
-            new HashSet<SystemPermission>
+            new HashSet<SystemCapability>
             {
-                SystemPermission.ViewProductCatalog,
-                SystemPermission.ViewInventoryHistory,
-                SystemPermission.AdjustInventory
+                SystemCapability.ViewProductCatalog,
+                SystemCapability.ViewInventoryHistory,
+                SystemCapability.AdjustInventory
             };
 
         AssertPermissionSet(
@@ -120,18 +121,18 @@ public sealed class PermissionServiceTests
 
         var result =
             service.Authorize(
-                SystemPermission.ManageProducts);
+                SystemCapability.ManageProducts);
 
         Assert.True(
             result.IsFailure);
 
         Assert.Equal(
             ErrorCodes.General.Unauthorized,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.False(
             service.HasPermission(
-                SystemPermission.ManageProducts));
+                SystemCapability.ManageProducts));
     }
 
     [Fact]
@@ -143,7 +144,7 @@ public sealed class PermissionServiceTests
 
         var result =
             service.Authorize(
-                SystemPermission.AdjustInventory);
+                SystemCapability.AdjustInventory);
 
         Assert.True(
             result.IsSuccess);
@@ -158,18 +159,18 @@ public sealed class PermissionServiceTests
 
         var result =
             service.Authorize(
-                SystemPermission.AdjustInventory);
+                SystemCapability.AdjustInventory);
 
         Assert.True(
             result.IsFailure);
 
         Assert.Equal(
             ErrorCodes.General.Forbidden,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Contains(
             "điều chỉnh tồn kho",
-            result.Error.Message,
+            result.AppError.Message,
             StringComparison.OrdinalIgnoreCase);
     }
 
@@ -181,7 +182,7 @@ public sealed class PermissionServiceTests
                 Role.Administrator);
 
         var invalidPermission =
-            (SystemPermission)999;
+            (SystemCapability)999;
 
         Assert.Throws<
             ArgumentOutOfRangeException>(
@@ -208,7 +209,7 @@ public sealed class PermissionServiceTests
                     RolePermissionPolicy
                         .HasPermission(
                             invalidRole,
-                            SystemPermission
+                            SystemCapability
                                 .ViewProductCatalog));
     }
 
@@ -242,7 +243,7 @@ public sealed class PermissionServiceTests
 
     private static void AssertPermissionSet(
         PermissionService service,
-        IReadOnlySet<SystemPermission>
+        HashSet<SystemCapability>
             expectedPermissions)
     {
         foreach (var permission in

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -8,6 +8,8 @@ namespace POS.Infrastructure.Persistence.Migrations
     /// <inheritdoc />
     public partial class AddUsersAuthenticationFoundation : Migration
     {
+        private static readonly string[] IndexColumns1 = ["IsActive", "Role", "FullName"];
+
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -44,7 +46,7 @@ namespace POS.Infrastructure.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Users_Active_Role_FullName",
                 table: "Users",
-                columns: new[] { "IsActive", "Role", "FullName" });
+                columns: IndexColumns1);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Users_LockedUntilUtc",

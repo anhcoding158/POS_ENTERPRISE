@@ -400,6 +400,12 @@ public sealed class OrderRepository :
                         order.CashierUser)
                 .Include(
                     order =>
+                        order.DiscountSnapshot)
+                    .ThenInclude(
+                        snapshot =>
+                            snapshot!.AppliedByUser)
+                .Include(
+                    order =>
                         order.Items)
                     .ThenInclude(
                         item =>

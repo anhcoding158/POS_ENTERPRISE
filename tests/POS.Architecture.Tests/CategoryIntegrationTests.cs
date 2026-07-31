@@ -69,7 +69,7 @@ public sealed class CategoryIntegrationTests
 
             Assert.True(
                 result.IsSuccess,
-                result.Error.ToString());
+                result.AppError.ToString());
 
             Assert.True(
                 result.Value.Id > 0);
@@ -150,7 +150,7 @@ public sealed class CategoryIntegrationTests
 
             Assert.True(
                 firstResult.IsSuccess,
-                firstResult.Error.ToString());
+                firstResult.AppError.ToString());
 
             var duplicateResult =
                 await service.CreateAsync(
@@ -166,7 +166,7 @@ public sealed class CategoryIntegrationTests
             Assert.Equal(
                 ErrorCodes.Categories
                     .NameAlreadyExists,
-                duplicateResult.Error.Code);
+                duplicateResult.AppError.Code);
         }
 
         await using var verifyContext =
@@ -209,7 +209,7 @@ public sealed class CategoryIntegrationTests
 
             Assert.Equal(
                 "CATEGORY.INVALID_DISPLAY_ORDER",
-                result.Error.Code);
+                result.AppError.Code);
         }
 
         await using var verifyContext =
@@ -253,7 +253,7 @@ public sealed class CategoryIntegrationTests
 
             Assert.True(
                 createResult.IsSuccess,
-                createResult.Error.ToString());
+                createResult.AppError.ToString());
 
             categoryId =
                 createResult.Value.Id;
@@ -287,7 +287,7 @@ public sealed class CategoryIntegrationTests
 
             Assert.True(
                 updateResult.IsSuccess,
-                updateResult.Error.ToString());
+                updateResult.AppError.ToString());
 
             Assert.Equal(
                 categoryId,
@@ -387,15 +387,15 @@ public sealed class CategoryIntegrationTests
 
             Assert.True(
                 categoryA.IsSuccess,
-                categoryA.Error.ToString());
+                categoryA.AppError.ToString());
 
             Assert.True(
                 categoryB.IsSuccess,
-                categoryB.Error.ToString());
+                categoryB.AppError.ToString());
 
             Assert.True(
                 categoryC.IsSuccess,
-                categoryC.Error.ToString());
+                categoryC.AppError.ToString());
 
             inactiveCategoryId =
                 categoryB.Value.Id;
@@ -408,7 +408,7 @@ public sealed class CategoryIntegrationTests
 
             Assert.True(
                 deactivateResult.IsSuccess,
-                deactivateResult.Error.ToString());
+                deactivateResult.AppError.ToString());
         }
 
         await using (
@@ -425,7 +425,7 @@ public sealed class CategoryIntegrationTests
 
             Assert.True(
                 listResult.IsSuccess,
-                listResult.Error.ToString());
+                listResult.AppError.ToString());
 
             Assert.Equal(
                 2,
@@ -492,7 +492,7 @@ public sealed class CategoryIntegrationTests
 
                 Assert.True(
                     createResult.IsSuccess,
-                    createResult.Error.ToString());
+                    createResult.AppError.ToString());
             }
 
             var percentResult =
@@ -507,7 +507,7 @@ public sealed class CategoryIntegrationTests
 
             Assert.True(
                 percentResult.IsSuccess,
-                percentResult.Error.ToString());
+                percentResult.AppError.ToString());
 
             var percentCategory =
                 Assert.Single(
@@ -529,7 +529,7 @@ public sealed class CategoryIntegrationTests
 
             Assert.True(
                 underscoreResult.IsSuccess,
-                underscoreResult.Error.ToString());
+                underscoreResult.AppError.ToString());
 
             var underscoreCategory =
                 Assert.Single(
@@ -551,7 +551,7 @@ public sealed class CategoryIntegrationTests
 
             Assert.True(
                 slashResult.IsSuccess,
-                slashResult.Error.ToString());
+                slashResult.AppError.ToString());
 
             var slashCategory =
                 Assert.Single(
@@ -579,11 +579,11 @@ public sealed class CategoryIntegrationTests
 
             Assert.True(
                 firstPage.IsSuccess,
-                firstPage.Error.ToString());
+                firstPage.AppError.ToString());
 
             Assert.True(
                 secondPage.IsSuccess,
-                secondPage.Error.ToString());
+                secondPage.AppError.ToString());
 
             Assert.Equal(
                 4,
@@ -641,7 +641,7 @@ public sealed class CategoryIntegrationTests
 
             Assert.True(
                 createResult.IsSuccess,
-                createResult.Error.ToString());
+                createResult.AppError.ToString());
 
             categoryId =
                 createResult.Value.Id;
@@ -673,7 +673,7 @@ public sealed class CategoryIntegrationTests
 
         Assert.True(
             staleLoadResult.IsSuccess,
-            staleLoadResult.Error.ToString());
+            staleLoadResult.AppError.ToString());
 
         var firstUpdateResult =
             await firstService.UpdateAsync(
@@ -691,7 +691,7 @@ public sealed class CategoryIntegrationTests
 
         Assert.True(
             firstUpdateResult.IsSuccess,
-            firstUpdateResult.Error.ToString());
+            firstUpdateResult.AppError.ToString());
 
         var staleUpdateResult =
             await staleService.UpdateAsync(
@@ -712,7 +712,7 @@ public sealed class CategoryIntegrationTests
 
         Assert.Equal(
             ErrorCodes.General.Conflict,
-            staleUpdateResult.Error.Code);
+            staleUpdateResult.AppError.Code);
 
         await using var verifyContext =
             database.CreateContext();

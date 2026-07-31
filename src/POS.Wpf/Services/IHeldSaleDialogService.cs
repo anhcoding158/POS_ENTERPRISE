@@ -1,4 +1,5 @@
 using POS.Application.DTOs.HeldSales;
+using POS.Domain.Enums;
 
 namespace POS.Wpf.Services;
 
@@ -31,7 +32,11 @@ public interface IHeldSaleDialogService
     HeldSaleHoldDialogResult? ShowHold(
         int lineCount,
         int totalQuantity,
+        long subtotal,
+        long discountAmount,
         long totalSnapshot,
+        SalesDiscountType discountType,
+        long requestedDiscountValue,
         Guid clientRequestId);
 
     HeldSaleListDialogResult? ShowActiveList(

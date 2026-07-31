@@ -43,7 +43,7 @@ public sealed class StoredVietQrPipelineTests
 
             Assert.True(
                 saveResult.IsSuccess,
-                saveResult.Error.Message);
+                saveResult.AppError.Message);
 
             Assert.True(
                 store.IsConfigured);
@@ -53,7 +53,7 @@ public sealed class StoredVietQrPipelineTests
 
             Assert.True(
                 loadResult.IsSuccess,
-                loadResult.Error.Message);
+                loadResult.AppError.Message);
 
             Assert.Equal(
                 payload,
@@ -64,7 +64,7 @@ public sealed class StoredVietQrPipelineTests
 
             Assert.True(
                 deleteResult.IsSuccess,
-                deleteResult.Error.Message);
+                deleteResult.AppError.Message);
 
             Assert.False(
                 store.IsConfigured);
@@ -110,7 +110,7 @@ public sealed class StoredVietQrPipelineTests
 
         Assert.True(
             result.IsSuccess,
-            result.Error.Message);
+            result.AppError.Message);
 
         var topLevel =
             ReadFields(
@@ -186,7 +186,7 @@ public sealed class StoredVietQrPipelineTests
 
         Assert.True(
             result.IsSuccess,
-            result.Error.Message);
+            result.AppError.Message);
 
         Assert.True(
             result.Value.Length > 8);
@@ -231,7 +231,7 @@ public sealed class StoredVietQrPipelineTests
         Assert.Equal(
             ErrorCodes.Payments
                 .VietQrNotConfigured,
-            result.Error.Code);
+            result.AppError.Code);
     }
 
     private static StoredVietQrService
@@ -344,7 +344,7 @@ public sealed class StoredVietQrPipelineTests
             $"{value}";
     }
 
-    private static IReadOnlyList<TestField>
+    private static List<TestField>
         ReadFields(
             string payload)
     {
@@ -477,7 +477,7 @@ public sealed class StoredVietQrPipelineTests
                 ? Result.Success(
                     _payload!)
                 : Result.Failure<string>(
-                    new Error(
+                    new AppError(
                         ErrorCodes.Payments
                             .VietQrNotConfigured,
 

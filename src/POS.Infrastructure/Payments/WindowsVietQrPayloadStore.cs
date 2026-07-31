@@ -128,7 +128,7 @@ public sealed class WindowsVietQrPayloadStore :
                         _payloadFilePath);
 
                     return Result.Failure<string>(
-                        validation.Error);
+                        validation.AppError);
                 }
 
                 return validation;
@@ -141,7 +141,7 @@ public sealed class WindowsVietQrPayloadStore :
                     _payloadFilePath);
 
                 return Result.Failure<string>(
-                    new Error(
+                    new AppError(
                         ErrorCodes.Payments
                             .VietQrNotConfigured,
 
@@ -171,7 +171,7 @@ public sealed class WindowsVietQrPayloadStore :
         if (validation.IsFailure)
         {
             return Result.Failure(
-                validation.Error);
+                validation.AppError);
         }
 
         lock (_syncRoot)
@@ -324,7 +324,7 @@ public sealed class WindowsVietQrPayloadStore :
         if (fieldsResult.IsFailure)
         {
             return Result.Failure<string>(
-                fieldsResult.Error);
+                fieldsResult.AppError);
         }
 
         var fields =
@@ -575,7 +575,7 @@ public sealed class WindowsVietQrPayloadStore :
         NotConfigured()
     {
         return Result.Failure<string>(
-            new Error(
+            new AppError(
                 ErrorCodes.Payments
                     .VietQrNotConfigured,
 
@@ -587,7 +587,7 @@ public sealed class WindowsVietQrPayloadStore :
             string message)
     {
         return Result.Failure<string>(
-            new Error(
+            new AppError(
                 ErrorCodes.Payments
                     .VietQrInvalidPayload,
 
@@ -600,7 +600,7 @@ public sealed class WindowsVietQrPayloadStore :
     {
         return Result.Failure<
             IReadOnlyList<TlvField>>(
-                new Error(
+                new AppError(
                     ErrorCodes.Payments
                         .VietQrInvalidPayload,
 
@@ -611,7 +611,7 @@ public sealed class WindowsVietQrPayloadStore :
         string message)
     {
         return Result.Failure(
-            new Error(
+            new AppError(
                 ErrorCodes.Payments
                     .VietQrGenerationFailed,
 

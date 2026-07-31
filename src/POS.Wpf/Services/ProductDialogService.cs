@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using POS.Application.Abstractions.Authorization;
 using POS.Application.Authorization;
 using POS.Wpf.ViewModels;
@@ -64,12 +64,12 @@ public sealed class ProductDialogService :
     {
         var authorization =
             _permissionService.Authorize(
-                SystemPermission.ManageProducts);
+                SystemCapability.ManageProducts);
 
         if (authorization.IsFailure)
         {
             ShowAuthorizationError(
-                authorization.Error.Message);
+                authorization.AppError.Message);
 
             return false;
         }

@@ -21,7 +21,10 @@ public sealed class HeldSale : AuditableEntity
         int createdByUserId,
         DateTimeOffset utcNow,
         IEnumerable<(int ProductId, string Code, string? Barcode, string Name,
-            int Quantity, long UnitPrice, int SortOrder, string? Notes)> lines)
+            int Quantity, long UnitPrice, int SortOrder, string? Notes)> lines,
+        SalesDiscountType discountType = SalesDiscountType.None,
+        long requestedDiscountValue = 0,
+        string? discountReason = null)
     {
         if (clientRequestId == Guid.Empty)
             throw new DomainException("HELD_SALE.REQUEST_ID_REQUIRED", "ClientRequestId không hợp lệ.");
@@ -49,6 +52,13 @@ public sealed class HeldSale : AuditableEntity
 
         if (_lines.Count is 0 or > BusinessRules.HeldSales.MaximumLines)
             throw new DomainException("HELD_SALE.LINES_REQUIRED", "Đơn giữ phải có ít nhất một dòng hợp lệ.");
+        SubtotalSnapshot = checked(_lines.Sum(line => line.LineTotalSnapshot));
+        DiscountType = discountType;
+        RequestedDiscountValue = requestedDiscountValue;
+        DiscountReason = Services.SalesDiscountCalculator.NormalizeReason(discountType, discountReason);
+        ResolvedDiscountAmountSnapshot = Services.SalesDiscountCalculator.Resolve(
+            SubtotalSnapshot, discountType, requestedDiscountValue, discountReason);
+        TotalSnapshot = checked(SubtotalSnapshot - ResolvedDiscountAmountSnapshot);
         MarkCreated(utcNow);
     }
 
@@ -62,7 +72,12 @@ public sealed class HeldSale : AuditableEntity
     public DateTimeOffset? CompletedAtUtc { get; private set; }
     public DateTimeOffset? CancelledAtUtc { get; private set; }
     public int? CompletedOrderId { get; private set; }
-    public long TotalSnapshot => _lines.Sum(line => line.LineTotalSnapshot);
+    public SalesDiscountType DiscountType { get; private set; }
+    public long RequestedDiscountValue { get; private set; }
+    public string? DiscountReason { get; private set; }
+    public long ResolvedDiscountAmountSnapshot { get; private set; }
+    public long SubtotalSnapshot { get; private set; }
+    public long TotalSnapshot { get; private set; }
     public IReadOnlyCollection<HeldSaleLine> Lines => _lines.AsReadOnly();
     public User? CreatedByUser { get; private set; }
     public Order? CompletedOrder { get; private set; }

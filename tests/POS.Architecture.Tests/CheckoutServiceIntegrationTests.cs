@@ -77,7 +77,7 @@ public sealed class CheckoutServiceIntegrationTests
 
         Assert.True(
             result.IsSuccess,
-            result.Error.ToString());
+            result.AppError.ToString());
 
         Assert.Equal(
             PaymentMethod.Cash,
@@ -203,7 +203,7 @@ public sealed class CheckoutServiceIntegrationTests
 
         Assert.True(
             result.IsSuccess,
-            result.Error.ToString());
+            result.AppError.ToString());
 
         Assert.Equal(
             "HD-VIETQR-0001",
@@ -394,11 +394,11 @@ public sealed class CheckoutServiceIntegrationTests
         Assert.Equal(
             ErrorCodes.Payments
                 .VietQrAmountMismatch,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Contains(
             "không khớp",
-            result.Error.Message,
+            result.AppError.Message,
             StringComparison.OrdinalIgnoreCase);
 
         /*
@@ -490,7 +490,7 @@ public sealed class CheckoutServiceIntegrationTests
         Assert.Equal(
             ErrorCodes.Checkout
                 .InsufficientStock,
-            result.Error.Code);
+            result.AppError.Code);
 
         await using var verifyContext =
             database.CreateContext();
@@ -568,7 +568,7 @@ public sealed class CheckoutServiceIntegrationTests
         Assert.Equal(
             ErrorCodes.Checkout
                 .ProductInactive,
-            result.Error.Code);
+            result.AppError.Code);
 
         await using var verifyContext =
             database.CreateContext();
@@ -627,7 +627,7 @@ public sealed class CheckoutServiceIntegrationTests
 
         Assert.True(
             result.IsSuccess,
-            result.Error.ToString());
+            result.AppError.ToString());
 
         await using var verifyContext =
             database.CreateContext();

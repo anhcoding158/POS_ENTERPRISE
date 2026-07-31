@@ -98,7 +98,7 @@ public sealed class VietQrImageDecoder :
             if (dimensionValidation.IsFailure)
             {
                 return Result.Failure<string>(
-                    dimensionValidation.Error);
+                    dimensionValidation.AppError);
             }
 
             var bitmap =
@@ -137,12 +137,12 @@ public sealed class VietQrImageDecoder :
                     AutoRotate =
                         true,
 
-                    TryInverted =
-                        true,
-
                     Options =
                         new DecodingOptions
                         {
+                            TryInverted =
+                                true,
+
                             TryHarder =
                                 true,
 
@@ -183,7 +183,7 @@ public sealed class VietQrImageDecoder :
             if (vietQrValidation.IsFailure)
             {
                 return Result.Failure<string>(
-                    vietQrValidation.Error);
+                    vietQrValidation.AppError);
             }
 
             return Result.Success(
@@ -215,7 +215,7 @@ public sealed class VietQrImageDecoder :
             height <= 0)
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     ErrorCodes.Payments
                         .VietQrInvalidPayload,
 
@@ -228,7 +228,7 @@ public sealed class VietQrImageDecoder :
                 MaximumPixelDimension)
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     ErrorCodes.Payments
                         .VietQrInvalidPayload,
 
@@ -246,7 +246,7 @@ public sealed class VietQrImageDecoder :
             MaximumPixelCount)
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     ErrorCodes.Payments
                         .VietQrInvalidPayload,
 
@@ -302,7 +302,7 @@ public sealed class VietQrImageDecoder :
                 StringComparison.Ordinal))
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     ErrorCodes.Payments
                         .VietQrInvalidPayload,
 
@@ -315,7 +315,7 @@ public sealed class VietQrImageDecoder :
                 StringComparison.Ordinal))
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     ErrorCodes.Payments
                         .VietQrInvalidPayload,
 
@@ -329,7 +329,7 @@ public sealed class VietQrImageDecoder :
         string message)
     {
         return Result.Failure<string>(
-            new Error(
+            new AppError(
                 ErrorCodes.Payments
                     .VietQrInvalidPayload,
 

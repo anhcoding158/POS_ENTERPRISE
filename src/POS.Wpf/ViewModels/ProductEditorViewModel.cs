@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
@@ -885,7 +885,7 @@ public sealed class ProductEditorViewModel :
             if (categoryResult.IsFailure)
             {
                 ShowError(
-                    categoryResult.Error.Message);
+                    categoryResult.AppError.Message);
 
                 return;
             }
@@ -914,7 +914,7 @@ public sealed class ProductEditorViewModel :
                 if (productResult.IsFailure)
                 {
                     ShowError(
-                        productResult.Error.Message);
+                        productResult.AppError.Message);
 
                     return;
                 }
@@ -955,7 +955,7 @@ public sealed class ProductEditorViewModel :
         }
         catch (Exception exception)
         {
-            _logger.LogError(
+            global::POS.Application.Common.PosLog.Error(_logger,
                 exception,
                 "Không thể khởi tạo ProductEditor.");
 
@@ -1190,13 +1190,13 @@ public sealed class ProductEditorViewModel :
             if (result.IsFailure)
             {
                 ShowError(
-                    result.Error.Message);
+                    result.AppError.Message);
 
-                _logger.LogWarning(
+                global::POS.Application.Common.PosLog.Warning(_logger,
                     "Lưu Product thất bại: " +
                     "{ErrorCode} - {ErrorMessage}",
-                    result.Error.Code,
-                    result.Error.Message);
+                    result.AppError.Code,
+                    result.AppError.Message);
 
                 return;
             }
@@ -1214,7 +1214,7 @@ public sealed class ProductEditorViewModel :
         }
         catch (Exception exception)
         {
-            _logger.LogError(
+            global::POS.Application.Common.PosLog.Error(_logger,
                 exception,
                 "Không thể lưu Product.");
 
@@ -1649,7 +1649,7 @@ public sealed class ProductEditorViewModel :
     private void HandleCommandException(
         Exception exception)
     {
-        _logger.LogError(
+        global::POS.Application.Common.PosLog.Error(_logger,
             exception,
             "Lệnh ProductEditor không thể hoàn thành.");
 

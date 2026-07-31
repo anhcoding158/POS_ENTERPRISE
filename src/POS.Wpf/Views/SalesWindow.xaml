@@ -1378,8 +1378,7 @@
             <Border
                 Grid.Column="2"
                 Style="{StaticResource CardStyle}"
-                Padding="0"
-                ClipToBounds="True">
+                Padding="0">
 
                 <Grid>
 
@@ -1456,11 +1455,21 @@
                                 </StackPanel>
                             </StackPanel>
 
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <WrapPanel Grid.Column="1"
+                                       HorizontalAlignment="Right"
+                                       VerticalAlignment="Center">
                                 <Button Command="{Binding OpenHeldSalesCommand}"
-                                        Content="{Binding ActiveHeldSaleCountText, StringFormat=Đơn đang giữ ({0})}"
+                                        Content="{Binding ActiveHeldSaleButtonText, FallbackValue=Đơn đang giữ}"
+                                        AutomationProperties.Name="{Binding ActiveHeldSaleAutomationName, FallbackValue=Đơn đang giữ}"
+                                        Visibility="{Binding HasActiveHeldSales, Converter={StaticResource BooleanToVisibilityConverter}}"
                                         Style="{StaticResource SecondaryButtonStyle}"
                                         Height="36" Padding="10,0" Margin="0,0,6,0"/>
+                                <Button Content="{Binding PendingPaymentIntentButtonText}"
+                                        AutomationProperties.Name="Mở VietQR cần xử lý"
+                                        Visibility="{Binding HasPendingPaymentIntentRecovery, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Height="36" Padding="10,0" Margin="0,0,6,0"
+                                        Click="OnOpenPaymentIntentRecoveryClick"/>
                                 <Button Command="{Binding HoldSaleCommand}"
                                         Content="Giữ đơn"
                                         ToolTip="Giữ giỏ hiện tại để phục vụ khách tiếp theo"
@@ -1470,7 +1479,7 @@
                                         Content="Làm trống"
                                         Style="{StaticResource SecondaryButtonStyle}"
                                         Height="36" Padding="10,0"/>
-                            </StackPanel>
+                            </WrapPanel>
                         </Grid>
                     </Border>
 
@@ -2138,17 +2147,17 @@
                             <!-- Total and payment detail -->
 
                             <Grid
+                                x:Name="PaymentAreaGrid"
                                 Grid.Row="4"
                                 Margin="0,9,0,0">
 
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="42*" />
-                                    <ColumnDefinition Width="10" />
-                                    <ColumnDefinition Width="58*" />
-                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
 
                                 <Border
-                                    Grid.Column="0"
+                                    x:Name="PaymentSummaryCard"
                                     Padding="13,11"
                                     Background="{StaticResource SidebarBrush}"
                                     BorderBrush="#745630"
@@ -2162,37 +2171,172 @@
                                             <RowDefinition Height="*" />
                                         </Grid.RowDefinitions>
 
-                                        <StackPanel>
+                                        <Grid x:Name="PaymentSummaryGrid">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="12" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
 
                                             <TextBlock
+                                                x:Name="PaymentSubtotalLabel"
+                                                Text="Tạm tính trước giảm"
+                                                Foreground="{StaticResource SidebarMutedBrush}"
+                                                FontSize="12.5"
+                                                FontWeight="SemiBold"
+                                                VerticalAlignment="Center" />
+                                            <TextBlock
+                                                x:Name="PaymentSubtotalAmount"
+                                                Grid.Column="2"
+                                                Text="{Binding EstimatedSubtotalText, Mode=OneWay}"
+                                                Foreground="{StaticResource SidebarMutedBrush}"
+                                                FontSize="13.5"
+                                                FontWeight="SemiBold"
+                                                TextWrapping="NoWrap"
+                                                HorizontalAlignment="Right"
+                                                TextAlignment="Right"
+                                                VerticalAlignment="Center" />
+
+                                            <TextBlock
+                                                x:Name="PaymentDiscountLabel"
+                                                Grid.Row="1"
+                                                Text="Giảm giá"
+                                                Foreground="{StaticResource SidebarMutedBrush}"
+                                                FontSize="12.5"
+                                                FontWeight="SemiBold"
+                                                Margin="0,5,0,0"
+                                                VerticalAlignment="Center" />
+                                            <TextBlock
+                                                x:Name="PaymentDiscountAmount"
+                                                Grid.Row="1"
+                                                Grid.Column="2"
+                                                Text="{Binding ResolvedDiscountAmountText, Mode=OneWay}"
+                                                Foreground="{StaticResource GoldHoverBrush}"
+                                                FontSize="13.5"
+                                                FontWeight="SemiBold"
+                                                TextWrapping="NoWrap"
+                                                HorizontalAlignment="Right"
+                                                TextAlignment="Right"
+                                                Margin="0,5,0,0"
+                                                VerticalAlignment="Center" />
+
+                                            <Separator
+                                                Grid.Row="2"
+                                                Grid.ColumnSpan="3"
+                                                Margin="0,6,0,5" />
+
+                                            <TextBlock
+                                                x:Name="PaymentTotalLabel"
+                                                Grid.Row="3"
                                                 Text="TỔNG THANH TOÁN"
                                                 Foreground="{StaticResource SidebarMutedBrush}"
-                                                FontSize="10"
-                                                FontWeight="SemiBold" />
-
+                                                FontSize="13"
+                                                FontWeight="SemiBold"
+                                                VerticalAlignment="Center" />
                                             <TextBlock
-                                                Text="{Binding SelectedPaymentMethodText}"
-                                                Foreground="#AAA097"
-                                                FontSize="9.5"
-                                                Margin="0,2,0,0" />
-                                        </StackPanel>
+                                                x:Name="PaymentTotalAmount"
+                                                Grid.Row="3"
+                                                Grid.Column="2"
+                                                Text="{Binding EstimatedTotalText, Mode=OneWay}"
+                                                Foreground="{StaticResource GoldHoverBrush}"
+                                                FontFamily="Georgia"
+                                                FontSize="22"
+                                                FontWeight="Bold"
+                                                TextWrapping="NoWrap"
+                                                HorizontalAlignment="Right"
+                                                TextAlignment="Right"
+                                                VerticalAlignment="Center"
+                                                Margin="8,0,0,0" />
+
+                                            <Grid Grid.Row="4"
+                                                  Grid.ColumnSpan="3"
+                                                  Margin="0,8,0,0">
+                                                <Button x:Name="AddDiscountButton"
+                                                        Content="Giảm giá"
+                                                        Click="OnDiscountClick"
+                                                        IsEnabled="{Binding CanApplySalesDiscount}"
+                                                        Height="34"
+                                                        Padding="12,0"
+                                                        FontSize="12"
+                                                        ToolTip="Phím tắt: F7">
+                                                    <Button.Style>
+                                                        <Style TargetType="{x:Type Button}"
+                                                               BasedOn="{StaticResource SecondaryButtonStyle}">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding HasSalesDiscount}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <StackPanel.Style>
+                                                        <Style TargetType="{x:Type StackPanel}">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding HasSalesDiscount}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </StackPanel.Style>
+                                                    <Button x:Name="EditDiscountButton"
+                                                            Content="Sửa"
+                                                            Click="OnDiscountClick"
+                                                            IsEnabled="{Binding CanApplySalesDiscount}"
+                                                            Style="{StaticResource SecondaryButtonStyle}"
+                                                            Height="34" Padding="12,0" Margin="0,0,6,0"
+                                                            FontSize="12"
+                                                            ToolTip="Phím tắt: F7"/>
+                                                    <Button x:Name="ClearDiscountButton"
+                                                            Content="Xóa"
+                                                            Click="OnClearDiscountClick"
+                                                            Style="{StaticResource SecondaryButtonStyle}"
+                                                            Height="34" Padding="12,0"
+                                                            FontSize="12"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Grid>
 
                                         <TextBlock
                                             Grid.Row="1"
-                                            Text="{Binding EstimatedTotalText}"
+                                            Text="{Binding SalesDiscountValidationText, Mode=OneWay}"
                                             Foreground="{StaticResource GoldHoverBrush}"
-                                            FontFamily="Georgia"
-                                            FontSize="25"
-                                            FontWeight="Bold"
+                                            FontSize="9.5"
+                                            FontWeight="SemiBold"
                                             TextWrapping="Wrap"
-                                            VerticalAlignment="Bottom"
-                                            Margin="0,10,0,0" />
+                                            Margin="0,6,0,0">
+                                            <TextBlock.Style>
+                                                <Style TargetType="{x:Type TextBlock}">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger
+                                                            Binding="{Binding IsSalesDiscountValid}"
+                                                            Value="False">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
                                     </Grid>
                                 </Border>
 
                                 <!-- Cash -->
 
-                                <Grid Grid.Column="2">
+                                <Grid
+                                    x:Name="CashPaymentSection"
+                                    Grid.Row="1"
+                                    Margin="0,9,0,0">
 
                                     <Grid.Style>
 
@@ -2222,47 +2366,53 @@
                                         <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
 
-                                    <Grid>
+                                    <Grid x:Name="CashPaymentHeaderGrid">
 
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="12" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
 
-                                        <StackPanel Orientation="Horizontal">
+                                        <StackPanel>
 
                                             <TextBlock
+                                                x:Name="CashReceivedLabel"
                                                 Text="Tiền khách đưa"
                                                 Foreground="{StaticResource TextPrimaryBrush}"
-                                                FontSize="10"
+                                                FontSize="12.5"
                                                 FontWeight="SemiBold" />
 
                                             <TextBlock
-                                                Text="  •  "
-                                                Foreground="{StaticResource TextMutedBrush}"
-                                                FontSize="9.5" />
-
-                                            <TextBlock
+                                                x:Name="CashReceivedHelper"
                                                 Text="{Binding CashPreviewText}"
                                                 Foreground="{StaticResource TextSecondaryBrush}"
-                                                FontSize="9.5"
+                                                FontSize="10.5"
+                                                Margin="0,2,0,0"
                                                 TextTrimming="CharacterEllipsis" />
                                         </StackPanel>
 
                                         <StackPanel
-                                            Grid.Column="1"
-                                            Orientation="Horizontal">
+                                            Grid.Column="2"
+                                            HorizontalAlignment="Right">
 
                                             <TextBlock
-                                                Text="Trả lại: "
-                                                Foreground="{StaticResource TextMutedBrush}"
-                                                FontSize="9.5" />
+                                                x:Name="ChangeLabel"
+                                                Text="Trả lại"
+                                                Foreground="{StaticResource TextPrimaryBrush}"
+                                                FontSize="12.5"
+                                                FontWeight="SemiBold"
+                                                HorizontalAlignment="Right" />
 
                                             <TextBlock
+                                                x:Name="ChangeAmount"
                                                 Text="{Binding ChangePreviewText}"
                                                 FontFamily="Georgia"
-                                                FontSize="12"
-                                                FontWeight="Bold">
+                                                FontSize="14"
+                                                FontWeight="Bold"
+                                                HorizontalAlignment="Right"
+                                                TextAlignment="Right"
+                                                Margin="0,2,0,0">
 
                                                 <TextBlock.Style>
 
@@ -2291,6 +2441,7 @@
                                     </Grid>
 
                                     <Grid
+                                        x:Name="CashInputGrid"
                                         Grid.Row="1"
                                         Margin="0,4,0,0">
 
@@ -2320,6 +2471,7 @@
                                             ToolTip="Chỉ nhập chữ số. F6 để chuyển nhanh tới ô này." />
 
                                         <Button
+                                            x:Name="ExactCashButton"
                                             Grid.Column="2"
                                             Command="{Binding ExactCashCommand}"
                                             Style="{StaticResource SecondaryButtonStyle}"
@@ -2330,6 +2482,7 @@
                                     </Grid>
 
                                     <UniformGrid
+                                        x:Name="QuickCashButtons"
                                         Grid.Row="2"
                                         Columns="4"
                                         Margin="0,6,0,0">
@@ -2363,7 +2516,9 @@
                                 <!-- VietQR -->
 
                                 <Border
-                                    Grid.Column="2"
+                                    x:Name="VietQrPaymentSection"
+                                    Grid.Row="1"
+                                    Margin="0,9,0,0"
                                     Padding="12"
                                     Background="{StaticResource GoldSoftBrush}"
                                     BorderBrush="{StaticResource GoldBorderBrush}"
@@ -2656,6 +2811,7 @@
                             <!-- Checkout -->
 
                             <Button
+                                x:Name="CheckoutButton"
                                 Grid.Row="7"
                                 Command="{Binding CheckoutCommand}"
                                 Style="{StaticResource LuxuryCheckoutButtonStyle}"
@@ -2733,6 +2889,240 @@
         </Grid>
 
         <!-- Durable checkout recovery -->
+
+        <Border
+            Panel.ZIndex="20"
+            Margin="24,12,24,0"
+            Padding="14,10"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Top"
+            Background="{StaticResource GoldSoftBrush}"
+            BorderBrush="{StaticResource GoldBorderBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Visibility="{Binding HasManualReviewPaymentIntentWarning,
+                Converter={StaticResource BooleanToVisibilityConverter}}">
+            <DockPanel LastChildFill="True">
+                <Button DockPanel.Dock="Right"
+                        Margin="16,0,0,0"
+                        Padding="14,6"
+                        Content="XỬ LÝ VIETQR"
+                        AutomationProperties.Name="Mở trung tâm xử lý giao dịch VietQR"
+                        Click="OnOpenPaymentIntentRecoveryClick" />
+                <TextBlock VerticalAlignment="Center"
+                           Text="{Binding ManualReviewPaymentIntentWarningText}"
+                           TextWrapping="Wrap"
+                           Foreground="{StaticResource TextPrimaryBrush}" />
+            </DockPanel>
+        </Border>
+
+        <Border
+            Grid.RowSpan="2"
+            Panel.ZIndex="998"
+            Background="{StaticResource AppBackgroundBrush}"
+            Visibility="{Binding IsPaymentIntentRecoveryOpen,
+                Mode=OneWay,
+                Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Border
+                Width="720"
+                MaxHeight="560"
+                Padding="24"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource GoldBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="16">
+                <StackPanel>
+                    <TextBlock
+                        Text="Yêu cầu VietQR đang chờ xử lý"
+                        FontFamily="Georgia"
+                        FontSize="22"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource TextPrimaryBrush}" />
+                    <TextBlock
+                        Margin="0,6,0,16"
+                        Text="Không có đơn hàng nào được tự động tạo khi khởi động. Các yêu cầu đã xác nhận cần được hoàn tất bằng đúng giao dịch đã lưu."
+                        TextWrapping="Wrap"
+                        Foreground="{StaticResource TextSecondaryBrush}" />
+                    <ListBox ItemsSource="{Binding PendingPaymentIntents, Mode=OneWay}"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             SelectedItem="{Binding SelectedPaymentIntentRecovery}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border
+                                    Margin="0,0,0,10"
+                                    Padding="14"
+                                    BorderBrush="{StaticResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8">
+                                    <StackPanel>
+                                        <TextBlock
+                                            Text="{Binding StateTitle}"
+                                            FontWeight="Bold"
+                                            Foreground="{StaticResource TextPrimaryBrush}" />
+                                        <TextBlock
+                                            Margin="0,4,0,0"
+                                            Text="{Binding DisplayCode, StringFormat=Mã tham chiếu: {0}}"
+                                            Foreground="{StaticResource TextSecondaryBrush}" />
+                                        <TextBlock
+                                            Text="{Binding AmountText, StringFormat=Số tiền: {0}}"
+                                            Foreground="{StaticResource AccentBrush}" />
+                                        <TextBlock
+                                            Text="{Binding TransferContent, StringFormat=Nội dung chuyển khoản: {0}}"
+                                            TextWrapping="Wrap"
+                                            Foreground="{StaticResource TextSecondaryBrush}" />
+                                        <TextBlock
+                                            Text="{Binding CreatedAtText, StringFormat=Thời gian tạo: {0}}"
+                                            Foreground="{StaticResource TextSecondaryBrush}" />
+                                        <TextBlock
+                                            Text="{Binding ExpiresAtText, StringFormat=Hết hạn: {0}}"
+                                            Foreground="{StaticResource TextSecondaryBrush}" />
+                                        <TextBlock
+                                            Text="{Binding ConfirmedAtText, StringFormat=Thời gian xác nhận: {0}}"
+                                            Visibility="{Binding HasConfirmedMetadata, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                            Foreground="{StaticResource TextSecondaryBrush}" />
+                                        <TextBlock
+                                            Text="{Binding ConfirmedByText, StringFormat=Xác nhận bởi: {0}}"
+                                            Visibility="{Binding HasConfirmedMetadata, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                            Foreground="{StaticResource TextSecondaryBrush}" />
+                                        <TextBlock
+                                            Margin="0,4,0,0"
+                                            Text="{Binding LineSummary, StringFormat=Sản phẩm: {0}}"
+                                            Visibility="{Binding HasLineSummary, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                            TextWrapping="Wrap"
+                                            Foreground="{StaticResource TextSecondaryBrush}" />
+                                        <TextBlock
+                                            Margin="0,4,0,0"
+                                            Text="{Binding Warning}"
+                                            TextWrapping="Wrap"
+                                            Foreground="{StaticResource WarningBrush}" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <Border
+                        Margin="0,8,0,0"
+                        Padding="12"
+                        Background="{StaticResource DangerSoftBrush}"
+                        BorderBrush="{StaticResource DangerBrush}"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Visibility="{Binding HasPaymentIntentRecoveryError, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock
+                            AutomationProperties.Name="Lỗi hoàn tất đơn VietQR"
+                            Text="{Binding PaymentIntentRecoveryError}"
+                            TextWrapping="Wrap"
+                            Foreground="{StaticResource DangerBrush}" />
+                    </Border>
+                    <WrapPanel Margin="0,8,0,0">
+                        <Button Margin="0,0,8,8"
+                                MinHeight="40"
+                                Padding="16,0"
+                                Content="{Binding SelectedPaymentIntentRecovery.QrActionText}"
+                                AutomationProperties.Name="Xem mã QR VietQR đã lưu"
+                                Visibility="{Binding SelectedPaymentIntentRecovery.CanShowQr, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Command="{Binding ShowPaymentIntentQrCommand}" />
+                        <Button Margin="0,0,8,8"
+                                MinHeight="40"
+                                Padding="16,0"
+                                Content="ĐÃ NHẬN TIỀN"
+                                AutomationProperties.Name="Xác nhận cửa hàng đã nhận tiền"
+                                Visibility="{Binding SelectedPaymentIntentRecovery.CanConfirm, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Command="{Binding ConfirmPaymentIntentRecoveryCommand}" />
+                        <Button Margin="0,0,8,8"
+                                MinHeight="40"
+                                Padding="16,0"
+                                Content="HỦY MÃ"
+                                AutomationProperties.Name="Hủy mã VietQR"
+                                Visibility="{Binding SelectedPaymentIntentRecovery.CanCancel, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Command="{Binding CancelPaymentIntentRecoveryCommand}" />
+                        <Button x:Name="ConfirmedRecoveryRetryButton"
+                                Margin="0,0,8,8"
+                                MinHeight="40"
+                                Padding="16,0"
+                                Content="THỬ HOÀN TẤT ĐƠN"
+                                AutomationProperties.Name="Thử lưu lại đơn VietQR đã xác nhận"
+                                Visibility="{Binding SelectedPaymentIntentRecovery.CanRetryCheckout, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Command="{Binding RetryPaymentIntentRecoveryCommand}"
+                                CommandParameter="{Binding SelectedPaymentIntentRecovery.Id}" />
+                        <Button x:Name="ConfirmedRecoveryCloseForLaterButton"
+                                Margin="0,0,0,8"
+                                MinHeight="40"
+                                Padding="16,0"
+                                Content="ĐÓNG ĐỂ XỬ LÝ SAU"
+                                AutomationProperties.Name="Đóng recovery VietQR để xử lý sau"
+                                Visibility="{Binding SelectedPaymentIntentRecovery.CanCloseForLater, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                IsEnabled="{Binding IsRecoveryOperationIdle}"
+                                Click="OnCloseRecoveryForLaterClick" />
+                        <Button Margin="0,0,8,8"
+                                MinHeight="40"
+                                Padding="16,0"
+                                Content="XEM CHI TIẾT"
+                                AutomationProperties.Name="Xem chi tiết an toàn giao dịch VietQR cần xử lý"
+                                Visibility="{Binding SelectedPaymentIntentRecovery.CanViewDetails, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Click="OnRecoveryDetailsClick" />
+                        <Button Margin="0,0,8,8"
+                                MinHeight="40"
+                                Padding="16,0"
+                                Content="TIẾP TỤC BÁN HÀNG"
+                                AutomationProperties.Name="Tiếp tục bán hàng và giữ cảnh báo VietQR"
+                                Visibility="{Binding SelectedPaymentIntentRecovery.CanContinueSales, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Click="OnContinueSalesClick" />
+                        <Button Margin="0,0,8,8"
+                                MinHeight="40"
+                                Padding="16,0"
+                                Content="XỬ LÝ THỦ CÔNG"
+                                AutomationProperties.Name="Xử lý thủ công giao dịch VietQR"
+                                Visibility="{Binding SelectedPaymentIntentRecovery.CanResolveManually, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Click="OnManualResolutionClick" />
+                        <Button Margin="0,0,8,8"
+                                MinHeight="40"
+                                Padding="16,0"
+                                Content="LỊCH SỬ XỬ LÝ"
+                                AutomationProperties.Name="Lịch sử xử lý thủ công VietQR"
+                                Click="OnManualResolutionHistoryClick" />
+                        <Button Margin="0,0,0,8"
+                                MinHeight="40"
+                                Padding="16,0"
+                                Content="ĐÓNG QUẦY"
+                                AutomationProperties.Name="Đóng quầy bán hàng"
+                                IsEnabled="{Binding IsRecoveryOperationIdle}"
+                                Click="OnRecoveryCloseClick" />
+                    </WrapPanel>
+                    <TextBlock
+                        Margin="0,8,0,0"
+                        Text="Đóng quầy để xử lý sau nếu chưa thể hoàn tất; trạng thái PaymentIntent vẫn được giữ nguyên."
+                        TextWrapping="Wrap"
+                        Foreground="{StaticResource TextSecondaryBrush}" />
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <Border
+            Grid.RowSpan="2"
+            Panel.ZIndex="999"
+            Background="{StaticResource AppBackgroundBrush}"
+            Visibility="{Binding IsProcessingRecovery,
+                Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Border
+                Width="360"
+                Padding="28"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource GoldBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="18">
+                <TextBlock
+                    Text="Đang hoàn tất đơn..."
+                    HorizontalAlignment="Center"
+                    FontSize="18"
+                    FontWeight="SemiBold"
+                    Foreground="{StaticResource TextPrimaryBrush}" />
+            </Border>
+        </Border>
 
         <Border
             Grid.RowSpan="2"
@@ -2871,24 +3261,28 @@
                             Grid.Column="0"
                             Content="BỎ GIAO DỊCH"
                             Command="{Binding AbandonRecoveryCommand}"
+                            Visibility="{Binding SelectedRecovery.CanAbandon, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
                             MinHeight="40" />
 
                         <Button
                             Grid.Column="2"
                             Content="MỞ HÓA ĐƠN"
                             Command="{Binding OpenRecoveryReceiptCommand}"
+                            Visibility="{Binding SelectedRecovery.CanOpenReceipt, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
                             MinHeight="40" />
 
                         <StackPanel Grid.Column="4">
 
                             <Button
-                                Content="THỬ LẠI"
+                                Content="{Binding SelectedRecovery.RetryActionText, Mode=OneWay}"
                                 Command="{Binding RetryRecoveryCommand}"
+                                Visibility="{Binding SelectedRecovery.CanRetry, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
                                 MinHeight="40" />
 
                             <Button
-                                Content="ĐÃ XEM"
+                                Content="TIẾP TỤC BÁN HÀNG"
                                 Command="{Binding AcknowledgeRecoveryCommand}"
+                                Visibility="{Binding SelectedRecovery.IsCompleted, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
                                 MinHeight="40"
                                 Margin="0,6,0,0" />
                         </StackPanel>

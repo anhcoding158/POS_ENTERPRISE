@@ -26,7 +26,7 @@ public sealed class PermissionService :
     }
 
     public bool HasPermission(
-        SystemPermission permission)
+        SystemCapability permission)
     {
         ValidatePermission(
             permission);
@@ -52,7 +52,7 @@ public sealed class PermissionService :
     }
 
     public Result Authorize(
-        SystemPermission permission)
+        SystemCapability permission)
     {
         ValidatePermission(
             permission);
@@ -61,7 +61,7 @@ public sealed class PermissionService :
             .IsAuthenticated)
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     ErrorCodes.General.Unauthorized,
                     "Phiên đăng nhập không còn hợp lệ. " +
                     "Vui lòng đăng nhập lại."));
@@ -73,7 +73,7 @@ public sealed class PermissionService :
         if (!role.HasValue)
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     ErrorCodes.General.Unauthorized,
                     "Phiên đăng nhập thiếu thông tin vai trò. " +
                     "Vui lòng đăng nhập lại."));
@@ -92,14 +92,14 @@ public sealed class PermissionService :
                     permission);
 
         return Result.Failure(
-            new Error(
+            new AppError(
                 ErrorCodes.General.Forbidden,
                 $"Tài khoản hiện tại không có quyền " +
                 $"{permissionDisplayName}."));
     }
 
     private static void ValidatePermission(
-        SystemPermission permission)
+        SystemCapability permission)
     {
         if (!Enum.IsDefined(
                 permission))

@@ -13,36 +13,36 @@ public sealed class AuthorizedHeldSaleService(
     public Task<Result<HeldSaleDto>> CreateHeldSaleAsync(
         CreateHeldSaleRequest request, CancellationToken cancellationToken = default)
     {
-        var authorization = permissionService.Authorize(SystemPermission.UseCheckout);
+        var authorization = permissionService.Authorize(SystemCapability.UseCheckout);
         return authorization.IsFailure
-            ? Task.FromResult(Result.Failure<HeldSaleDto>(authorization.Error))
+            ? Task.FromResult(Result.Failure<HeldSaleDto>(authorization.AppError))
             : innerService.CreateHeldSaleAsync(request, cancellationToken);
     }
 
     public Task<Result<IReadOnlyList<HeldSaleDto>>> GetActiveHeldSalesAsync(
         int limit = 100, CancellationToken cancellationToken = default)
     {
-        var authorization = permissionService.Authorize(SystemPermission.UseCheckout);
+        var authorization = permissionService.Authorize(SystemCapability.UseCheckout);
         return authorization.IsFailure
-            ? Task.FromResult(Result.Failure<IReadOnlyList<HeldSaleDto>>(authorization.Error))
+            ? Task.FromResult(Result.Failure<IReadOnlyList<HeldSaleDto>>(authorization.AppError))
             : innerService.GetActiveHeldSalesAsync(limit, cancellationToken);
     }
 
     public Task<Result<HeldSaleResumeDto>> GetHeldSaleForResumeAsync(
         int heldSaleId, CancellationToken cancellationToken = default)
     {
-        var authorization = permissionService.Authorize(SystemPermission.UseCheckout);
+        var authorization = permissionService.Authorize(SystemCapability.UseCheckout);
         return authorization.IsFailure
-            ? Task.FromResult(Result.Failure<HeldSaleResumeDto>(authorization.Error))
+            ? Task.FromResult(Result.Failure<HeldSaleResumeDto>(authorization.AppError))
             : innerService.GetHeldSaleForResumeAsync(heldSaleId, cancellationToken);
     }
 
     public Task<Result> CancelHeldSaleAsync(
         int heldSaleId, CancellationToken cancellationToken = default)
     {
-        var authorization = permissionService.Authorize(SystemPermission.UseCheckout);
+        var authorization = permissionService.Authorize(SystemCapability.UseCheckout);
         return authorization.IsFailure
-            ? Task.FromResult(Result.Failure(authorization.Error))
+            ? Task.FromResult(Result.Failure(authorization.AppError))
             : innerService.CancelHeldSaleAsync(heldSaleId, cancellationToken);
     }
 }

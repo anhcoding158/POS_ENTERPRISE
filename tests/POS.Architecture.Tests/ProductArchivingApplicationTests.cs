@@ -58,7 +58,7 @@ public sealed class ProductArchivingApplicationTests
 
         Assert.True(
             result.IsSuccess,
-            result.Error.ToString());
+            result.AppError.ToString());
 
         await using var verifyContext =
             database.CreateContext();
@@ -107,7 +107,7 @@ public sealed class ProductArchivingApplicationTests
         Assert.Equal(
             ErrorCodes.Authentication
                 .CurrentUserNotFound,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.False(
             context.ChangeTracker
@@ -148,7 +148,7 @@ public sealed class ProductArchivingApplicationTests
 
         Assert.Equal(
             ErrorCodes.General.Validation,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Empty(
             context.ChangeTracker.Entries());
@@ -180,7 +180,7 @@ public sealed class ProductArchivingApplicationTests
 
         Assert.Equal(
             ErrorCodes.Products.NotFound,
-            result.Error.Code);
+            result.AppError.Code);
     }
 
     [Fact]
@@ -210,7 +210,7 @@ public sealed class ProductArchivingApplicationTests
 
         Assert.Equal(
             "PRODUCT.ALREADY_ARCHIVED",
-            result.Error.Code);
+            result.AppError.Code);
 
         await using var verifyContext =
             database.CreateContext();
@@ -254,7 +254,7 @@ public sealed class ProductArchivingApplicationTests
 
         Assert.True(
             result.IsSuccess,
-            result.Error.ToString());
+            result.AppError.ToString());
 
         await using var verifyContext =
             database.CreateContext();
@@ -296,7 +296,7 @@ public sealed class ProductArchivingApplicationTests
 
         Assert.True(
             result.IsSuccess,
-            result.Error.ToString());
+            result.AppError.ToString());
 
         await using var verifyContext =
             database.CreateContext();
@@ -336,7 +336,7 @@ public sealed class ProductArchivingApplicationTests
 
         Assert.Equal(
             "PRODUCT.NOT_ARCHIVED",
-            result.Error.Code);
+            result.AppError.Code);
     }
 
     [Fact]
@@ -367,7 +367,7 @@ public sealed class ProductArchivingApplicationTests
 
         Assert.Equal(
             "PRODUCT.ARCHIVED_CANNOT_ACTIVATE",
-            result.Error.Code);
+            result.AppError.Code);
 
         await using var verifyContext =
             database.CreateContext();
@@ -414,7 +414,7 @@ public sealed class ProductArchivingApplicationTests
 
         Assert.True(
             result.IsSuccess,
-            result.Error.ToString());
+            result.AppError.ToString());
 
         await using var verifyContext =
             database.CreateContext();
@@ -490,7 +490,7 @@ public sealed class ProductArchivingApplicationTests
         Assert.Equal(
             ErrorCodes.Products
                 .ConcurrencyConflict,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Equal(
             1,

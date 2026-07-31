@@ -284,7 +284,7 @@ public sealed class OrderHistoryServiceTests
         var result = await database.CreateService().GetDetailsAsync(999_999);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(ErrorCodes.Orders.NotFound, result.Error.Code);
+        Assert.Equal(ErrorCodes.Orders.NotFound, result.AppError.Code);
     }
 
     [Fact]
@@ -394,7 +394,7 @@ public sealed class OrderHistoryServiceTests
             .GetReprintReceiptAsync(orderId);
 
         Assert.True(result.IsFailure);
-        Assert.Contains("trước khi", result.Error.Message, StringComparison.Ordinal);
+        Assert.Contains("trước khi", result.AppError.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -415,7 +415,7 @@ public sealed class OrderHistoryServiceTests
         var result = await service.GetReprintReceiptAsync(1);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(ErrorCodes.Orders.ReceiptSnapshotInvalid, result.Error.Code);
+        Assert.Equal(ErrorCodes.Orders.ReceiptSnapshotInvalid, result.AppError.Code);
     }
 
     [Fact]
@@ -628,7 +628,7 @@ public sealed class OrderHistoryServiceTests
             CancellationToken cancellationToken = default)
         {
             SearchCalls++;
-            return Task.FromResult(PagedResult<Order>.Empty(pageNumber, pageSize));
+            return Task.FromResult(PagedResult.Empty<Order>(pageNumber, pageSize));
         }
         public Task<bool> CodeExistsAsync(string orderCode, CancellationToken cancellationToken = default) =>
             Task.FromResult(false);

@@ -29,7 +29,7 @@ public sealed class OrderHistoryWindowService : IOrderHistoryWindowService
     public Task ShowAsync()
     {
         var authorization = _permissions.Authorize(
-            SystemPermission.ViewReports);
+            SystemCapability.ViewReports);
         if (authorization.IsFailure)
         {
             return Task.CompletedTask;

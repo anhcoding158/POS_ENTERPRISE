@@ -79,11 +79,8 @@ public sealed class DatabaseInitializerSafetyTests
             appliedMigrations);
 
         var integrity =
-            serviceProvider
-                .GetRequiredService<
-                    SqliteDatabaseSafetyService>()
-                .CheckIntegrity(
-                    temporaryDirectory.DatabasePath);
+            SqliteDatabaseSafetyService.CheckIntegrity(
+                temporaryDirectory.DatabasePath);
 
         Assert.True(
             integrity.IsSuccess);
@@ -121,13 +118,8 @@ public sealed class DatabaseInitializerSafetyTests
                     backupPath)
                 .Length > 0);
 
-        var safetyService =
-            serviceProvider.GetRequiredService<
-                SqliteDatabaseSafetyService>();
-
         Assert.True(
-            safetyService
-                .CheckIntegrity(
+            SqliteDatabaseSafetyService.CheckIntegrity(
                     backupPath)
                 .IsSuccess);
 
@@ -213,10 +205,7 @@ public sealed class DatabaseInitializerSafetyTests
             appliedMigrations);
 
         Assert.True(
-            serviceProvider
-                .GetRequiredService<
-                    SqliteDatabaseSafetyService>()
-                .CheckIntegrity(
+            SqliteDatabaseSafetyService.CheckIntegrity(
                     temporaryDirectory.DatabasePath)
                 .IsSuccess);
     }

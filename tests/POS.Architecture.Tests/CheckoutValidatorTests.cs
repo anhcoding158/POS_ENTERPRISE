@@ -39,7 +39,7 @@ public sealed class CheckoutValidatorTests
 
         Assert.True(
             result.IsSuccess,
-            result.Error.ToString());
+            result.AppError.ToString());
     }
 
     [Fact]
@@ -73,7 +73,7 @@ public sealed class CheckoutValidatorTests
 
         Assert.True(
             result.IsSuccess,
-            result.Error.ToString());
+            result.AppError.ToString());
     }
 
     [Fact]
@@ -100,7 +100,7 @@ public sealed class CheckoutValidatorTests
 
         Assert.Equal(
             ErrorCodes.Checkout.EmptyCart,
-            result.Error.Code);
+            result.AppError.Code);
     }
 
     [Fact]
@@ -137,11 +137,11 @@ public sealed class CheckoutValidatorTests
 
         Assert.Equal(
             ErrorCodes.Payments.InvalidAmount,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Contains(
             "VietQR",
-            result.Error.Message,
+            result.AppError.Message,
             StringComparison.OrdinalIgnoreCase);
     }
 
@@ -179,11 +179,11 @@ public sealed class CheckoutValidatorTests
 
         Assert.Equal(
             ErrorCodes.General.Validation,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Contains(
             "VietQR",
-            result.Error.Message,
+            result.AppError.Message,
             StringComparison.OrdinalIgnoreCase);
     }
 
@@ -221,11 +221,11 @@ public sealed class CheckoutValidatorTests
 
         Assert.Equal(
             ErrorCodes.General.Validation,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Contains(
             "tiền mặt",
-            result.Error.Message,
+            result.AppError.Message,
             StringComparison.OrdinalIgnoreCase);
     }
 
@@ -269,7 +269,7 @@ public sealed class CheckoutValidatorTests
         Assert.Equal(
             ErrorCodes.Checkout
                 .PaymentMethodNotSupported,
-            result.Error.Code);
+            result.AppError.Code);
     }
 
     [Fact]
@@ -303,7 +303,7 @@ public sealed class CheckoutValidatorTests
 
         Assert.Equal(
             ErrorCodes.General.Validation,
-            result.Error.Code);
+            result.AppError.Code);
     }
 
     [Fact]
@@ -341,7 +341,7 @@ public sealed class CheckoutValidatorTests
         Assert.Equal(
             ErrorCodes.Checkout
                 .LineDiscountNotSupported,
-            result.Error.Code);
+            result.AppError.Code);
     }
 
     [Fact]
@@ -386,7 +386,7 @@ public sealed class CheckoutValidatorTests
         Assert.Equal(
             ErrorCodes.Checkout
                 .ModifiersNotSupported,
-            result.Error.Code);
+            result.AppError.Code);
     }
 
     [Fact]
@@ -424,6 +424,6 @@ public sealed class CheckoutValidatorTests
         Assert.Equal(
             ErrorCodes.Checkout
                 .CustomerNotSupported,
-            result.Error.Code);
+            result.AppError.Code);
     }
 }

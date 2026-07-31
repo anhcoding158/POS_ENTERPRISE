@@ -40,7 +40,7 @@ public sealed class SqliteDatabaseSafetyServiceTests
                 new SqliteDatabaseSafetyService();
 
             var result =
-                service.CheckIntegrity(
+                SqliteDatabaseSafetyService.CheckIntegrity(
                     databasePath);
 
             Assert.True(
@@ -71,7 +71,7 @@ public sealed class SqliteDatabaseSafetyServiceTests
                 new SqliteDatabaseSafetyService();
 
             var result =
-                service.CheckIntegrity(
+                SqliteDatabaseSafetyService.CheckIntegrity(
                     missingPath);
 
             Assert.False(
@@ -113,7 +113,7 @@ public sealed class SqliteDatabaseSafetyServiceTests
                     () =>
                     {
                         var result =
-                            service.CheckIntegrity(
+                            SqliteDatabaseSafetyService.CheckIntegrity(
                                 corruptPath);
 
                         Assert.False(
@@ -156,7 +156,7 @@ public sealed class SqliteDatabaseSafetyServiceTests
                 new SqliteDatabaseSafetyService();
 
             var result =
-                service.CreateVerifiedBackup(
+                SqliteDatabaseSafetyService.CreateVerifiedBackup(
                     sourcePath,
                     backupDirectory,
                     BackupUtcNow);
@@ -182,7 +182,7 @@ public sealed class SqliteDatabaseSafetyServiceTests
                     result.BackupFilePath));
 
             var integrity =
-                service.CheckIntegrity(
+                SqliteDatabaseSafetyService.CheckIntegrity(
                     result.BackupFilePath);
 
             Assert.True(
@@ -260,7 +260,7 @@ public sealed class SqliteDatabaseSafetyServiceTests
                 new SqliteDatabaseSafetyService();
 
             var result =
-                service.CreateVerifiedBackup(
+                SqliteDatabaseSafetyService.CreateVerifiedBackup(
                     sourcePath,
                     backupDirectory,
                     BackupUtcNow);
@@ -324,13 +324,13 @@ public sealed class SqliteDatabaseSafetyServiceTests
                 new SqliteDatabaseSafetyService();
 
             var first =
-                service.CreateVerifiedBackup(
+                SqliteDatabaseSafetyService.CreateVerifiedBackup(
                     sourcePath,
                     backupDirectory,
                     BackupUtcNow);
 
             var second =
-                service.CreateVerifiedBackup(
+                SqliteDatabaseSafetyService.CreateVerifiedBackup(
                     sourcePath,
                     backupDirectory,
                     BackupUtcNow);
@@ -383,8 +383,7 @@ public sealed class SqliteDatabaseSafetyServiceTests
             CreateDatabaseWithRow(sourcePath, "temporary-cleanup");
 
             var result =
-                new SqliteDatabaseSafetyService()
-                    .CreateVerifiedBackup(
+                SqliteDatabaseSafetyService.CreateVerifiedBackup(
                         sourcePath,
                         backupDirectory,
                         BackupUtcNow);
@@ -417,8 +416,7 @@ public sealed class SqliteDatabaseSafetyServiceTests
             CreateDatabaseWithRow(sourcePath, "final-cleanup");
 
             var result =
-                new SqliteDatabaseSafetyService()
-                    .CreateVerifiedBackup(
+                SqliteDatabaseSafetyService.CreateVerifiedBackup(
                         sourcePath,
                         backupDirectory,
                         BackupUtcNow);
@@ -460,8 +458,7 @@ public sealed class SqliteDatabaseSafetyServiceTests
                 "INSERT INTO SafetyRows (Value) VALUES ('source-sidecars');");
 
             var result =
-                new SqliteDatabaseSafetyService()
-                    .CreateVerifiedBackup(
+                SqliteDatabaseSafetyService.CreateVerifiedBackup(
                         sourcePath,
                         backupDirectory,
                         BackupUtcNow);
@@ -516,8 +513,7 @@ public sealed class SqliteDatabaseSafetyServiceTests
             Assert.NotNull(result.BackupFilePath);
 
             var integrity =
-                new SqliteDatabaseSafetyService()
-                    .CheckIntegrity(result.BackupFilePath);
+                SqliteDatabaseSafetyService.CheckIntegrity(result.BackupFilePath);
 
             Assert.True(integrity.IsSuccess, integrity.Message);
             Assert.False(File.Exists(result.BackupFilePath + "-wal"));
@@ -544,8 +540,7 @@ public sealed class SqliteDatabaseSafetyServiceTests
             File.WriteAllBytes(sourcePath, [0x00, 0x01, 0x02, 0x03]);
 
             var result =
-                new SqliteDatabaseSafetyService()
-                    .CreateVerifiedBackup(
+                SqliteDatabaseSafetyService.CreateVerifiedBackup(
                         sourcePath,
                         backupDirectory,
                         BackupUtcNow);
@@ -602,8 +597,7 @@ public sealed class SqliteDatabaseSafetyServiceTests
             var first =
                 CreateVerifiedTestBackup(testDirectory, "repeated");
             var second =
-                new SqliteDatabaseSafetyService()
-                    .CreateVerifiedBackup(
+                SqliteDatabaseSafetyService.CreateVerifiedBackup(
                         Path.Combine(testDirectory, "source.db"),
                         Path.Combine(testDirectory, "backups"),
                         BackupUtcNow);
@@ -646,7 +640,7 @@ public sealed class SqliteDatabaseSafetyServiceTests
                 new SqliteDatabaseSafetyService();
 
             var result =
-                service.CreateVerifiedBackup(
+                SqliteDatabaseSafetyService.CreateVerifiedBackup(
                     sourcePath,
                     backupDirectory,
                     BackupUtcNow);
@@ -698,7 +692,7 @@ public sealed class SqliteDatabaseSafetyServiceTests
                 new SqliteDatabaseSafetyService();
 
             var result =
-                service.CreateVerifiedBackup(
+                SqliteDatabaseSafetyService.CreateVerifiedBackup(
                     sourcePath,
                     testDirectory,
                     BackupUtcNow);
@@ -772,8 +766,7 @@ public sealed class SqliteDatabaseSafetyServiceTests
         CreateDatabaseWithRow(sourcePath, value);
 
         var result =
-            new SqliteDatabaseSafetyService()
-                .CreateVerifiedBackup(
+            SqliteDatabaseSafetyService.CreateVerifiedBackup(
                     sourcePath,
                     backupDirectory,
                     BackupUtcNow);

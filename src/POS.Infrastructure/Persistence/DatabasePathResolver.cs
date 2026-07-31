@@ -24,7 +24,7 @@ public sealed class DatabasePathResolver
     /// Chuyển đường dẫn cấu hình thành đường dẫn tuyệt đối
     /// và bảo đảm thư mục chứa database đã tồn tại.
     /// </summary>
-    public string ResolveDatabasePath(
+    public static string ResolveDatabasePath(
         string configuredPath)
     {
         if (string.IsNullOrWhiteSpace(configuredPath))
@@ -75,7 +75,7 @@ public sealed class DatabasePathResolver
     /// Tạo connection string SQLite bằng builder
     /// để tránh lỗi ký tự đặc biệt và connection-string injection.
     /// </summary>
-    public string CreateConnectionString(
+    public static string CreateConnectionString(
         InfrastructureOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);

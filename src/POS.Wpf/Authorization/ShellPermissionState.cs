@@ -29,34 +29,34 @@ public sealed record ShellPermissionState(
         return new ShellPermissionState(
             CanViewProductCatalog:
                 permissionService.HasPermission(
-                    SystemPermission.ViewProductCatalog),
+                    SystemCapability.ViewProductCatalog),
 
             CanManageProducts:
                 permissionService.HasPermission(
-                    SystemPermission.ManageProducts),
+                    SystemCapability.ManageProducts),
 
             CanManageCategories:
                 permissionService.HasPermission(
-                    SystemPermission.ManageCategories),
+                    SystemCapability.ManageCategories),
 
             CanAdjustInventory:
                 permissionService.HasPermission(
-                    SystemPermission.AdjustInventory),
+                    SystemCapability.AdjustInventory),
 
             CanViewInventoryHistory:
                 permissionService.HasPermission(
-                    SystemPermission.ViewInventoryHistory),
+                    SystemCapability.ViewInventoryHistory),
 
             CanUseCheckout:
                 permissionService.HasPermission(
-                    SystemPermission.UseCheckout),
+                    SystemCapability.UseCheckout),
 
             CanViewReports:
                 permissionService.HasPermission(
-                    SystemPermission.ViewReports),
+                    SystemCapability.ViewReports),
 
             CanManageUsers:
                 permissionService.HasPermission(
-                    SystemPermission.ManageUsers));
+                    SystemCapability.ManageUsers));
     }
 }

@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -194,7 +194,7 @@ public sealed class VietQrService :
         if (transferContentResult.IsFailure)
         {
             return Result.Failure<string>(
-                transferContentResult.Error);
+                transferContentResult.AppError);
         }
 
         try
@@ -366,7 +366,7 @@ public sealed class VietQrService :
              * OrderCode được phép log vì đây là mã nghiệp vụ
              * dùng để truy vết lỗi và không phải credential.
              */
-            _logger.LogError(
+            global::POS.Application.Common.PosLog.Error(_logger,
                 exception,
                 "Không thể dựng payload VietQR cho đơn " +
                 "{OrderCode}.",
@@ -396,7 +396,7 @@ public sealed class VietQrService :
         if (payloadResult.IsFailure)
         {
             return Result.Failure<byte[]>(
-                payloadResult.Error);
+                payloadResult.AppError);
         }
 
         try
@@ -434,7 +434,7 @@ public sealed class VietQrService :
             if (!HasValidPngSignature(
                     pngBytes))
             {
-                _logger.LogError(
+                global::POS.Application.Common.PosLog.Error(_logger,
                     "QRCoder trả về dữ liệu không có " +
                     "PNG signature cho đơn {OrderCode}.",
                     request.OrderCode);
@@ -454,7 +454,7 @@ public sealed class VietQrService :
             /*
              * Không ghi payload hoặc số tài khoản vào log.
              */
-            _logger.LogError(
+            global::POS.Application.Common.PosLog.Error(_logger,
                 exception,
                 "Không thể tạo ảnh VietQR cho đơn " +
                 "{OrderCode}.",
@@ -794,7 +794,7 @@ public sealed class VietQrService :
         string message)
     {
         return Result.Failure<TValue>(
-            new Error(
+            new AppError(
                 code,
                 message));
     }

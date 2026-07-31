@@ -376,7 +376,7 @@ public sealed class CategoryEditorViewModel :
             if (result.IsFailure)
             {
                 ShowError(
-                    result.Error.Message);
+                    result.AppError.Message);
 
                 return;
             }
@@ -386,7 +386,7 @@ public sealed class CategoryEditorViewModel :
         }
         catch (Exception exception)
         {
-            _logger.LogError(
+            global::POS.Application.Common.PosLog.Error(_logger,
                 exception,
                 "Không thể khởi tạo CategoryEditor.");
 
@@ -488,7 +488,7 @@ public sealed class CategoryEditorViewModel :
             if (result.IsFailure)
             {
                 ApplyServiceError(
-                    result.Error);
+                    result.AppError);
 
                 return;
             }
@@ -505,7 +505,7 @@ public sealed class CategoryEditorViewModel :
         }
         catch (Exception exception)
         {
-            _logger.LogError(
+            global::POS.Application.Common.PosLog.Error(_logger,
                 exception,
                 "Không thể lưu Category.");
 
@@ -632,7 +632,7 @@ public sealed class CategoryEditorViewModel :
     }
 
     private void ApplyServiceError(
-        Error error)
+        AppError error)
     {
         ShowError(
             error.Message);
@@ -657,7 +657,7 @@ public sealed class CategoryEditorViewModel :
     private void HandleCommandException(
         Exception exception)
     {
-        _logger.LogError(
+        global::POS.Application.Common.PosLog.Error(_logger,
             exception,
             "Lệnh CategoryEditor thất bại.");
 

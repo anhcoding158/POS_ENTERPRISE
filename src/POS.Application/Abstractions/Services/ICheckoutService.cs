@@ -1,4 +1,4 @@
-﻿using POS.Application.Common;
+using POS.Application.Common;
 using POS.Application.DTOs.Checkout;
 
 namespace POS.Application.Abstractions.Services;
@@ -18,28 +18,35 @@ public interface ICheckoutService
         CheckoutRequest request,
         CancellationToken cancellationToken = default) =>
         Task.FromResult(Result.Failure<CheckoutPreparationDto>(
-            new Error("CHECKOUT.IDEMPOTENCY_NOT_SUPPORTED", "Service chưa hỗ trợ durable checkout.")));
+            new AppError("CHECKOUT.IDEMPOTENCY_NOT_SUPPORTED", "Service chưa hỗ trợ durable checkout.")));
 
     Task<Result<CheckoutResultDto>> CheckoutAsync(
         CheckoutRequest request,
         CancellationToken cancellationToken = default);
 
+    Task<Result<CheckoutResultDto>> RetryConfirmedPaymentIntentAsync(
+        int paymentIntentId,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult(Result.Failure<CheckoutResultDto>(
+            new AppError("PAYMENT_INTENT.RETRY_NOT_SUPPORTED",
+                "Service chưa hỗ trợ retry PaymentIntent.")));
+
     Task<Result<IReadOnlyList<CheckoutRecoveryDto>>> GetCheckoutRecoveryAsync(
         int limit = 25,
         CancellationToken cancellationToken = default) =>
         Task.FromResult(Result.Failure<IReadOnlyList<CheckoutRecoveryDto>>(
-            new Error("CHECKOUT.IDEMPOTENCY_NOT_SUPPORTED", "Service chưa hỗ trợ recovery checkout.")));
+            new AppError("CHECKOUT.IDEMPOTENCY_NOT_SUPPORTED", "Service chưa hỗ trợ recovery checkout.")));
 
     Task<Result> AcknowledgeCheckoutAsync(
         Guid clientRequestId,
         CancellationToken cancellationToken = default) =>
         Task.FromResult(Result.Failure(
-            new Error("CHECKOUT.IDEMPOTENCY_NOT_SUPPORTED", "Service chưa hỗ trợ acknowledgment checkout.")));
+            new AppError("CHECKOUT.IDEMPOTENCY_NOT_SUPPORTED", "Service chưa hỗ trợ acknowledgment checkout.")));
 
     Task<Result> AbandonCheckoutAsync(
         Guid clientRequestId,
         CancellationToken cancellationToken = default) =>
         Task.FromResult(Result.Failure(
-            new Error("CHECKOUT.IDEMPOTENCY_NOT_SUPPORTED", "Service chưa hỗ trợ abandon checkout.")));
+            new AppError("CHECKOUT.IDEMPOTENCY_NOT_SUPPORTED", "Service chưa hỗ trợ abandon checkout.")));
 }
 

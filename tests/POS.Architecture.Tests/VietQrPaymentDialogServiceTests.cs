@@ -212,7 +212,7 @@ public sealed class VietQrPaymentDialogServiceTests
         Payload_failure_must_be_returned_without_generating_png()
     {
         var expectedError =
-            new Error(
+            new AppError(
                 ErrorCodes.Payments
                     .VietQrInvalidPayload,
 
@@ -253,11 +253,11 @@ public sealed class VietQrPaymentDialogServiceTests
 
         Assert.Equal(
             expectedError.Code,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Equal(
             expectedError.Message,
-            result.Error.Message);
+            result.AppError.Message);
 
         Assert.Equal(
             1,
@@ -273,7 +273,7 @@ public sealed class VietQrPaymentDialogServiceTests
         Png_failure_must_be_returned_after_successful_payload()
     {
         var expectedError =
-            new Error(
+            new AppError(
                 ErrorCodes.Payments
                     .VietQrGenerationFailed,
 
@@ -313,11 +313,11 @@ public sealed class VietQrPaymentDialogServiceTests
 
         Assert.Equal(
             expectedError.Code,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Equal(
             expectedError.Message,
-            result.Error.Message);
+            result.AppError.Message);
 
         Assert.Equal(
             1,
@@ -367,11 +367,11 @@ public sealed class VietQrPaymentDialogServiceTests
         Assert.Equal(
             ErrorCodes.Payments
                 .VietQrInvalidPayload,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Contains(
             "TLV",
-            result.Error.Message,
+            result.AppError.Message,
             StringComparison.OrdinalIgnoreCase);
     }
 
@@ -418,7 +418,7 @@ public sealed class VietQrPaymentDialogServiceTests
         Assert.Equal(
             ErrorCodes.Payments
                 .VietQrNotConfigured,
-            result.Error.Code);
+            result.AppError.Code);
     }
 
     [Fact]

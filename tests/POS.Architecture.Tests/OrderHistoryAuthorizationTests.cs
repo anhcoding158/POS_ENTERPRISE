@@ -23,7 +23,7 @@ public sealed class OrderHistoryAuthorizationTests
         var result = await service.SearchAsync(new());
 
         Assert.True(result.IsFailure);
-        Assert.Equal(ErrorCodes.General.Forbidden, result.Error.Code);
+        Assert.Equal(ErrorCodes.General.Forbidden, result.AppError.Code);
     }
 
     [Fact]
@@ -35,7 +35,7 @@ public sealed class OrderHistoryAuthorizationTests
         var result = await service.GetDetailsAsync(1);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(ErrorCodes.General.Forbidden, result.Error.Code);
+        Assert.Equal(ErrorCodes.General.Forbidden, result.AppError.Code);
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public sealed class OrderHistoryAuthorizationTests
         var result = await service.GetReprintReceiptAsync(1);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(ErrorCodes.General.Forbidden, result.Error.Code);
+        Assert.Equal(ErrorCodes.General.Forbidden, result.AppError.Code);
     }
 
     [Fact]
@@ -157,13 +157,13 @@ public sealed class OrderHistoryAuthorizationTests
     {
         Assert.True(RolePermissionPolicy.HasPermission(
             Role.Manager,
-            SystemPermission.ViewReports));
+            SystemCapability.ViewReports));
         Assert.True(RolePermissionPolicy.HasPermission(
             Role.Administrator,
-            SystemPermission.ViewReports));
+            SystemCapability.ViewReports));
         Assert.False(RolePermissionPolicy.HasPermission(
             Role.Cashier,
-            SystemPermission.ViewReports));
+            SystemCapability.ViewReports));
     }
 
     private static AuthorizedOrderHistoryService CreateService(
@@ -186,7 +186,7 @@ public sealed class OrderHistoryAuthorizationTests
 
     private sealed class RecordingService : IOrderHistoryService
     {
-        private static readonly Error InnerError =
+        private static readonly AppError InnerError =
             new("TEST.INNER", "Inner service was called.");
 
         public int SearchCalls { get; private set; }

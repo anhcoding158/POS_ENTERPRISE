@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using POS.Application.Abstractions.Authentication;
 using POS.Application.DTOs.Authentication;
@@ -242,7 +242,7 @@ public sealed class LoginViewModel :
             if (result.IsFailure)
             {
                 ShowError(
-                    result.Error.Message);
+                    result.AppError.Message);
 
                 RequestPasswordClear?
                     .Invoke();
@@ -263,7 +263,7 @@ public sealed class LoginViewModel :
         }
         catch (Exception exception)
         {
-            _logger.LogError(
+            global::POS.Application.Common.PosLog.Error(_logger,
                 exception,
                 "Đăng nhập không thể hoàn thành.");
 
@@ -316,7 +316,7 @@ public sealed class LoginViewModel :
     private void HandleCommandException(
         Exception exception)
     {
-        _logger.LogError(
+        global::POS.Application.Common.PosLog.Error(_logger,
             exception,
             "Lệnh đăng nhập thất bại.");
 

@@ -83,7 +83,7 @@ public sealed class InventoryService : IInventoryService
         {
             return Result.Failure<
                 InventoryAdjustmentResultDto>(
-                new Error(
+                new AppError(
                     ErrorCodes.Inventory.ProductNotFound,
                     "Không tìm thấy sản phẩm cần điều chỉnh kho."));
         }
@@ -92,7 +92,7 @@ public sealed class InventoryService : IInventoryService
         {
             return Result.Failure<
                 InventoryAdjustmentResultDto>(
-                new Error(
+                new AppError(
                     ErrorCodes.Products.Archived,
                     "Không thể điều chỉnh kho cho sản phẩm đã lưu trữ."));
         }
@@ -101,7 +101,7 @@ public sealed class InventoryService : IInventoryService
         {
             return Result.Failure<
                 InventoryAdjustmentResultDto>(
-                new Error(
+                new AppError(
                     ErrorCodes.Inventory.InventoryNotTracked,
                     "Sản phẩm này không theo dõi tồn kho."));
         }
@@ -329,7 +329,7 @@ public sealed class InventoryService : IInventoryService
             movement.OccurredAtUtc);
     }
 
-    private static Error MapDomainError(
+    private static AppError MapDomainError(
         DomainException exception)
     {
         if (string.Equals(
@@ -337,7 +337,7 @@ public sealed class InventoryService : IInventoryService
                 "PRODUCT.INVENTORY_NOT_TRACKED",
                 StringComparison.Ordinal))
         {
-            return new Error(
+            return new AppError(
                 ErrorCodes.Inventory.InventoryNotTracked,
                 exception.Message);
         }
@@ -347,7 +347,7 @@ public sealed class InventoryService : IInventoryService
                 "PRODUCT.INSUFFICIENT_STOCK",
                 StringComparison.Ordinal))
         {
-            return new Error(
+            return new AppError(
                 ErrorCodes.Inventory.InsufficientStock,
                 exception.Message);
         }
@@ -359,29 +359,29 @@ public sealed class InventoryService : IInventoryService
             "PRODUCT.STOCK_TOO_LOW" or
             "PRODUCT.NEGATIVE_STOCK_NOT_ALLOWED")
         {
-            return new Error(
+            return new AppError(
                 ErrorCodes.Inventory.InvalidQuantity,
                 exception.Message);
         }
 
-        return new Error(
+        return new AppError(
             exception.Code,
             exception.Message);
     }
 
-    private static Error MapPersistenceConflict(
+    private static AppError MapPersistenceConflict(
         PersistenceConflictException exception)
     {
         if (exception.Kind ==
             PersistenceConflictKind.Concurrency)
         {
-            return new Error(
+            return new AppError(
                 ErrorCodes.Inventory.ConcurrencyConflict,
                 "Tồn kho đã được một thao tác khác thay đổi. " +
                 "Hãy tải lại sản phẩm rồi thực hiện lại.");
         }
 
-        return new Error(
+        return new AppError(
             ErrorCodes.Inventory.PersistenceConflict,
             "Không thể lưu biến động tồn kho do dữ liệu " +
             "đang xung đột. Hãy tải lại và thử lại.");

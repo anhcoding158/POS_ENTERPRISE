@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using POS.Application.DTOs.HeldSales;
@@ -69,7 +70,9 @@ public partial class HeldSaleResumeWindow : Window, INotifyPropertyChanged
             CurrentPriceText = value.CurrentUnitPrice.HasValue
                 ? $"{value.CurrentUnitPrice.Value:N0} ₫"
                 : "—";
-            CurrentStockText = value.CurrentStock?.ToString("N0") ?? "—";
+            CurrentStockText = value.CurrentStock?.ToString(
+                "N0",
+                CultureInfo.GetCultureInfo("vi-VN")) ?? "—";
             Warning = value.Warning ?? "Không thay đổi";
             IsUnavailable = value.Status == HeldSaleResumeLineStatus.Unavailable;
             PriceChanged = value.CurrentUnitPrice.HasValue &&

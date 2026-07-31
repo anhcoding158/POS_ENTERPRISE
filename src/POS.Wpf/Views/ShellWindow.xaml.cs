@@ -142,22 +142,22 @@ public partial class ShellWindow :
         ApplyCommandPermission(
             _viewModel.AddProductCommand,
             permissionState.CanManageProducts,
-            SystemPermission.ManageProducts);
+            SystemCapability.ManageProducts);
 
         ApplyCommandPermission(
             _viewModel.EditProductCommand,
             permissionState.CanManageProducts,
-            SystemPermission.ManageProducts);
+            SystemCapability.ManageProducts);
 
         ApplyCommandPermission(
             _viewModel.ToggleProductActiveCommand,
             permissionState.CanManageProducts,
-            SystemPermission.ManageProducts);
+            SystemCapability.ManageProducts);
 
         ApplyMenuItemPermission(
             ToggleProductArchiveMenuItem,
             permissionState.CanManageProducts,
-            SystemPermission.ManageProducts);
+            SystemCapability.ManageProducts);
 
         if (!permissionState.CanManageProducts)
         {
@@ -184,36 +184,36 @@ public partial class ShellWindow :
         ApplyCommandPermission(
             _viewModel.OpenCategoryManagementCommand,
             permissionState.CanManageCategories,
-            SystemPermission.ManageCategories);
+            SystemCapability.ManageCategories);
 
         ApplyCommandPermission(
             _viewModel.AdjustInventoryCommand,
             permissionState.CanAdjustInventory,
-            SystemPermission.AdjustInventory);
+            SystemCapability.AdjustInventory);
 
         ApplyMenuItemPermission(
             AdjustInventoryMenuItem,
             permissionState.CanAdjustInventory,
-            SystemPermission.AdjustInventory);
+            SystemCapability.AdjustInventory);
 
         ApplyCommandPermission(
             _viewModel.ViewInventoryHistoryCommand,
             permissionState.CanViewInventoryHistory,
-            SystemPermission.ViewInventoryHistory);
+            SystemCapability.ViewInventoryHistory);
 
         ApplyCommandPermission(
             _viewModel.OpenOrderHistoryCommand,
             permissionState.CanViewReports,
-            SystemPermission.ViewReports);
+            SystemCapability.ViewReports);
 
         ApplyMenuItemPermission(
             InventoryHistoryMenuItem,
             permissionState.CanViewInventoryHistory,
-            SystemPermission.ViewInventoryHistory);
+            SystemCapability.ViewInventoryHistory);
 
         var canUseCheckout =
         _permissionService.HasPermission(
-        SystemPermission.UseCheckout);
+        SystemCapability.UseCheckout);
 
         SalesNavigationButton.IsEnabled =
             canUseCheckout;
@@ -229,7 +229,7 @@ public partial class ShellWindow :
     private void ApplyCommandPermission(
         global::System.Windows.Input.ICommand command,
         bool isAllowed,
-        SystemPermission permission)
+        SystemCapability permission)
     {
         ArgumentNullException.ThrowIfNull(
             command);
@@ -292,7 +292,7 @@ public partial class ShellWindow :
     private static void ApplyMenuItemPermission(
         global::System.Windows.Controls.MenuItem menuItem,
         bool isAllowed,
-        SystemPermission permission)
+        SystemCapability permission)
     {
         if (isAllowed)
         {
@@ -844,7 +844,7 @@ public partial class ShellWindow :
             if (result.IsFailure)
             {
                 throw new InvalidOperationException(
-                    result.Error.Message);
+                    result.AppError.Message);
             }
 
             LogoutRequested =

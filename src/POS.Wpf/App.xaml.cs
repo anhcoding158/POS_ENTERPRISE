@@ -302,6 +302,15 @@ public partial class App :
             CheckoutService>();
 
         services.AddScoped<
+            PaymentIntentService>();
+
+        services.AddScoped<IPaymentIntentService>(
+            serviceProvider =>
+                new AuthorizedPaymentIntentService(
+                    serviceProvider.GetRequiredService<PaymentIntentService>(),
+                    serviceProvider.GetRequiredService<IPermissionService>()));
+
+        services.AddScoped<
             ICheckoutService>(
                 serviceProvider =>
                     new AuthorizedCheckoutService(
@@ -678,7 +687,7 @@ public partial class App :
         if (result.IsFailure)
         {
             throw new InvalidOperationException(
-                result.Error.Message);
+                result.AppError.Message);
         }
 
         return result.Value;

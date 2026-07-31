@@ -34,8 +34,7 @@ public sealed class CheckoutRequestJournalRepository(PosDbContext dbContext) :
     public async Task<IReadOnlyList<CheckoutRequestJournal>> GetActiveRecoveryAsync(
         int preparedByUserId, int limit, CancellationToken cancellationToken = default)
     {
-        if (preparedByUserId <= 0)
-            throw new ArgumentOutOfRangeException(nameof(preparedByUserId));
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(preparedByUserId);
         if (limit is <= 0 or > 100)
             throw new ArgumentOutOfRangeException(nameof(limit));
 

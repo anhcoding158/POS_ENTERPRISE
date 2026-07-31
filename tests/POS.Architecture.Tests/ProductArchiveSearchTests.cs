@@ -232,7 +232,7 @@ public sealed class ProductArchiveSearchTests
 
         Assert.True(
             result.IsSuccess,
-            result.Error.ToString());
+            result.AppError.ToString());
 
         var product =
             Assert.Single(
@@ -265,7 +265,7 @@ public sealed class ProductArchiveSearchTests
 
         Assert.True(
             result.IsSuccess,
-            result.Error.ToString());
+            result.AppError.ToString());
 
         Assert.True(
             result.Value.IsArchived);

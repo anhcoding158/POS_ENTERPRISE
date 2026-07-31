@@ -235,10 +235,10 @@ public sealed class VietQrInfrastructureTests
 
         var descriptor =
             Assert.Single(
-                services.Where(
-                    service =>
-                        service.ServiceType ==
-                        typeof(IVietQrService)));
+                services,
+                service =>
+                    service.ServiceType ==
+                    typeof(IVietQrService));
 
         Assert.Equal(
             ServiceLifetime.Singleton,
@@ -317,7 +317,7 @@ public sealed class VietQrInfrastructureTests
         Assert.Equal(
             ErrorCodes.Payments
                 .VietQrNotConfigured,
-            result.Error.Code);
+            result.AppError.Code);
     }
 
     [Fact]
@@ -359,7 +359,7 @@ public sealed class VietQrInfrastructureTests
 
         Assert.True(
             payloadResult.IsSuccess,
-            payloadResult.Error.Message);
+            payloadResult.AppError.Message);
 
         Assert.StartsWith(
             "000201",
@@ -398,7 +398,7 @@ public sealed class VietQrInfrastructureTests
 
         Assert.True(
             pngResult.IsSuccess,
-            pngResult.Error.Message);
+            pngResult.AppError.Message);
 
         Assert.True(
             pngResult.Value.Length >

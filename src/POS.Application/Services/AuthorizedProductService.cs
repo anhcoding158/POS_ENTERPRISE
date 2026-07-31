@@ -45,12 +45,12 @@ public sealed class AuthorizedProductService :
     {
         var authorization =
             _permissionService.Authorize(
-                SystemPermission.ViewProductCatalog);
+                SystemCapability.ViewProductCatalog);
 
         return authorization.IsFailure
             ? Task.FromResult(
                 Result.Failure<SalesCatalogProductDto>(
-                    authorization.Error))
+                    authorization.AppError))
             : _innerService.FindSalesExactAsync(
                 scanOrCode,
                 cancellationToken);
@@ -64,14 +64,14 @@ public sealed class AuthorizedProductService :
     {
         var authorization =
             _permissionService.Authorize(
-                SystemPermission.ViewProductCatalog);
+                SystemCapability.ViewProductCatalog);
 
         if (authorization.IsFailure)
         {
             return Task.FromResult(
                 Result.Failure<
                     PagedResult<ProductListItemDto>>(
-                    authorization.Error));
+                    authorization.AppError));
         }
 
         return _innerService.SearchAsync(
@@ -86,13 +86,13 @@ public sealed class AuthorizedProductService :
     {
         var authorization =
             _permissionService.Authorize(
-                SystemPermission.ViewProductCatalog);
+                SystemCapability.ViewProductCatalog);
 
         if (authorization.IsFailure)
         {
             return Task.FromResult(
                 Result.Failure<ProductDetailsDto>(
-                    authorization.Error));
+                    authorization.AppError));
         }
 
         return _innerService.GetByIdAsync(
@@ -107,13 +107,13 @@ public sealed class AuthorizedProductService :
     {
         var authorization =
             _permissionService.Authorize(
-                SystemPermission.ManageProducts);
+                SystemCapability.ManageProducts);
 
         if (authorization.IsFailure)
         {
             return Task.FromResult(
                 Result.Failure<ProductDetailsDto>(
-                    authorization.Error));
+                    authorization.AppError));
         }
 
         return _innerService.CreateAsync(
@@ -128,13 +128,13 @@ public sealed class AuthorizedProductService :
     {
         var authorization =
             _permissionService.Authorize(
-                SystemPermission.ManageProducts);
+                SystemCapability.ManageProducts);
 
         if (authorization.IsFailure)
         {
             return Task.FromResult(
                 Result.Failure<ProductDetailsDto>(
-                    authorization.Error));
+                    authorization.AppError));
         }
 
         return _innerService.UpdateAsync(
@@ -149,13 +149,13 @@ public sealed class AuthorizedProductService :
     {
         var authorization =
             _permissionService.Authorize(
-                SystemPermission.ManageProducts);
+                SystemCapability.ManageProducts);
 
         if (authorization.IsFailure)
         {
             return Task.FromResult(
                 Result.Failure(
-                    authorization.Error));
+                    authorization.AppError));
         }
 
         return _innerService.SetActiveStateAsync(
@@ -170,13 +170,13 @@ public sealed class AuthorizedProductService :
     {
         var authorization =
             _permissionService.Authorize(
-                SystemPermission.ManageProducts);
+                SystemCapability.ManageProducts);
 
         if (authorization.IsFailure)
         {
             return Task.FromResult(
                 Result.Failure(
-                    authorization.Error));
+                    authorization.AppError));
         }
 
         return _innerService.ArchiveAsync(
@@ -190,13 +190,13 @@ public sealed class AuthorizedProductService :
     {
         var authorization =
             _permissionService.Authorize(
-                SystemPermission.ManageProducts);
+                SystemCapability.ManageProducts);
 
         if (authorization.IsFailure)
         {
             return Task.FromResult(
                 Result.Failure(
-                    authorization.Error));
+                    authorization.AppError));
         }
 
         return _innerService.RestoreAsync(

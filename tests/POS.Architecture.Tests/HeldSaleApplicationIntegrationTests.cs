@@ -58,7 +58,7 @@ public sealed class HeldSaleApplicationIntegrationTests
             .CreateHeldSaleAsync(database.HoldRequest(requestId, quantity: 3));
 
         Assert.True(conflict.IsFailure);
-        Assert.Equal("HELD_SALE.IDEMPOTENCY_CONFLICT", conflict.Error.Code);
+        Assert.Equal("HELD_SALE.IDEMPOTENCY_CONFLICT", conflict.AppError.Code);
         await database.AssertBusinessStateAsync(
             1, HeldSaleStatus.Active, 0, 20, 0, 0);
     }

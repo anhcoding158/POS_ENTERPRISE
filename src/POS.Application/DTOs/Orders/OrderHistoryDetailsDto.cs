@@ -21,4 +21,13 @@ public sealed record OrderHistoryDetailsDto(
     int? CustomerId,
     int? RestaurantTableId,
     bool HasReceiptSnapshot,
-    IReadOnlyList<OrderHistoryLineDto> Lines);
+    IReadOnlyList<OrderHistoryLineDto> Lines,
+    SalesDiscountType SalesDiscountType = SalesDiscountType.None,
+    long RequestedDiscountValue = 0,
+    string? DiscountReason = null,
+    int? DiscountAppliedByUserId = null,
+    string? DiscountAppliedBy = null,
+    DateTimeOffset? DiscountAppliedAtUtc = null,
+    int? PaymentIntentId = null,
+    string? PaymentIntentDisplayCode = null,
+    DateTimeOffset? PaymentConfirmedAtUtc = null);

@@ -84,11 +84,9 @@ public sealed class EfApplicationTransaction :
     private IDbContextTransaction
         GetActiveTransaction()
     {
-        if (_transaction is null)
-        {
-            throw new ObjectDisposedException(
-                nameof(EfApplicationTransaction));
-        }
+        ObjectDisposedException.ThrowIf(
+            _transaction is null,
+            nameof(EfApplicationTransaction));
 
         if (IsCompleted)
         {

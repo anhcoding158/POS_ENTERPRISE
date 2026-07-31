@@ -98,7 +98,7 @@ public sealed class CheckoutReceiptIntegrationTests
 
         Assert.True(
             result.IsSuccess,
-            result.Error.ToString());
+            result.AppError.ToString());
 
         var checkoutResult =
             result.Value;
@@ -317,7 +317,7 @@ public sealed class CheckoutReceiptIntegrationTests
 
         Assert.Equal(
             ErrorCodes.Checkout.SaveFailed,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Null(
             result.ValueOrDefault);

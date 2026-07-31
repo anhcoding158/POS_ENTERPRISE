@@ -14,9 +14,9 @@ public sealed class AuthorizedOrderReturnService(
         OrderReturnRequest request,
         CancellationToken cancellationToken = default)
     {
-        var authorization = permissions.Authorize(SystemPermission.ProcessReturns);
+        var authorization = permissions.Authorize(SystemCapability.ProcessReturns);
         return authorization.IsFailure
-            ? Task.FromResult(Result.Failure<OrderReturnResultDto>(authorization.Error))
+            ? Task.FromResult(Result.Failure<OrderReturnResultDto>(authorization.AppError))
             : inner.ProcessAsync(request, cancellationToken);
     }
 
@@ -24,9 +24,9 @@ public sealed class AuthorizedOrderReturnService(
         int orderId,
         CancellationToken cancellationToken = default)
     {
-        var authorization = permissions.Authorize(SystemPermission.ProcessReturns);
+        var authorization = permissions.Authorize(SystemCapability.ProcessReturns);
         return authorization.IsFailure
-            ? Task.FromResult(Result.Failure<IReadOnlyList<OrderReturnSummaryDto>>(authorization.Error))
+            ? Task.FromResult(Result.Failure<IReadOnlyList<OrderReturnSummaryDto>>(authorization.AppError))
             : inner.GetReturnsByOrderIdAsync(orderId, cancellationToken);
     }
 
@@ -34,9 +34,9 @@ public sealed class AuthorizedOrderReturnService(
         int orderId,
         CancellationToken cancellationToken = default)
     {
-        var authorization = permissions.Authorize(SystemPermission.ProcessReturns);
+        var authorization = permissions.Authorize(SystemCapability.ProcessReturns);
         return authorization.IsFailure
-            ? Task.FromResult(Result.Failure<ReturnableOrderDto>(authorization.Error))
+            ? Task.FromResult(Result.Failure<ReturnableOrderDto>(authorization.AppError))
             : inner.GetReturnableOrderAsync(orderId, cancellationToken);
     }
 }

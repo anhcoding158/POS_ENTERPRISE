@@ -28,7 +28,7 @@ public sealed class VietQrRecipientMetadataStoreTests
 
             Assert.True(
                 saveResult.IsSuccess,
-                saveResult.Error.Message);
+                saveResult.AppError.Message);
 
             Assert.True(
                 store.IsConfigured);
@@ -38,7 +38,7 @@ public sealed class VietQrRecipientMetadataStoreTests
 
             Assert.True(
                 loadResult.IsSuccess,
-                loadResult.Error.Message);
+                loadResult.AppError.Message);
 
             Assert.Equal(
                 "Ngân hàng Quân đội",
@@ -53,7 +53,7 @@ public sealed class VietQrRecipientMetadataStoreTests
 
             Assert.True(
                 deleteResult.IsSuccess,
-                deleteResult.Error.Message);
+                deleteResult.AppError.Message);
 
             Assert.False(
                 store.IsConfigured);
@@ -86,14 +86,14 @@ public sealed class VietQrRecipientMetadataStoreTests
 
             Assert.True(
                 saveResult.IsSuccess,
-                saveResult.Error.Message);
+                saveResult.AppError.Message);
 
             var loadResult =
                 store.Load();
 
             Assert.True(
                 loadResult.IsSuccess,
-                loadResult.Error.Message);
+                loadResult.AppError.Message);
 
             Assert.Equal(
                 "Vietcombank",
@@ -137,7 +137,7 @@ public sealed class VietQrRecipientMetadataStoreTests
 
             Assert.True(
                 saveResult.IsSuccess,
-                saveResult.Error.Message);
+                saveResult.AppError.Message);
 
             var protectedBytes =
                 File.ReadAllBytes(

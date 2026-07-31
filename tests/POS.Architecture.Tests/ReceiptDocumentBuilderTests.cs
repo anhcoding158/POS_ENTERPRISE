@@ -47,7 +47,7 @@ public sealed class ReceiptDocumentBuilderTests
                     new ReceiptDocumentBuilder();
 
                 var document =
-                    builder.Build(
+                    ReceiptDocumentBuilder.Build(
                         request);
 
                 Assert.Equal(
@@ -183,7 +183,7 @@ public sealed class ReceiptDocumentBuilderTests
                     new ReceiptDocumentBuilder();
 
                 var document =
-                    builder.Build(
+                    ReceiptDocumentBuilder.Build(
                         request);
 
                 var text =
@@ -224,7 +224,7 @@ public sealed class ReceiptDocumentBuilderTests
                     new ReceiptDocumentBuilder();
 
                 var document =
-                    builder.Build(
+                    ReceiptDocumentBuilder.Build(
                         request);
 
                 var text =
@@ -249,7 +249,7 @@ public sealed class ReceiptDocumentBuilderTests
                     new ReceiptDocumentBuilder();
 
                 var document =
-                    builder.Build(
+                    ReceiptDocumentBuilder.Build(
                         CreateReceipt());
 
                 var text =
@@ -282,7 +282,7 @@ public sealed class ReceiptDocumentBuilderTests
                     Assert.Throws<
                         InvalidOperationException>(
                             () =>
-                                builder.Build(
+                                ReceiptDocumentBuilder.Build(
                                     request));
 
                 Assert.Contains(
@@ -317,7 +317,7 @@ public sealed class ReceiptDocumentBuilderTests
                     new ReceiptDocumentBuilder();
 
                 var document =
-                    builder.Build(
+                    ReceiptDocumentBuilder.Build(
                         CreateReceipt(
                             paymentMethod:
                                 paymentMethod));
@@ -358,7 +358,7 @@ public sealed class ReceiptDocumentBuilderTests
                     new ReceiptDocumentBuilder();
 
                 var document =
-                    builder.Build(
+                    ReceiptDocumentBuilder.Build(
                         CreateReceipt());
 
                 var text =

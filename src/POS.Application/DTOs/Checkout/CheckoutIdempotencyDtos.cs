@@ -21,7 +21,17 @@ public sealed record CheckoutRecoveryDto(
     IReadOnlyList<CheckoutRecoveryLineDto> Lines,
     CheckoutRequest? PreparedRequest,
     bool CanRetry,
-    bool CanAbandon);
+    bool CanAbandon)
+{
+    public int? PaymentIntentId { get; init; }
+
+    public PaymentIntentStatus? PaymentIntentStatus { get; init; }
+
+    public bool HasConfirmedPayment =>
+        PaymentIntentStatus is
+            Domain.Enums.PaymentIntentStatus.Confirmed or
+            Domain.Enums.PaymentIntentStatus.Completed;
+}
 
 public sealed record CheckoutRecoveryLineDto(
     int ProductId,

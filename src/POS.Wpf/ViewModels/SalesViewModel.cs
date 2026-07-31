@@ -3,14 +3,19 @@ using System.Globalization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using POS.Application.Abstractions.Authentication;
+using POS.Application.Abstractions.Payments;
 using POS.Application.Abstractions.Services;
 using POS.Application.Common;
 using POS.Application.DTOs.Checkout;
 using POS.Application.DTOs.HeldSales;
+using POS.Application.DTOs.Payments;
 using POS.Application.DTOs.Printing;
 using POS.Application.DTOs.Products;
 using POS.Domain.Constants;
+using POS.Domain.Common;
 using POS.Domain.Enums;
+using POS.Domain.Services;
+using POS.Application.Authorization;
 using POS.Wpf.Commands;
 using POS.Wpf.Services;
 
@@ -104,15 +109,24 @@ public sealed class SalesViewModel :
     private long _orderSessionVersion;
     private bool _isDisposed;
     private Guid? _checkoutClientRequestId;
+    private Guid? _paymentIntentClientRequestId;
+    private int? _pendingPaymentIntentId;
     private CheckoutRecoveryItemViewModel? _selectedRecovery;
+    private PaymentIntentRecoveryItemViewModel? _selectedPaymentIntentRecovery;
     private bool _isLoadingRecovery;
     private bool _isProcessingRecovery;
+    private string? _paymentIntentRecoveryError;
+    private bool _isPaymentIntentRecoveryOpen;
     private CancellationTokenSource? _recoveryLoadSource;
+    private CancellationTokenSource? _paymentIntentRecoveryLoadSource;
+    private readonly Dictionary<int, CheckoutRecoveryDto>
+        _confirmedCheckoutRecoveries = [];
     private readonly SemaphoreSlim _scanGate = new(1, 1);
     private SalesCartLineViewModel? _selectedCartLine;
     private readonly IHeldSaleDialogService _heldSaleDialogs;
     private Guid? _holdClientRequestId;
     private int? _activeHeldSaleId;
+    private SalesDiscountRequest _salesDiscount = SalesDiscountRequest.None;
     private int _activeHeldSaleCount;
     private bool _isHeldSaleBusy;
 
@@ -269,6 +283,33 @@ public sealed class SalesViewModel :
                 OpenRecoveryReceiptAsync,
                 () => SelectedRecovery?.CanOpenReceipt == true && !IsRecoveryBusy,
                 HandleCommandException);
+
+        RetryPaymentIntentRecoveryCommand =
+            new AsyncRelayCommand(
+                RetryPaymentIntentRecoveryAsync,
+                CanRetryPaymentIntentRecovery,
+                HandleCommandException);
+
+        ShowPaymentIntentQrCommand =
+            new AsyncRelayCommand(
+                ShowPaymentIntentQrAsync,
+                () => SelectedPaymentIntentRecovery?.CanShowQr == true &&
+                      !IsProcessingRecovery,
+                HandleCommandException);
+
+        ConfirmPaymentIntentRecoveryCommand =
+            new AsyncRelayCommand(
+                ConfirmPaymentIntentRecoveryAsync,
+                () => SelectedPaymentIntentRecovery?.CanConfirm == true &&
+                      !IsProcessingRecovery,
+                HandleCommandException);
+
+        CancelPaymentIntentRecoveryCommand =
+            new AsyncRelayCommand(
+                CancelPaymentIntentRecoveryAsync,
+                () => SelectedPaymentIntentRecovery?.CanCancel == true &&
+                      !IsProcessingRecovery,
+                HandleCommandException);
     }
 
     public ObservableCollection<
@@ -298,6 +339,127 @@ public sealed class SalesViewModel :
         get;
     } = [];
 
+    public ObservableCollection<PaymentIntentRecoveryItemViewModel>
+        PendingPaymentIntents
+    {
+        get;
+    } = [];
+
+    public bool HasPendingPaymentIntentRecovery =>
+        PendingPaymentIntents.Count > 0;
+
+    public string PendingPaymentIntentButtonText =>
+        $"VietQR cần xử lý ({PendingPaymentIntents.Count:N0})";
+
+    public int ManualReviewPaymentIntentCount =>
+        PendingPaymentIntents.Count(value => value.IsManualReview);
+
+    public bool HasManualReviewPaymentIntentWarning =>
+        ManualReviewPaymentIntentCount > 0;
+
+    public string ManualReviewPaymentIntentWarningText =>
+        ManualReviewPaymentIntentCount == 1
+            ? "Có 1 giao dịch VietQR đã xác nhận nhận tiền cần xử lý."
+            : $"Có {ManualReviewPaymentIntentCount} giao dịch VietQR đã xác nhận nhận tiền cần xử lý.";
+
+    public bool IsPaymentIntentRecoveryOpen
+    {
+        get => _isPaymentIntentRecoveryOpen;
+        private set
+        {
+            if (!SetProperty(ref _isPaymentIntentRecoveryOpen, value))
+                return;
+            OnPropertyChanged(nameof(IsOrderLocked));
+            OnPropertyChanged(nameof(CanEditOrder));
+            OnPropertyChanged(nameof(IsPaymentSelectionEnabled));
+            OnPropertyChanged(nameof(IsCashInputEnabled));
+            NotifyCommandStates();
+        }
+    }
+
+    public void OpenPaymentIntentRecovery()
+    {
+        if (HasPendingPaymentIntentRecovery)
+            IsPaymentIntentRecoveryOpen = true;
+    }
+
+    public void ClosePaymentIntentRecoveryForLater() =>
+        IsPaymentIntentRecoveryOpen = false;
+
+    public bool ContinueSalesAfterManualReviewWarning()
+    {
+        if (SelectedPaymentIntentRecovery?.CanContinueSales != true ||
+            !_recoveryConfirmation.ConfirmContinueSales())
+            return false;
+
+        IsPaymentIntentRecoveryOpen = false;
+        return true;
+    }
+
+    public async Task<bool> ResolveSelectedPaymentIntentManuallyAsync(
+        ResolvePaymentIntentManuallyRequest request)
+    {
+        if (SelectedPaymentIntentRecovery?.Id != request.PaymentIntentId)
+            return false;
+        IsProcessingRecovery = true;
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var service = scope.ServiceProvider.GetRequiredService<IPaymentIntentService>();
+            var result = await service.ResolveManuallyAsync(request);
+            if (result.IsFailure)
+            {
+                ShowError(result.AppError.Message);
+                return false;
+            }
+            await ReloadRecoveryStateAsync(openHighestPriority: false);
+            IsPaymentIntentRecoveryOpen = false;
+            ShowSuccess("Đã lưu kết quả xử lý thủ công VietQR.");
+            return true;
+        }
+        finally
+        {
+            IsProcessingRecovery = false;
+        }
+    }
+
+    public async Task<IReadOnlyList<PaymentIntentManualResolutionDto>>
+        LoadPaymentIntentManualResolutionHistoryAsync()
+    {
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var service = scope.ServiceProvider.GetRequiredService<IPaymentIntentService>();
+            var result = await service.GetManualResolutionHistoryAsync(100);
+            if (result.IsSuccess)
+                return result.Value;
+            ShowError(result.AppError.Message);
+        }
+        catch (Exception exception)
+        {
+            global::POS.Application.Common.PosLog.Error(
+                _logger, exception, "Không thể tải lịch sử xử lý thủ công PaymentIntent.");
+            ShowError("Không thể tải lịch sử xử lý thủ công VietQR.");
+        }
+
+        return Array.Empty<PaymentIntentManualResolutionDto>();
+    }
+
+    public PaymentIntentRecoveryItemViewModel? SelectedPaymentIntentRecovery
+    {
+        get => _selectedPaymentIntentRecovery;
+        set
+        {
+            if (SetProperty(ref _selectedPaymentIntentRecovery, value))
+            {
+                RetryPaymentIntentRecoveryCommand.NotifyCanExecuteChanged();
+                ShowPaymentIntentQrCommand.NotifyCanExecuteChanged();
+                ConfirmPaymentIntentRecoveryCommand.NotifyCanExecuteChanged();
+                CancelPaymentIntentRecoveryCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
     public SalesCartLineViewModel? SelectedCartLine
     {
         get => _selectedCartLine;
@@ -321,6 +483,18 @@ public sealed class SalesViewModel :
     public bool HasCheckoutRecovery => CheckoutRecoveries.Count > 0;
 
     public bool IsRecoveryBusy => IsLoadingRecovery || IsProcessingRecovery;
+    public bool IsRecoveryOperationIdle => !IsProcessingRecovery;
+    public string? PaymentIntentRecoveryError
+    {
+        get => _paymentIntentRecoveryError;
+        private set
+        {
+            if (SetProperty(ref _paymentIntentRecoveryError, value))
+                OnPropertyChanged(nameof(HasPaymentIntentRecoveryError));
+        }
+    }
+    public bool HasPaymentIntentRecoveryError =>
+        !string.IsNullOrWhiteSpace(PaymentIntentRecoveryError);
 
     public bool IsLoadingRecovery
     {
@@ -330,6 +504,7 @@ public sealed class SalesViewModel :
             if (SetProperty(ref _isLoadingRecovery, value))
             {
                 OnPropertyChanged(nameof(IsRecoveryBusy));
+                OnPropertyChanged(nameof(IsRecoveryOperationIdle));
                 NotifyRecoveryCommands();
             }
         }
@@ -343,6 +518,7 @@ public sealed class SalesViewModel :
             if (SetProperty(ref _isProcessingRecovery, value))
             {
                 OnPropertyChanged(nameof(IsRecoveryBusy));
+                OnPropertyChanged(nameof(IsRecoveryOperationIdle));
                 NotifyRecoveryCommands();
             }
         }
@@ -355,6 +531,11 @@ public sealed class SalesViewModel :
     public AsyncRelayCommand AcknowledgeRecoveryCommand { get; }
 
     public AsyncRelayCommand OpenRecoveryReceiptCommand { get; }
+
+    public AsyncRelayCommand RetryPaymentIntentRecoveryCommand { get; }
+    public AsyncRelayCommand ShowPaymentIntentQrCommand { get; }
+    public AsyncRelayCommand ConfirmPaymentIntentRecoveryCommand { get; }
+    public AsyncRelayCommand CancelPaymentIntentRecoveryCommand { get; }
 
     public AsyncRelayCommand SearchCommand { get; }
 
@@ -536,7 +717,8 @@ public sealed class SalesViewModel :
 
     public bool IsOrderLocked =>
         HasPendingVietQrAuthorization ||
-        HasCheckoutRecovery;
+        HasCheckoutRecovery ||
+        IsPaymentIntentRecoveryOpen;
 
     public bool CanEditOrder =>
         !IsBusy &&
@@ -742,10 +924,84 @@ public sealed class SalesViewModel :
     public int CartLineCount =>
         CartLines.Count;
 
-    public decimal EstimatedTotal =>
+    public decimal EstimatedSubtotal =>
         CartLines.Sum(
             line =>
                 line.LineTotal);
+
+    public long ResolvedDiscountAmount
+    {
+        get
+        {
+            if (_salesDiscount.Type == SalesDiscountType.None || EstimatedSubtotal <= 0)
+                return 0;
+            try
+            {
+                return SalesDiscountCalculator.Resolve(
+                    checked((long)EstimatedSubtotal), _salesDiscount.Type,
+                    _salesDiscount.Value, _salesDiscount.Reason);
+            }
+            catch (DomainException)
+            {
+                return 0;
+            }
+        }
+    }
+
+    public decimal EstimatedTotal => EstimatedSubtotal - ResolvedDiscountAmount;
+    public string EstimatedSubtotalText =>
+        $"{EstimatedSubtotal.ToString("N0", VietnameseCulture)} ₫";
+    public string ResolvedDiscountAmountText =>
+        ResolvedDiscountAmount == 0
+            ? "0 ₫"
+            : $"-{ResolvedDiscountAmount.ToString("N0", VietnameseCulture)} ₫";
+    public string SalesDiscountValidationText =>
+        IsSalesDiscountValid
+            ? string.Empty
+            : "Giảm giá hiện tại không còn hợp lệ. Hãy sửa hoặc xóa giảm giá trước khi thanh toán.";
+    public bool HasSalesDiscount => _salesDiscount.Type != SalesDiscountType.None;
+    public bool IsSalesDiscountValid =>
+        !HasSalesDiscount || ResolvedDiscountAmount > 0;
+    public bool CanApplySalesDiscount =>
+        !IsCheckingOut && !HasPendingVietQrAuthorization &&
+        (_currentUserService.Role is Role.Administrator or Role.Manager);
+    public string SalesDiscountSummary => !HasSalesDiscount
+        ? "Chưa áp dụng giảm giá"
+        : $"{(_salesDiscount.Type == SalesDiscountType.FixedAmount ? "Theo số tiền" : "Theo phần trăm")} · " +
+          $"-{ResolvedDiscountAmount.ToString("N0", VietnameseCulture)} ₫ · {_salesDiscount.Reason}";
+    public SalesDiscountRequest CurrentSalesDiscount => _salesDiscount;
+
+    public bool TryApplySalesDiscount(
+        SalesDiscountType type, long value, string reason, out string? error)
+    {
+        error = null;
+        if (!CanApplySalesDiscount)
+        {
+            error = "Bạn không có quyền áp dụng giảm giá hoặc đơn đang bị khóa.";
+            return false;
+        }
+        try
+        {
+            _ = SalesDiscountCalculator.Resolve(
+                checked((long)EstimatedSubtotal), type, value, reason);
+            _salesDiscount = new SalesDiscountRequest(type, value, reason);
+            NotifyCartPresentation();
+            return true;
+        }
+        catch (DomainException exception)
+        {
+            error = exception.Message;
+            return false;
+        }
+    }
+
+    public void ClearSalesDiscount()
+    {
+        if (IsCheckingOut || HasPendingVietQrAuthorization)
+            return;
+        _salesDiscount = SalesDiscountRequest.None;
+        NotifyCartPresentation();
+    }
 
     public string CartItemCountText =>
         $"{CartItemCount:N0} món";
@@ -782,11 +1038,25 @@ public sealed class SalesViewModel :
         private set
         {
             if (SetProperty(ref _activeHeldSaleCount, value))
+            {
                 OnPropertyChanged(nameof(ActiveHeldSaleCountText));
+                OnPropertyChanged(nameof(ActiveHeldSaleButtonText));
+                OnPropertyChanged(nameof(ActiveHeldSaleAutomationName));
+                OnPropertyChanged(nameof(HasActiveHeldSales));
+            }
         }
     }
 
-    public string ActiveHeldSaleCountText => ActiveHeldSaleCount.ToString("N0");
+    public string ActiveHeldSaleCountText =>
+        ActiveHeldSaleCount.ToString("N0", VietnameseCulture);
+
+    public string ActiveHeldSaleButtonText =>
+        $"Đơn đang giữ ({ActiveHeldSaleCountText})";
+
+    public bool HasActiveHeldSales => ActiveHeldSaleCount > 0;
+
+    public string ActiveHeldSaleAutomationName =>
+        $"Đơn đang giữ, {ActiveHeldSaleCountText} đơn";
 
     public event EventHandler? ScanFocusRequested;
 
@@ -950,7 +1220,337 @@ public sealed class SalesViewModel :
             cancellationToken: default);
 
         await LoadCheckoutRecoveryAsync();
+        await LoadPaymentIntentRecoveryAsync();
         await RefreshHeldSaleCountAsync();
+    }
+
+    private async Task LoadPaymentIntentRecoveryAsync()
+    {
+        _paymentIntentRecoveryLoadSource?.Cancel();
+        _paymentIntentRecoveryLoadSource?.Dispose();
+        var source = new CancellationTokenSource();
+        _paymentIntentRecoveryLoadSource = source;
+
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var service =
+                scope.ServiceProvider.GetRequiredService<IPaymentIntentService>();
+            var result = await service.RecoverPendingAsync(
+                limit: 25,
+                source.Token);
+
+            if (_isDisposed ||
+                source.IsCancellationRequested ||
+                !ReferenceEquals(
+                    _paymentIntentRecoveryLoadSource,
+                    source))
+            {
+                return;
+            }
+
+            if (result.IsFailure)
+            {
+                global::POS.Application.Common.PosLog.Warning(_logger,
+                    "Không thể tải PaymentIntent recovery: {Code} - {Message}",
+                    result.AppError.Code,
+                    result.AppError.Message);
+                return;
+            }
+
+            PendingPaymentIntents.Clear();
+            foreach (var intent in result.Value)
+            {
+                _confirmedCheckoutRecoveries.TryGetValue(
+                    intent.Id,
+                    out var checkoutRecovery);
+                PendingPaymentIntents.Add(
+                    new PaymentIntentRecoveryItemViewModel(
+                        intent,
+                        checkoutRecovery));
+            }
+            SelectedPaymentIntentRecovery = PendingPaymentIntents.FirstOrDefault();
+            OnPropertyChanged(nameof(HasPendingPaymentIntentRecovery));
+            OnPropertyChanged(nameof(PendingPaymentIntentButtonText));
+            OnPropertyChanged(nameof(ManualReviewPaymentIntentCount));
+            OnPropertyChanged(nameof(HasManualReviewPaymentIntentWarning));
+            OnPropertyChanged(nameof(ManualReviewPaymentIntentWarningText));
+            IsPaymentIntentRecoveryOpen = HasPendingPaymentIntentRecovery;
+        }
+        catch (OperationCanceledException)
+            when (source.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            global::POS.Application.Common.PosLog.Error(_logger,
+                exception,
+                "Không thể tải PaymentIntent recovery.");
+        }
+        finally
+        {
+            if (ReferenceEquals(
+                    _paymentIntentRecoveryLoadSource,
+                    source))
+            {
+                _paymentIntentRecoveryLoadSource = null;
+                source.Dispose();
+            }
+        }
+    }
+
+    private async Task ReloadRecoveryStateAsync(bool openHighestPriority)
+    {
+        var selectedPaymentIntentId = SelectedPaymentIntentRecovery?.Id;
+        var selectedCheckoutId = SelectedRecovery?.ClientRequestId;
+        var wasPaymentOpen = IsPaymentIntentRecoveryOpen;
+
+        await LoadCheckoutRecoveryAsync();
+        await LoadPaymentIntentRecoveryAsync();
+
+        SelectedPaymentIntentRecovery = selectedPaymentIntentId.HasValue
+            ? PendingPaymentIntents.FirstOrDefault(x => x.Id == selectedPaymentIntentId.Value)
+                ?? PendingPaymentIntents.FirstOrDefault()
+            : PendingPaymentIntents.FirstOrDefault();
+        SelectedRecovery = selectedCheckoutId.HasValue
+            ? CheckoutRecoveries.FirstOrDefault(x => x.ClientRequestId == selectedCheckoutId.Value)
+                ?? CheckoutRecoveries.FirstOrDefault()
+            : CheckoutRecoveries.FirstOrDefault();
+
+        IsPaymentIntentRecoveryOpen = openHighestPriority
+            ? HasPendingPaymentIntentRecovery
+            : wasPaymentOpen && HasPendingPaymentIntentRecovery;
+    }
+
+    private bool CanRetryPaymentIntentRecovery(object? parameter) =>
+        parameter is int paymentIntentId &&
+        paymentIntentId > 0 &&
+        SelectedPaymentIntentRecovery is { CanRetryCheckout: true } pending &&
+        pending.Id == paymentIntentId &&
+        !IsProcessingRecovery;
+
+    private async Task RetryPaymentIntentRecoveryAsync(object? parameter)
+    {
+        if (parameter is not int paymentIntentId ||
+            SelectedPaymentIntentRecovery is not { CanRetryCheckout: true } pending ||
+            pending.Id != paymentIntentId)
+        {
+            return;
+        }
+
+        IsProcessingRecovery = true;
+        PaymentIntentRecoveryError = null;
+        ShowNeutral("Đang hoàn tất đơn...");
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var checkout = scope.ServiceProvider.GetRequiredService<ICheckoutService>();
+            var result = await checkout.RetryConfirmedPaymentIntentAsync(paymentIntentId);
+            if (result.IsFailure)
+            {
+                global::POS.Application.Common.PosLog.Warning(
+                    _logger,
+                    "Không thể retry PaymentIntent {PaymentIntentId}: {Code} - {Message}",
+                    paymentIntentId,
+                    result.AppError.Code,
+                    result.AppError.Message);
+                PaymentIntentRecoveryError = result.AppError.Message;
+                ShowError(result.AppError.Message);
+                return;
+            }
+            await ReloadRecoveryStateAsync(openHighestPriority: false);
+            PaymentIntentRecoveryError = null;
+            ShowSuccess($"Đã lưu đơn {result.Value.OrderCode} từ giao dịch VietQR đã xác nhận.");
+            if (result.Value.ReceiptSnapshot is not null)
+                await ShowReceiptPreviewAsync(result.Value.ReceiptSnapshot);
+        }
+        catch (Exception exception)
+        {
+            global::POS.Application.Common.PosLog.Error(
+                _logger,
+                exception,
+                "Retry PaymentIntent {PaymentIntentId} thất bại.",
+                paymentIntentId);
+            PaymentIntentRecoveryError =
+                "Không thể hoàn tất đơn VietQR lúc này. Giao dịch đã nhận tiền vẫn được giữ nguyên; " +
+                "vui lòng thử lại hoặc đóng để xử lý sau.";
+            ShowError(PaymentIntentRecoveryError);
+        }
+        finally
+        {
+            IsProcessingRecovery = false;
+        }
+    }
+
+    private async Task ShowPaymentIntentQrAsync()
+    {
+        var pending = SelectedPaymentIntentRecovery;
+        if (pending?.CanShowQr != true)
+            return;
+
+        IsProcessingRecovery = true;
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var intents = scope.ServiceProvider.GetRequiredService<IPaymentIntentService>();
+            var gateway = scope.ServiceProvider.GetRequiredService<IVietQrPaymentGateway>();
+            var dialog = scope.ServiceProvider.GetRequiredService<IVietQrPaymentDialogService>();
+            var latest = await intents.GetByIdAsync(pending.Id);
+            if (latest.IsFailure)
+            {
+                ShowError(latest.AppError.Message);
+                return;
+            }
+
+            if (latest.Value.Status is not (PaymentIntentStatus.Created or PaymentIntentStatus.Presented))
+            {
+                ShowError("Trạng thái giao dịch VietQR đã thay đổi. Vui lòng tải lại danh sách.");
+                await LoadPaymentIntentRecoveryAsync();
+                return;
+            }
+
+            var png = gateway.RenderPng(latest.Value.PayloadText);
+            if (png.IsFailure)
+            {
+                ShowError("Không thể hiển thị mã VietQR đã lưu. Vui lòng thử lại.");
+                return;
+            }
+
+            var shown = await dialog.ShowPresentationAsync(
+                new VietQrPaymentPresentation(
+                    latest.Value.Amount,
+                    latest.Value.DisplayCode,
+                    latest.Value.TransferContent,
+                    png.Value)
+                {
+                    BankName = latest.Value.BankCode,
+                    AccountName = latest.Value.AccountName,
+                    RecipientInformationMessage =
+                        $"Tài khoản {latest.Value.AccountNumber}"
+                });
+            if (shown.IsFailure)
+            {
+                ShowError("Không thể mở màn hình VietQR. Vui lòng thử lại.");
+                return;
+            }
+
+            if (latest.Value.Status == PaymentIntentStatus.Created)
+            {
+                var presented = await intents.MarkPresentedAsync(pending.Id);
+                if (presented.IsFailure)
+                {
+                    ShowError(presented.AppError.Message);
+                    return;
+                }
+            }
+
+            await LoadPaymentIntentRecoveryAsync();
+        }
+        catch (Exception exception)
+        {
+            global::POS.Application.Common.PosLog.Error(_logger, exception, "Không thể hiển thị PaymentIntent {PaymentIntentId}.", pending.Id);
+            ShowError("Không thể mở màn hình VietQR. Vui lòng thử lại.");
+        }
+        finally
+        {
+            IsProcessingRecovery = false;
+        }
+    }
+
+    private async Task ConfirmPaymentIntentRecoveryAsync()
+    {
+        var pending = SelectedPaymentIntentRecovery;
+        if (pending?.CanConfirm != true ||
+            !_recoveryConfirmation.ConfirmPaymentReceived(pending.Recovery.Amount))
+            return;
+
+        IsProcessingRecovery = true;
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var intents = scope.ServiceProvider.GetRequiredService<IPaymentIntentService>();
+            var latest = await intents.GetByIdAsync(pending.Id);
+            if (latest.IsFailure || latest.Value.Status != PaymentIntentStatus.Presented)
+            {
+                ShowError(latest.IsFailure
+                    ? latest.AppError.Message
+                    : "Trạng thái giao dịch VietQR đã thay đổi. Vui lòng tải lại danh sách.");
+                return;
+            }
+
+            var confirmed = await intents.ConfirmReceivedAsync(pending.Id);
+            if (confirmed.IsFailure)
+            {
+                ShowError(confirmed.AppError.Message);
+                return;
+            }
+
+            var checkout = scope.ServiceProvider.GetRequiredService<ICheckoutService>();
+            var result = await checkout.RetryConfirmedPaymentIntentAsync(pending.Id);
+            if (result.IsFailure)
+            {
+                ShowError(result.AppError.Message);
+                await LoadPaymentIntentRecoveryAsync();
+                return;
+            }
+
+            await ReloadRecoveryStateAsync(openHighestPriority: false);
+            ShowSuccess($"Đã lưu đơn {result.Value.OrderCode} từ giao dịch VietQR đã xác nhận.");
+            if (result.Value.ReceiptSnapshot is not null)
+                await ShowReceiptPreviewAsync(result.Value.ReceiptSnapshot);
+        }
+        catch (Exception exception)
+        {
+            global::POS.Application.Common.PosLog.Error(_logger, exception, "Không thể xác nhận PaymentIntent {PaymentIntentId}.", pending.Id);
+            ShowError("Không thể hoàn tất giao dịch VietQR. Trạng thái đã lưu được giữ nguyên.");
+        }
+        finally
+        {
+            IsProcessingRecovery = false;
+        }
+    }
+
+    private async Task CancelPaymentIntentRecoveryAsync()
+    {
+        var pending = SelectedPaymentIntentRecovery;
+        if (pending?.CanCancel != true ||
+            !_recoveryConfirmation.ConfirmCancelPaymentIntent(pending.DisplayCode))
+            return;
+
+        IsProcessingRecovery = true;
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var intents = scope.ServiceProvider.GetRequiredService<IPaymentIntentService>();
+            var latest = await intents.GetByIdAsync(pending.Id);
+            if (latest.IsFailure ||
+                latest.Value.Status is not (PaymentIntentStatus.Created or PaymentIntentStatus.Presented))
+            {
+                ShowError(latest.IsFailure
+                    ? latest.AppError.Message
+                    : "Giao dịch đã được xác nhận và không thể hủy.");
+                await LoadPaymentIntentRecoveryAsync();
+                return;
+            }
+
+            var cancelled = await intents.CancelAsync(pending.Id);
+            if (cancelled.IsFailure)
+            {
+                ShowError(cancelled.AppError.Message);
+                return;
+            }
+
+            await ReloadRecoveryStateAsync(openHighestPriority: false);
+        }
+        catch (Exception exception)
+        {
+            global::POS.Application.Common.PosLog.Error(_logger, exception, "Không thể hủy PaymentIntent {PaymentIntentId}.", pending.Id);
+            ShowError("Không thể hủy mã VietQR. Vui lòng thử lại.");
+        }
+        finally
+        {
+            IsProcessingRecovery = false;
+        }
     }
 
     private async Task LoadCheckoutRecoveryAsync()
@@ -978,18 +1578,30 @@ public sealed class SalesViewModel :
 
             if (result.IsFailure)
             {
-                _logger.LogWarning(
+                global::POS.Application.Common.PosLog.Warning(_logger,
                     "Không thể tải checkout recovery: {Code} - {Message}",
-                    result.Error.Code,
-                    result.Error.Message);
+                    result.AppError.Code,
+                    result.AppError.Message);
                 ShowError(
                     "Không thể kiểm tra giao dịch dang dở. Bạn vẫn có thể tiếp tục bán hàng.");
                 return;
             }
 
             CheckoutRecoveries.Clear();
+            _confirmedCheckoutRecoveries.Clear();
             foreach (var recovery in result.Value)
             {
+                if (recovery.HasConfirmedPayment &&
+                    recovery.PaymentIntentId is int paymentIntentId)
+                {
+                    _confirmedCheckoutRecoveries[paymentIntentId] = recovery;
+                }
+
+                if (_checkoutClientRequestId ==
+                        recovery.ClientRequestId ||
+                    recovery.HasConfirmedPayment)
+                    continue;
+
                 CheckoutRecoveries.Add(new CheckoutRecoveryItemViewModel(recovery));
             }
 
@@ -1002,7 +1614,7 @@ public sealed class SalesViewModel :
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "Không thể tải checkout recovery.");
+            global::POS.Application.Common.PosLog.Error(_logger, exception, "Không thể tải checkout recovery.");
             if (!_isDisposed)
             {
                 ShowError(
@@ -1055,11 +1667,11 @@ public sealed class SalesViewModel :
 
             if (result.IsFailure)
             {
-                _logger.LogWarning(
+                global::POS.Application.Common.PosLog.Warning(_logger,
                     "Không thể tải danh mục bán hàng: " +
                     "{Code} - {Message}",
-                    result.Error.Code,
-                    result.Error.Message);
+                    result.AppError.Code,
+                    result.AppError.Message);
 
                 return;
             }
@@ -1078,7 +1690,7 @@ public sealed class SalesViewModel :
         }
         catch (Exception exception)
         {
-            _logger.LogError(
+            global::POS.Application.Common.PosLog.Error(_logger,
                 exception,
                 "Không thể tải danh mục cho màn hình bán hàng.");
 
@@ -1117,7 +1729,7 @@ public sealed class SalesViewModel :
             cancellationToken: default);
     }
 
-    private Task SearchAsync()
+    private Task<bool> SearchAsync()
     {
         return LoadProductsAsync();
     }
@@ -1187,7 +1799,7 @@ public sealed class SalesViewModel :
         }
     }
 
-    private Task RefreshAsync()
+    private Task<bool> RefreshAsync()
     {
         return LoadProductsAsync();
     }
@@ -1248,7 +1860,7 @@ public sealed class SalesViewModel :
             if (result.IsFailure)
             {
                 ShowError(
-                    result.Error.Message);
+                    result.AppError.Message);
 
                 return false;
             }
@@ -1283,7 +1895,7 @@ public sealed class SalesViewModel :
         }
         catch (Exception exception)
         {
-            _logger.LogError(
+            global::POS.Application.Common.PosLog.Error(_logger,
                 exception,
                 "Không thể tải catalog bán hàng.");
 
@@ -1450,7 +2062,11 @@ public sealed class SalesViewModel :
         var dialog = _heldSaleDialogs.ShowHold(
             CartLineCount,
             CartItemCount,
+            checked((long)EstimatedSubtotal),
+            ResolvedDiscountAmount,
             checked((long)EstimatedTotal),
+            _salesDiscount.Type,
+            _salesDiscount.Value,
             _holdClientRequestId.Value);
         if (dialog is null)
             return;
@@ -1466,11 +2082,12 @@ public sealed class SalesViewModel :
                 dialog.Label,
                 dialog.Notes,
                 CartLines.Select(line =>
-                    new CreateHeldSaleLineRequest(line.ProductId, line.Quantity)).ToArray());
+                    new CreateHeldSaleLineRequest(line.ProductId, line.Quantity)).ToArray(),
+                _salesDiscount);
             var result = await service.CreateHeldSaleAsync(request);
             if (result.IsFailure)
             {
-                ShowError(result.Error.Message);
+                ShowError(result.AppError.Message);
                 return;
             }
 
@@ -1479,6 +2096,7 @@ public sealed class SalesViewModel :
             CashReceivedText = string.Empty;
             OrderNotes = string.Empty;
             ActiveHeldSaleId = null;
+            _salesDiscount = SalesDiscountRequest.None;
             _checkoutClientRequestId = null;
             _holdClientRequestId = null;
             _orderSessionVersion++;
@@ -1508,7 +2126,7 @@ public sealed class SalesViewModel :
             var list = await service.GetActiveHeldSalesAsync();
             if (list.IsFailure)
             {
-                ShowError(list.Error.Message);
+                ShowError(list.AppError.Message);
                 return;
             }
             ActiveHeldSaleCount = list.Value.Count;
@@ -1523,7 +2141,7 @@ public sealed class SalesViewModel :
                 var cancelled = await service.CancelHeldSaleAsync(action.HeldSaleId);
                 if (cancelled.IsFailure)
                 {
-                    ShowError(cancelled.Error.Message);
+                    ShowError(cancelled.AppError.Message);
                     return;
                 }
                 await RefreshHeldSaleCountAsync();
@@ -1540,7 +2158,7 @@ public sealed class SalesViewModel :
             var resume = await service.GetHeldSaleForResumeAsync(action.HeldSaleId);
             if (resume.IsFailure)
             {
-                ShowError(resume.Error.Message);
+                ShowError(resume.AppError.Message);
                 return;
             }
             var selection = _heldSaleDialogs.ShowResumeReview(resume.Value);
@@ -1590,6 +2208,8 @@ public sealed class SalesViewModel :
             return;
         BeginNewOrderSession();
         ActiveHeldSaleId = heldSale.Id;
+        _salesDiscount = new SalesDiscountRequest(
+            heldSale.DiscountType, heldSale.RequestedDiscountValue, heldSale.DiscountReason);
         OrderNotes = heldSale.Notes ?? string.Empty;
         SelectedCartLine = CartLines[0];
         NotifyCartPresentation();
@@ -1612,7 +2232,7 @@ public sealed class SalesViewModel :
         }
         catch (Exception exception)
         {
-            _logger.LogWarning(exception, "Không thể cập nhật số đơn đang giữ.");
+            global::POS.Application.Common.PosLog.Warning(_logger, exception, "Không thể cập nhật số đơn đang giữ.");
         }
     }
 
@@ -1646,6 +2266,7 @@ public sealed class SalesViewModel :
         ClearLastOrderPresentation();
 
         CartLines.Clear();
+        _salesDiscount = SalesDiscountRequest.None;
         SelectedCartLine = null;
         ActiveHeldSaleId = null;
         _holdClientRequestId = null;
@@ -2002,11 +2623,7 @@ public sealed class SalesViewModel :
         long amount,
         long step)
     {
-        if (step <= 0)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(step));
-        }
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(step);
 
         if (amount <= 0)
         {
@@ -2082,11 +2699,7 @@ public sealed class SalesViewModel :
             return;
         }
 
-        if (amount < 0)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(amount));
-        }
+        ArgumentOutOfRangeException.ThrowIfNegative(amount);
 
         CashReceivedText =
             amount.ToString(
@@ -2279,26 +2892,30 @@ public sealed class SalesViewModel :
         try
         {
             var authorizationResult =
-                await _paymentFlowService
-                    .AuthorizeAsync(
-                        new SalesPaymentAuthorizationRequest(
-                            paymentMethod:
-                                SelectedPaymentMethod,
+                IsVietQrPaymentSelected
+                    ? await AuthorizePaymentIntentAsync(
+                        requestLines,
+                        totalAmount)
+                    : await _paymentFlowService
+                        .AuthorizeAsync(
+                            new SalesPaymentAuthorizationRequest(
+                                paymentMethod:
+                                    SelectedPaymentMethod,
 
-                            totalAmount:
-                                totalAmount,
+                                totalAmount:
+                                    totalAmount,
 
-                            cashReceived:
-                                cashReceived,
+                                cashReceived:
+                                    cashReceived,
 
-                            existingAuthorization:
-                                _pendingVietQrAuthorization));
+                                existingAuthorization:
+                                    null));
 
             if (authorizationResult.IsFailure)
             {
                 ShowError(
                     authorizationResult
-                        .Error
+                        .AppError
                         .Message);
 
                 return;
@@ -2370,7 +2987,15 @@ public sealed class SalesViewModel :
                             Guid.NewGuid(),
 
                     heldSaleId:
-                        ActiveHeldSaleId);
+                        ActiveHeldSaleId,
+
+                    salesDiscount:
+                        _salesDiscount,
+
+                    paymentIntentId:
+                        authorization.IsVietQr
+                            ? _pendingPaymentIntentId
+                            : null);
 
             ShowNeutral(
                 authorization.IsVietQr
@@ -2388,9 +3013,9 @@ public sealed class SalesViewModel :
                         ICheckoutService>();
 
             var result =
-                await checkoutService
-                    .CheckoutAsync(
-                        request);
+                authorization.IsVietQr && _pendingPaymentIntentId is int paymentIntentId
+                    ? await checkoutService.RetryConfirmedPaymentIntentAsync(paymentIntentId)
+                    : await checkoutService.CheckoutAsync(request);
 
             if (result.IsFailure)
             {
@@ -2407,7 +3032,7 @@ public sealed class SalesViewModel :
                 await LoadCheckoutRecoveryAsync();
 
                 ShowCheckoutFailure(
-                    result.Error,
+                    result.AppError,
                     authorization);
 
                 return;
@@ -2427,7 +3052,7 @@ public sealed class SalesViewModel :
 
             if (receiptToPreview is null)
             {
-                _logger.LogError(
+                global::POS.Application.Common.PosLog.Error(_logger,
                     "Checkout {OrderCode} đã commit nhưng " +
                     "không trả về receipt snapshot.",
                     completedOrder.OrderCode);
@@ -2450,6 +3075,7 @@ public sealed class SalesViewModel :
                     true);
 
             CartLines.Clear();
+            _salesDiscount = SalesDiscountRequest.None;
             SelectedCartLine = null;
             ActiveHeldSaleId = null;
 
@@ -2478,48 +3104,54 @@ public sealed class SalesViewModel :
             var acknowledgment =
                 await checkoutService
                     .AcknowledgeCheckoutAsync(
+                        completedOrder.CheckoutClientRequestId ??
                         request.ClientRequestId);
 
             if (acknowledgment.IsFailure)
             {
-                _logger.LogWarning(
+                global::POS.Application.Common.PosLog.Warning(_logger,
                     "Checkout {OrderCode} đã hoàn tất nhưng acknowledgment thất bại: {ErrorCode}",
                     completedOrder.OrderCode,
-                    acknowledgment.Error.Code);
+                    acknowledgment.AppError.Code);
             }
 
             _checkoutClientRequestId =
                 null;
 
             await RefreshHeldSaleCountAsync();
+            await ReloadRecoveryStateAsync(openHighestPriority: false);
         }
         catch (OperationCanceledException)
         {
-            throw;
+            ShowNeutral(
+                "Đã dừng thao tác thanh toán. Đơn hàng chưa được lưu.");
         }
         catch (Exception exception)
         {
-            _logger.LogError(
+            global::POS.Application.Common.PosLog.Error(_logger,
                 exception,
                 "Thanh toán từ giao diện bán hàng thất bại.");
 
-            if (authorization?.IsVietQr ==
+            if (IsPaymentIntentSchemaCompatibilityFailure(
+                    exception))
+            {
+                ShowError(
+                    "Cơ sở dữ liệu chưa được nâng cấp đầy đủ cho VietQR. " +
+                    "Vui lòng đóng ứng dụng và mở lại để hoàn tất nâng cấp.");
+            }
+            else if (authorization?.IsVietQr ==
                 true)
             {
                 ShowCheckoutFailure(
-                    "Không thể hoàn tất thanh toán. " +
-                    exception
-                        .GetBaseException()
-                        .Message,
+                    "Không thể hoàn tất thanh toán VietQR. " +
+                    "Yêu cầu đã xác nhận vẫn được giữ để thử lại.",
                     authorization);
             }
             else
             {
                 ShowError(
                     "Không thể hoàn tất thanh toán. " +
-                    exception
-                        .GetBaseException()
-                        .Message);
+                    "Vui lòng kiểm tra và thử lại.");
             }
         }
         finally
@@ -2579,9 +3211,9 @@ public sealed class SalesViewModel :
             if (result.IsFailure)
             {
                 ShowError(
-                    result.Error.Code == "CHECKOUT.PREPARATION_STALE"
+                    result.AppError.Code == "CHECKOUT.PREPARATION_STALE"
                         ? "Giá hoặc dữ liệu bán hàng đã thay đổi. Hãy bỏ giao dịch dang dở, kiểm tra lại và tạo đơn mới."
-                        : result.Error.Message);
+                        : result.AppError.Message);
                 return;
             }
 
@@ -2602,10 +3234,10 @@ public sealed class SalesViewModel :
                 await service.AcknowledgeCheckoutAsync(recovery.ClientRequestId);
             if (acknowledgment.IsFailure)
             {
-                _logger.LogWarning(
+                global::POS.Application.Common.PosLog.Warning(_logger,
                     "Checkout recovery {ClientRequestId} đã hoàn tất nhưng acknowledgment thất bại: {Code}",
                     recovery.ClientRequestId,
-                    acknowledgment.Error.Code);
+                    acknowledgment.AppError.Code);
             }
 
             RemoveSelectedRecovery();
@@ -2635,7 +3267,7 @@ public sealed class SalesViewModel :
             var result = await service.AbandonCheckoutAsync(recovery.ClientRequestId);
             if (result.IsFailure)
             {
-                ShowError(result.Error.Message);
+                ShowError(result.AppError.Message);
                 return;
             }
 
@@ -2669,7 +3301,7 @@ public sealed class SalesViewModel :
             var result = await service.AcknowledgeCheckoutAsync(recovery.ClientRequestId);
             if (result.IsFailure)
             {
-                ShowError(result.Error.Message);
+                ShowError(result.AppError.Message);
                 return;
             }
 
@@ -2697,7 +3329,7 @@ public sealed class SalesViewModel :
             var receipt = await history.GetReprintReceiptAsync(orderId);
             if (receipt.IsFailure)
             {
-                ShowError(receipt.Error.Message);
+                ShowError(receipt.AppError.Message);
                 return;
             }
 
@@ -2736,6 +3368,10 @@ public sealed class SalesViewModel :
         AbandonRecoveryCommand.NotifyCanExecuteChanged();
         AcknowledgeRecoveryCommand.NotifyCanExecuteChanged();
         OpenRecoveryReceiptCommand.NotifyCanExecuteChanged();
+        RetryPaymentIntentRecoveryCommand.NotifyCanExecuteChanged();
+        ShowPaymentIntentQrCommand.NotifyCanExecuteChanged();
+        ConfirmPaymentIntentRecoveryCommand.NotifyCanExecuteChanged();
+        CancelPaymentIntentRecoveryCommand.NotifyCanExecuteChanged();
     }
 
     private bool TryBuildCheckoutNotes(
@@ -2875,7 +3511,7 @@ public sealed class SalesViewModel :
     }
 
     private void ShowCheckoutFailure(
-        Error error,
+        AppError error,
         SalesPaymentAuthorization authorization)
     {
         ArgumentNullException.ThrowIfNull(
@@ -2997,7 +3633,7 @@ public sealed class SalesViewModel :
         }
         catch (Exception exception)
         {
-            _logger.LogError(
+            global::POS.Application.Common.PosLog.Error(_logger,
                 exception,
                 "Giao dịch {OrderCode} đã lưu nhưng " +
                 "không thể mở receipt preview.",
@@ -3053,6 +3689,8 @@ public sealed class SalesViewModel :
     {
         _pendingVietQrAuthorization =
             null;
+        _pendingPaymentIntentId = null;
+        _paymentIntentClientRequestId = null;
 
         if (resetSelectedMethod)
         {
@@ -3063,6 +3701,121 @@ public sealed class SalesViewModel :
         NotifyPaymentPresentation();
         NotifyCashPresentation();
         NotifyCommandStates();
+    }
+
+    private async Task<Result<SalesPaymentAuthorizationOutcome>>
+        AuthorizePaymentIntentAsync(
+            IReadOnlyList<CheckoutLineRequest> requestLines,
+            long totalAmount)
+    {
+        if (_pendingVietQrAuthorization is not null &&
+            _pendingPaymentIntentId.HasValue)
+            return Result.Success(
+                SalesPaymentAuthorizationOutcome.Authorized(
+                    _pendingVietQrAuthorization));
+
+        _paymentIntentClientRequestId ??= Guid.NewGuid();
+
+        var intentCheckout = new CheckoutRequest(
+            lines: requestLines,
+            paymentMethod: PaymentMethod.VietQr,
+            cashReceived: 0,
+            notes: OrderNotes,
+            confirmedPaymentAmount: 1,
+            clientRequestId: _checkoutClientRequestId ??= Guid.NewGuid(),
+            heldSaleId: ActiveHeldSaleId,
+            salesDiscount: _salesDiscount);
+
+        await using var scope = _scopeFactory.CreateAsyncScope();
+        var intentService =
+            scope.ServiceProvider.GetRequiredService<IPaymentIntentService>();
+        var gateway =
+            scope.ServiceProvider.GetRequiredService<IVietQrPaymentGateway>();
+        var dialog =
+            scope.ServiceProvider.GetRequiredService<IVietQrPaymentDialogService>();
+
+        var created = await intentService.CreateAsync(
+            new CreatePaymentIntentRequest(
+                _paymentIntentClientRequestId.Value,
+                intentCheckout));
+        if (created.IsFailure)
+            return Result.Failure<SalesPaymentAuthorizationOutcome>(
+                created.AppError);
+
+        _pendingPaymentIntentId = created.Value.Id;
+
+        var png = gateway.RenderPng(created.Value.PayloadText);
+        if (png.IsFailure)
+            return Result.Failure<SalesPaymentAuthorizationOutcome>(
+                png.AppError);
+
+        var dialogResult = await dialog.ShowPresentationAsync(
+            new VietQrPaymentPresentation(
+                created.Value.Amount,
+                created.Value.DisplayCode,
+                created.Value.TransferContent,
+                png.Value)
+            {
+                BankName = created.Value.BankCode,
+                AccountName = created.Value.AccountName,
+                RecipientInformationMessage =
+                    $"Tài khoản {created.Value.AccountNumber}"
+            });
+
+        if (dialogResult.IsFailure)
+            return Result.Failure<SalesPaymentAuthorizationOutcome>(
+                dialogResult.AppError);
+
+        var presented = await intentService.MarkPresentedAsync(
+            created.Value.Id);
+        if (presented.IsFailure)
+            return Result.Failure<SalesPaymentAuthorizationOutcome>(
+                presented.AppError);
+
+        if (!dialogResult.Value.Confirmed)
+        {
+            var cancelled = await intentService.CancelAsync(
+                created.Value.Id);
+            if (cancelled.IsFailure)
+                return Result.Failure<SalesPaymentAuthorizationOutcome>(
+                    cancelled.AppError);
+
+            _pendingPaymentIntentId = null;
+            _paymentIntentClientRequestId = null;
+            return Result.Success(
+                SalesPaymentAuthorizationOutcome.Cancelled());
+        }
+
+        var confirmed = await intentService.ConfirmReceivedAsync(
+            created.Value.Id);
+        if (confirmed.IsFailure)
+            return Result.Failure<SalesPaymentAuthorizationOutcome>(
+                confirmed.AppError);
+
+        return Result.Success(
+            SalesPaymentAuthorizationOutcome.Authorized(
+                new SalesPaymentAuthorization(
+                    PaymentMethod.VietQr,
+                    cashReceived: 0,
+                    confirmedPaymentAmount: totalAmount,
+                    paymentReference: confirmed.Value.DisplayCode,
+                    transferContent: confirmed.Value.TransferContent)));
+    }
+
+    private static bool IsPaymentIntentSchemaCompatibilityFailure(
+        Exception exception)
+    {
+        var message =
+            exception
+                .GetBaseException()
+                .Message;
+
+        return message.Contains(
+                   "no such column",
+                   StringComparison.OrdinalIgnoreCase) &&
+               message.Contains(
+                   "PaymentIntent",
+                   StringComparison.OrdinalIgnoreCase);
     }
 
     private void ShowPendingVietQrLockError()
@@ -3329,6 +4082,7 @@ public sealed class SalesViewModel :
     {
         if (IsBusy ||
             !HasCartItems ||
+            !IsSalesDiscountValid ||
             EstimatedTotal <= 0 ||
             EstimatedTotal >
             BusinessRules.Orders
@@ -3343,12 +4097,7 @@ public sealed class SalesViewModel :
         {
             return
                 IsVietQrPaymentSelected &&
-                _pendingVietQrAuthorization is not null &&
-                TryConvertEstimatedTotal(
-                    out var pendingTotal) &&
-                pendingTotal ==
-                _pendingVietQrAuthorization
-                    .ConfirmedPaymentAmount;
+                _pendingVietQrAuthorization is not null;
         }
 
         if (IsCashPaymentSelected)
@@ -3374,6 +4123,15 @@ public sealed class SalesViewModel :
 
         OnPropertyChanged(
             nameof(EstimatedTotal));
+        OnPropertyChanged(nameof(EstimatedSubtotal));
+        OnPropertyChanged(nameof(EstimatedSubtotalText));
+        OnPropertyChanged(nameof(ResolvedDiscountAmount));
+        OnPropertyChanged(nameof(ResolvedDiscountAmountText));
+        OnPropertyChanged(nameof(HasSalesDiscount));
+        OnPropertyChanged(nameof(IsSalesDiscountValid));
+        OnPropertyChanged(nameof(SalesDiscountValidationText));
+        OnPropertyChanged(nameof(CanApplySalesDiscount));
+        OnPropertyChanged(nameof(SalesDiscountSummary));
 
         OnPropertyChanged(
             nameof(CartItemCountText));
@@ -3508,7 +4266,7 @@ public sealed class SalesViewModel :
     private void HandleCommandException(
         Exception exception)
     {
-        _logger.LogError(
+        global::POS.Application.Common.PosLog.Error(_logger,
             exception,
             "Một lệnh trên màn hình bán hàng thất bại.");
 
@@ -3561,6 +4319,15 @@ public sealed class SalesViewModel :
         {
             recoverySource.Cancel();
             recoverySource.Dispose();
+        }
+
+        var paymentIntentRecoverySource =
+            _paymentIntentRecoveryLoadSource;
+        _paymentIntentRecoveryLoadSource = null;
+        if (paymentIntentRecoverySource is not null)
+        {
+            paymentIntentRecoverySource.Cancel();
+            paymentIntentRecoverySource.Dispose();
         }
 
         _pendingVietQrAuthorization =

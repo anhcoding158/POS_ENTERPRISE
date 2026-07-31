@@ -75,7 +75,7 @@ public sealed class InventoryIntegrationTests
 
             Assert.True(
                 result.IsSuccess,
-                result.Error.ToString());
+                result.AppError.ToString());
 
             Assert.Equal(
                 10,
@@ -162,7 +162,7 @@ public sealed class InventoryIntegrationTests
             Assert.Equal(
                 ErrorCodes.Inventory
                     .InsufficientStock,
-                result.Error.Code);
+                result.AppError.Code);
         }
 
         await using var verifyContext =
@@ -224,7 +224,7 @@ public sealed class InventoryIntegrationTests
 
             Assert.True(
                 result.IsSuccess,
-                result.Error.ToString());
+                result.AppError.ToString());
 
             Assert.Equal(
                 -3,
@@ -371,7 +371,7 @@ public sealed class InventoryIntegrationTests
 
         Assert.True(
             firstResult.IsSuccess,
-            firstResult.Error.ToString());
+            firstResult.AppError.ToString());
 
         var staleService =
             new InventoryService(
@@ -397,7 +397,7 @@ public sealed class InventoryIntegrationTests
         Assert.Equal(
             ErrorCodes.Inventory
                 .ConcurrencyConflict,
-            staleResult.Error.Code);
+            staleResult.AppError.Code);
 
         await using var verifyContext =
             database.CreateContext();
@@ -469,7 +469,7 @@ public sealed class InventoryIntegrationTests
 
                 Assert.True(
                     result.IsSuccess,
-                    result.Error.ToString());
+                    result.AppError.ToString());
             }
         }
 

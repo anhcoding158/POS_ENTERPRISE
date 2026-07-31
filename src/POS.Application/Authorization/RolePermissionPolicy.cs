@@ -6,13 +6,13 @@ namespace POS.Application.Authorization;
 /// Ma trận quyền tập trung theo vai trò.
 ///
 /// Đây là nguồn sự thật duy nhất cho ánh xạ:
-/// Role → SystemPermission.
+/// Role → SystemCapability.
 /// </summary>
 public static class RolePermissionPolicy
 {
     public static bool HasPermission(
         Role role,
-        SystemPermission permission)
+        SystemCapability permission)
     {
         ValidateRole(
             role);
@@ -27,25 +27,26 @@ public static class RolePermissionPolicy
 
             Role.Manager =>
                 permission is
-                    SystemPermission.ViewProductCatalog or
-                    SystemPermission.ManageProducts or
-                    SystemPermission.ManageCategories or
-                    SystemPermission.ViewInventoryHistory or
-                    SystemPermission.AdjustInventory or
-                    SystemPermission.UseCheckout or
-                    SystemPermission.ViewReports or
-                    SystemPermission.ProcessReturns,
+                    SystemCapability.ViewProductCatalog or
+                    SystemCapability.ManageProducts or
+                    SystemCapability.ManageCategories or
+                    SystemCapability.ViewInventoryHistory or
+                    SystemCapability.AdjustInventory or
+                    SystemCapability.UseCheckout or
+                    SystemCapability.ViewReports or
+                    SystemCapability.ProcessReturns or
+                    SystemCapability.ApplySalesDiscount,
 
             Role.Cashier =>
                 permission is
-                    SystemPermission.ViewProductCatalog or
-                    SystemPermission.UseCheckout,
+                    SystemCapability.ViewProductCatalog or
+                    SystemCapability.UseCheckout,
 
             Role.InventoryStaff =>
                 permission is
-                    SystemPermission.ViewProductCatalog or
-                    SystemPermission.ViewInventoryHistory or
-                    SystemPermission.AdjustInventory,
+                    SystemCapability.ViewProductCatalog or
+                    SystemCapability.ViewInventoryHistory or
+                    SystemCapability.AdjustInventory,
 
             _ =>
                 false
@@ -53,39 +54,42 @@ public static class RolePermissionPolicy
     }
 
     public static string GetDisplayName(
-        SystemPermission permission)
+        SystemCapability permission)
     {
         ValidatePermission(
             permission);
 
         return permission switch
         {
-            SystemPermission.ViewProductCatalog =>
+            SystemCapability.ViewProductCatalog =>
                 "xem danh mục sản phẩm",
 
-            SystemPermission.ManageProducts =>
+            SystemCapability.ManageProducts =>
                 "quản lý sản phẩm",
 
-            SystemPermission.ManageCategories =>
+            SystemCapability.ManageCategories =>
                 "quản lý danh mục",
 
-            SystemPermission.ViewInventoryHistory =>
+            SystemCapability.ViewInventoryHistory =>
                 "xem lịch sử tồn kho",
 
-            SystemPermission.AdjustInventory =>
+            SystemCapability.AdjustInventory =>
                 "điều chỉnh tồn kho",
 
-            SystemPermission.UseCheckout =>
+            SystemCapability.UseCheckout =>
                 "thực hiện bán hàng",
 
-            SystemPermission.ViewReports =>
+            SystemCapability.ViewReports =>
                 "xem báo cáo",
 
-            SystemPermission.ManageUsers =>
+            SystemCapability.ManageUsers =>
                 "quản lý tài khoản",
 
-            SystemPermission.ProcessReturns =>
+            SystemCapability.ProcessReturns =>
                 "xử lý trả hàng và hoàn tiền",
+
+            SystemCapability.ApplySalesDiscount =>
+                "áp dụng giảm giá bán hàng",
 
             _ =>
                 throw new ArgumentOutOfRangeException(
@@ -109,7 +113,7 @@ public static class RolePermissionPolicy
     }
 
     private static void ValidatePermission(
-        SystemPermission permission)
+        SystemCapability permission)
     {
         if (!Enum.IsDefined(
                 permission))

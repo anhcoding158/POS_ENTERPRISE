@@ -51,14 +51,14 @@ public sealed class AuthorizedCategoryService :
     {
         var authorization =
             _permissionService.Authorize(
-                SystemPermission.ViewProductCatalog);
+                SystemCapability.ViewProductCatalog);
 
         if (authorization.IsFailure)
         {
             return Task.FromResult(
                 Result.Failure<
                     IReadOnlyList<CategoryOptionDto>>(
-                        authorization.Error));
+                        authorization.AppError));
         }
 
         return _innerService.ListActiveAsync(
@@ -82,7 +82,7 @@ public sealed class AuthorizedCategoryService :
             return Task.FromResult(
                 Result.Failure<
                     PagedResult<CategoryListItemDto>>(
-                        authorization.Error));
+                        authorization.AppError));
         }
 
         return _innerService.SearchAsync(
@@ -106,7 +106,7 @@ public sealed class AuthorizedCategoryService :
         {
             return Task.FromResult(
                 Result.Failure<CategoryDetailsDto>(
-                    authorization.Error));
+                    authorization.AppError));
         }
 
         return _innerService.GetByIdAsync(
@@ -126,7 +126,7 @@ public sealed class AuthorizedCategoryService :
         {
             return Task.FromResult(
                 Result.Failure<CategoryDetailsDto>(
-                    authorization.Error));
+                    authorization.AppError));
         }
 
         return _innerService.CreateAsync(
@@ -146,7 +146,7 @@ public sealed class AuthorizedCategoryService :
         {
             return Task.FromResult(
                 Result.Failure<CategoryDetailsDto>(
-                    authorization.Error));
+                    authorization.AppError));
         }
 
         return _innerService.UpdateAsync(
@@ -166,7 +166,7 @@ public sealed class AuthorizedCategoryService :
         {
             return Task.FromResult(
                 Result.Failure(
-                    authorization.Error));
+                    authorization.AppError));
         }
 
         return _innerService.SetActiveStateAsync(
@@ -178,6 +178,6 @@ public sealed class AuthorizedCategoryService :
     private Result AuthorizeCategoryManagement()
     {
         return _permissionService.Authorize(
-            SystemPermission.ManageCategories);
+            SystemCapability.ManageCategories);
     }
 }

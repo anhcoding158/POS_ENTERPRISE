@@ -40,12 +40,12 @@ public sealed class CategoryManagementDialogService :
     {
         var authorization =
             _permissionService.Authorize(
-                SystemPermission.ManageCategories);
+                SystemCapability.ManageCategories);
 
         if (authorization.IsFailure)
         {
             ShowAuthorizationError(
-                authorization.Error.Message);
+                authorization.AppError.Message);
 
             return;
         }

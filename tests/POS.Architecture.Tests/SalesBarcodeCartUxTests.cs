@@ -7,6 +7,7 @@ using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.Services;
 using POS.Application.Common;
 using POS.Application.DTOs.Authentication;
+using POS.Application.DTOs.Payments;
 using POS.Application.DTOs.Products;
 using POS.Domain.Enums;
 using POS.Infrastructure.Authentication;
@@ -19,6 +20,83 @@ namespace POS.Architecture.Tests;
 
 public sealed class SalesBarcodeCartUxTests
 {
+    [Fact]
+    public async Task Confirmed_recovery_retry_button_has_command()
+    {
+        var exception = await RunOnStaAsync(() =>
+        {
+            var context = CreateContext();
+            context.ViewModel.PendingPaymentIntents.Add(ConfirmedIntent());
+            context.ViewModel.SelectedPaymentIntentRecovery =
+                context.ViewModel.PendingPaymentIntents[0];
+            Assert.Equal(
+                "Button",
+                NamedElement("ConfirmedRecoveryRetryButton").Name.LocalName);
+            var button = new System.Windows.Controls.Button
+            {
+                DataContext = context.ViewModel,
+                Command = context.ViewModel.RetryPaymentIntentRecoveryCommand,
+                CommandParameter = context.ViewModel.SelectedPaymentIntentRecovery.Id
+            };
+
+            Assert.NotNull(button.Command);
+            Assert.Equal(73, button.CommandParameter);
+            Assert.True(button.IsEnabled);
+            Assert.True(button.IsHitTestVisible);
+        });
+
+        Assert.Null(exception);
+    }
+
+    [Fact]
+    public void Confirmed_recovery_retry_command_receives_payment_intent_id()
+    {
+        var context = CreateContext();
+        context.ViewModel.PendingPaymentIntents.Add(ConfirmedIntent());
+        context.ViewModel.SelectedPaymentIntentRecovery =
+            context.ViewModel.PendingPaymentIntents[0];
+
+        Assert.True(context.ViewModel.RetryPaymentIntentRecoveryCommand.CanExecute(73));
+        Assert.False(context.ViewModel.RetryPaymentIntentRecoveryCommand.CanExecute(null));
+        Assert.False(context.ViewModel.RetryPaymentIntentRecoveryCommand.CanExecute(74));
+    }
+
+    [Fact]
+    public void Confirmed_recovery_retry_command_cannot_execute_while_busy()
+    {
+        var context = CreateContext();
+        context.ViewModel.PendingPaymentIntents.Add(ConfirmedIntent());
+        context.ViewModel.SelectedPaymentIntentRecovery =
+            context.ViewModel.PendingPaymentIntents[0];
+        SetField(context.ViewModel, "_isProcessingRecovery", true);
+
+        Assert.False(context.ViewModel.RetryPaymentIntentRecoveryCommand.CanExecute(73));
+    }
+
+    [Fact]
+    public async Task Confirmed_recovery_has_close_for_later_action()
+    {
+        var exception = await RunOnStaAsync(() =>
+        {
+            var context = CreateContext();
+            Assert.Equal(
+                "Button",
+                NamedElement("ConfirmedRecoveryCloseForLaterButton").Name.LocalName);
+            var close = new System.Windows.Controls.Button
+            {
+                DataContext = context.ViewModel,
+                Content = "ĐÓNG ĐỂ XỬ LÝ SAU",
+                IsEnabled = context.ViewModel.IsRecoveryOperationIdle
+            };
+
+            Assert.Equal("ĐÓNG ĐỂ XỬ LÝ SAU", close.Content);
+            Assert.True(close.IsEnabled);
+            Assert.True(close.IsHitTestVisible);
+        });
+
+        Assert.Null(exception);
+    }
+
     [Fact]
     public async Task Exact_barcode_adds_product_once()
     {
@@ -742,6 +820,51 @@ public sealed class SalesBarcodeCartUxTests
         return new(viewModel, confirmation);
     }
 
+    private static PaymentIntentRecoveryItemViewModel ConfirmedIntent() =>
+        new(new PaymentIntentPendingDto(
+            73,
+            "VQ-0073",
+            PaymentIntentStatus.Confirmed,
+            145_000,
+            "VND",
+            "PAY VQ-0073",
+            "persisted-payload",
+            "970415",
+            "123456789",
+            "POS TEST",
+            DateTimeOffset.UtcNow.AddMinutes(-5),
+            DateTimeOffset.UtcNow,
+            null,
+            null,
+            false,
+            false,
+            false,
+            false,
+            true,
+            false,
+            "KHÔNG YÊU CẦU KHÁCH CHUYỂN THÊM."));
+
+    private static Task<Exception?> RunOnStaAsync(Action action)
+    {
+        var completion = new TaskCompletionSource<Exception?>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                action();
+                completion.SetResult(null);
+            }
+            catch (Exception exception)
+            {
+                completion.SetResult(exception);
+            }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        return completion.Task;
+    }
+
     private static SalesCartLineViewModel CreateLine(TestContext context, SalesCatalogProductDto product) =>
         new(
             new SalesProductCardViewModel(product, _ => Task.CompletedTask),
@@ -802,7 +925,7 @@ public sealed class SalesBarcodeCartUxTests
                 string.Equals(x.Code, scanOrCode, StringComparison.OrdinalIgnoreCase));
             return Task.FromResult(product is null
                 ? Result.Failure<SalesCatalogProductDto>(
-                    new Error(ErrorCodes.Products.NotFound, "Không tìm thấy sản phẩm."))
+                    new AppError(ErrorCodes.Products.NotFound, "Không tìm thấy sản phẩm."))
                 : Result.Success(product));
         }
 

@@ -21,7 +21,7 @@ public sealed class SqliteDatabaseSafetyService
     private const string MissingDatabaseMessage =
         "Không tìm thấy database SQLite.";
 
-    public SqliteIntegrityCheckResult CheckIntegrity(
+    public static SqliteIntegrityCheckResult CheckIntegrity(
         string databaseFilePath)
     {
         ValidatePathArgument(
@@ -127,7 +127,7 @@ public sealed class SqliteDatabaseSafetyService
         }
     }
 
-    public SqliteBackupResult CreateVerifiedBackup(
+    public static SqliteBackupResult CreateVerifiedBackup(
         string sourceDatabaseFilePath,
         string backupDirectoryPath,
         DateTimeOffset utcNow)

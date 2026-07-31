@@ -166,6 +166,7 @@ public partial class SalesWindow :
         }
 
         if (_viewModel.HasCheckoutRecovery ||
+            _viewModel.IsPaymentIntentRecoveryOpen ||
             _viewModel.IsRecoveryBusy)
         {
             e.Handled = true;
@@ -194,7 +195,7 @@ public partial class SalesWindow :
                      global::System.Windows
                          .Input.Key.Escape)
             {
-                ShowPendingVietQrCloseBlockedMessage();
+                Close();
             }
             else
             {
@@ -245,6 +246,11 @@ public partial class SalesWindow :
                 e.Handled =
                     true;
 
+                break;
+
+            case global::System.Windows.Input.Key.F7:
+                ShowDiscountDialog();
+                e.Handled = true;
                 break;
 
             case global::System.Windows
@@ -329,6 +335,45 @@ public partial class SalesWindow :
             e.Handled = true;
         }
     }
+
+    private void OnDiscountClick(
+        object sender,
+        global::System.Windows.RoutedEventArgs e) =>
+        ShowDiscountDialog();
+
+    private void ShowDiscountDialog()
+    {
+        if (!_viewModel.CanApplySalesDiscount ||
+            _viewModel.EstimatedSubtotal <= 0 ||
+            _viewModel.EstimatedSubtotal > long.MaxValue)
+        {
+            SystemSounds.Beep.Play();
+            return;
+        }
+        var currentDiscount = _viewModel.CurrentSalesDiscount;
+        var dialog = new SalesDiscountWindow(
+            checked((long)_viewModel.EstimatedSubtotal),
+            currentDiscount.Type,
+            currentDiscount.Value,
+            currentDiscount.Reason)
+        {
+            Owner = this
+        };
+        if (dialog.ShowDialog() != true)
+            return;
+        if (!_viewModel.TryApplySalesDiscount(
+                dialog.DiscountType, dialog.DiscountValue,
+                dialog.DiscountReason, out var error))
+            global::System.Windows.MessageBox.Show(
+                this, error, "Giảm giá",
+                global::System.Windows.MessageBoxButton.OK,
+                global::System.Windows.MessageBoxImage.Warning);
+    }
+
+    private void OnClearDiscountClick(
+        object sender,
+        global::System.Windows.RoutedEventArgs e) =>
+        _viewModel.ClearSalesDiscount();
 
     private async Task HandleEnterKeyAsync(
         global::System.Windows.Input
@@ -822,7 +867,7 @@ public partial class SalesWindow :
          * - DI scope bị đóng;
          * - DbContext và service được giải phóng.
          */
-        if (_viewModel.IsCheckingOut)
+        if (_viewModel.IsCheckingOut || _viewModel.IsProcessingRecovery)
         {
             e.Cancel =
                 true;
@@ -841,24 +886,31 @@ public partial class SalesWindow :
             return;
         }
 
-        /*
-         * Authorization VietQR hiện chỉ nằm trong bộ nhớ
-         * của SalesViewModel. Nếu đóng cửa sổ ở thời điểm này:
-         * - mã tham chiếu sẽ mất;
-         * - số tiền đã xác nhận sẽ mất;
-         * - lần mở lại có nguy cơ tạo QR khác.
-         *
-         * Vì vậy nút X, Alt+F4 và ESC đều bị chặn tuyệt đối.
-         */
-        if (_viewModel
-            .HasPendingVietQrAuthorization)
+        var hasConfirmedRecovery =
+            _viewModel.PendingPaymentIntents.Any(
+                value => value.Status == POS.Domain.Enums.PaymentIntentStatus.Confirmed);
+
+        if (_viewModel.HasPendingVietQrAuthorization || hasConfirmedRecovery)
         {
-            e.Cancel =
-                true;
+            var closeResult =
+                global::System.Windows.MessageBox.Show(
+                    this,
+                    "Giao dịch VietQR đã được xác nhận nhận tiền nhưng đơn chưa lưu.\n\n" +
+                    "Bạn có thể ở lại để thử lưu lại đơn, hoặc đóng cửa sổ và tiếp tục xử lý khi mở lại phần mềm.\n\n" +
+                    "Không yêu cầu khách chuyển thêm.",
+                    "Giao dịch VietQR đã nhận tiền",
+                    global::System.Windows.MessageBoxButton.YesNo,
+                    global::System.Windows.MessageBoxImage.Warning,
+                    global::System.Windows.MessageBoxResult.No);
 
-            ShowPendingVietQrCloseBlockedMessage();
+            if (closeResult !=
+                global::System.Windows.MessageBoxResult.Yes)
+            {
+                e.Cancel = true;
+                return;
+            }
 
-            return;
+            _closeConfirmed = true;
         }
 
         if (_closeConfirmed ||
@@ -894,6 +946,73 @@ public partial class SalesWindow :
 
         _closeConfirmed =
             true;
+    }
+
+    private void OnRecoveryCloseClick(
+        object sender,
+        global::System.Windows.RoutedEventArgs e) => Close();
+
+    private void OnContinueSalesClick(
+        object sender,
+        global::System.Windows.RoutedEventArgs e) =>
+        _viewModel.ContinueSalesAfterManualReviewWarning();
+
+    private async void OnManualResolutionClick(
+        object sender,
+        global::System.Windows.RoutedEventArgs e)
+    {
+        if (_viewModel.SelectedPaymentIntentRecovery is not { CanResolveManually: true } pending)
+            return;
+        var dialog = new PaymentIntentManualResolutionWindow(pending.Id)
+        {
+            Owner = this
+        };
+        if (dialog.ShowDialog() == true && dialog.Request is not null)
+            await _viewModel.ResolveSelectedPaymentIntentManuallyAsync(dialog.Request);
+    }
+
+    private async void OnManualResolutionHistoryClick(
+        object sender,
+        global::System.Windows.RoutedEventArgs e)
+    {
+        var history = await _viewModel.LoadPaymentIntentManualResolutionHistoryAsync();
+        new PaymentIntentManualResolutionHistoryWindow(history)
+        {
+            Owner = this
+        }.ShowDialog();
+    }
+
+    private void OnCloseRecoveryForLaterClick(
+        object sender,
+        global::System.Windows.RoutedEventArgs e) =>
+        _viewModel.ClosePaymentIntentRecoveryForLater();
+
+    private void OnOpenPaymentIntentRecoveryClick(
+        object sender,
+        global::System.Windows.RoutedEventArgs e) =>
+        _viewModel.OpenPaymentIntentRecovery();
+
+    private void OnRecoveryDetailsClick(
+        object sender,
+        global::System.Windows.RoutedEventArgs e)
+    {
+        var item = _viewModel.SelectedPaymentIntentRecovery;
+        if (item?.CanViewDetails != true)
+            return;
+
+        global::System.Windows.MessageBox.Show(
+            this,
+            $"Mã tham chiếu: {item.DisplayCode}\n" +
+            $"Số tiền: {item.AmountText}\n" +
+            $"Thời gian tạo: {item.CreatedAtText}\n" +
+            $"Thời gian xác nhận: {item.ConfirmedAtText}\n" +
+            $"Xác nhận bởi: {item.ConfirmedByText}\n" +
+            (item.HasLineSummary ? $"Sản phẩm: {item.LineSummary}\n" : string.Empty) +
+            $"\nLý do phục hồi:\n{item.Warning}\n\n" +
+            "Metadata an toàn: snapshot legacy/không đọc được; không hiển thị raw JSON.",
+            "Chi tiết giao dịch VietQR",
+            global::System.Windows.MessageBoxButton.OK,
+            global::System.Windows.MessageBoxImage.Warning);
     }
 
     private void OnWindowClosed(

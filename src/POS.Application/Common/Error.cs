@@ -1,4 +1,4 @@
-﻿namespace POS.Application.Common;
+namespace POS.Application.Common;
 
 /// <summary>
 /// Mô tả một lỗi có mã ổn định và thông báo thân thiện.
@@ -9,15 +9,15 @@
 /// - ghi log có cấu trúc;
 /// - tránh phụ thuộc vào nội dung Message.
 /// </summary>
-public sealed record Error
+public sealed record AppError
 {
-    private Error()
+    private AppError()
     {
         Code = string.Empty;
         Message = string.Empty;
     }
 
-    public Error(
+    public AppError(
         string code,
         string message)
     {
@@ -45,13 +45,13 @@ public sealed record Error
     /// <summary>
     /// Đại diện cho trạng thái không có lỗi.
     /// </summary>
-    public static Error None { get; } = new();
+    public static AppError None { get; } = new();
 
     /// <summary>
     /// Lỗi dùng khi một Result thành công nhưng dữ liệu
     /// bắt buộc lại bị null.
     /// </summary>
-    public static Error NullValue { get; } = new(
+    public static AppError NullValue { get; } = new(
         "GENERAL.NULL_VALUE",
         "Kết quả thành công không chứa dữ liệu.");
 

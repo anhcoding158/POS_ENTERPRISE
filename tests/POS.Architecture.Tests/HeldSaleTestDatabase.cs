@@ -1,12 +1,17 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Globalization;
 using POS.Application.Abstractions.DateTime;
+using POS.Application.Abstractions.Authorization;
 using POS.Application.Abstractions.Persistence;
 using POS.Application.Abstractions.Printing;
+using POS.Application.Abstractions.Payments;
 using POS.Application.DTOs.Authentication;
 using POS.Application.DTOs.Checkout;
 using POS.Application.DTOs.HeldSales;
 using POS.Application.DTOs.Printing;
+using POS.Application.Authorization;
+using POS.Application.Common;
 using POS.Application.Services;
 using POS.Domain.Entities;
 using POS.Domain.Enums;
@@ -71,13 +76,15 @@ internal sealed class HeldSaleTestDatabase : IAsyncDisposable
             new EfUnitOfWork(context),
             CurrentUser(userId ?? UserId),
             new FixedClock(),
-            new HeldSaleRequestCanonicalizer());
+            new HeldSaleRequestCanonicalizer(),
+            paymentIntents: new PaymentIntentRepository(context));
 
     public CheckoutService CheckoutService(
         PosDbContext context,
         IReceiptSnapshotSerializer? serializer = null,
         IOrderReceiptSnapshotRepository? snapshots = null,
-        int? userId = null) =>
+        int? userId = null,
+        IPermissionService? permissionService = null) =>
         new(
             new ProductRepository(context),
             new OrderRepository(context),
@@ -92,7 +99,25 @@ internal sealed class HeldSaleTestDatabase : IAsyncDisposable
             new StoreProvider(),
             new CheckoutRequestJournalRepository(context),
             new CheckoutRequestCanonicalizer(),
-            new HeldSaleRepository(context));
+            new HeldSaleRepository(context),
+            permissionService,
+            paymentIntents: new PaymentIntentRepository(context));
+
+    public PaymentIntentService PaymentIntentService(
+        PosDbContext context,
+        int? userId = null,
+        IClock? clock = null,
+        Role role = Role.Cashier) =>
+        new(
+            new PaymentIntentRepository(context),
+            new ProductRepository(context),
+            new HeldSaleRepository(context),
+            new OrderRepository(context),
+            new EfUnitOfWork(context),
+            CurrentUser(userId ?? UserId, role),
+            clock ?? new FixedClock(),
+            new CheckoutRequestCanonicalizer(),
+            new PaymentGateway());
 
     public CreateHeldSaleRequest HoldRequest(
         Guid requestId,
@@ -117,7 +142,7 @@ internal sealed class HeldSaleTestDatabase : IAsyncDisposable
         var result = await HeldSaleService(context)
             .CreateHeldSaleAsync(HoldRequest(requestId ?? Guid.NewGuid()));
         if (result.IsFailure)
-            throw new InvalidOperationException(result.Error.Message);
+            throw new InvalidOperationException(result.AppError.Message);
         return result.Value.Id;
     }
 
@@ -150,11 +175,12 @@ internal sealed class HeldSaleTestDatabase : IAsyncDisposable
             File.Delete(_path);
     }
 
-    private static CurrentUserService CurrentUser(int userId)
+    private static CurrentUserService CurrentUser(
+        int userId, Role role = Role.Cashier)
     {
         var service = new CurrentUserService();
         service.SetCurrentUser(new AuthenticatedUserDto(
-            userId, "cashier", $"Thu ngân #{userId}", Role.Cashier, Now));
+            userId, "cashier", $"Thu ngân #{userId}", role, Now));
         return service;
     }
 
@@ -168,6 +194,27 @@ internal sealed class HeldSaleTestDatabase : IAsyncDisposable
         public ReceiptStoreSnapshotDto GetCurrentSnapshot() =>
             new("POS Test", null, null, null, "Cảm ơn");
     }
+
+    private sealed class PaymentGateway : IVietQrPaymentGateway
+    {
+        public POS.Application.Common.Result<VietQrPaymentPayload> Build(long amount, string displayCode) =>
+            POS.Application.Common.Result.Success(new VietQrPaymentPayload(
+                $"000201010212540{amount.ToString(CultureInfo.InvariantCulture).Length}{amount.ToString(CultureInfo.InvariantCulture)}6304ABCD",
+                $"POS {displayCode}",
+                "970415",
+                "123456789",
+                "POS TEST"));
+
+        public POS.Application.Common.Result<byte[]> RenderPng(string payloadText) =>
+            POS.Application.Common.Result.Success<byte[]>([137, 80, 78, 71]);
+    }
+}
+
+internal sealed class HeldSaleAllowAllPermissionService : IPermissionService
+{
+    public bool HasPermission(SystemCapability permission) => true;
+
+    public Result Authorize(SystemCapability permission) => Result.Success();
 }
 
 internal sealed class HeldSaleThrowingSerializer : IReceiptSnapshotSerializer

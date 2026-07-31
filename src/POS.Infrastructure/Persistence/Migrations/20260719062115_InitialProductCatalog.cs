@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -7,6 +7,10 @@ namespace POS.Infrastructure.Persistence.Migrations
     /// <inheritdoc />
     public partial class InitialProductCatalog : Migration
     {
+        private static readonly string[] IndexColumns1 = ["IsActive", "DisplayOrder", "Name"];
+        private static readonly string[] IndexColumns2 = ["CategoryId", "IsActive", "Name"];
+        private static readonly string[] IndexColumns3 = ["TrackInventory", "IsActive", "StockQuantity"];
+
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -73,7 +77,7 @@ namespace POS.Infrastructure.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Categories_Active_DisplayOrder_Name",
                 table: "Categories",
-                columns: new[] { "IsActive", "DisplayOrder", "Name" });
+                columns: IndexColumns1);
 
             migrationBuilder.CreateIndex(
                 name: "UX_Categories_Name",
@@ -84,12 +88,12 @@ namespace POS.Infrastructure.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Products_Category_Active_Name",
                 table: "Products",
-                columns: new[] { "CategoryId", "IsActive", "Name" });
+                columns: IndexColumns2);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Products_Inventory_Active_Stock",
                 table: "Products",
-                columns: new[] { "TrackInventory", "IsActive", "StockQuantity" });
+                columns: IndexColumns3);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Products_Name",

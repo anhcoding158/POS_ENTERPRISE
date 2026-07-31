@@ -114,6 +114,16 @@ public interface IVietQrPaymentDialogService
         ShowAsync(
             VietQrPaymentDialogRequest request,
             CancellationToken cancellationToken = default);
+
+    Task<Result<VietQrPaymentDialogResult>>
+        ShowPresentationAsync(
+            VietQrPaymentPresentation presentation,
+            CancellationToken cancellationToken = default) =>
+        Task.FromResult(
+            Result.Failure<VietQrPaymentDialogResult>(
+                new AppError(
+                    ErrorCodes.Payments.VietQrGenerationFailed,
+                    "Dialog không hỗ trợ payload VietQR đã lưu.")));
 }
 
 /// <summary>
@@ -269,7 +279,7 @@ public sealed class VietQrPaymentDialogService :
         {
             return Result.Failure<
                 VietQrPaymentDialogResult>(
-                    new Error(
+                    new AppError(
                         ErrorCodes.Payments
                             .VietQrNotConfigured,
 
@@ -300,7 +310,7 @@ public sealed class VietQrPaymentDialogService :
         {
             return Result.Failure<
                 VietQrPaymentDialogResult>(
-                    payloadResult.Error);
+                    payloadResult.AppError);
         }
 
         var pngResult =
@@ -316,7 +326,7 @@ public sealed class VietQrPaymentDialogService :
         {
             return Result.Failure<
                 VietQrPaymentDialogResult>(
-                    pngResult.Error);
+                    pngResult.AppError);
         }
 
         var transferContentResult =
@@ -327,7 +337,7 @@ public sealed class VietQrPaymentDialogService :
         {
             return Result.Failure<
                 VietQrPaymentDialogResult>(
-                    transferContentResult.Error);
+                    transferContentResult.AppError);
         }
 
         string?
@@ -362,7 +372,7 @@ public sealed class VietQrPaymentDialogService :
                 recipientInformationMessage =
                     string.Empty;
             }
-            else if (metadataResult.Error.Code ==
+            else if (metadataResult.AppError.Code ==
                      ErrorCodes.Payments
                          .VietQrNotConfigured)
             {
@@ -371,10 +381,11 @@ public sealed class VietQrPaymentDialogService :
             }
             else
             {
-                _logger?.LogWarning(
-                    "Không thể đọc metadata người nhận VietQR. " +
-                    "Mã lỗi: {ErrorCode}.",
-                    metadataResult.Error.Code);
+                if (_logger is not null)
+                    global::POS.Application.Common.PosLog.Warning(
+                        _logger,
+                        "Không thể đọc metadata người nhận VietQR. Mã lỗi: {ErrorCode}.",
+                        metadataResult.AppError.Code);
             }
         }
 
@@ -448,9 +459,11 @@ public sealed class VietQrPaymentDialogService :
         }
         catch (Exception exception)
         {
-            _logger?.LogError(
-                exception,
-                "Không thể mở dialog VietQR.");
+            if (_logger is not null)
+                global::POS.Application.Common.PosLog.Error(
+                    _logger,
+                    exception,
+                    "Không thể mở dialog VietQR.");
 
             return Failure(
                 "Không thể mở màn hình VietQR.");
@@ -579,10 +592,11 @@ public sealed class VietQrPaymentDialogService :
             }
             catch (Exception exception)
             {
-                _logger?.LogWarning(
-                    exception,
-                    "Không thể mở màn hình khách VietQR. " +
-                    "Tiếp tục dùng màn hình thu ngân.");
+                if (_logger is not null)
+                    global::POS.Application.Common.PosLog.Warning(
+                        _logger,
+                        exception,
+                        "Không thể mở màn hình khách VietQR. Tiếp tục dùng màn hình thu ngân.");
             }
         }
 
@@ -760,7 +774,7 @@ public sealed class VietQrPaymentDialogService :
         if (topLevelResult.IsFailure)
         {
             return Result.Failure<string>(
-                topLevelResult.Error);
+                topLevelResult.AppError);
         }
 
         var additionalData =
@@ -785,7 +799,7 @@ public sealed class VietQrPaymentDialogService :
         if (nestedResult.IsFailure)
         {
             return Result.Failure<string>(
-                nestedResult.Error);
+                nestedResult.AppError);
         }
 
         var transferContent =
@@ -916,7 +930,7 @@ public sealed class VietQrPaymentDialogService :
     {
         return Result.Failure<
             VietQrPaymentDialogResult>(
-                new Error(
+                new AppError(
                     ErrorCodes.Payments
                         .VietQrGenerationFailed,
 
@@ -928,11 +942,36 @@ public sealed class VietQrPaymentDialogService :
             string message)
     {
         return Result.Failure<TValue>(
-            new Error(
+            new AppError(
                 ErrorCodes.Payments
                     .VietQrInvalidPayload,
 
                 message));
+    }
+
+    public Task<Result<VietQrPaymentDialogResult>>
+        ShowPresentationAsync(
+            VietQrPaymentPresentation presentation,
+            CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(presentation);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var application = global::System.Windows.Application.Current;
+        if (application is null)
+            return Task.FromResult(Failure(
+                "Không thể mở màn hình VietQR khi ứng dụng chưa sẵn sàng."));
+
+        if (application.Dispatcher.CheckAccess())
+            return Task.FromResult(ShowCore(
+                application,
+                presentation,
+                cancellationToken));
+
+        return application.Dispatcher.InvokeAsync(
+            () => ShowCore(application, presentation, cancellationToken),
+            DispatcherPriority.Normal,
+            cancellationToken).Task;
     }
 
     private sealed record TlvField(

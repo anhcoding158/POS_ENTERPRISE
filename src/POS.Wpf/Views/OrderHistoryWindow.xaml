@@ -138,7 +138,17 @@
                     <StackPanel Grid.Row="1" Margin="0,8,0,10">
                         <TextBlock Text="{Binding SelectedOrder.CashierName, StringFormat=Thu ngân: {0}}" />
                         <TextBlock Text="{Binding SelectedOrder.PaymentText, StringFormat=Thanh toán: {0}}" />
+                        <TextBlock Text="{Binding SelectedVietQrReferenceText, StringFormat=Mã tham chiếu VietQR: {0}}"
+                                   Visibility="{Binding HasSelectedVietQrReference, Converter={StaticResource BooleanToVisibilityConverter}}" />
                         <TextBlock Text="{Binding SelectedOrder.TotalAmountText, StringFormat=Tổng tiền: {0}}" />
+                        <Border Margin="0,8,0,0" Padding="10" Background="{StaticResource GoldSoftBrush}"
+                                Visibility="{Binding HasSelectedOrderDiscount, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <StackPanel>
+                                <TextBlock Text="Giảm giá" FontWeight="Bold"/>
+                                <TextBlock Text="{Binding SelectedOrderDiscountText, Mode=OneWay}"
+                                           Margin="0,4,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
                         <TextBlock
                             Margin="0,6,0,0"
                             Foreground="{StaticResource TextSecondaryBrush}"

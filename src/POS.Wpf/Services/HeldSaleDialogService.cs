@@ -1,5 +1,6 @@
 using System.Windows;
 using POS.Application.DTOs.HeldSales;
+using POS.Domain.Enums;
 using POS.Wpf.Views;
 
 namespace POS.Wpf.Services;
@@ -9,11 +10,16 @@ public sealed class HeldSaleDialogService : IHeldSaleDialogService
     public HeldSaleHoldDialogResult? ShowHold(
         int lineCount,
         int totalQuantity,
+        long subtotal,
+        long discountAmount,
         long totalSnapshot,
+        SalesDiscountType discountType,
+        long requestedDiscountValue,
         Guid clientRequestId)
     {
         var window = new HeldSaleHoldWindow(
-            lineCount, totalQuantity, totalSnapshot, clientRequestId)
+            lineCount, totalQuantity, subtotal, discountAmount, totalSnapshot,
+            discountType, requestedDiscountValue, clientRequestId)
         {
             Owner = System.Windows.Application.Current?.Windows
                 .OfType<Window>().FirstOrDefault(value => value.IsActive)
@@ -55,7 +61,9 @@ public sealed class HeldSaleDialogService : IHeldSaleDialogService
 internal sealed class NullHeldSaleDialogService : IHeldSaleDialogService
 {
     public HeldSaleHoldDialogResult? ShowHold(
-        int lineCount, int totalQuantity, long totalSnapshot, Guid clientRequestId) => null;
+        int lineCount, int totalQuantity, long subtotal, long discountAmount,
+        long totalSnapshot, SalesDiscountType discountType,
+        long requestedDiscountValue, Guid clientRequestId) => null;
     public HeldSaleListDialogResult? ShowActiveList(IReadOnlyList<HeldSaleDto> heldSales) => null;
     public HeldSaleResumeDialogResult? ShowResumeReview(HeldSaleResumeDto heldSale) => null;
     public bool ConfirmCancel() => false;

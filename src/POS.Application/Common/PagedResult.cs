@@ -83,17 +83,6 @@ public sealed class PagedResult<TItem>
     public bool IsEmpty =>
         Items.Count == 0;
 
-    public static PagedResult<TItem> Empty(
-        int pageNumber,
-        int pageSize)
-    {
-        return new PagedResult<TItem>(
-            Array.Empty<TItem>(),
-            pageNumber,
-            pageSize,
-            0);
-    }
-
     /// <summary>
     /// Chuyển dữ liệu trong trang sang DTO khác
     /// nhưng giữ nguyên thông tin phân trang.
@@ -113,4 +102,10 @@ public sealed class PagedResult<TItem>
             PageSize,
             TotalCount);
     }
+}
+
+public static class PagedResult
+{
+    public static PagedResult<TItem> Empty<TItem>(int pageNumber, int pageSize) =>
+        new(Array.Empty<TItem>(), pageNumber, pageSize, 0);
 }

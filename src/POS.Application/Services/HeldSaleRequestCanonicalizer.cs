@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using POS.Application.Abstractions.Services;
 using POS.Application.DTOs.HeldSales;
+using POS.Application.DTOs.Checkout;
 
 namespace POS.Application.Services;
 
@@ -18,9 +19,15 @@ public sealed class HeldSaleRequestCanonicalizer : IHeldSaleRequestCanonicalizer
         ArgumentNullException.ThrowIfNull(request);
         var document = new
         {
-            version = 1,
+            version = 2,
             label = Normalize(request.Label),
             notes = Normalize(request.Notes),
+            discount = new
+            {
+                type = (request.SalesDiscount ?? SalesDiscountRequest.None).Type,
+                value = (request.SalesDiscount ?? SalesDiscountRequest.None).Value,
+                reason = Normalize((request.SalesDiscount ?? SalesDiscountRequest.None).Reason)
+            },
             lines = (request.Lines ?? [])
                 .Select(line => new
                 {

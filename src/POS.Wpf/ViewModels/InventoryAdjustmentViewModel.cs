@@ -604,7 +604,7 @@ public sealed class InventoryAdjustmentViewModel :
             if (result.IsFailure)
             {
                 ErrorMessage =
-                    result.Error.Message;
+                    result.AppError.Message;
 
                 return false;
             }
@@ -648,7 +648,7 @@ public sealed class InventoryAdjustmentViewModel :
         }
         catch (Exception exception)
         {
-            _logger.LogError(
+            global::POS.Application.Common.PosLog.Error(_logger,
                 exception,
                 "Không thể khởi tạo cửa sổ điều chỉnh kho " +
                 "cho sản phẩm {ProductId}.",
@@ -699,13 +699,13 @@ public sealed class InventoryAdjustmentViewModel :
             if (result.IsFailure)
             {
                 ErrorMessage =
-                    result.Error.Message;
+                    result.AppError.Message;
 
-                _logger.LogWarning(
+                global::POS.Application.Common.PosLog.Warning(_logger,
                     "Điều chỉnh kho thất bại: " +
                     "{ErrorCode} - {ErrorMessage}",
-                    result.Error.Code,
-                    result.Error.Message);
+                    result.AppError.Code,
+                    result.AppError.Message);
 
                 return;
             }
@@ -723,7 +723,7 @@ public sealed class InventoryAdjustmentViewModel :
         }
         catch (Exception exception)
         {
-            _logger.LogError(
+            global::POS.Application.Common.PosLog.Error(_logger,
                 exception,
                 "Không thể lưu biến động kho cho sản phẩm " +
                 "{ProductId}.",
@@ -1088,7 +1088,7 @@ public sealed class InventoryAdjustmentViewModel :
     private void HandleCommandException(
         Exception exception)
     {
-        _logger.LogError(
+        global::POS.Application.Common.PosLog.Error(_logger,
             exception,
             "Lệnh điều chỉnh tồn kho không thể hoàn thành.");
 

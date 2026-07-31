@@ -202,7 +202,7 @@ public sealed class
 
         Assert.Equal(
             ErrorCodes.General.Conflict,
-            secondResult.Error.Code);
+            secondResult.AppError.Code);
 
         Assert.Equal(
             1,
@@ -244,7 +244,7 @@ public sealed class
 
         Assert.Equal(
             ErrorCodes.General.Validation,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.False(
             await context.Users.AnyAsync());
@@ -289,7 +289,7 @@ public sealed class
 
         Assert.Equal(
             ErrorCodes.General.Validation,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.False(
             await context.Users.AnyAsync());

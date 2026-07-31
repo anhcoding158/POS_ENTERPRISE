@@ -1,8 +1,8 @@
 using System.ComponentModel;
-using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using POS.Wpf.Services;
+using POS.Domain.Enums;
 
 namespace POS.Wpf.Views;
 
@@ -17,19 +17,51 @@ public partial class HeldSaleHoldWindow : Window, INotifyPropertyChanged
         int totalQuantity,
         long totalSnapshot,
         Guid clientRequestId)
+        : this(
+            lineCount,
+            totalQuantity,
+            totalSnapshot,
+            0,
+            totalSnapshot,
+            SalesDiscountType.None,
+            0,
+            clientRequestId)
+    {
+    }
+
+    public HeldSaleHoldWindow(
+        int lineCount,
+        int totalQuantity,
+        long subtotal,
+        long discountAmount,
+        long totalSnapshot,
+        SalesDiscountType discountType,
+        long requestedDiscountValue,
+        Guid clientRequestId)
     {
         InitializeComponent();
         _clientRequestId = clientRequestId;
         _label = $"Đơn giữ {DateTime.Now:HH:mm}";
-        Summary = $"{lineCount:N0} loại sản phẩm • {totalQuantity:N0} sản phẩm • " +
-            $"{totalSnapshot.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"))} ₫";
+        ItemSummary = $"{lineCount:N0} loại sản phẩm · {totalQuantity:N0} sản phẩm";
+        HasDiscount = discountType != SalesDiscountType.None && discountAmount > 0;
+        SubtotalText = SalesDiscountPresentationFormatter.FormatMoney(subtotal);
+        DiscountLabel = HasDiscount
+            ? $"Giảm giá {SalesDiscountPresentationFormatter.FormatRequestedValue(discountType, requestedDiscountValue)}"
+            : "Giảm giá";
+        DiscountText = $"-{SalesDiscountPresentationFormatter.FormatMoney(discountAmount)}";
+        TotalText = SalesDiscountPresentationFormatter.FormatMoney(totalSnapshot);
         DataContext = this;
         Loaded += (_, _) => LabelTextBox.Focus();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
     public HeldSaleHoldDialogResult? Result { get; private set; }
-    public string Summary { get; }
+    public string ItemSummary { get; }
+    public bool HasDiscount { get; }
+    public string SubtotalText { get; }
+    public string DiscountLabel { get; }
+    public string DiscountText { get; }
+    public string TotalText { get; }
 
     public string Label
     {

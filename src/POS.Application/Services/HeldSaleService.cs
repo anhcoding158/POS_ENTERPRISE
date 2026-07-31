@@ -1,10 +1,15 @@
 using System.Collections.Concurrent;
 using POS.Application.Abstractions.Authentication;
+using POS.Application.Abstractions.Authorization;
 using POS.Application.Abstractions.DateTime;
 using POS.Application.Abstractions.Persistence;
 using POS.Application.Abstractions.Services;
 using POS.Application.Common;
 using POS.Application.DTOs.HeldSales;
+using POS.Application.DTOs.Checkout;
+using POS.Application.Authorization;
+using POS.Domain.Enums;
+using POS.Domain.Services;
 using POS.Domain.Common;
 using POS.Domain.Entities;
 
@@ -16,7 +21,9 @@ public sealed class HeldSaleService(
     IUnitOfWork unitOfWork,
     ICurrentUserService currentUser,
     IClock clock,
-    IHeldSaleRequestCanonicalizer canonicalizer) : IHeldSaleService
+    IHeldSaleRequestCanonicalizer canonicalizer,
+    IPermissionService? permissions = null,
+    IPaymentIntentRepository? paymentIntents = null) : IHeldSaleService
 {
     private static readonly ConcurrentDictionary<Guid, SemaphoreSlim> CreateLocks = new();
 
@@ -54,6 +61,12 @@ public sealed class HeldSaleService(
         if (request.Lines.Any(line => line.ProductId <= 0 || line.Quantity <= 0))
             return Failure<HeldSaleDto>("HELD_SALE.INVALID_LINE", "Dòng sản phẩm đơn giữ không hợp lệ.");
 
+        var discount = request.SalesDiscount ?? SalesDiscountRequest.None;
+        if (discount.Type != SalesDiscountType.None &&
+            (permissions is null ||
+             !permissions.HasPermission(SystemCapability.ApplySalesDiscount)))
+            return Failure<HeldSaleDto>("GENERAL.FORBIDDEN", "Bạn không có quyền áp dụng giảm giá bán hàng.");
+
         var canonical = canonicalizer.Canonicalize(request);
         var existing = await heldSales.GetByClientRequestIdAsync(
             request.ClientRequestId, tracked: false, cancellationToken);
@@ -83,7 +96,8 @@ public sealed class HeldSaleService(
 
         var displayCode = $"G{utcNow:yyMMddHHmm}-{request.ClientRequestId:N}"[..20].ToUpperInvariant();
         var heldSale = new HeldSale(request.ClientRequestId, canonical.Fingerprint,
-            displayCode, normalizedLabel, request.Notes, actorId, utcNow, snapshots);
+            displayCode, normalizedLabel, request.Notes, actorId, utcNow, snapshots,
+            discount.Type, discount.Value, discount.Reason);
 
         try
         {
@@ -115,7 +129,18 @@ public sealed class HeldSaleService(
         if (limit is <= 0 or > 100)
             return Failure<IReadOnlyList<HeldSaleDto>>("HELD_SALE.INVALID_LIMIT", "Giới hạn danh sách không hợp lệ.");
         var values = await heldSales.GetActiveAsync(actorId, limit, cancellationToken);
-        return Result.Success<IReadOnlyList<HeldSaleDto>>(values.Select(Map).ToArray());
+        if (paymentIntents is null)
+            return Result.Success<IReadOnlyList<HeldSaleDto>>(values.Select(Map).ToArray());
+        var resumable = new List<HeldSaleDto>(values.Count);
+        foreach (var value in values)
+        {
+            var owner = await paymentIntents.GetActiveByHeldSaleIdAsync(
+                value.Id, tracked: false, cancellationToken);
+            if (HeldSalePaymentOwnershipPolicy.Evaluate(value, owner) ==
+                HeldSalePaymentOwnership.Unlocked)
+                resumable.Add(Map(value));
+        }
+        return Result.Success<IReadOnlyList<HeldSaleDto>>(resumable);
     }
 
     public async Task<Result<HeldSaleResumeDto>> GetHeldSaleForResumeAsync(
@@ -127,6 +152,17 @@ public sealed class HeldSaleService(
         if (heldSale is null || heldSale.CreatedByUserId != actorId ||
             heldSale.Status != POS.Domain.Enums.HeldSaleStatus.Active)
             return Failure<HeldSaleResumeDto>("HELD_SALE.NOT_FOUND", "Không tìm thấy đơn đang giữ.");
+
+        if (paymentIntents is not null)
+        {
+            var owner = await paymentIntents.GetActiveByHeldSaleIdAsync(
+                heldSaleId, tracked: false, cancellationToken);
+            if (HeldSalePaymentOwnershipPolicy.Evaluate(heldSale, owner) !=
+                HeldSalePaymentOwnership.Unlocked)
+                return Failure<HeldSaleResumeDto>(
+                    "HELD_SALE.PAYMENT_OWNED",
+                    HeldSalePaymentOwnershipPolicy.LockedMessage);
+        }
 
         var resultLines = new List<HeldSaleResumeLineDto>();
         foreach (var line in heldSale.Lines.OrderBy(value => value.SortOrder))
@@ -157,21 +193,50 @@ public sealed class HeldSaleService(
                 status, warning, line.LineNotesSnapshot));
         }
 
+        var currentSubtotal = resultLines
+            .Where(line => line.CurrentUnitPrice.HasValue)
+            .Sum(line => checked(line.CurrentUnitPrice!.Value * line.RequestedQuantity));
+        var currentDiscount = 0L;
+        var requiresReview = currentSubtotal != heldSale.SubtotalSnapshot;
+        try
+        {
+            currentDiscount = SalesDiscountCalculator.Resolve(
+                currentSubtotal, heldSale.DiscountType,
+                heldSale.RequestedDiscountValue, heldSale.DiscountReason);
+        }
+        catch (DomainException)
+        {
+            requiresReview = true;
+        }
         return Result.Success(new HeldSaleResumeDto(
-            heldSale.Id, heldSale.DisplayCode, heldSale.Label, heldSale.Notes, resultLines));
+            heldSale.Id, heldSale.DisplayCode, heldSale.Label, heldSale.Notes, resultLines,
+            heldSale.DiscountType, heldSale.RequestedDiscountValue, heldSale.DiscountReason,
+            heldSale.ResolvedDiscountAmountSnapshot, heldSale.SubtotalSnapshot,
+            heldSale.TotalSnapshot, currentDiscount,
+            checked(currentSubtotal - currentDiscount), requiresReview));
     }
 
     public async Task<Result> CancelHeldSaleAsync(
         int heldSaleId, CancellationToken cancellationToken = default)
     {
         if (currentUser.UserId is not int actorId || actorId <= 0)
-            return Result.Failure(new Error("GENERAL.UNAUTHORIZED", "Không tìm thấy phiên đăng nhập hợp lệ."));
+            return Result.Failure(new AppError("GENERAL.UNAUTHORIZED", "Không tìm thấy phiên đăng nhập hợp lệ."));
         await using var transaction = await unitOfWork.BeginTransactionAsync(cancellationToken);
         try
         {
             var heldSale = await heldSales.GetByIdAsync(heldSaleId, tracked: true, cancellationToken);
             if (heldSale is null || heldSale.CreatedByUserId != actorId)
-                return Result.Failure(new Error("HELD_SALE.NOT_FOUND", "Không tìm thấy đơn đang giữ."));
+                return Result.Failure(new AppError("HELD_SALE.NOT_FOUND", "Không tìm thấy đơn đang giữ."));
+            if (paymentIntents is not null)
+            {
+                var owner = await paymentIntents.GetActiveByHeldSaleIdAsync(
+                    heldSaleId, tracked: false, cancellationToken);
+                if (HeldSalePaymentOwnershipPolicy.Evaluate(heldSale, owner) !=
+                    HeldSalePaymentOwnership.Unlocked)
+                    return Result.Failure(new AppError(
+                        "HELD_SALE.PAYMENT_OWNED",
+                        HeldSalePaymentOwnershipPolicy.LockedMessage));
+            }
             if (heldSale.Status == POS.Domain.Enums.HeldSaleStatus.Cancelled)
             {
                 await transaction.RollbackAsync(CancellationToken.None);
@@ -184,11 +249,11 @@ public sealed class HeldSaleService(
         }
         catch (DomainException exception)
         {
-            return Result.Failure(new Error(exception.Code, exception.Message));
+            return Result.Failure(new AppError(exception.Code, exception.Message));
         }
         catch (PersistenceConflictException)
         {
-            return Result.Failure(new Error("HELD_SALE.CONCURRENCY_CONFLICT",
+            return Result.Failure(new AppError("HELD_SALE.CONCURRENCY_CONFLICT",
                 "Đơn giữ vừa được xử lý bởi phiên khác."));
         }
     }
@@ -209,8 +274,11 @@ public sealed class HeldSaleService(
                 new HeldSaleLineDto(line.ProductId, line.ProductCodeSnapshot,
                     line.BarcodeSnapshot, line.ProductNameSnapshot, line.Quantity,
                     line.UnitPriceSnapshot, line.LineTotalSnapshot, line.SortOrder,
-                    line.LineNotesSnapshot)).ToArray());
+                    line.LineNotesSnapshot)).ToArray(),
+            false, heldSale.DiscountType, heldSale.RequestedDiscountValue,
+            heldSale.DiscountReason, heldSale.ResolvedDiscountAmountSnapshot,
+            heldSale.SubtotalSnapshot);
 
     private static Result<T> Failure<T>(string code, string message) =>
-        Result.Failure<T>(new Error(code, message));
+        Result.Failure<T>(new AppError(code, message));
 }

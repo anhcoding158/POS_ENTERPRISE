@@ -55,7 +55,7 @@ public sealed class AuthServiceIntegrationTests
         Assert.Equal(
             ErrorCodes.Authentication
                 .UsernameRequired,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.False(
             fixture.CurrentUser
@@ -87,7 +87,7 @@ public sealed class AuthServiceIntegrationTests
         Assert.Equal(
             ErrorCodes.Authentication
                 .PasswordRequired,
-            result.Error.Code);
+            result.AppError.Code);
     }
 
     [Fact]
@@ -115,7 +115,7 @@ public sealed class AuthServiceIntegrationTests
         Assert.Equal(
             ErrorCodes.Authentication
                 .InvalidCredentials,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.False(
             fixture.CurrentUser
@@ -153,7 +153,7 @@ public sealed class AuthServiceIntegrationTests
             Assert.Equal(
                 ErrorCodes.Authentication
                     .InvalidCredentials,
-                result.Error.Code);
+                result.AppError.Code);
 
             Assert.False(
                 fixture.CurrentUser
@@ -211,7 +211,7 @@ public sealed class AuthServiceIntegrationTests
             Assert.Equal(
                 ErrorCodes.Authentication
                     .AccountLocked,
-                result.Error.Code);
+                result.AppError.Code);
         }
 
         await using var verificationContext =
@@ -270,7 +270,7 @@ public sealed class AuthServiceIntegrationTests
             Assert.Equal(
                 ErrorCodes.Authentication
                     .AccountLocked,
-                result.Error.Code);
+                result.AppError.Code);
 
             Assert.False(
                 fixture.CurrentUser
@@ -320,7 +320,7 @@ public sealed class AuthServiceIntegrationTests
         Assert.Equal(
             ErrorCodes.Authentication
                 .AccountInactive,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.False(
             fixture.CurrentUser

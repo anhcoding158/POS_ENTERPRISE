@@ -187,10 +187,10 @@ public sealed class ReceiptPrinterPipelineTests
 
         var receiptServiceDescriptor =
             Assert.Single(
-                services.Where(
-                    descriptor =>
-                        descriptor.ServiceType ==
-                        typeof(IReceiptService)));
+                services,
+                descriptor =>
+                    descriptor.ServiceType ==
+                    typeof(IReceiptService));
 
         Assert.Equal(
             ServiceLifetime.Singleton,
@@ -203,10 +203,10 @@ public sealed class ReceiptPrinterPipelineTests
 
         var documentBuilderDescriptor =
             Assert.Single(
-                services.Where(
-                    descriptor =>
-                        descriptor.ServiceType ==
-                        typeof(ReceiptDocumentBuilder)));
+                services,
+                descriptor =>
+                    descriptor.ServiceType ==
+                    typeof(ReceiptDocumentBuilder));
 
         Assert.Equal(
             ServiceLifetime.Singleton,

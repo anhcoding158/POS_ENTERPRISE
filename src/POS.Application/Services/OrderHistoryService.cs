@@ -1,4 +1,4 @@
-﻿using POS.Application.Abstractions.Persistence;
+using POS.Application.Abstractions.Persistence;
 using POS.Application.Abstractions.Printing;
 using POS.Application.Abstractions.Services;
 using POS.Application.Common;
@@ -69,14 +69,28 @@ public sealed class OrderHistoryService : IOrderHistoryService
         if (order is null)
         {
             return Result.Failure<OrderHistoryDetailsDto>(
-                new Error(ErrorCodes.Orders.NotFound, "Không tìm thấy đơn hàng."));
+                new AppError(ErrorCodes.Orders.NotFound, "Không tìm thấy đơn hàng."));
         }
 
         var snapshot = await _snapshots.GetByOrderIdAsync(
             orderId,
             cancellationToken);
 
-        return Result.Success(MapDetails(order, snapshot is not null));
+        ReceiptRequest? receipt = null;
+        if (snapshot is not null)
+        {
+            try
+            {
+                receipt = _serializer.Deserialize(snapshot.PayloadJson);
+            }
+            catch (Exception exception) when (
+                exception is InvalidDataException or ArgumentException)
+            {
+                // Details remain available even when an old snapshot is unreadable.
+            }
+        }
+
+        return Result.Success(MapDetails(order, snapshot is not null, receipt));
     }
 
     public async Task<Result<ReceiptRequest>> GetReprintReceiptAsync(
@@ -95,7 +109,7 @@ public sealed class OrderHistoryService : IOrderHistoryService
         if (snapshot is null)
         {
             return Result.Failure<ReceiptRequest>(
-                new Error(
+                new AppError(
                     ErrorCodes.Orders.ReceiptSnapshotUnavailable,
                     "Đơn hàng này được tạo trước khi hệ thống lưu snapshot hóa đơn, nên chưa thể in lại."));
         }
@@ -109,7 +123,7 @@ public sealed class OrderHistoryService : IOrderHistoryService
             exception is InvalidDataException or ArgumentException)
         {
             return Result.Failure<ReceiptRequest>(
-                new Error(
+                new AppError(
                     ErrorCodes.Orders.ReceiptSnapshotInvalid,
                     "Snapshot hóa đơn đã lưu không hợp lệ."));
         }
@@ -118,7 +132,7 @@ public sealed class OrderHistoryService : IOrderHistoryService
             original.SnapshotVersion != snapshot.SnapshotVersion)
         {
             return Result.Failure<ReceiptRequest>(
-                new Error(
+                new AppError(
                     ErrorCodes.Orders.ReceiptSnapshotInvalid,
                     "Snapshot hóa đơn không khớp với đơn hàng."));
         }
@@ -127,7 +141,7 @@ public sealed class OrderHistoryService : IOrderHistoryService
             ReceiptSnapshotFactory.CreateReprint(original, 1));
     }
 
-    private static Error? Validate(OrderHistorySearchRequest request)
+    private static AppError? Validate(OrderHistorySearchRequest request)
     {
         if (request.PageNumber <= 0 ||
             request.PageSize is <= 0 or > MaximumPageSize ||
@@ -140,7 +154,7 @@ public sealed class OrderHistoryService : IOrderHistoryService
             request.Status.HasValue && !Enum.IsDefined(request.Status.Value) ||
             request.PaymentMethod.HasValue && !Enum.IsDefined(request.PaymentMethod.Value))
         {
-            return new Error(
+            return new AppError(
                 ErrorCodes.General.Validation,
                 "Bộ lọc lịch sử đơn hàng không hợp lệ.");
         }
@@ -166,7 +180,8 @@ public sealed class OrderHistoryService : IOrderHistoryService
 
     private static OrderHistoryDetailsDto MapDetails(
         Order order,
-        bool hasReceiptSnapshot) =>
+        bool hasReceiptSnapshot,
+        ReceiptRequest? receipt) =>
         new(
             order.Id,
             order.OrderCode,
@@ -209,9 +224,18 @@ public sealed class OrderHistoryService : IOrderHistoryService
                             modifier.ModifierName,
                             modifier.Quantity,
                             modifier.UnitAdditionalPrice,
-                            modifier.AmountPerProductUnit)).ToArray())).ToArray());
+                            modifier.AmountPerProductUnit)).ToArray())).ToArray(),
+            order.DiscountSnapshot?.Type ?? POS.Domain.Enums.SalesDiscountType.None,
+            order.DiscountSnapshot?.RequestedValue ?? 0,
+            order.DiscountSnapshot?.Reason,
+            order.DiscountSnapshot?.AppliedByUserId,
+            order.DiscountSnapshot?.AppliedByUser.FullName,
+            order.DiscountSnapshot?.AppliedAtUtc,
+            receipt?.PaymentIntentId,
+            receipt?.PaymentIntentDisplayCode,
+            receipt?.PaymentConfirmedAtUtc);
 
     private static Result<T> ValidationFailure<T>(string message) =>
         Result.Failure<T>(
-            new Error(ErrorCodes.General.Validation, message));
+            new AppError(ErrorCodes.General.Validation, message));
 }

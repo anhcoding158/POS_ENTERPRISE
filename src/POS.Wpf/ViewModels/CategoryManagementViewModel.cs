@@ -528,7 +528,7 @@ public sealed class CategoryManagementViewModel :
             if (result.IsFailure)
             {
                 ShowError(
-                    result.Error.Message);
+                    result.AppError.Message);
 
                 return;
             }
@@ -546,7 +546,7 @@ public sealed class CategoryManagementViewModel :
         }
         catch (Exception exception)
         {
-            _logger.LogError(
+            global::POS.Application.Common.PosLog.Error(_logger,
                 exception,
                 "Không thể thay đổi trạng thái Category {CategoryId}.",
                 selected.Id);
@@ -604,7 +604,7 @@ public sealed class CategoryManagementViewModel :
         }
         catch (Exception exception)
         {
-            _logger.LogError(
+            global::POS.Application.Common.PosLog.Error(_logger,
                 exception,
                 "Không thể tải danh sách Category.");
 
@@ -660,7 +660,7 @@ public sealed class CategoryManagementViewModel :
         if (result.IsFailure)
         {
             ShowError(
-                result.Error.Message);
+                result.AppError.Message);
 
             return;
         }
@@ -780,7 +780,7 @@ public sealed class CategoryManagementViewModel :
     private void HandleCommandException(
         Exception exception)
     {
-        _logger.LogError(
+        global::POS.Application.Common.PosLog.Error(_logger,
             exception,
             "Lệnh CategoryManagement thất bại.");
 

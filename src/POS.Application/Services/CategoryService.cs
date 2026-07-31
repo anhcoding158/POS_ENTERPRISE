@@ -1,4 +1,4 @@
-﻿using POS.Application.Abstractions.DateTime;
+using POS.Application.Abstractions.DateTime;
 using POS.Application.Abstractions.Persistence;
 using POS.Application.Abstractions.Services;
 using POS.Application.Common;
@@ -224,7 +224,7 @@ public sealed class CategoryService :
         {
             return Result.Failure<
                 CategoryDetailsDto>(
-                    saveResult.Error);
+                    saveResult.AppError);
         }
 
         return Result.Success(
@@ -332,7 +332,7 @@ public sealed class CategoryService :
         {
             return Result.Failure<
                 CategoryDetailsDto>(
-                    saveResult.Error);
+                    saveResult.AppError);
         }
 
         return Result.Success(
@@ -349,7 +349,7 @@ public sealed class CategoryService :
         if (categoryId <= 0)
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     ErrorCodes.General.Validation,
                     "Mã danh mục phải lớn hơn 0."));
         }
@@ -366,7 +366,7 @@ public sealed class CategoryService :
         if (category is null)
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     ErrorCodes.Categories.NotFound,
                     "Không tìm thấy danh mục."));
         }
@@ -416,7 +416,7 @@ public sealed class CategoryService :
         }
     }
 
-    private static Error
+    private static AppError
         MapPersistenceConflict(
             PersistenceConflictException exception)
     {
@@ -429,7 +429,7 @@ public sealed class CategoryService :
                     .CategoryName,
                 StringComparison.Ordinal))
         {
-            return new Error(
+            return new AppError(
                 ErrorCodes.Categories
                     .NameAlreadyExists,
                 "Tên danh mục đã tồn tại. " +
@@ -439,13 +439,13 @@ public sealed class CategoryService :
         if (exception.Kind ==
             PersistenceConflictKind.Concurrency)
         {
-            return new Error(
+            return new AppError(
                 ErrorCodes.General.Conflict,
                 "Danh mục đã được người dùng hoặc cửa sổ khác " +
                 "thay đổi. Hãy tải lại dữ liệu rồi thực hiện lại.");
         }
 
-        return new Error(
+        return new AppError(
             ErrorCodes.General.Conflict,
             "Không thể lưu danh mục do dữ liệu đang xung đột. " +
             "Hãy tải lại và thử lại.");
@@ -493,7 +493,7 @@ public sealed class CategoryService :
         CategoryNotFound<TValue>()
     {
         return Result.Failure<TValue>(
-            new Error(
+            new AppError(
                 ErrorCodes.Categories.NotFound,
                 "Không tìm thấy danh mục."));
     }
@@ -503,7 +503,7 @@ public sealed class CategoryService :
             string categoryName)
     {
         return Result.Failure<TValue>(
-            new Error(
+            new AppError(
                 ErrorCodes.Categories
                     .NameAlreadyExists,
                 $"Tên danh mục '{categoryName}' đã tồn tại."));
@@ -514,7 +514,7 @@ public sealed class CategoryService :
             string message)
     {
         return Result.Failure<TValue>(
-            new Error(
+            new AppError(
                 ErrorCodes.General.Validation,
                 message));
     }
@@ -524,7 +524,7 @@ public sealed class CategoryService :
             DomainException exception)
     {
         return Result.Failure<TValue>(
-            new Error(
+            new AppError(
                 exception.Code,
                 exception.Message));
     }

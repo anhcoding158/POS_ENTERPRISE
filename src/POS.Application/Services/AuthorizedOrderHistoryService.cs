@@ -1,4 +1,4 @@
-﻿using POS.Application.Abstractions.Authorization;
+using POS.Application.Abstractions.Authorization;
 using POS.Application.Abstractions.Services;
 using POS.Application.Authorization;
 using POS.Application.Common;
@@ -42,9 +42,9 @@ public sealed class AuthorizedOrderHistoryService : IOrderHistoryService
         Func<Task<Result<T>>> operation)
     {
         var authorization = _permissions.Authorize(
-            SystemPermission.ViewReports);
+            SystemCapability.ViewReports);
         return authorization.IsFailure
-            ? Task.FromResult(Result.Failure<T>(authorization.Error))
+            ? Task.FromResult(Result.Failure<T>(authorization.AppError))
             : operation();
     }
 }

@@ -43,7 +43,7 @@ public sealed class AuthorizedCheckoutServiceTests
 
         Assert.Equal(
             ErrorCodes.General.Unauthorized,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Equal(
             0,
@@ -72,7 +72,7 @@ public sealed class AuthorizedCheckoutServiceTests
 
         Assert.Equal(
             ErrorCodes.General.Forbidden,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Equal(
             0,
@@ -220,7 +220,7 @@ public sealed class AuthorizedCheckoutServiceTests
         {
             Record(cancellationToken);
             return Task.FromResult(Result.Failure<CheckoutPreparationDto>(
-                new Error("TEST", "Recorded")));
+                new AppError("TEST", "Recorded")));
         }
 
         public Task<Result<IReadOnlyList<CheckoutRecoveryDto>>> GetCheckoutRecoveryAsync(

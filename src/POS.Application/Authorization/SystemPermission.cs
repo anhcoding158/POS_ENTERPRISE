@@ -4,9 +4,9 @@ namespace POS.Application.Authorization;
 /// Các quyền nghiệp vụ ổn định của POS Enterprise.
 ///
 /// Không kiểm tra quyền trực tiếp bằng tên Role trong UI.
-/// Mỗi chức năng phải yêu cầu một SystemPermission cụ thể.
+/// Mỗi chức năng phải yêu cầu một SystemCapability cụ thể.
 /// </summary>
-public enum SystemPermission
+public enum SystemCapability
 {
     ViewProductCatalog = 1,
 
@@ -24,5 +24,7 @@ public enum SystemPermission
 
     ManageUsers = 8,
 
-    ProcessReturns = 9
+    ProcessReturns = 9,
+
+    ApplySalesDiscount = 10
 }

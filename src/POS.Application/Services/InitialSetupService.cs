@@ -108,7 +108,7 @@ public sealed class InitialSetupService :
         {
             return Result.Failure<
                 AuthenticatedUserDto>(
-                    validationResult.Error);
+                    validationResult.AppError);
         }
 
         /*
@@ -344,7 +344,7 @@ public sealed class InitialSetupService :
             string message)
     {
         return Result.Failure(
-            new Error(
+            new AppError(
                 ErrorCodes.General.Validation,
                 message));
     }
@@ -357,7 +357,7 @@ public sealed class InitialSetupService :
     {
         return Result.Failure<
             AuthenticatedUserDto>(
-                new Error(
+                new AppError(
                     errorCode,
                     errorMessage));
     }

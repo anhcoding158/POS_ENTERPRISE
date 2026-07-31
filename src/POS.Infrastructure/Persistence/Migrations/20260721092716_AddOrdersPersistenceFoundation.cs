@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -8,6 +8,14 @@ namespace POS.Infrastructure.Persistence.Migrations
     /// <inheritdoc />
     public partial class AddOrdersPersistenceFoundation : Migration
     {
+        private static readonly string[] IndexColumns1 = ["OrderItemId", "ModifierGroupId"];
+        private static readonly string[] IndexColumns2 = ["OrderItemId", "ModifierId"];
+        private static readonly string[] IndexColumns3 = ["ProductId", "CreatedAtUtc"];
+        private static readonly string[] IndexColumns4 = ["CashierUserId", "CreatedAtUtc"];
+        private static readonly string[] IndexColumns5 = ["CustomerId", "CreatedAtUtc"];
+        private static readonly string[] IndexColumns6 = ["Status", "CreatedAtUtc"];
+        private static readonly string[] IndexColumns7 = ["RestaurantTableId", "Status"];
+
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -150,12 +158,12 @@ namespace POS.Infrastructure.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_OrderItemModifiers_Item_Group",
                 table: "OrderItemModifiers",
-                columns: new[] { "OrderItemId", "ModifierGroupId" });
+                columns: IndexColumns1);
 
             migrationBuilder.CreateIndex(
                 name: "UX_OrderItemModifiers_OrderItem_Modifier",
                 table: "OrderItemModifiers",
-                columns: new[] { "OrderItemId", "ModifierId" },
+                columns: IndexColumns2,
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -166,27 +174,27 @@ namespace POS.Infrastructure.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_OrderItems_Product_CreatedAtUtc",
                 table: "OrderItems",
-                columns: new[] { "ProductId", "CreatedAtUtc" });
+                columns: IndexColumns3);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Orders_Cashier_CreatedAtUtc",
                 table: "Orders",
-                columns: new[] { "CashierUserId", "CreatedAtUtc" });
+                columns: IndexColumns4);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Orders_Customer_CreatedAtUtc",
                 table: "Orders",
-                columns: new[] { "CustomerId", "CreatedAtUtc" });
+                columns: IndexColumns5);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Orders_Status_CreatedAtUtc",
                 table: "Orders",
-                columns: new[] { "Status", "CreatedAtUtc" });
+                columns: IndexColumns6);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Orders_Table_Status",
                 table: "Orders",
-                columns: new[] { "RestaurantTableId", "Status" });
+                columns: IndexColumns7);
 
             migrationBuilder.CreateIndex(
                 name: "UX_Orders_OrderCode",

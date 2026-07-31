@@ -1,4 +1,4 @@
-﻿using POS.Application.Abstractions.Authentication;
+using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.DateTime;
 using POS.Application.Abstractions.Persistence;
 using POS.Application.Abstractions.Services;
@@ -289,7 +289,7 @@ public sealed class ProductService :
         {
             return Result.Failure<
                 ProductDetailsDto>(
-                    categoryResult.Error);
+                    categoryResult.AppError);
         }
 
         /*
@@ -305,7 +305,7 @@ public sealed class ProductService :
         {
             return Result.Failure<
                 ProductDetailsDto>(
-                    new Error(
+                    new AppError(
                         ErrorCodes.Products
                             .CodeAlreadyExists,
                         $"Mã sản phẩm " +
@@ -322,7 +322,7 @@ public sealed class ProductService :
         {
             return Result.Failure<
                 ProductDetailsDto>(
-                    new Error(
+                    new AppError(
                         ErrorCodes.Products
                             .BarcodeAlreadyExists,
                         $"Mã vạch " +
@@ -401,7 +401,7 @@ public sealed class ProductService :
             {
                 return Result.Failure<
                     ProductDetailsDto>(
-                        productSaveResult.Error);
+                        productSaveResult.AppError);
             }
 
             /*
@@ -457,7 +457,7 @@ public sealed class ProductService :
                 {
                     return Result.Failure<
                         ProductDetailsDto>(
-                            openingBalanceSaveResult.Error);
+                            openingBalanceSaveResult.AppError);
                 }
             }
 
@@ -514,7 +514,7 @@ public sealed class ProductService :
         {
             return Result.Failure<
                 ProductDetailsDto>(
-                new Error(
+                new AppError(
                     ErrorCodes.Products.Archived,
                     "Sản phẩm đã được lưu trữ. " +
                     "Hãy khôi phục trước khi chỉnh sửa."));
@@ -564,7 +564,7 @@ public sealed class ProductService :
         {
             return Result.Failure<
                 ProductDetailsDto>(
-                    categoryResult.Error);
+                    categoryResult.AppError);
         }
 
         if (await _productRepository.CodeExistsAsync(
@@ -574,7 +574,7 @@ public sealed class ProductService :
         {
             return Result.Failure<
                 ProductDetailsDto>(
-                    new Error(
+                    new AppError(
                         ErrorCodes.Products
                             .CodeAlreadyExists,
                         $"Mã sản phẩm " +
@@ -591,7 +591,7 @@ public sealed class ProductService :
         {
             return Result.Failure<
                 ProductDetailsDto>(
-                    new Error(
+                    new AppError(
                         ErrorCodes.Products
                             .BarcodeAlreadyExists,
                         $"Mã vạch " +
@@ -657,7 +657,7 @@ public sealed class ProductService :
         {
             return Result.Failure<
                 ProductDetailsDto>(
-                    saveResult.Error);
+                    saveResult.AppError);
         }
 
         return Result.Success(
@@ -675,7 +675,7 @@ public sealed class ProductService :
         if (productId <= 0)
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     ErrorCodes.General.Validation,
                     "Mã sản phẩm phải lớn hơn 0."));
         }
@@ -691,7 +691,7 @@ public sealed class ProductService :
         if (product is null)
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     ErrorCodes.Products.NotFound,
                     "Không tìm thấy sản phẩm."));
         }
@@ -716,7 +716,7 @@ public sealed class ProductService :
                 if (categoryResult.IsFailure)
                 {
                     return Result.Failure(
-                        categoryResult.Error);
+                        categoryResult.AppError);
                 }
 
                 product.Activate(
@@ -731,7 +731,7 @@ public sealed class ProductService :
         catch (DomainException exception)
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     exception.Code,
                     exception.Message));
         }
@@ -750,7 +750,7 @@ public sealed class ProductService :
         if (productId <= 0)
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     ErrorCodes.General.Validation,
                     "Mã sản phẩm phải lớn hơn 0."));
         }
@@ -762,7 +762,7 @@ public sealed class ProductService :
             currentUserId.Value <= 0)
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     ErrorCodes.Authentication
                         .CurrentUserNotFound,
                     "Không tìm thấy người dùng hiện tại."));
@@ -776,7 +776,7 @@ public sealed class ProductService :
         if (product is null)
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     ErrorCodes.Products.NotFound,
                     "Không tìm thấy sản phẩm."));
         }
@@ -790,7 +790,7 @@ public sealed class ProductService :
         catch (DomainException exception)
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     exception.Code,
                     exception.Message));
         }
@@ -809,7 +809,7 @@ public sealed class ProductService :
         if (productId <= 0)
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     ErrorCodes.General.Validation,
                     "Mã sản phẩm phải lớn hơn 0."));
         }
@@ -822,7 +822,7 @@ public sealed class ProductService :
         if (product is null)
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     ErrorCodes.Products.NotFound,
                     "Không tìm thấy sản phẩm."));
         }
@@ -835,7 +835,7 @@ public sealed class ProductService :
         catch (DomainException exception)
         {
             return Result.Failure(
-                new Error(
+                new AppError(
                     exception.Code,
                     exception.Message));
         }
@@ -852,7 +852,7 @@ public sealed class ProductService :
         if (categoryId <= 0)
         {
             return Result.Failure<Category>(
-                new Error(
+                new AppError(
                     ErrorCodes.General.Validation,
                     "Mã danh mục phải lớn hơn 0."));
         }
@@ -865,7 +865,7 @@ public sealed class ProductService :
         if (category is null)
         {
             return Result.Failure<Category>(
-                new Error(
+                new AppError(
                     ErrorCodes.Products
                         .CategoryNotFound,
                     "Không tìm thấy danh mục sản phẩm."));
@@ -874,7 +874,7 @@ public sealed class ProductService :
         if (!category.IsActive)
         {
             return Result.Failure<Category>(
-                new Error(
+                new AppError(
                     ErrorCodes.Products
                         .CategoryInactive,
                     "Danh mục sản phẩm đang ngừng hoạt động."));
@@ -975,7 +975,7 @@ public sealed class ProductService :
         }
     }
 
-    private static Error MapPersistenceConflict(
+    private static AppError MapPersistenceConflict(
         PersistenceConflictException exception)
     {
         if (exception.Kind ==
@@ -987,7 +987,7 @@ public sealed class ProductService :
                     .ProductCode,
                 StringComparison.Ordinal))
         {
-            return new Error(
+            return new AppError(
                 ErrorCodes.Products
                     .CodeAlreadyExists,
                 "Mã sản phẩm đã tồn tại. " +
@@ -1003,7 +1003,7 @@ public sealed class ProductService :
                     .ProductBarcode,
                 StringComparison.Ordinal))
         {
-            return new Error(
+            return new AppError(
                 ErrorCodes.Products
                     .BarcodeAlreadyExists,
                 "Mã vạch đã được sử dụng " +
@@ -1013,7 +1013,7 @@ public sealed class ProductService :
         if (exception.Kind ==
             PersistenceConflictKind.Concurrency)
         {
-            return new Error(
+            return new AppError(
                 ErrorCodes.Products
                     .ConcurrencyConflict,
                 "Sản phẩm đã được người dùng " +
@@ -1021,7 +1021,7 @@ public sealed class ProductService :
                 "Hãy tải lại dữ liệu rồi thực hiện lại.");
         }
 
-        return new Error(
+        return new AppError(
             ErrorCodes.Products
                 .PersistenceConflict,
             "Không thể lưu sản phẩm do dữ liệu " +
@@ -1121,7 +1121,7 @@ public sealed class ProductService :
         ProductNotFound<TValue>()
     {
         return Result.Failure<TValue>(
-            new Error(
+            new AppError(
                 ErrorCodes.Products.NotFound,
                 "Không tìm thấy sản phẩm."));
     }
@@ -1131,7 +1131,7 @@ public sealed class ProductService :
             string message)
     {
         return Result.Failure<TValue>(
-            new Error(
+            new AppError(
                 ErrorCodes.General.Validation,
                 message));
     }
@@ -1141,7 +1141,7 @@ public sealed class ProductService :
             DomainException exception)
     {
         return Result.Failure<TValue>(
-            new Error(
+            new AppError(
                 exception.Code,
                 exception.Message));
     }

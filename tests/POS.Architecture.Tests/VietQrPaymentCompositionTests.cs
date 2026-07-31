@@ -111,7 +111,7 @@ public sealed class VietQrPaymentCompositionTests
         Assert.Equal(
             ErrorCodes.Payments
                 .VietQrNotConfigured,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Equal(
             0,

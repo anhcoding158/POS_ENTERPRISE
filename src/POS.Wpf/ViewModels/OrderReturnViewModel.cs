@@ -115,7 +115,7 @@ public sealed class OrderReturnViewModel : ViewModelBase, IDisposable
                 return;
             if (result.IsFailure)
             {
-                Message = result.Error.Message;
+                Message = result.AppError.Message;
                 return;
             }
             OrderCode = result.Value.OrderCode;
@@ -171,7 +171,7 @@ public sealed class OrderReturnViewModel : ViewModelBase, IDisposable
                 return;
             Message = result.IsSuccess
                 ? $"Đã tạo chứng từ trả hàng #{result.Value.ReturnId}."
-                : result.Error.Message;
+                : result.AppError.Message;
             if (result.IsSuccess)
                 IsSuccessful = true;
         }

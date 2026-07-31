@@ -50,4 +50,14 @@ public sealed record CheckoutResultDto(
     }
 
     public bool IsIdempotentReplay { get; init; }
+
+    public SalesDiscountType SalesDiscountType { get; init; }
+    public long RequestedDiscountValue { get; init; }
+    public string? DiscountReason { get; init; }
+    public int? DiscountAppliedByUserId { get; init; }
+    public DateTimeOffset? DiscountAppliedAtUtc { get; init; }
+    public int? PaymentIntentId { get; init; }
+    public string? PaymentIntentDisplayCode { get; init; }
+    public DateTimeOffset? PaymentConfirmedAtUtc { get; init; }
+    public Guid? CheckoutClientRequestId { get; init; }
 }

@@ -106,7 +106,7 @@ public sealed class SalesCartLineViewModel :
         Func<bool> canMutate,
         Action mutationBlocked)
     {
-        if (productId <= 0) throw new ArgumentOutOfRangeException(nameof(productId));
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(productId);
         ProductId = productId;
         ProductCode = productCode ?? throw new ArgumentNullException(nameof(productCode));
         ProductName = productName ?? throw new ArgumentNullException(nameof(productName));

@@ -89,10 +89,10 @@ public sealed class OrderReturnApplicationTests
     [Fact]
     public void OrderReturnApplication_permission_policy_must_match_checkpoint()
     {
-        Assert.True(RolePermissionPolicy.HasPermission(Role.Administrator, SystemPermission.ProcessReturns));
-        Assert.True(RolePermissionPolicy.HasPermission(Role.Manager, SystemPermission.ProcessReturns));
-        Assert.False(RolePermissionPolicy.HasPermission(Role.Cashier, SystemPermission.ProcessReturns));
-        Assert.False(RolePermissionPolicy.HasPermission(Role.InventoryStaff, SystemPermission.ProcessReturns));
+        Assert.True(RolePermissionPolicy.HasPermission(Role.Administrator, SystemCapability.ProcessReturns));
+        Assert.True(RolePermissionPolicy.HasPermission(Role.Manager, SystemCapability.ProcessReturns));
+        Assert.False(RolePermissionPolicy.HasPermission(Role.Cashier, SystemCapability.ProcessReturns));
+        Assert.False(RolePermissionPolicy.HasPermission(Role.InventoryStaff, SystemCapability.ProcessReturns));
     }
 
     [Fact]

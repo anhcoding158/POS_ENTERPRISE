@@ -45,7 +45,7 @@ public sealed class AuthorizedProductServiceTests
 
         Assert.Equal(
             ErrorCodes.General.Unauthorized,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Equal(
             0,
@@ -81,7 +81,7 @@ public sealed class AuthorizedProductServiceTests
         Assert.Equal(
             RecordingProductService
                 .InnerErrorCode,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Equal(
             1,
@@ -111,7 +111,7 @@ public sealed class AuthorizedProductServiceTests
 
         Assert.Equal(
             ErrorCodes.General.Forbidden,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Equal(
             0,
@@ -140,7 +140,7 @@ public sealed class AuthorizedProductServiceTests
 
         Assert.True(
             result.IsSuccess,
-            result.Error.ToString());
+            result.AppError.ToString());
 
         Assert.Equal(
             1,
@@ -171,7 +171,7 @@ public sealed class AuthorizedProductServiceTests
 
         Assert.Equal(
             ErrorCodes.General.Forbidden,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Equal(
             0,
@@ -201,7 +201,7 @@ public sealed class AuthorizedProductServiceTests
 
         Assert.Equal(
             ErrorCodes.General.Forbidden,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Equal(
             0,
@@ -230,7 +230,7 @@ public sealed class AuthorizedProductServiceTests
 
         Assert.True(
             result.IsSuccess,
-            result.Error.ToString());
+            result.AppError.ToString());
 
         Assert.Equal(
             1,
@@ -263,7 +263,7 @@ public sealed class AuthorizedProductServiceTests
 
         Assert.True(
             result.IsSuccess,
-            result.Error.ToString());
+            result.AppError.ToString());
 
         Assert.Equal(
             1,
@@ -309,7 +309,7 @@ public sealed class AuthorizedProductServiceTests
         public const string InnerErrorCode =
             "TEST.INNER";
 
-        private static readonly Error
+        private static readonly AppError
             InnerError =
                 new(
                     InnerErrorCode,

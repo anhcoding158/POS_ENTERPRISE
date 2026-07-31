@@ -61,7 +61,7 @@ public sealed class SalesPaymentFlowServiceTests
 
         Assert.True(
             result.IsSuccess,
-            result.Error.ToString());
+            result.AppError.ToString());
 
         Assert.True(
             result.Value.IsAuthorized);
@@ -133,7 +133,7 @@ public sealed class SalesPaymentFlowServiceTests
         Assert.Equal(
             ErrorCodes.Payments
                 .InvalidAmount,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Equal(
             0,
@@ -175,7 +175,7 @@ public sealed class SalesPaymentFlowServiceTests
         Assert.Equal(
             ErrorCodes.Payments
                 .VietQrNotConfigured,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Equal(
             0,
@@ -227,7 +227,7 @@ public sealed class SalesPaymentFlowServiceTests
 
         Assert.True(
             result.IsSuccess,
-            result.Error.ToString());
+            result.AppError.ToString());
 
         Assert.False(
             result.Value.IsAuthorized);
@@ -290,7 +290,7 @@ public sealed class SalesPaymentFlowServiceTests
 
         Assert.True(
             result.IsSuccess,
-            result.Error.ToString());
+            result.AppError.ToString());
 
         Assert.True(
             result.Value.IsAuthorized);
@@ -382,7 +382,7 @@ public sealed class SalesPaymentFlowServiceTests
 
             Assert.True(
                 result.IsSuccess,
-                result.Error.ToString());
+                result.AppError.ToString());
         }
 
         Assert.Equal(
@@ -461,7 +461,7 @@ public sealed class SalesPaymentFlowServiceTests
 
         Assert.True(
             result.IsSuccess,
-            result.Error.ToString());
+            result.AppError.ToString());
 
         Assert.True(
             result.Value.IsAuthorized);
@@ -542,11 +542,11 @@ public sealed class SalesPaymentFlowServiceTests
         Assert.Equal(
             ErrorCodes.Payments
                 .VietQrAmountMismatch,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Contains(
             "thay đổi",
-            result.Error.Message,
+            result.AppError.Message,
             StringComparison.OrdinalIgnoreCase);
 
         Assert.Equal(
@@ -610,7 +610,7 @@ public sealed class SalesPaymentFlowServiceTests
 
         Assert.True(
             result.IsSuccess,
-            result.Error.ToString());
+            result.AppError.ToString());
 
         Assert.Same(
             existingAuthorization,
@@ -655,7 +655,7 @@ public sealed class SalesPaymentFlowServiceTests
 
         Assert.Equal(
             ErrorCodes.General.Validation,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Equal(
             0,
@@ -697,7 +697,7 @@ public sealed class SalesPaymentFlowServiceTests
         Assert.Equal(
             ErrorCodes.Checkout
                 .PaymentMethodNotSupported,
-            result.Error.Code);
+            result.AppError.Code);
 
         Assert.Equal(
             0,

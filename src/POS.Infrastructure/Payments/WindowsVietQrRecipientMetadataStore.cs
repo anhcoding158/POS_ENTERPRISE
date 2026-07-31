@@ -311,7 +311,7 @@ public sealed class WindowsVietQrRecipientMetadataStore :
     {
         return Result.Failure<
             VietQrRecipientMetadata>(
-                new Error(
+                new AppError(
                     ErrorCodes.Payments
                         .VietQrNotConfigured,
 
@@ -324,7 +324,7 @@ public sealed class WindowsVietQrRecipientMetadataStore :
     {
         return Result.Failure<
             VietQrRecipientMetadata>(
-                new Error(
+                new AppError(
                     InvalidMetadataCode,
                     message));
     }
@@ -333,7 +333,7 @@ public sealed class WindowsVietQrRecipientMetadataStore :
         string message)
     {
         return Result.Failure(
-            new Error(
+            new AppError(
                 StorageFailedCode,
                 message));
     }

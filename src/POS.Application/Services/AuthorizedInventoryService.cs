@@ -48,14 +48,14 @@ public sealed class AuthorizedInventoryService :
     {
         var authorizationResult =
             _permissionService.Authorize(
-                SystemPermission.AdjustInventory);
+                SystemCapability.AdjustInventory);
 
         if (authorizationResult.IsFailure)
         {
             return Task.FromResult(
                 Result.Failure<
                     InventoryAdjustmentResultDto>(
-                        authorizationResult.Error));
+                        authorizationResult.AppError));
         }
 
         return _innerService.AdjustAsync(
@@ -75,7 +75,7 @@ public sealed class AuthorizedInventoryService :
     {
         var authorizationResult =
             _permissionService.Authorize(
-                SystemPermission
+                SystemCapability
                     .ViewInventoryHistory);
 
         if (authorizationResult.IsFailure)
@@ -84,7 +84,7 @@ public sealed class AuthorizedInventoryService :
                 Result.Failure<
                     PagedResult<
                         InventoryMovementDto>>(
-                            authorizationResult.Error));
+                            authorizationResult.AppError));
         }
 
         return _innerService.SearchAsync(

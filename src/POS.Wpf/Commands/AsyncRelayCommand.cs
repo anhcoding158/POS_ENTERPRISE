@@ -11,8 +11,8 @@ namespace POS.Wpf.Commands;
 /// </summary>
 public sealed class AsyncRelayCommand : ICommand
 {
-    private readonly Func<Task> _execute;
-    private readonly Func<bool>? _canExecute;
+    private readonly Func<object?, Task> _execute;
+    private readonly Func<object?, bool>? _canExecute;
     private readonly Action<Exception>? _onException;
 
     private bool _isExecuting;
@@ -20,6 +20,20 @@ public sealed class AsyncRelayCommand : ICommand
     public AsyncRelayCommand(
         Func<Task> execute,
         Func<bool>? canExecute = null,
+        Action<Exception>? onException = null)
+    {
+        ArgumentNullException.ThrowIfNull(execute);
+        _execute =
+            _ => execute();
+        _canExecute = canExecute is null
+            ? null
+            : _ => canExecute();
+        _onException = onException;
+    }
+
+    public AsyncRelayCommand(
+        Func<object?, Task> execute,
+        Func<object?, bool>? canExecute = null,
         Action<Exception>? onException = null)
     {
         _execute =
@@ -38,7 +52,7 @@ public sealed class AsyncRelayCommand : ICommand
     public bool CanExecute(object? parameter)
     {
         return !_isExecuting &&
-               (_canExecute?.Invoke() ?? true);
+               (_canExecute?.Invoke(parameter) ?? true);
     }
 
     public async void Execute(object? parameter)
@@ -54,7 +68,7 @@ public sealed class AsyncRelayCommand : ICommand
 
             NotifyCanExecuteChanged();
 
-            await _execute();
+            await _execute(parameter);
         }
         catch (OperationCanceledException)
         {
