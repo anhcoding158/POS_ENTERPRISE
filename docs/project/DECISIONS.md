@@ -287,14 +287,27 @@ Current closeout evidence: Presented PaymentIntent is persisted before the QR di
 - **Revisit trigger/checkpoint:** R1.1 repository closeout/reconciliation.
 - **Supersedes/superseded by:** Không supersede historical decisions; records the exception and recovery path.
 
+## DEC-020 — R1.1 repository closeout follows the formal R0.5 closeout
+
+- **Status:** Policy for the R1.1 repository-closeout checkpoint.
+- **Original decision date:** `2026-08-01`.
+- **Context/problem:** R1.1 runtime verification occurred at `afdda252ce124413b9190607a96a0046cf5097e7` before the separate R0.5 formal closeout commit `dfb0eb7a000054664aa7feccb51778fe80aa32a7`.
+- **Decision:** Preserve both proven commit identities and provenance. Record R1.1 runtime E2E as PASS from the supplied Jenkins evidence, prepare a separate repository-closeout payload after R0.5 is Closed / Committed / Pushed, and require its own commit/push and Git-clean verification before R1.2 starts. Do not rewrite or rebase history, and do not treat R1.2 or R1.3 as started.
+- **Evidence:** Live Git state at `dfb0eb7a000054664aa7feccb51778fe80aa32a7`; supplied Jenkins runtime evidence at `afdda252ce124413b9190607a96a0046cf5097e7`; R1.1 acceptance details in `D:\Projects_1\POS_Enterprise_DotNet\docs\project\TEST-BASELINE.md`.
+- **Consequences:** Runtime evidence and repository-closeout commit remain distinct. R1 stays In Progress; R1.2 is the next permitted checkpoint only after R1.1 closeout; R1.3 remains NOT STARTED.
+- **Trade-offs:** Repository governance is reconciled with the actual Git sequence without erasing the earlier runtime verification.
+- **Related constraints/invariants:** `DEC-016`, `DEC-017`, `DEC-019`; exact staging and closeout requirements in `CHECKPOINT-WORKFLOW.md`.
+- **Revisit trigger/checkpoint:** R1.1 closeout commit/push or a later change to R1 scope.
+- **Supersedes/superseded by:** Does not supersede historical decisions.
+
 ## 2. Roadmap state decision
 
 - R0: Completed theo authoritative closeout.
 - R0.5A–R0.5F: PASS in the reviewed R0.5 closeout payload.
-- R0.5: Completed/PASS in the closeout payload; commit/push and final Git-clean confirmation remain pending.
+- R0.5: Closed / Committed / Pushed at `dfb0eb7a000054664aa7feccb51778fe80aa32a7`; HEAD and origin/main were aligned and the post-commit worktree was clean.
 - R0.5E pack: `project-context-20260801T0647171300576Z`, baseline `70523861949aeb5eefe981633db33f50bc890145`, exporter exit code `0`, security findings `0`, coverage `501/501`, excluded candidates `0`, manifest integrity `16/16` PASS.
 - R0.5F: ChatGPT and Codex fresh-session verifications both PASS on `2026-08-01`.
-- R1: In Progress by reconciliation. R1.1 runtime E2E PASS at `afdda252ce124413b9190607a96a0046cf5097e7`; repository closeout PENDING. R1.2 and R1.3 NOT STARTED.
+- R1: In Progress. R1.1 runtime E2E PASS at `afdda252ce124413b9190607a96a0046cf5097e7`; R1.1 is Completed/PASS in the reviewed repository-closeout payload, while formal repository baseline remains pending its separate commit/push and Git-clean verification. R1.2 and R1.3 NOT STARTED.
 - R2–R13: Not Started; future acceptance chưa chạy.
 - Partial feature không làm future stage Completed.
 
@@ -320,7 +333,7 @@ Mọi thay đổi kiến trúc hoặc roadmap sau khi register này tồn tại 
 | Status | Count |
 |---|---:|
 | Observed and Accepted | 14 |
-| Policy | 4 |
+| Policy | 5 |
 | Deferred | 1 |
 | Superseded | 0 |
-| **Total** | **19** |
+| **Total** | **20** |

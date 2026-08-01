@@ -9,13 +9,14 @@
 - Branch: `main`.
 - CapturedAtLocal: `2026-07-31T14:32:44.841+07:00`.
 - Context Pack baseline HEAD: `70523861949aeb5eefe981633db33f50bc890145`.
-- Live HEAD before R0.5 closeout: `afdda252ce124413b9190607a96a0046cf5097e7`.
-- Live origin/main before R0.5 closeout: `afdda252ce124413b9190607a96a0046cf5097e7`.
+- Live HEAD after R0.5 closeout: `dfb0eb7a000054664aa7feccb51778fe80aa32a7`.
+- Live origin/main after R0.5 closeout: `dfb0eb7a000054664aa7feccb51778fe80aa32a7`.
+- R0.5 formal closeout commit: `dfb0eb7a000054664aa7feccb51778fe80aa32a7`.
 - Ahead/behind: `0/0`.
 - Baseline commit: `e330b616b277bde3bed2a46e71fe511cb4531ce8`.
 - Baseline relationship: R0 historical baseline is at `e330b616`; R0.5 Context Pack and its historical verification evidence are at `7052386`; live pre-closeout Git is at `afdda252`. These commits are not interchangeable.
 - Baseline type: Accepted Historical R0 Baseline.
-- Current checkpoint: R0.5 — Project Memory Foundation — Completed/PASS in the reviewed closeout payload; commit/push and final Git-clean confirmation remain pending.
+- Current checkpoint: R1.1 — Jenkins CI Pipeline repository closeout/reconciliation; R0.5 is Closed / Committed / Pushed.
 - R0.5D execution policy: read-only evidence audit; restore, build, tests, Quality Gate, EF commands, migrations, database access and application execution were prohibited.
 - RuntimeExecutedInR0.5D: No.
 - DatabaseReadInR0.5D: No.
@@ -83,7 +84,7 @@ The following build/test/gate/manual results were supplied as completed live-run
 
 - Jenkins-verified commit: `afdda252ce124413b9190607a96a0046cf5097e7`.
 - R1.1 runtime E2E: PASS from user-supplied evidence: correct SCM checkout, Windows agent, .NET SDK `10.0.302`, Release build with 0 warnings/0 errors, 975 passed/0 failed/0 skipped, Quality Gate PASS, vulnerability scan PASS, EF pending-model PASS, intentional exit `23` propagated pipeline FAILURE with later stages skipped, and final normal rerun SUCCESS.
-- The intentional replay probe is not repository Jenkinsfile content. R1.1 formal repository closeout remains PENDING. R1.2 and R1.3 are NOT STARTED.
+- The intentional replay probe is not repository Jenkinsfile content. R1.1 repository closeout is the current checkpoint; R1.2 and R1.3 are NOT STARTED.
 - This R1.1 evidence does not replace R0.5F evidence or change Context Pack baseline `7052386`.
 
 ## 3E. Final R0.5 closeout verification — 2026-08-01
@@ -97,6 +98,18 @@ The following build/test/gate/manual results were supplied as completed live-run
 - Accepted complete Quality Gate rerun outside the sandbox: PASS, exit code `0`, no `-SkipEfCheck`; Debug build 0 warnings/0 errors; 975 passed/0 failed/0 skipped; no vulnerable packages; local tool restore PASS; EF reports no changes since the last migration; Git whitespace/status checks PASS.
 - Jenkins safeguards: intentional R1.1 failure-propagation probe absent; Jenkinsfile local diff empty.
 - No database update, real database read, bootstrap execution or Context Pack export was performed.
+
+## 3F. R1.1 repository closeout reconciliation — 2026-08-01
+
+- Entry criterion from R0.5 is satisfied by R0.5 closeout commit/push `dfb0eb7a000054664aa7feccb51778fe80aa32a7`; this is distinct from the Jenkins runtime evidence commit.
+- R1.1 is Completed/PASS in the reviewed repository-closeout payload. Its formal repository baseline remains pending the separate closeout commit/push and post-commit Git-clean verification.
+- Runtime evidence remains attributed to `afdda252ce124413b9190607a96a0046cf5097e7`; the R0.5 Context Pack baseline remains `70523861949aeb5eefe981633db33f50bc890145`.
+- The accepted Jenkins evidence covers SCM checkout, Windows agent, .NET SDK `10.0.302`, Release build with 0 warnings/0 errors, 975/975 tests, Quality Gate, vulnerability scan, EF pending-model check, failure propagation and final normal rerun.
+- Manual UI acceptance for this docs-only repository-closeout payload: N/A. This does not replace the accepted Jenkins runtime evidence.
+- R1 remains In Progress. R1.2 Repository Standards and R1.3 CI Artifacts remain NOT STARTED; R1.2 is the next permitted checkpoint only after R1.1 closeout commit/push and Git-clean verification.
+- Final local verification in this R1.1 turn: explicit restore PASS; explicit Release build PASS with 0 warnings/0 errors; explicit Release full tests PASS with 975 passed, 0 failed and 0 skipped.
+- Quality Gate first sandbox attempt reached restore/build/tests but the network-dependent vulnerability scan exited `1`; the complete rerun with NuGet access exited `0`, without `-SkipEfCheck`, and passed dependency scan, local tool restore, EF pending-model check, Git whitespace and Git status checks. Its internal build had 0 warnings/0 errors and tests had 975 passed, 0 failed and 0 skipped.
+- Replay-probe check returned `rg` exit `1` with no match, which is the required absent result. `git diff -- Jenkinsfile` was empty.
 
 ## 4. Baseline result table
 

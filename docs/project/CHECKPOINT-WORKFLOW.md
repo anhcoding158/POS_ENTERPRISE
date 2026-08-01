@@ -11,7 +11,7 @@
 - Live HEAD before the R0.5 closeout commit: `afdda252ce124413b9190607a96a0046cf5097e7`.
 - Live origin/main before the R0.5 closeout commit: `afdda252ce124413b9190607a96a0046cf5097e7`.
 - Context Pack baseline: `70523861949aeb5eefe981633db33f50bc890145`.
-- Current checkpoint: R0.5 — Project Memory Foundation — Completed/PASS in the reviewed closeout payload; commit/push and final Git-clean confirmation remain pending. R1 is In Progress by reconciliation; only R1.1 repository closeout/reconciliation may follow before R1.2.
+- Current checkpoint: R1.1 — Jenkins CI Pipeline repository closeout/reconciliation. R0.5 is Closed / Committed / Pushed at `dfb0eb7a000054664aa7feccb51778fe80aa32a7`; R1 is In Progress; R1.2 and R1.3 remain NOT STARTED.
 - AppliesTo: every new Codex/ChatGPT session and every checkpoint after R0.5, subject to a narrower compatible instruction file.
 - Authority: `D:\Projects_1\POS_Enterprise_DotNet\AGENTS.md`, accepted Project Memory, the active checkpoint contract and explicit user authorization.
 
@@ -413,9 +413,10 @@ For this document capture:
 - R0.5E is PASS: pack `project-context-20260801T0647171300576Z`, baseline `70523861949aeb5eefe981633db33f50bc890145`, exporter exit code `0`, source coverage `501/501`, security findings `0`, excluded candidates `0`, and manifest integrity `16/16` PASS.
 - R0.5F is PASS in the closeout payload: ChatGPT Context Pack and Codex repository fresh-session checks both PASS on `2026-08-01`. The Context Pack predates those checks and is not expected to contain their later results.
 - Final local closeout gates on `2026-08-01` PASS: restore; Release build with 0 warnings/0 errors; Release full tests 975/975; complete Quality Gate without `-SkipEfCheck`, including dependency vulnerability and EF pending-model checks; replay-probe absence; Jenkinsfile unchanged. A first sandboxed gate attempt stopped at the network-dependent vulnerability command; the complete rerun with NuGet access passed and is the accepted gate evidence.
-- R0.5 is Completed/PASS in the reviewed closeout payload. It is not yet Closed/Committed/Pushed; those states require the reviewed closeout commit, push and post-commit Git-clean verification.
-- R1 is In Progress by reconciliation. R1.1 runtime E2E PASS is accepted from supplied Jenkins evidence at `afdda252ce124413b9190607a96a0046cf5097e7`; R1.1 repository closeout is PENDING. R1.2 and R1.3 are NOT STARTED. R2–R13 remain Not Started.
+- R0.5 is Closed / Committed / Pushed at `dfb0eb7a000054664aa7feccb51778fe80aa32a7`; HEAD and origin/main were aligned and the post-commit worktree was clean.
+- R1.1 entry criterion from R0.5 was satisfied at `dfb0eb7a000054664aa7feccb51778fe80aa32a7`; the Jenkins runtime acceptance remains attributed to `afdda252ce124413b9190607a96a0046cf5097e7`.
+- R1 is In Progress. R1.1 runtime E2E PASS is accepted from supplied Jenkins evidence at `afdda252ce124413b9190607a96a0046cf5097e7`; R1.1 is Completed/PASS in the reviewed repository-closeout payload, while its formal repository baseline remains pending the separate closeout commit/push and Git-clean verification. R1.2 and R1.3 are NOT STARTED. R2–R13 remain Not Started.
 
-The R0.5 Project Memory files are intentionally uncommitted until R0.5F closeout. Status text must preserve the distinction between local completion, blocked verification, user acceptance and closed/pushed state.
+The R0.5 Project Memory files were committed in the R0.5F closeout at `dfb0eb7a000054664aa7feccb51778fe80aa32a7`. Status text must preserve the distinction between local completion, blocked verification, user acceptance and closed/pushed state.
 
-The historical Context Pack is export-only under ignored `artifacts/project-context/`. Final build/test/Quality Gate, exact staging and staged-diff review may proceed because both fresh-session checks PASS. The current turn stops before commit/push.
+The historical Context Pack is export-only under ignored `artifacts/project-context/`. Final build/test/Quality Gate, exact staging and staged-diff review may proceed because both fresh-session checks PASS. The current R1.1 turn stops before its closeout commit/push.

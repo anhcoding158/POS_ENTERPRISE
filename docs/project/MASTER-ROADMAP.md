@@ -42,8 +42,8 @@ Bản cài đầu tiên đủ an toàn cho một cửa hàng bán lẻ, một ch
 | Stage | Status |
 |---|---|
 | R0 | Completed |
-| R0.5 | Completed/PASS in closeout payload; commit/push pending |
-| R1 | In Progress by reconciliation |
+| R0.5 | Closed / Committed / Pushed |
+| R1 | In Progress |
 | R2 | Not Started |
 | R3 | Not Started |
 | R4 | Not Started |
@@ -85,7 +85,7 @@ Evidence hoàn thành:
 
 ## R0.5 — PROJECT MEMORY FOUNDATION
 
-- **Status:** Completed/PASS in the reviewed closeout payload; repository closeout commit/push and final Git-clean confirmation remain pending.
+- **Status:** Closed / Committed / Pushed at `dfb0eb7a000054664aa7feccb51778fe80aa32a7`; HEAD and origin/main were aligned and the post-commit worktree was clean.
 - **Objective:** tạo bộ nhớ kỹ thuật bền vững trong repository, không phụ thuộc lịch sử ChatGPT/Codex.
 - **Scope/checkpoints:**
   - R0.5A — Project Memory Entry Gate: PASS.
@@ -124,7 +124,7 @@ Reconciled verification evidence:
 
 Checkpoint state after reconciliation:
 
-- R1.1 — Jenkins CI Pipeline runtime E2E: PASS from supplied Jenkins evidence at `afdda252ce124413b9190607a96a0046cf5097e7`; SCM checkout, Windows agent, .NET SDK `10.0.302`, Release build/test, Quality Gate, vulnerability scan, EF pending-model check, intentional failure propagation and final normal rerun were verified. Formal repository closeout: PENDING until handled in a separate post-R0.5 closeout checkpoint.
+- R1.1 — Jenkins CI Pipeline runtime E2E: PASS from supplied Jenkins evidence at `afdda252ce124413b9190607a96a0046cf5097e7`; SCM checkout, Windows agent, .NET SDK `10.0.302`, Release build/test, Quality Gate, vulnerability scan, EF pending-model check, intentional failure propagation and final normal rerun were verified. R1.1 is Completed/PASS in the reviewed repository-closeout payload; formal repository baseline remains pending the separate closeout commit/push and Git-clean verification.
 - R1.2 — Repository Standards: NOT STARTED.
 - R1.3 — CI Artifacts: NOT STARTED.
 
