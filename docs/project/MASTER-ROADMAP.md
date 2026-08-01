@@ -57,7 +57,7 @@ Bản cài đầu tiên đủ an toàn cho một cửa hàng bán lẻ, một ch
 | R12 | Not Started |
 | R13 | Not Started |
 
-Không đánh dấu stage hoàn thành chỉ vì một phần tính năng đã tồn tại. Controlled Discount đã có nhưng R8 vẫn Not Started vì còn line discount, coupon, voucher và Promotion Engine. Return đã có nhưng R9 vẫn Not Started vì còn immutable return receipt, Cashbook Lite và Daily Close. Receipt printing đã có nhưng R11 vẫn Not Started vì hardware acceptance thực tế chưa hoàn thành. R1 hiện In Progress by reconciliation chỉ vì R1.1 runtime E2E có evidence; R1.1 repository closeout vẫn PENDING và R1.2/R1.3 vẫn Not Started.
+Không đánh dấu stage hoàn thành chỉ vì một phần tính năng đã tồn tại. Controlled Discount đã có nhưng R8 vẫn Not Started vì còn line discount, coupon, voucher và Promotion Engine. Return đã có nhưng R9 vẫn Not Started vì còn immutable return receipt, Cashbook Lite và Daily Close. Receipt printing đã có nhưng R11 vẫn Not Started vì hardware acceptance thực tế chưa hoàn thành. R1 hiện In Progress; R1.1 đã Closed / Committed / Pushed / Git-clean, R1.2 là checkpoint hiện tại và R1.3 vẫn Not Started.
 
 Manual acceptance của stage tương lai chỉ là tiêu chí phải đạt; không được ghi PASS trước khi chạy thật.
 
@@ -124,8 +124,8 @@ Reconciled verification evidence:
 
 Checkpoint state after reconciliation:
 
-- R1.1 — Jenkins CI Pipeline runtime E2E: PASS from supplied Jenkins evidence at `afdda252ce124413b9190607a96a0046cf5097e7`; SCM checkout, Windows agent, .NET SDK `10.0.302`, Release build/test, Quality Gate, vulnerability scan, EF pending-model check, intentional failure propagation and final normal rerun were verified. R1.1 is Completed/PASS in the reviewed repository-closeout payload; formal repository baseline remains pending the separate closeout commit/push and Git-clean verification.
-- R1.2 — Repository Standards: NOT STARTED.
+- R1.1 — Jenkins CI Pipeline runtime E2E: PASS from supplied Jenkins evidence at `afdda252ce124413b9190607a96a0046cf5097e7`; SCM checkout, Windows agent, .NET SDK `10.0.302`, Release build/test, Quality Gate, vulnerability scan, EF pending-model check, intentional failure propagation and final normal rerun were verified. Repository closeout is Closed / Committed / Pushed / Git-clean at `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`.
+- R1.2 — Repository Standards: Completed/PASS in the reviewed implementation/closeout payload; formal repository baseline remains pending commit/push and post-commit Git-clean verification. Added minimal text/binary and LF policy (`.gitattributes`), editor policy (`.editorconfig`), SDK pin (`global.json` at `10.0.302`), changelog convention (`CHANGELOG.md`) and `_audit_temp` ignore protection. Existing deterministic/CI build metadata was retained; no product version was invented or changed. Restore, Release build, full tests and Quality Gate all PASS in this turn.
 - R1.3 — CI Artifacts: NOT STARTED.
 
 ## R2 — PLATFORM HARDENING

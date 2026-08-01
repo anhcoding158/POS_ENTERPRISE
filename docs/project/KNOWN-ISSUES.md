@@ -9,15 +9,15 @@
 - Branch: `main`.
 - CapturedAtLocal: `2026-07-31T14:32:44.841+07:00`.
 - Context Pack baseline HEAD: `70523861949aeb5eefe981633db33f50bc890145`.
-- Live HEAD before R0.5 closeout: `afdda252ce124413b9190607a96a0046cf5097e7`.
-- Live origin/main before R0.5 closeout: `afdda252ce124413b9190607a96a0046cf5097e7`.
+- Live HEAD after R1.1 closeout: `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`.
+- Live origin/main after R1.1 closeout: `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`.
 - Ahead/behind: `0/0`.
 - EvidenceMode: Read-only source and Project Memory audit.
 - RuntimeExecutedInR0.5D: No.
 - DatabaseReadInR0.5D: No.
 - ExporterExecutedInR0.5E: Yes; latest pack exit code `0`, secret scan `0 findings`, coverage `501/501`, manifest/integrity/exclusion checks passed.
 - DatabaseReadInR0.5E: No.
-- CurrentCheckpoint: R0.5 — Project Memory Foundation — Completed/PASS in closeout payload; commit/push and final Git-clean confirmation pending.
+- CurrentCheckpoint: R1.2 — Repository Standards — Completed/PASS in reviewed implementation/closeout payload; formal commit/push and final Git-clean confirmation pending.
 - Scope: inventory evidence-supported operating conditions only; R0.5D did not reproduce runtime failures, run gates, open a real database, inspect database rows or perform hardware/store acceptance.
 
 Source-of-truth order:
@@ -246,17 +246,17 @@ Severity describes supported impact, not roadmap priority. Insufficient evidence
 - Severity: Informational.
 - Affected area: automated push pipeline, repository standards and CI artifacts.
 - Evidence: Policy/roadmap evidence at `D:\Projects_1\POS_Enterprise_DotNet\docs\project\MASTER-ROADMAP.md` — R1; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\DECISIONS.md` — `DEC-018`.
-- Observed or known condition: supplied Jenkins evidence establishes R1.1 runtime E2E PASS at `afdda252ce124413b9190607a96a0046cf5097e7`, including normal success and intentional failure propagation. R1.1 formal repository closeout is still pending; R1.2 and R1.3 are Not Started.
-- Expected condition or intended boundary: a separate post-R0.5 checkpoint must close R1.1 repository evidence before R1.2 starts; full R1 completion still requires R1.1–R1.3 exit criteria.
+- Observed or known condition: supplied Jenkins evidence establishes R1.1 runtime E2E PASS at `afdda252ce124413b9190607a96a0046cf5097e7`, including normal success and intentional failure propagation. R1.1 repository closeout is Closed / Committed / Pushed / Git-clean at `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`. R1.2 implementation/verification is PASS in the reviewed payload; R1.3 remains Not Started.
+- Expected condition or intended boundary: R1.2 formal repository baseline requires its own commit/push and post-commit Git-clean verification; full R1 completion still requires R1.1–R1.3 exit criteria.
 - User/business impact: current readiness claims cannot rely on an accepted automated push pipeline.
-- Trigger or reproduction precondition: R1.1 repository closeout after the R0.5 commit/push.
+- Trigger or reproduction precondition: R1.2 standards change or R1.3 CI artifact implementation/closeout.
 - Workaround or recovery behavior: No verified workaround recorded.
 - Related invariant/decision/roadmap checkpoint: `INV-MIGRATION-002`; `DEC-018`; R1.
 - Owner checkpoint: R1.
 - Closure criteria: R1.1–R1.3 exit criteria and manual pipeline acceptance PASS.
 - Revalidation trigger: start or change of R1 scope, Jenkinsfile, repository standards or CI artifact policy.
-- Last verified commit: `e330b616b277bde3bed2a46e71fe511cb4531ce8`.
-- Last verified time: `2026-07-31T14:32:44.841+07:00` roadmap review.
+- Last verified commit: `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`.
+- Last verified time: `2026-08-01` R1.2 verification review.
 - Notes: reconciled verification gap, not a runtime bug and not a claim that all of R1 is complete.
 
 ### POS-ROAD-002 — R2–R4 operational hardening, recovery and store administration are deferred
@@ -349,7 +349,7 @@ Severity describes supported impact, not roadmap priority. Insufficient evidence
 
 ## 6. Roadmap and evidence boundary
 
-- R1.2, R1.3 and R2–R13 being Not Started does not mean every item in those scopes is a bug; R1.1 runtime E2E is separately reconciled as PASS with repository closeout pending.
+- R1.3 and R2–R13 being Not Started does not mean every item in those scopes is a bug; R1.1 runtime E2E is separately reconciled as PASS with repository closeout Closed / Committed / Pushed / Git-clean, and R1.2 is reviewed PASS pending formal closeout.
 - Foundation source may exist while its commercial checkpoint remains Not Started.
 - Completed architecture foundation does not mean hardware, manual or store acceptance has passed.
 - Source existence does not equal runtime acceptance.

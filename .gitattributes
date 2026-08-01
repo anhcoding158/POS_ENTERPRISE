@@ -1,0 +1,12 @@
+# Repository text and binary policy. This does not renormalize existing files.
+* text=auto eol=lf
+
+*.db binary
+*.db-shm binary
+*.db-wal binary
+*.db-journal binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary

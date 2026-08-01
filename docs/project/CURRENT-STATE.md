@@ -6,8 +6,9 @@
 - CapturedAtLocal: `2026-07-31T11:34:28.975+07:00` (Asia/Bangkok, UTC+07:00).
 - ReviewedAtLocal: `2026-08-01` (Asia/Saigon, UTC+07:00).
 - ReconciledAtLocal: `2026-08-01` (Asia/Saigon, UTC+07:00).
-- Live repository HEAD after the R0.5 closeout commit: `dfb0eb7a000054664aa7feccb51778fe80aa32a7`.
+- Live repository HEAD after the R1.1 closeout commit: `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`.
 - R0.5 formal closeout commit: `dfb0eb7a000054664aa7feccb51778fe80aa32a7`.
+- R1.1 formal repository closeout commit: `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`.
 - R0.5 Context Pack baseline commit: `70523861949aeb5eefe981633db33f50bc890145`.
 - Base commit for the original R0.5B capture: `e330b616b277bde3bed2a46e71fe511cb4531ce8`.
 - Tài liệu này được tạo trong R0.5B; R0.5 Project Memory được formal-closeout trong `dfb0eb7a000054664aa7feccb51778fe80aa32a7`.
@@ -18,17 +19,17 @@
 - Solution: `D:\Projects_1\POS_Enterprise_DotNet\POS.Enterprise.slnx`
 - Branch: `main`
 - Upstream: `origin/main`
-- Live HEAD after R0.5 closeout: `dfb0eb7a000054664aa7feccb51778fe80aa32a7`
-- Live origin/main after R0.5 closeout: `dfb0eb7a000054664aa7feccb51778fe80aa32a7`
+- Live HEAD after R1.1 closeout: `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`
+- Live origin/main after R1.1 closeout: `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`
 - Ahead/behind: `0/0`
 
 ## 3. Checkpoint status
 
 - Project: POS Enterprise Retail V1
-- Current checkpoint: R1.1 — Jenkins CI Pipeline — Completed/PASS in the reviewed repository-closeout payload; the separate closeout commit/push and post-commit Git-clean confirmation remain pending.
-- Previous checkpoint: R0 — VietQR Runtime Closeout — Completed
-- Next checkpoint after R1.1 closeout: R1.2 — Repository Standards — NOT STARTED.
-- R1.2 is not authorized to start before R1.1 closeout commit/push and Git-clean verification.
+- Current checkpoint: R1.2 — Repository Standards — Completed/PASS in the reviewed implementation/closeout payload; its formal repository baseline remains pending commit/push and post-commit Git-clean verification.
+- Previous checkpoint: R1.1 — Jenkins CI Pipeline — Closed / Committed / Pushed / Git-clean.
+- Next checkpoint after R1.2 closeout: R1.3 — CI Artifacts — NOT STARTED.
+- R1.3 is not authorized to start before R1.2 closeout commit/push and Git-clean verification.
 
 Completed subcheckpoints in the R0.5 closeout payload:
 
@@ -41,21 +42,29 @@ Completed subcheckpoints in the R0.5 closeout payload:
 
 Fresh-session provenance is intentionally later than the historical Context Pack: ChatGPT evidence is the user-supplied transcript plus manifest follow-up; Codex evidence is the independent fresh-session report against live Project Memory/Git. Neither verification claims to have committed or pushed files.
 
-R0.5 is Closed / Committed / Pushed at `dfb0eb7a000054664aa7feccb51778fe80aa32a7`, with HEAD and origin/main aligned and the post-commit worktree clean. R1 remains In Progress. Jenkins R1.1 runtime E2E PASS is accepted from supplied evidence at `afdda252ce124413b9190607a96a0046cf5097e7`; R1.1 is Completed/PASS in the reviewed repository-closeout payload, while its formal repository baseline is pending the separate closeout commit/push and Git-clean verification. R1.2 and R1.3 are NOT STARTED.
+R0.5 is Closed / Committed / Pushed at `dfb0eb7a000054664aa7feccb51778fe80aa32a7`; R1.1 is Closed / Committed / Pushed / Git-clean at `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`. R1 remains In Progress. R1.2 is Completed/PASS in the reviewed implementation/closeout payload, while its formal repository baseline remains pending commit/push and post-commit Git-clean verification. R1.3 is NOT STARTED.
 
 Final R0.5 local verification on `2026-08-01`: `git diff --check` PASS; restore PASS; Release build PASS with 0 warnings/0 errors; Release full tests 975/975 PASS with 0 failed/0 skipped; full Quality Gate rerun PASS without `-SkipEfCheck`, including 975/975 tests, dependency vulnerability scan with no vulnerable packages, EF pending-model check PASS and Git checks PASS. Replay probe is absent and Jenkinsfile is unchanged. The first sandboxed Quality Gate invocation stopped at the vulnerability command with exit code `1` and no package result because network was unavailable; the same scan and the complete gate then passed outside the sandbox with NuGet access.
+
+R1.2 verification on `2026-08-01`: pinned SDK `10.0.302`; restore PASS; Release build PASS with 0 warnings/0 errors; Release full tests 975/975 PASS with 0 failed/0 skipped; Quality Gate PASS with exit code `0`, vulnerability scan PASS and EF pending-model check PASS without `-SkipEfCheck`; Jenkinsfile unchanged; replay probe absent. Repository standards added/updated: `.gitattributes`, `.editorconfig`, `global.json`, `CHANGELOG.md` and `/_audit_temp/` in `.gitignore`. Existing deterministic/CI build metadata in `Directory.Build.props` was retained. Manual UI acceptance is N/A because the payload contains repository metadata and Project Memory only.
 
 ## 4. Working-tree state
 
 Entry state trước R0.5B: **Clean**.
 
-Expected state during R1.1 repository closeout preparation: **Dirty có chủ ý**, gồm only the reviewed Project Memory closeout files:
+Expected state during R1.2 closeout preparation: **Dirty có chủ ý**, gồm repository standards and reviewed Project Memory closeout files:
 
 ```text
+ M .gitignore
+?? .editorconfig
+?? .gitattributes
+?? CHANGELOG.md
+?? global.json
  M docs/project/CURRENT-STATE.md
  M docs/project/MASTER-ROADMAP.md
  M docs/project/CHECKPOINT-WORKFLOW.md
  M docs/project/DECISIONS.md
+ M docs/project/KNOWN-ISSUES.md
  M docs/project/TEST-BASELINE.md
 ```
 
@@ -106,27 +115,34 @@ Architecture audit chi tiết, gồm service map, transaction map và business i
 
 ## 9. Files changed in current subcheckpoint
 
+- `D:\Projects_1\POS_Enterprise_DotNet\.gitattributes`
+- `D:\Projects_1\POS_Enterprise_DotNet\.editorconfig`
+- `D:\Projects_1\POS_Enterprise_DotNet\global.json`
+- `D:\Projects_1\POS_Enterprise_DotNet\CHANGELOG.md`
+- `D:\Projects_1\POS_Enterprise_DotNet\.gitignore`
 - `D:\Projects_1\POS_Enterprise_DotNet\docs\project\CURRENT-STATE.md`
 - `D:\Projects_1\POS_Enterprise_DotNet\docs\project\MASTER-ROADMAP.md`
 - `D:\Projects_1\POS_Enterprise_DotNet\docs\project\CHECKPOINT-WORKFLOW.md`
 - `D:\Projects_1\POS_Enterprise_DotNet\docs\project\DECISIONS.md`
 - `D:\Projects_1\POS_Enterprise_DotNet\docs\project\TEST-BASELINE.md`
+- `D:\Projects_1\POS_Enterprise_DotNet\docs\project\KNOWN-ISSUES.md`
 
 - Production source changed: No.
 - Tests changed: No.
 - Migrations changed: No.
-- Project/package/config changed: No.
+- Product/package/source behavior changed: No.
+- Repository standards/config changed: Yes; no package or target framework change.
 
 ## 10. Prohibited next actions
 
-- Không triển khai R1.2 hoặc R1.3.
-- Không sửa production source hoặc Jenkinsfile trong R0.5 closeout.
+- Không triển khai R1.3 trong lượt R1.2 này.
+- Không sửa production source, tests, Jenkinsfile hoặc Quality Gate script.
 - Context Pack đã tạo trong `artifacts/project-context/`, thư mục này bị ignore và không được stage.
 - Không chạy database update.
 - Không đọc dữ liệu database thật.
-- Không stage, commit hoặc push riêng R0.5E; final staging/commit/push chỉ ở R0.5F closeout.
-- Không triển khai R1.2/R1.3 trong lượt R1.1 repository closeout này.
+- Không commit hoặc push trong lượt này trước khi user review staged diff.
+- Không tạo CI artifacts hoặc bắt đầu R1.3.
 
 ## 11. Closeout note
 
-R0.5 closeout state became the repository baseline through commit/push `dfb0eb7a000054664aa7feccb51778fe80aa32a7`; post-commit Git-clean verification is recorded above. This R1.1 turn prepares and stages the separate repository-closeout payload only; it does not commit or push.
+R1.1 closeout is the repository baseline at `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`. This R1.2 turn prepares and stages the reviewed repository-standards and Project Memory payload only; it does not commit or push. R1.3 remains NOT STARTED.

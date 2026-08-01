@@ -300,6 +300,19 @@ Current closeout evidence: Presented PaymentIntent is persisted before the QR di
 - **Revisit trigger/checkpoint:** R1.1 closeout commit/push or a later change to R1 scope.
 - **Supersedes/superseded by:** Does not supersede historical decisions.
 
+## DEC-021 — R1.2 repository standards are explicit without normalization
+
+- **Status:** Policy for the R1.2 Repository Standards checkpoint.
+- **Original decision date:** `2026-08-01`.
+- **Context/problem:** The live roadmap assigns line endings, versioning, build metadata and changelog convention to R1.2, while the repository had no `.gitattributes`, `.editorconfig`, `global.json` or `CHANGELOG.md` and had local `_audit_temp` protection only outside the repository `.gitignore`.
+- **Decision:** Add minimal repository standards: automatic text detection with LF policy and explicit binary patterns, UTF-8/editor defaults, SDK pin `10.0.302` supported by live Jenkins evidence and installed locally, a lightweight Unreleased/dated changelog convention, and `/_audit_temp/` ignore protection. Retain existing deterministic and CI build metadata in `Directory.Build.props`; do not invent a product version, normalize existing files, or implement R1.3 artifacts.
+- **Evidence:** Live R1 scope in `D:\Projects_1\POS_Enterprise_DotNet\docs\project\MASTER-ROADMAP.md`; candidate inventory before change; `dotnet --version` `10.0.302`; restore PASS; Release build 0 warnings/0 errors; 975/975 tests; Quality Gate exit `0` with vulnerability and EF pending-model checks PASS; Jenkinsfile unchanged; replay probe absent.
+- **Consequences:** Future text files have an explicit repository policy without a mass EOL rewrite. R1 remains In Progress; R1.2 is Completed/PASS in the reviewed implementation/closeout payload but needs its own commit/push and Git-clean verification; R1.3 remains NOT STARTED.
+- **Trade-offs:** Product/version semantics remain intentionally undefined until a checkpoint provides evidence for a release version; CI artifact publication remains R1.3.
+- **Related constraints/invariants:** `DEC-020`; R1.2/R1.3 scope and exact staging rules in `CHECKPOINT-WORKFLOW.md`; no repo-wide normalization or package changes.
+- **Revisit trigger/checkpoint:** R1.2 closeout or a later release/versioning policy change.
+- **Supersedes/superseded by:** Does not supersede historical decisions.
+
 ## 2. Roadmap state decision
 
 - R0: Completed theo authoritative closeout.
@@ -307,7 +320,7 @@ Current closeout evidence: Presented PaymentIntent is persisted before the QR di
 - R0.5: Closed / Committed / Pushed at `dfb0eb7a000054664aa7feccb51778fe80aa32a7`; HEAD and origin/main were aligned and the post-commit worktree was clean.
 - R0.5E pack: `project-context-20260801T0647171300576Z`, baseline `70523861949aeb5eefe981633db33f50bc890145`, exporter exit code `0`, security findings `0`, coverage `501/501`, excluded candidates `0`, manifest integrity `16/16` PASS.
 - R0.5F: ChatGPT and Codex fresh-session verifications both PASS on `2026-08-01`.
-- R1: In Progress. R1.1 runtime E2E PASS at `afdda252ce124413b9190607a96a0046cf5097e7`; R1.1 is Completed/PASS in the reviewed repository-closeout payload, while formal repository baseline remains pending its separate commit/push and Git-clean verification. R1.2 and R1.3 NOT STARTED.
+- R1: In Progress. R1.1 is Closed / Committed / Pushed / Git-clean at `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`; runtime E2E remains attributed to `afdda252ce124413b9190607a96a0046cf5097e7`. R1.2 is Completed/PASS in the reviewed implementation/closeout payload, while formal repository baseline remains pending its separate commit/push and Git-clean verification. R1.3 NOT STARTED.
 - R2–R13: Not Started; future acceptance chưa chạy.
 - Partial feature không làm future stage Completed.
 
@@ -333,7 +346,7 @@ Mọi thay đổi kiến trúc hoặc roadmap sau khi register này tồn tại 
 | Status | Count |
 |---|---:|
 | Observed and Accepted | 14 |
-| Policy | 5 |
+| Policy | 6 |
 | Deferred | 1 |
 | Superseded | 0 |
-| **Total** | **20** |
+| **Total** | **21** |
