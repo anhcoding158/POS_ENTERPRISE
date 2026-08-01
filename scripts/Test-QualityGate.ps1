@@ -87,7 +87,8 @@ Invoke-DotNetStep `
         "restore",
         $solutionPath,
         "--verbosity",
-        "minimal"
+        "minimal",
+        "-p:RestoreBuildInParallel=false"
     )
 
 Invoke-DotNetStep `
@@ -95,7 +96,10 @@ Invoke-DotNetStep `
     -Arguments @(
         "build",
         $solutionPath,
-        "--no-restore"
+        "--no-restore",
+        "-m:1",
+        "-nr:false",
+        "-p:BuildInParallel=false"
     )
 
 Invoke-DotNetStep `
@@ -104,7 +108,10 @@ Invoke-DotNetStep `
         "test",
         $solutionPath,
         "--no-build",
-        "--no-restore"
+        "--no-restore",
+        "-m:1",
+        "-nr:false",
+        "-p:BuildInParallel=false"
     )
 
 Write-Host ""
