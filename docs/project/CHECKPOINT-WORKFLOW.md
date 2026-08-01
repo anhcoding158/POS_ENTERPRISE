@@ -11,7 +11,7 @@
 - Live HEAD before the R0.5 closeout commit: `afdda252ce124413b9190607a96a0046cf5097e7`.
 - Live origin/main before the R0.5 closeout commit: `afdda252ce124413b9190607a96a0046cf5097e7`.
 - Context Pack baseline: `70523861949aeb5eefe981633db33f50bc890145`.
-- Current checkpoint: R1.2 — Repository Standards implementation/closeout. R1.1 is Closed / Committed / Pushed / Git-clean at `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`; R1 is In Progress; R1.3 remains NOT STARTED.
+- Current checkpoint: R1.3 — CI Artifacts implementation. R1.1 and R1.2 are Closed / Committed / Pushed / Git-clean; R1 is In Progress; the binary-name blocker is resolved by the owner-approved native `POS.Enterprise.*` contract correction.
 - AppliesTo: every new Codex/ChatGPT session and every checkpoint after R0.5, subject to a narrower compatible instruction file.
 - Authority: `D:\Projects_1\POS_Enterprise_DotNet\AGENTS.md`, accepted Project Memory, the active checkpoint contract and explicit user authorization.
 
@@ -415,9 +415,9 @@ For this document capture:
 - Final local closeout gates on `2026-08-01` PASS: restore; Release build with 0 warnings/0 errors; Release full tests 975/975; complete Quality Gate without `-SkipEfCheck`, including dependency vulnerability and EF pending-model checks; replay-probe absence; Jenkinsfile unchanged. A first sandboxed gate attempt stopped at the network-dependent vulnerability command; the complete rerun with NuGet access passed and is the accepted gate evidence.
 - R0.5 is Closed / Committed / Pushed at `dfb0eb7a000054664aa7feccb51778fe80aa32a7`; HEAD and origin/main were aligned and the post-commit worktree was clean.
 - R1.1 entry criterion from R0.5 was satisfied at `dfb0eb7a000054664aa7feccb51778fe80aa32a7`; its repository closeout is Closed / Committed / Pushed / Git-clean at `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`, while Jenkins runtime acceptance remains attributed to `afdda252ce124413b9190607a96a0046cf5097e7`.
-- R1.2 is the current checkpoint. Its reviewed implementation/closeout payload adds minimal repository standards: `.gitattributes`, `.editorconfig`, `global.json` SDK `10.0.302`, `CHANGELOG.md` and `/_audit_temp/` protection in `.gitignore`; existing deterministic/CI build metadata and fail-fast Jenkins behavior are retained. Verification PASS: restore, Release build 0 warnings/0 errors, 975/975 tests, Quality Gate exit `0`, vulnerability scan and EF pending-model check.
-- R1 is In Progress. R1.2 formal repository baseline remains pending its own commit/push and post-commit Git-clean verification. R1.3 is NOT STARTED; R2–R13 remain Not Started.
+- R1.2 is Closed / Committed / Pushed / Git-clean at `7490e87a2b5381f6e030ef0948b5b6be0dd2e77d`; its reviewed implementation added minimal repository standards and passed restore, Release build 0 warnings/0 errors, 975/975 tests and Quality Gate exit `0`.
+- R1 is In Progress. R1.3 is Implemented / local verification PASS / staged review pending with native `POS.Enterprise.*` artifacts; live Jenkins remains PENDING POST-PUSH CI RUN. R2–R13 remain Not Started.
 
 The R0.5 Project Memory files were committed in the R0.5F closeout at `dfb0eb7a000054664aa7feccb51778fe80aa32a7`. Status text must preserve the distinction between local completion, blocked verification, user acceptance and closed/pushed state.
 
-The historical Context Pack is export-only under ignored `artifacts/project-context/`. The current R1.2 turn stops after exact staging and staged-diff review; it does not commit or push and does not begin R1.3.
+The historical Context Pack is export-only under ignored `artifacts/project-context/`. R1.3 resumes with the owner-approved native `POS.Enterprise.*` contract; it does not commit, push or begin a later checkpoint in this turn.

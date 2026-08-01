@@ -57,7 +57,7 @@ Bản cài đầu tiên đủ an toàn cho một cửa hàng bán lẻ, một ch
 | R12 | Not Started |
 | R13 | Not Started |
 
-Không đánh dấu stage hoàn thành chỉ vì một phần tính năng đã tồn tại. Controlled Discount đã có nhưng R8 vẫn Not Started vì còn line discount, coupon, voucher và Promotion Engine. Return đã có nhưng R9 vẫn Not Started vì còn immutable return receipt, Cashbook Lite và Daily Close. Receipt printing đã có nhưng R11 vẫn Not Started vì hardware acceptance thực tế chưa hoàn thành. R1 hiện In Progress; R1.1 đã Closed / Committed / Pushed / Git-clean, R1.2 là checkpoint hiện tại và R1.3 vẫn Not Started.
+Không đánh dấu stage hoàn thành chỉ vì một phần tính năng đã tồn tại. Controlled Discount đã có nhưng R8 vẫn Not Started vì còn line discount, coupon, voucher và Promotion Engine. Return đã có nhưng R9 vẫn Not Started vì còn immutable return receipt, Cashbook Lite và Daily Close. Receipt printing đã có nhưng R11 vẫn Not Started vì hardware acceptance thực tế chưa hoàn thành. R1 hiện In Progress; R1.1 và R1.2 đã Closed / Committed / Pushed / Git-clean, còn R1.3 đang In Progress sau owner correction của binary-name contract.
 
 Manual acceptance của stage tương lai chỉ là tiêu chí phải đạt; không được ghi PASS trước khi chạy thật.
 
@@ -125,8 +125,22 @@ Reconciled verification evidence:
 Checkpoint state after reconciliation:
 
 - R1.1 — Jenkins CI Pipeline runtime E2E: PASS from supplied Jenkins evidence at `afdda252ce124413b9190607a96a0046cf5097e7`; SCM checkout, Windows agent, .NET SDK `10.0.302`, Release build/test, Quality Gate, vulnerability scan, EF pending-model check, intentional failure propagation and final normal rerun were verified. Repository closeout is Closed / Committed / Pushed / Git-clean at `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`.
-- R1.2 — Repository Standards: Completed/PASS in the reviewed implementation/closeout payload; formal repository baseline remains pending commit/push and post-commit Git-clean verification. Added minimal text/binary and LF policy (`.gitattributes`), editor policy (`.editorconfig`), SDK pin (`global.json` at `10.0.302`), changelog convention (`CHANGELOG.md`) and `_audit_temp` ignore protection. Existing deterministic/CI build metadata was retained; no product version was invented or changed. Restore, Release build, full tests and Quality Gate all PASS in this turn.
-- R1.3 — CI Artifacts: NOT STARTED.
+- R1.2 — Repository Standards: Closed / Committed / Pushed / Git-clean at `7490e87a2b5381f6e030ef0948b5b6be0dd2e77d`. Added minimal text/binary and LF policy (`.gitattributes`), editor policy (`.editorconfig`), SDK pin (`global.json` at `10.0.302`), changelog convention (`CHANGELOG.md`) and `_audit_temp` ignore protection. Existing deterministic/CI build metadata was retained; no product version was invented or changed. Restore, Release build, full tests and Quality Gate all PASS.
+- R1.3 — CI Artifacts: Implemented / local verification PASS / staged review pending; owner-approved contract uses native `POS.Enterprise.*` output names. Live Jenkins artifact publication remains PENDING POST-PUSH CI RUN and formal closeout is pending.
+
+R1.3 owner-approved artifact contract:
+
+- Artifact root is `D:\Projects_1\POS_Enterprise_DotNet\_ci_artifacts` (`_ci_artifacts/` in Jenkins), generated-only, ignored by Git and safely cleaned only at the exact root before preparation.
+- Test results: one valid TRX/XML per full-test project at `_ci_artifacts/test-results/<ProjectName>.trx`; the current solution has only `POS.Architecture.Tests`, so the required file is `POS.Architecture.Tests.trx`. Full-test selection remains unchanged, and a runner-started test failure must still produce TRX.
+- Build logs: non-empty plain text, console-visible and exit-code preserving at `_ci_artifacts/logs/restore.log`, `build-release.log` and `publish-win-x64.log`.
+- Quality Gate log: `_ci_artifacts/logs/quality-gate.log`, console-visible, non-empty and exit-code preserving; Quality Gate runs without `-SkipEfCheck`.
+- Vulnerability report: valid SDK-supported JSON from the full-solution, transitive-inclusive vulnerability command at `_ci_artifacts/reports/vulnerability/vulnerabilities.json`; existing vulnerability enforcement remains active.
+- Experimental publish: producer `src/POS.Wpf/POS.Wpf.csproj`, native application identity `POS.Enterprise` with root files `POS.Enterprise.exe`, `POS.Enterprise.dll`, `POS.Enterprise.deps.json` and `POS.Enterprise.runtimeconfig.json`; Release/net10.0-windows, win-x64, framework-dependent, not single-file/R2R/signed, output at `_ci_artifacts/publish/POS.Wpf/win-x64/`. The validator checks those four native identity files plus `appsettings.json` directly at the publish root, then applies the approved allowlist and denylist. CI does not override `AssemblyName`/`TargetName` or copy/rename binaries.
+- Publication uses Declarative Pipeline `post { always { ... } }` and `archiveArtifacts`: only `*.exe` and `*.dll` use `fingerprint: true`; every `*.json` uses `fingerprint: false`, including `POS.Enterprise.deps.json`, `POS.Enterprise.runtimeconfig.json` and `appsettings.json`. TRX, logs, Quality Gate log and vulnerability JSON also use `fingerprint: false`. Binary and JSON archive calls use `onlyIfSuccessful: false`; `allowEmptyArchive: true` only protects post/always publication when the pipeline fails before publish. Successful pipelines still require the validator to prove all five artifact groups are present and valid.
+- Retention keeps metadata/console for 30 builds and archived artifacts for 10 builds via the equivalent `buildDiscarder(logRotator(...))` policy; no new plugin is introduced.
+- All safe artifacts are archived on success or failure when created; missing artifacts from stages not reached are not fabricated. Publication or validation failure fails the build and never changes a prior failure to success.
+- Databases, backups, secrets, credentials, customer data, source archives, workspace-wide files, coverage/JUnit/HTML reports and installers are excluded.
+- Formal R1.3 closeout requires a successful live Jenkins run on the exact pushed commit with all five artifact groups validated; before that, live Jenkins artifact publication remains PENDING POST-PUSH CI RUN.
 
 ## R2 — PLATFORM HARDENING
 

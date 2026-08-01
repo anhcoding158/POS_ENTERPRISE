@@ -387,7 +387,7 @@ Current R0 closeout evidence confirms the Presented transition is persisted befo
 - **Direct test evidence:** Không áp dụng cho tài liệu; review/secret scan là gate.
 - **Failure/recovery:** Dừng, sanitize và review trước commit.
 - **Status:** Policy Only.
-- **Gap/revisit:** R0.5E exporter pack now passes secret scan and exclusion checks; R0.5F fresh-session/closeout review remains pending.
+- **Gap/revisit:** R0.5E exporter secret/exclusion scan PASS; R0.5F fresh-session verification and formal closeout PASS; R0.5 was committed/pushed at `dfb0eb7a000054664aa7feccb51778fe80aa32a7`. Future Project Memory/export changes must rerun the secret/privacy gate.
 
 ### INV-SECURITY-002 — Log/audit phải sanitize sensitive values
 
@@ -399,7 +399,7 @@ Current R0 closeout evidence confirms the Presented transition is persisted befo
 - **Direct test evidence:** `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\ReceiptSnapshotPersistenceTests.cs` — `ReceiptSnapshotPersistenceTests.Persisted_payload_must_not_contain_cost_price_or_known_secrets`; không có direct global log-sanitization test trong source audit hiện tại.
 - **Failure/recovery:** Review/sanitize output.
 - **Status:** Partially Enforced.
-- **Gap/revisit:** Logging/Support Bundle R2.3 và exporter scan R0.5F.
+- **Gap/revisit:** R0.5F exporter/closeout scan PASS; universal logging/support-bundle redaction remains a gap for R2.3.
 
 ## 3. Traceability summary
 

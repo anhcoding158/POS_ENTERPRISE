@@ -9,15 +9,15 @@
 - Branch: `main`.
 - CapturedAtLocal: `2026-07-31T14:32:44.841+07:00`.
 - Context Pack baseline HEAD: `70523861949aeb5eefe981633db33f50bc890145`.
-- Live HEAD after R1.1 closeout: `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`.
-- Live origin/main after R1.1 closeout: `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`.
+- Live HEAD after R1.2 closeout: `7490e87a2b5381f6e030ef0948b5b6be0dd2e77d`.
+- Live origin/main after R1.2 closeout: `7490e87a2b5381f6e030ef0948b5b6be0dd2e77d`.
 - Ahead/behind: `0/0`.
 - EvidenceMode: Read-only source and Project Memory audit.
 - RuntimeExecutedInR0.5D: No.
 - DatabaseReadInR0.5D: No.
 - ExporterExecutedInR0.5E: Yes; latest pack exit code `0`, secret scan `0 findings`, coverage `501/501`, manifest/integrity/exclusion checks passed.
 - DatabaseReadInR0.5E: No.
-- CurrentCheckpoint: R1.2 — Repository Standards — Completed/PASS in reviewed implementation/closeout payload; formal commit/push and final Git-clean confirmation pending.
+- CurrentCheckpoint: R1.3 — CI Artifacts — In Progress after owner correction to native `POS.Enterprise.*` output names.
 - Scope: inventory evidence-supported operating conditions only; R0.5D did not reproduce runtime failures, run gates, open a real database, inspect database rows or perform hardware/store acceptance.
 
 Source-of-truth order:
@@ -220,7 +220,7 @@ Severity describes supported impact, not roadmap priority. Insufficient evidence
 - Stable ID: `POS-VER-005`.
 - Title: Bootstrap script contained a non-placeholder default admin password literal.
 - Classification: Verification Gap.
-- Status: Resolved locally; closeout commit/push pending.
+- Status: Resolved.
 - Severity: Medium.
 - Affected area: Project Context export, repository secret hygiene and bootstrap tooling.
 - Evidence: `D:\Projects_1\POS_Enterprise_DotNet\Create-POS-Enterprise-Structure.DO-NOT-RUN.ps1` — authorized local remediation disables default administrator seeding and removes the fixed credential; `D:\Projects_1\POS_Enterprise_DotNet\scripts\Export-ProjectContext.ps1` — latest pack reports security finding count `0`, without recording the former value.
@@ -229,11 +229,11 @@ Severity describes supported impact, not roadmap priority. Insufficient evidence
 - User/business impact: a copied or reused bootstrap credential could weaken initial account security; no evidence establishes that the value was used in production.
 - Trigger or reproduction precondition: run the R0.5E exporter against the current repository; no database or runtime credential was accessed.
 - Workaround or recovery behavior: bootstrap script remains `DO-NOT-RUN`; no default administrator is seeded.
-- Related invariant/decision/roadmap checkpoint: `INV-SECURITY-001`, `INV-SECURITY-002`; R0.5E/R0.5F.
+- Related invariant/decision/roadmap checkpoint: `INV-SECURITY-001`, `INV-SECURITY-002`; R0.5E/R0.5F; `dfb0eb7a000054664aa7feccb51778fe80aa32a7`.
 - Owner checkpoint: R0.5E/R0.5F security review.
-- Closure criteria: authorized remediation removes the non-placeholder literal or establishes an approved non-secret input boundary; exporter exit code `0`, security finding count `0`, manifest/coverage checks PASS, and required review evidence is recorded. These local criteria and R0.5F review are met in the closeout payload; repository closure remains pending until commit/push.
+- Closure criteria: authorized remediation removes the non-placeholder literal or establishes an approved non-secret input boundary; exporter exit code `0`, security finding count `0`, manifest/coverage checks PASS, and required review evidence is recorded. These criteria and R0.5F review were met and the remediation was committed in `dfb0eb7a000054664aa7feccb51778fe80aa32a7`.
 - Revalidation trigger: change to bootstrap scripts, exporter redaction rules, authentication setup or Project Memory export policy.
-- Last verified commit/base: `70523861949aeb5eefe981633db33f50bc890145`; remediation remains uncommitted by DEC-017.
+- Last verified commit/base: `dfb0eb7a000054664aa7feccb51778fe80aa32a7` (remediation and R0.5 formal closeout).
 - Last verified time: `2026-08-01` latest R0.5E exporter execution; former value intentionally not retained.
 - Notes: this is a source/export security verification gap, not a claim of production exposure.
 
@@ -246,17 +246,17 @@ Severity describes supported impact, not roadmap priority. Insufficient evidence
 - Severity: Informational.
 - Affected area: automated push pipeline, repository standards and CI artifacts.
 - Evidence: Policy/roadmap evidence at `D:\Projects_1\POS_Enterprise_DotNet\docs\project\MASTER-ROADMAP.md` — R1; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\DECISIONS.md` — `DEC-018`.
-- Observed or known condition: supplied Jenkins evidence establishes R1.1 runtime E2E PASS at `afdda252ce124413b9190607a96a0046cf5097e7`, including normal success and intentional failure propagation. R1.1 repository closeout is Closed / Committed / Pushed / Git-clean at `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`. R1.2 implementation/verification is PASS in the reviewed payload; R1.3 remains Not Started.
-- Expected condition or intended boundary: R1.2 formal repository baseline requires its own commit/push and post-commit Git-clean verification; full R1 completion still requires R1.1–R1.3 exit criteria.
+- Observed or known condition: supplied Jenkins evidence establishes R1.1 runtime E2E PASS at `afdda252ce124413b9190607a96a0046cf5097e7`, including normal success and intentional failure propagation. R1.1 repository closeout is Closed / Committed / Pushed / Git-clean at `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`. R1.2 is Closed / Committed / Pushed / Git-clean at `7490e87a2b5381f6e030ef0948b5b6be0dd2e77d`. The binary-name blocker is resolved by owner decision to use native `POS.Enterprise.*`; R1.3 local artifact verification PASS, staged review, commit/push, live Jenkins verification and formal closeout remain pending.
+- Expected condition or intended boundary: complete R1.3 staged review, commit/push and live Jenkins artifact verification; full R1 completion still requires R1.1–R1.3 exit criteria.
 - User/business impact: current readiness claims cannot rely on an accepted automated push pipeline.
 - Trigger or reproduction precondition: R1.2 standards change or R1.3 CI artifact implementation/closeout.
 - Workaround or recovery behavior: No verified workaround recorded.
-- Related invariant/decision/roadmap checkpoint: `INV-MIGRATION-002`; `DEC-018`; R1.
+- Related invariant/decision/roadmap checkpoint: `INV-MIGRATION-002`; `DEC-018`, `DEC-022`; R1.
 - Owner checkpoint: R1.
 - Closure criteria: R1.1–R1.3 exit criteria and manual pipeline acceptance PASS.
 - Revalidation trigger: start or change of R1 scope, Jenkinsfile, repository standards or CI artifact policy.
-- Last verified commit: `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`.
-- Last verified time: `2026-08-01` R1.2 verification review.
+- Last verified commit: `7490e87a2b5381f6e030ef0948b5b6be0dd2e77d`.
+- Last verified time: `2026-08-01` R1.3 owner contract correction.
 - Notes: reconciled verification gap, not a runtime bug and not a claim that all of R1 is complete.
 
 ### POS-ROAD-002 — R2–R4 operational hardening, recovery and store administration are deferred
@@ -349,7 +349,7 @@ Severity describes supported impact, not roadmap priority. Insufficient evidence
 
 ## 6. Roadmap and evidence boundary
 
-- R1.3 and R2–R13 being Not Started does not mean every item in those scopes is a bug; R1.1 runtime E2E is separately reconciled as PASS with repository closeout Closed / Committed / Pushed / Git-clean, and R1.2 is reviewed PASS pending formal closeout.
+- R1.3 being In Progress and R2–R13 being Not Started does not mean every item in those scopes is a bug; R1.1 and R1.2 are separately reconciled as Closed / Committed / Pushed / Git-clean, while R1.3 local artifact verification PASS; staged review, commit/push, live Jenkins verification and formal closeout remain pending.
 - Foundation source may exist while its commercial checkpoint remains Not Started.
 - Completed architecture foundation does not mean hardware, manual or store acceptance has passed.
 - Source existence does not equal runtime acceptance.
@@ -385,8 +385,7 @@ An issue may change to `Resolved` only when its closure criteria are met and the
 | Monitoring | 3 |
 | In Progress | 1 |
 | Deferred | 4 |
-| Resolved | 0 |
-| Resolved locally; closeout commit/push pending | 1 |
+| Resolved | 1 |
 | Not Revalidated | 2 |
 | Critical | 0 |
 | High | 0 |

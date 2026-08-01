@@ -313,6 +313,23 @@ Current closeout evidence: Presented PaymentIntent is persisted before the QR di
 - **Revisit trigger/checkpoint:** R1.2 closeout or a later release/versioning policy change.
 - **Supersedes/superseded by:** Does not supersede historical decisions.
 
+## DEC-022 — R1.3 CI artifact contract
+
+- **Status:** Owner-approved policy for the R1.3 CI Artifacts checkpoint.
+- **Original decision date:** `2026-08-01`.
+- **Context/problem:** The live roadmap names test results, build logs, gate logs, vulnerability report and experimental published binaries, but the operational artifact contract was not previously recorded.
+- **Decision:** Use the exact generated root `_ci_artifacts/`, clean only that root before preparation, produce one valid TRX per full-test project, three command logs, one Quality Gate log, one full-solution transitive vulnerability JSON report and a validated experimental framework-dependent publish payload from `src/POS.Wpf/POS.Wpf.csproj`. The native POS.Enterprise application identity has four root files: `POS.Enterprise.exe`, `POS.Enterprise.dll`, `POS.Enterprise.deps.json` and `POS.Enterprise.runtimeconfig.json`. The validator directly checks those four files plus `appsettings.json` at the publish root, for five direct-root files total. Keep output console-visible and preserve every native exit code.
+- **Publication:** Archive safe artifacts from Declarative Pipeline `post { always { ... } }`. Only `*.exe` and `*.dll` use `fingerprint: true`; every `*.json` uses `fingerprint: false`, including the two POS.Enterprise metadata files and `appsettings.json`. Logs/reports/TRX also use `fingerprint: false`. Binary and JSON archive calls use `onlyIfSuccessful: false`; `allowEmptyArchive: true` only protects post/always publication when failure occurs before publish. Successful pipelines must independently validate non-empty binaries and all five artifact groups.
+- **Retention:** Keep metadata/console for 30 builds and archived artifacts for 10 builds through `buildDiscarder(logRotator(numToKeepStr: '30', artifactNumToKeepStr: '10'))`, unless a stricter live policy exists. No plugin dependency is added.
+- **Safety boundary:** Allowlist the approved publish output only; deny databases, backups, secrets, credentials, customer data, source archives, workspace-wide files, PDBs, installers, coverage/JUnit/HTML reports and Context Pack content.
+- **Failure contract:** Artifact preparation, command, validation or archive failures are non-zero failures. Existing build/test/Quality Gate failures remain failures; publication must not make a red build green or replace the root failure.
+- **Evidence boundary:** Local artifact production/parse/allowlist verification may establish implementation evidence. Live Jenkins publication on the exact pushed commit is mandatory for formal R1.3 closeout and remains PENDING POST-PUSH CI RUN until observed.
+- **Local evidence:** SDK `10.0.302`; Release build 0 warnings/0 errors; 975/975 tests; valid five-project vulnerability JSON; Quality Gate exit `0` with EF check; native publish validation PASS with 50 files and required `POS.Enterprise.*` root files; controlled exit-23 probe preserved the non-zero result. Generated `_ci_artifacts` was removed after verification.
+- **Consequences:** R1 remains In Progress; the binary-name blocker is resolved by the owner-approved correction to native `POS.Enterprise.*` output. R1.3 does not include an assembly identity change, `AssemblyName`/`TargetName` override, binary copy/rename, coverage, JUnit conversion, HTML reports, installer/package release, product behavior, database/migration or SDK/package changes.
+- **Related constraints/invariants:** `DEC-021`; R1 scope and exact artifact contract in `MASTER-ROADMAP.md`; Jenkins failure propagation and Project Memory evidence rules in `CHECKPOINT-WORKFLOW.md`.
+- **Revisit trigger/checkpoint:** R1.3 formal closeout or a later owner-approved CI artifact policy change.
+- **Supersedes/superseded by:** Does not supersede historical decisions.
+
 ## 2. Roadmap state decision
 
 - R0: Completed theo authoritative closeout.
@@ -320,7 +337,7 @@ Current closeout evidence: Presented PaymentIntent is persisted before the QR di
 - R0.5: Closed / Committed / Pushed at `dfb0eb7a000054664aa7feccb51778fe80aa32a7`; HEAD and origin/main were aligned and the post-commit worktree was clean.
 - R0.5E pack: `project-context-20260801T0647171300576Z`, baseline `70523861949aeb5eefe981633db33f50bc890145`, exporter exit code `0`, security findings `0`, coverage `501/501`, excluded candidates `0`, manifest integrity `16/16` PASS.
 - R0.5F: ChatGPT and Codex fresh-session verifications both PASS on `2026-08-01`.
-- R1: In Progress. R1.1 is Closed / Committed / Pushed / Git-clean at `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`; runtime E2E remains attributed to `afdda252ce124413b9190607a96a0046cf5097e7`. R1.2 is Completed/PASS in the reviewed implementation/closeout payload, while formal repository baseline remains pending its separate commit/push and Git-clean verification. R1.3 NOT STARTED.
+- R1: In Progress. R1.1 is Closed / Committed / Pushed / Git-clean at `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`; runtime E2E remains attributed to `afdda252ce124413b9190607a96a0046cf5097e7`. R1.2 is Closed / Committed / Pushed / Git-clean at `7490e87a2b5381f6e030ef0948b5b6be0dd2e77d`. R1.3 is In Progress after the owner-approved correction to native `POS.Enterprise.*` output names; live Jenkins publication remains pending.
 - R2–R13: Not Started; future acceptance chưa chạy.
 - Partial feature không làm future stage Completed.
 
@@ -346,7 +363,7 @@ Mọi thay đổi kiến trúc hoặc roadmap sau khi register này tồn tại 
 | Status | Count |
 |---|---:|
 | Observed and Accepted | 14 |
-| Policy | 6 |
+| Policy | 7 |
 | Deferred | 1 |
 | Superseded | 0 |
-| **Total** | **21** |
+| **Total** | **22** |

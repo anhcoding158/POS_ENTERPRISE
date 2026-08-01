@@ -8,7 +8,7 @@
 - EvidenceNormalizationReviewedAtLocal: `2026-07-31T12:24:15.171+07:00`.
 - Evidence base HEAD: `e330b616b277bde3bed2a46e71fe511cb4531ce8`.
 - Current live HEAD reviewed during R0.5E: `70523861949aeb5eefe981633db33f50bc890145`.
-- Ba file R0.5B và ba file R0.5C đều chưa commit.
+- Tại thời điểm capture R0.5C, ba file R0.5B và ba file R0.5C chưa commit. Chúng sau đó đã được formal-closeout/commit/push trong R0.5 tại `dfb0eb7a000054664aa7feccb51778fe80aa32a7`.
 - Không đọc database rows, `__EFMigrationsHistory`, WAL, SHM, journal hoặc backup database.
 - Không chạy build, test, Quality Gate, migration hoặc ứng dụng trong R0.5C.
 

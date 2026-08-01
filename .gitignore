@@ -12,6 +12,7 @@ logs/
 src/POS.Wpf/AppData/
 artifacts/
 /_audit_temp/
+/_ci_artifacts/
 /Auth-Stage7-Snapshot.txt
 /Category-Authorization-Snapshot.txt
 /Stage7F-Checkout-Snapshot.txt
