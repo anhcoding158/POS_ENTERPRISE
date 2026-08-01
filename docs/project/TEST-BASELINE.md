@@ -1,0 +1,231 @@
+# TEST BASELINE — POS ENTERPRISE RETAIL V1
+
+## 1. Metadata
+
+- Document: `TEST-BASELINE.md`.
+- Purpose: preserve the accepted verification baseline, its evidence boundary and mandatory revalidation conditions without presenting historical evidence as a fresh run.
+- RepositoryRoot: `D:\Projects_1\POS_Enterprise_DotNet`.
+- Solution: `D:\Projects_1\POS_Enterprise_DotNet\POS.Enterprise.slnx`.
+- Branch: `main`.
+- CapturedAtLocal: `2026-07-31T14:32:44.841+07:00`.
+- Context Pack baseline HEAD: `70523861949aeb5eefe981633db33f50bc890145`.
+- Live HEAD before R0.5 closeout: `afdda252ce124413b9190607a96a0046cf5097e7`.
+- Live origin/main before R0.5 closeout: `afdda252ce124413b9190607a96a0046cf5097e7`.
+- Ahead/behind: `0/0`.
+- Baseline commit: `e330b616b277bde3bed2a46e71fe511cb4531ce8`.
+- Baseline relationship: R0 historical baseline is at `e330b616`; R0.5 Context Pack and its historical verification evidence are at `7052386`; live pre-closeout Git is at `afdda252`. These commits are not interchangeable.
+- Baseline type: Accepted Historical R0 Baseline.
+- Current checkpoint: R0.5 — Project Memory Foundation — Completed/PASS in the reviewed closeout payload; commit/push and final Git-clean confirmation remain pending.
+- R0.5D execution policy: read-only evidence audit; restore, build, tests, Quality Gate, EF commands, migrations, database access and application execution were prohibited.
+- RuntimeExecutedInR0.5D: No.
+- DatabaseReadInR0.5D: No.
+
+## 2. Evidence concepts
+
+### A. Accepted Historical Baseline
+
+A result that was executed and accepted before R0.5D and is retained by authoritative Project Memory at a specific commit. It can be cited as historical evidence, but not as a fresh run.
+
+### B. Current R0.5D Observation
+
+A read-only review of live Project Memory, Git metadata, source, test project and Quality Gate script. R0.5D did not execute any gate and therefore cannot create a new runtime baseline.
+
+### C. Required Revalidation
+
+The execution required by a later authorized checkpoint before its exit, commit, release or after a listed trigger. Historical PASS does not waive a checkpoint contract.
+
+These concepts must remain distinct.
+
+## 3. Accepted R0 baseline
+
+The live Project Memory consistently records:
+
+- Build: PASS.
+- Warnings: 0.
+- Errors: 0.
+- Full automated tests: 969/969 PASS.
+- Failed: 0.
+- Skipped: 0.
+- Quality Gate: PASS.
+- EF pending-model check: PASS; Quality Gate did not use `-SkipEfCheck`.
+- Manual acceptance: PASS for authoritative R0 closeout.
+
+Evidence:
+
+- `D:\Projects_1\POS_Enterprise_DotNet\docs\project\MASTER-ROADMAP.md` — R0 completion evidence.
+- `D:\Projects_1\POS_Enterprise_DotNet\docs\project\CURRENT-STATE.md` — accepted R0 baseline.
+- `D:\Projects_1\POS_Enterprise_DotNet\scripts\Test-QualityGate.ps1` — live stage implementation at the same baseline/current commit.
+- Git commit `e330b616b277bde3bed2a46e71fe511cb4531ce8` — `feat(checkout): add controlled discounts and durable VietQR recovery`.
+
+The exact gate execution timestamp is **Unknown / Not recorded**. The Git commit time is not treated as the gate execution time. No `.trx`, test-result or gate-log artifact was found in the live repository audit. No contradictory test-result evidence was found. The 969 count was not reconstructed from static source and was not rerun in R0.5D.
+
+## 3B. Current R0.5 verification evidence
+
+The following build/test/gate/manual results were supplied as completed live-run evidence and reconciled with the current Git history. They were not rerun in this documentation/exporter turn; the exporter was rerun below.
+
+- Current verification commit: `70523861949aeb5eefe981633db33f50bc890145`.
+- Sequential build: PASS; 0 warnings; 0 errors.
+- Full automated tests: 975/975 PASS; 0 failed.
+- Quality Gate: PASS; Restore, Build, Tests, vulnerability scan, local tools restore, EF pending-model check and Git whitespace check passed; exit code 0; no `-SkipEfCheck`.
+- VietQR manual acceptance: PASS; Presented PaymentIntent persistence was verified before the QR dialog.
+- R0.5E exporter: syntax PASS; latest pack exit code `0`; secret scan `0 findings`; source coverage `501/501` (100%); manifest/hash/integrity/exclusion checks PASS. The former credential value is not copied into this baseline.
+
+## 3C. R0.5E and R0.5F acceptance evidence
+
+- Context Pack: `project-context-20260801T0647171300576Z`.
+- Context Pack baseline: `70523861949aeb5eefe981633db33f50bc890145`.
+- Exporter exit code: `0`; coverage `501/501` (100%); security findings `0`; excluded candidates `0`; manifest integrity `16/16` PASS across the 16 non-manifest artifacts.
+- ChatGPT fresh-session verification: PASS on `2026-08-01`. Provenance: user-supplied fresh-session transcript and manifest follow-up. The session identified repository, solution, architecture, pack state, working rules, R1/R1.1 sequence and deferred boundaries without claiming R0.5 closeout.
+- Codex fresh-session verification: PASS on `2026-08-01`. Provenance: independent fresh-session report against Project Memory and live Git at `afdda252ce124413b9190607a96a0046cf5097e7`; it reported the `7052386`/`afdda252` distinction and the KNOWN-ISSUES recount discrepancy without modifying or staging files.
+- The Context Pack predates both fresh-session checks; absence of their later results from the historical pack is expected and is not an integrity failure.
+
+## 3D. Supplied R1.1 runtime evidence boundary
+
+- Jenkins-verified commit: `afdda252ce124413b9190607a96a0046cf5097e7`.
+- R1.1 runtime E2E: PASS from user-supplied evidence: correct SCM checkout, Windows agent, .NET SDK `10.0.302`, Release build with 0 warnings/0 errors, 975 passed/0 failed/0 skipped, Quality Gate PASS, vulnerability scan PASS, EF pending-model PASS, intentional exit `23` propagated pipeline FAILURE with later stages skipped, and final normal rerun SUCCESS.
+- The intentional replay probe is not repository Jenkinsfile content. R1.1 formal repository closeout remains PENDING. R1.2 and R1.3 are NOT STARTED.
+- This R1.1 evidence does not replace R0.5F evidence or change Context Pack baseline `7052386`.
+
+## 3E. Final R0.5 closeout verification — 2026-08-01
+
+- Live pre-closeout HEAD/origin/main: `afdda252ce124413b9190607a96a0046cf5097e7` / `afdda252ce124413b9190607a96a0046cf5097e7`.
+- `git diff --check`: PASS; only the informational LF-to-CRLF warning for the tracked bootstrap script was emitted.
+- Explicit restore: PASS; all projects up-to-date.
+- Explicit Release build: PASS; 0 warnings, 0 errors.
+- Explicit Release full tests: 975 passed, 0 failed, 0 skipped.
+- First sandboxed Quality Gate invocation: restore/build/tests PASS, then the network-dependent vulnerability command exited `1` without a package result; EF and later stages did not run in that attempt. The identical direct vulnerability scan passed outside the sandbox with NuGet access.
+- Accepted complete Quality Gate rerun outside the sandbox: PASS, exit code `0`, no `-SkipEfCheck`; Debug build 0 warnings/0 errors; 975 passed/0 failed/0 skipped; no vulnerable packages; local tool restore PASS; EF reports no changes since the last migration; Git whitespace/status checks PASS.
+- Jenkins safeguards: intentional R1.1 failure-propagation probe absent; Jenkinsfile local diff empty.
+- No database update, real database read, bootstrap execution or Context Pack export was performed.
+
+## 4. Baseline result table
+
+| Gate | Accepted result | Passed | Failed | Skipped | Warnings | Errors | EF pending-model result | Baseline commit | Evidence time | Evidence source | R0.5D run status | Revalidation requirement | Notes |
+|---|---|---:|---:|---:|---:|---:|---|---|---|---|---|---|---|
+| Restore | HISTORICAL PASS — NOT RERUN IN R0.5D | NOT RECORDED | NOT APPLICABLE | NOT APPLICABLE | NOT RECORDED | 0 implied by successful gate stage | NOT APPLICABLE | `e330b616b277bde3bed2a46e71fe511cb4531ce8` | Unknown / Not recorded | `D:\Projects_1\POS_Enterprise_DotNet\docs\project\CURRENT-STATE.md`; `D:\Projects_1\POS_Enterprise_DotNet\scripts\Test-QualityGate.ps1` | NOT RUN — prohibited by R0.5D scope | R0.5F or any checkpoint requiring restore/gate execution | Quality Gate stage 1 restores the solution; no separate historical restore log is retained. |
+| Rebuild/build | HISTORICAL PASS — NOT RERUN IN R0.5D | NOT RECORDED | NOT APPLICABLE | NOT APPLICABLE | 0 | 0 | NOT APPLICABLE | `e330b616b277bde3bed2a46e71fe511cb4531ce8` | Unknown / Not recorded | `D:\Projects_1\POS_Enterprise_DotNet\docs\project\MASTER-ROADMAP.md`; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\CURRENT-STATE.md` | NOT RUN — prohibited by R0.5D scope | Rebuild before authorized checkpoint exit | Accepted result does not retain the exact historical standalone command. |
+| Full automated tests | HISTORICAL PASS — NOT RERUN IN R0.5D | 969 | 0 | 0 | NOT APPLICABLE | NOT APPLICABLE | NOT APPLICABLE | `e330b616b277bde3bed2a46e71fe511cb4531ce8` | Unknown / Not recorded | `D:\Projects_1\POS_Enterprise_DotNet\docs\project\MASTER-ROADMAP.md`; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\CURRENT-STATE.md` | NOT RUN — prohibited by R0.5D scope | Full suite before authorized checkpoint exit | Static source scan is not a replacement for `dotnet test`. |
+| Quality Gate | HISTORICAL PASS — NOT RERUN IN R0.5D | NOT RECORDED | NOT APPLICABLE | NOT APPLICABLE | Build stage accepted as 0 | Build stage accepted as 0 | PASS | `e330b616b277bde3bed2a46e71fe511cb4531ce8` | Unknown / Not recorded | `D:\Projects_1\POS_Enterprise_DotNet\docs\project\MASTER-ROADMAP.md`; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\CURRENT-STATE.md`; `D:\Projects_1\POS_Enterprise_DotNet\scripts\Test-QualityGate.ps1` | NOT RUN — prohibited by R0.5D scope | Run without `-SkipEfCheck` at R0.5F and other required closeouts | Historical PASS includes the live script stages at the same commit; no persisted gate log was found. |
+| EF pending-model check | HISTORICAL PASS — NOT RERUN IN R0.5D | NOT RECORDED | NOT APPLICABLE | NOT APPLICABLE | NOT APPLICABLE | 0 implied by successful command | PASS | `e330b616b277bde3bed2a46e71fe511cb4531ce8` | Unknown / Not recorded | `D:\Projects_1\POS_Enterprise_DotNet\docs\project\CURRENT-STATE.md`; `D:\Projects_1\POS_Enterprise_DotNet\scripts\Test-QualityGate.ps1` | NOT RUN — prohibited by R0.5D scope | Mandatory after model/migration change and at required closeouts | A PASS does not prove any migration was applied to a real database. |
+| Manual acceptance — R0 | HISTORICAL PASS — NOT RERUN IN R0.5D | NOT RECORDED | 0 recorded | NOT RECORDED | NOT APPLICABLE | NOT APPLICABLE | NOT APPLICABLE | `e330b616b277bde3bed2a46e71fe511cb4531ce8` | Unknown / Not recorded | `D:\Projects_1\POS_Enterprise_DotNet\docs\project\MASTER-ROADMAP.md`; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\CURRENT-STATE.md` | NOT RUN — prohibited by R0.5D scope | New manual acceptance is required when a checkpoint contract says so | Detailed scenario record, tester, environment and time are not retained in current Project Memory. |
+| WPF smoke test | NOT RECORDED | NOT RECORDED | NOT RECORDED | NOT RECORDED | NOT APPLICABLE | NOT APPLICABLE | NOT APPLICABLE | NOT RECORDED | Unknown / Not recorded | No separate repository evidence found | NOT RUN — prohibited by R0.5D scope | Required when UI/composition/runtime behavior changes or checkpoint requires it | R0 manual acceptance must not be relabeled as a separately evidenced WPF smoke test. |
+| Hardware acceptance | NOT RECORDED | NOT RECORDED | NOT RECORDED | NOT RECORDED | NOT APPLICABLE | NOT APPLICABLE | NOT APPLICABLE | NOT RECORDED | Unknown / Not recorded | `D:\Projects_1\POS_Enterprise_DotNet\docs\project\MASTER-ROADMAP.md` — R11 is Not Started | NOT RUN — prohibited by R0.5D scope | R11 manual acceptance | No printer, scanner, label printer or cash-drawer PASS is claimed. |
+| Database migration/application | NOT RECORDED | NOT RECORDED | NOT RECORDED | NOT RECORDED | NOT APPLICABLE | NOT APPLICABLE | NOT RECORDED | NOT RECORDED | Unknown / Not recorded | `D:\Projects_1\POS_Enterprise_DotNet\docs\project\ARCHITECTURE.md`; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\CURRENT-STATE.md` | NOT RUN — prohibited by R0.5D scope | Authorized migration/restore checkpoint only | Source/model checks are distinct from real database applied state. |
+| Package vulnerability scan | HISTORICAL PASS — NOT RERUN IN R0.5D | NOT RECORDED | 0 vulnerable identifiers implied by stage PASS | NOT APPLICABLE | NOT APPLICABLE | 0 gate errors | NOT APPLICABLE | `e330b616b277bde3bed2a46e71fe511cb4531ce8` | Unknown / Not recorded | `D:\Projects_1\POS_Enterprise_DotNet\docs\project\CURRENT-STATE.md`; `D:\Projects_1\POS_Enterprise_DotNet\scripts\Test-QualityGate.ps1` | NOT RUN — prohibited by R0.5D scope | Re-run with Quality Gate after package/project changes and at closeout | This is package vulnerability evidence only. |
+| Comprehensive security/privacy check | NOT RECORDED | NOT RECORDED | NOT RECORDED | NOT RECORDED | NOT APPLICABLE | NOT APPLICABLE | NOT APPLICABLE | NOT RECORDED | Unknown / Not recorded | `D:\Projects_1\POS_Enterprise_DotNet\docs\project\BUSINESS-INVARIANTS.md` — `INV-SECURITY-001`, `INV-SECURITY-002` | NOT RUN — prohibited by R0.5D scope | R0.5F secret scan and relevant future security gates | Package scanning does not prove global log/output redaction or absence of all secrets. |
+
+## 5. Canonical verification commands
+
+These commands are templates for an authorized checkpoint. They were not executed in R0.5D.
+
+```powershell
+Set-Location "D:\Projects_1\POS_Enterprise_DotNet"
+
+git diff --check
+
+dotnet build "D:\Projects_1\POS_Enterprise_DotNet\POS.Enterprise.slnx" -t:Rebuild --no-restore -m:1 -nr:false -p:BuildInParallel=false
+
+dotnet test "D:\Projects_1\POS_Enterprise_DotNet\POS.Enterprise.slnx" --no-build --no-restore -m:1 -nr:false -p:BuildInParallel=false
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "D:\Projects_1\POS_Enterprise_DotNet\scripts\Test-QualityGate.ps1"
+```
+
+The Quality Gate performs its own restore. A separate restore command is used only when the checkpoint or environment explicitly requires it. A closeout that requires the EF check must not pass `-SkipEfCheck`.
+
+## 6. Live Quality Gate inventory
+
+Evidence script: `D:\Projects_1\POS_Enterprise_DotNet\scripts\Test-QualityGate.ps1`.
+
+| Stage | Command or implementation | Failure condition | Evidence produced | Pipeline blocking | Notes |
+|---|---|---|---|---|---|
+| 1. Restore solution | `Invoke-DotNetStep` → `dotnet restore <solution> --verbosity minimal -p:RestoreBuildInParallel=false` | Non-zero exit code | Console output and exit code | Yes | Always runs. |
+| 2. Build solution | `Invoke-DotNetStep` → `dotnet build <solution> --no-restore -m:1 -nr:false -p:BuildInParallel=false` | Non-zero exit code | Console output and exit code | Yes | Serialized MSBuild graph. |
+| 3. Run automated tests | `Invoke-DotNetStep` → `dotnet test <solution> --no-build --no-restore -m:1 -nr:false -p:BuildInParallel=false` | Non-zero exit code | Console test summary and exit code | Yes | Serialized solution test invocation. |
+| 4. Scan vulnerable packages | `dotnet list <solution> package --vulnerable --include-transitive` | Non-zero exit code or output matches a GHSA/CVE identifier | Console package scan output | Yes | Does not replace a comprehensive privacy/secret review. |
+| 5. Restore local tools | `Invoke-DotNetStep` → `dotnet tool restore` | Non-zero exit code | Console output and exit code | Yes | Runs only when `-SkipEfCheck` is absent. |
+| 6. Check pending EF model changes | `dotnet ef migrations has-pending-model-changes --project <Infrastructure project> --startup-project <WPF project>` | Non-zero exit code | Console EF result and exit code | Yes | Runs only when `-SkipEfCheck` is absent; does not read or prove real migration applied state. |
+| 7. Check Git whitespace | `git diff --check` | Non-zero exit code | Console output and exit code | Yes | Checks unstaged tracked diff; untracked file content still requires direct review. |
+| 8. Git status | `git status --short` | Non-zero exit code | Console status | Yes | Reports state; the script does not require a clean tree. |
+
+The script writes console output only; it does not create a persisted test, vulnerability or gate report artifact. Its final success sentence is unconditional, so an invocation with `-SkipEfCheck` must never be cited as evidence that the EF model check passed.
+
+## 7. Test inventory boundary
+
+- Test project: `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\POS.Architecture.Tests.csproj`.
+- Framework: xUnit v3 (`xunit.v3`) with `Microsoft.NET.Test.Sdk` and Visual Studio runner versions managed in `D:\Projects_1\POS_Enterprise_DotNet\Directory.Packages.props`.
+- Target/output: `net10.0-windows`, executable test project.
+- Solution membership: one test project is listed in `D:\Projects_1\POS_Enterprise_DotNet\POS.Enterprise.slnx`.
+- Source categories present: dependency architecture, domain rules, Application authorization/use cases, EF/SQLite persistence and migration, concurrency/recovery, WPF UI contracts, printing and VietQR infrastructure.
+
+Direct critical-flow test source includes:
+
+- Checkout idempotency/restart/concurrency: `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\CheckoutIdempotencyApplicationTests.cs`, `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\CheckoutReliabilityIntegrationTests.cs`.
+- PaymentIntent confirmation/recovery/concurrency: `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\PaymentIntentCheckoutTests.cs`, `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\PaymentIntentConcurrencyTests.cs`, `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\PaymentIntentRecoveryActionTests.cs`.
+- Held-sale persistence/resume/ownership: `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\HeldSaleApplicationIntegrationTests.cs`, `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\HeldSalePaymentOwnershipTests.cs`.
+- Discount money/audit behavior: `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\SalesDiscountTests.cs`.
+- Return persistence/idempotency: `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\OrderReturnPersistenceTests.cs`, `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\OrderReturnApplicationTests.cs`.
+- Receipt snapshot/serialization/print boundaries: `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\ReceiptSnapshotPersistenceTests.cs`, `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\ReceiptSnapshotSerializationTests.cs`, `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\ReceiptPrinterPipelineTests.cs`.
+- Migration/backup safety: `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\PaymentIntentMigrationTests.cs`, `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\DatabaseInitializerSafetyTests.cs`.
+- Authentication/RBAC: `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\AuthServiceIntegrationTests.cs`, `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\PermissionServiceTests.cs`, `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\AuthorizedCheckoutServiceTests.cs`.
+
+All listed tests are source evidence only in R0.5D. They were not executed. The historical 969 count comes from the accepted baseline, not from counting attributes, methods or files.
+
+Manual or hardware scenarios outside the automated baseline include real scanner input, physical K80/label printing, cash-drawer behavior, display/DPI matrix, production-scale performance, installer/upgrade/rollback and store pilot operations.
+
+## 8. Baseline limitations
+
+The accepted automated baseline does not by itself prove:
+
+- a physical printer works;
+- a real scanner works;
+- a real cash drawer works;
+- VietQR was automatically confirmed by a bank;
+- an installer or production upgrade passed;
+- restore on real store data passed;
+- a store pilot passed;
+- a new manual WPF acceptance passed;
+- production-scale performance passed;
+- a migration was applied to a real database;
+- universal log/support-output redaction passed.
+
+## 9. Mandatory revalidation triggers
+
+Revalidate the applicable gates when:
+
+- production source changes;
+- test source changes;
+- project or package configuration changes;
+- `D:\Projects_1\POS_Enterprise_DotNet\scripts\Test-QualityGate.ps1` changes;
+- a migration or ModelSnapshot changes;
+- a transaction boundary changes;
+- pricing, discount, return or payment behavior changes;
+- authentication or RBAC changes;
+- receipt, persistence or recovery behavior changes;
+- .NET SDK/runtime changes;
+- a checkpoint approaches exit;
+- a checkpoint contract requires verification before commit/push;
+- a release candidate is prepared;
+- a merge or conflict resolution occurs;
+- baseline evidence and current HEAD are no longer the same commit;
+- a known issue closure criterion requires new evidence.
+
+Both R0.5F fresh-session checks PASS. R0.5 closeout still requires the final local gates, reviewed staged payload, commit/push and post-commit Git-state verification according to the active checkpoint boundary.
+
+## 10. Future failure handling
+
+If a gate fails in an authorized future checkpoint:
+
+1. Stop the checkpoint.
+2. Do not commit or push.
+3. Record the exact command, exit code and failure output after sanitization.
+4. Determine whether the failure is new or part of an accepted baseline.
+5. Do not delete or weaken tests to make the gate green.
+6. Do not lower an assertion without business evidence.
+7. Fix only within checkpoint scope.
+8. Re-run from the appropriate preceding gate.
+9. Update `D:\Projects_1\POS_Enterprise_DotNet\docs\project\KNOWN-ISSUES.md` if the issue cannot be resolved.
+10. Change this baseline only after new evidence is executed, reviewed and accepted.
+
+## 11. R0.5D execution statement
+
+R0.5D did not run restore, build, tests, Quality Gate, EF commands, migration, database operations, WPF or the application. Every PASS in this document is explicitly historical and tied to the accepted R0 baseline.

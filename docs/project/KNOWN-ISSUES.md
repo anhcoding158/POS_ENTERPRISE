@@ -1,0 +1,397 @@
+# KNOWN ISSUES — POS ENTERPRISE RETAIL V1
+
+## 1. Metadata
+
+- Document: `KNOWN-ISSUES.md`.
+- Purpose: sổ đăng ký tập trung cho vấn đề vận hành hiện tại, giới hạn đã biết, verification gap và capability được hoãn; ngăn việc quên issue, nhầm roadmap gap thành runtime bug hoặc tuyên bố resolved khi chưa có acceptance evidence.
+- RepositoryRoot: `D:\Projects_1\POS_Enterprise_DotNet`.
+- Solution: `D:\Projects_1\POS_Enterprise_DotNet\POS.Enterprise.slnx`.
+- Branch: `main`.
+- CapturedAtLocal: `2026-07-31T14:32:44.841+07:00`.
+- Context Pack baseline HEAD: `70523861949aeb5eefe981633db33f50bc890145`.
+- Live HEAD before R0.5 closeout: `afdda252ce124413b9190607a96a0046cf5097e7`.
+- Live origin/main before R0.5 closeout: `afdda252ce124413b9190607a96a0046cf5097e7`.
+- Ahead/behind: `0/0`.
+- EvidenceMode: Read-only source and Project Memory audit.
+- RuntimeExecutedInR0.5D: No.
+- DatabaseReadInR0.5D: No.
+- ExporterExecutedInR0.5E: Yes; latest pack exit code `0`, secret scan `0 findings`, coverage `501/501`, manifest/integrity/exclusion checks passed.
+- DatabaseReadInR0.5E: No.
+- CurrentCheckpoint: R0.5 — Project Memory Foundation — Completed/PASS in closeout payload; commit/push and final Git-clean confirmation pending.
+- Scope: inventory evidence-supported operating conditions only; R0.5D did not reproduce runtime failures, run gates, open a real database, inspect database rows or perform hardware/store acceptance.
+
+Source-of-truth order:
+
+1. Live repository source.
+2. Live Git state and history.
+3. Existing Project Memory.
+4. Live production source, tests, migrations, configuration and scripts.
+5. Historical evidence retained in the repository.
+6. Older reports as hints only.
+
+No confirmed open runtime defect was established by the R0.5D read-only audit.
+
+## 2. Taxonomy
+
+- **Confirmed Defect:** current behavior is proven by evidence to violate expected behavior. A source gap or future roadmap item alone does not qualify.
+- **Known Operational Limitation:** known, currently accepted behavior has a real operating boundary. It is not automatically a defect.
+- **Verification Gap:** implementation or policy may exist, but automated, manual, hardware or production-like evidence is insufficient.
+- **Deferred Roadmap Capability:** capability belongs to a future R1–R13 checkpoint and is not part of the accepted current baseline. It is not called a bug without observed incorrect behavior.
+- **Resolved Historical Issue:** retained only when closure history is operationally necessary and supported by closure evidence. Ordinary completed changes are not copied here.
+
+## 3. Status vocabulary
+
+- **Open:** evidence-supported gap requires action or an explicit disposition.
+- **Monitoring:** accepted boundary remains active and must be considered during operation or future changes.
+- **Deferred:** work belongs to a named future roadmap checkpoint.
+- **Resolved:** closure criteria and acceptance evidence exist.
+- **Not Revalidated:** condition is known from source/Project Memory, but the relevant runtime, manual, hardware or production-like check has not been repeated for the current review.
+
+`Resolved` is prohibited without evidence. `Not Revalidated` is not equivalent to failure.
+
+## 4. Severity vocabulary
+
+- **Critical:** evidenced condition can cause catastrophic loss, compromise or inability to operate and requires immediate stop.
+- **High:** evidenced impact is severe and materially blocks safe operation.
+- **Medium:** evidenced or explicitly bounded impact affects important operational correctness or readiness.
+- **Low:** limited operational impact with a narrow, understood boundary.
+- **Informational:** governance/readiness record with no evidenced current runtime failure.
+
+Severity describes supported impact, not roadmap priority. Insufficient evidence must not be used to elevate severity; it remains a revalidation need.
+
+## 5. Active register
+
+### POS-OPS-001 — VietQR uses cashier confirmation, not bank auto-reconciliation
+
+- Stable ID: `POS-OPS-001`.
+- Title: VietQR uses cashier confirmation, not bank auto-reconciliation.
+- Classification: Known Operational Limitation.
+- Status: Monitoring.
+- Severity: Medium.
+- Affected area: VietQR payment confirmation and reconciliation.
+- Evidence: `D:\Projects_1\POS_Enterprise_DotNet\src\POS.Application\Services\PaymentIntentService.cs` — `PaymentIntentService.ConfirmReceivedAsync`, `ResolveManuallyAsync`; `D:\Projects_1\POS_Enterprise_DotNet\src\POS.Infrastructure\Payments\VietQrPaymentGateway.cs` — `VietQrPaymentGateway.Build`; `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\PaymentIntentCheckoutTests.cs` — `PaymentIntentCheckoutTests.Checkout_journal_is_created_only_after_manual_confirmation`; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\MASTER-ROADMAP.md` — API ngân hàng tự động đối soát is outside Retail V1.
+- Observed or known condition: source implements QR payload presentation plus explicit user confirmation and manual resolution; no source evidence establishes automatic bank settlement confirmation.
+- Expected condition or intended boundary: Retail V1 must describe this as manual confirmation and must not claim bank API confirmation.
+- User/business impact: cashier verification remains part of the payment workflow; automatic settlement certainty is not provided by the current boundary.
+- Trigger or reproduction precondition: source-defined condition when completing a VietQR payment; no runtime reproduction was performed in R0.5D.
+- Workaround or recovery behavior: No verified workaround recorded.
+- Related invariant/decision/roadmap checkpoint: `INV-PAYMENT-001` to `INV-PAYMENT-003`; `DEC-009`; automatic bank reconciliation is outside Retail V1.
+- Owner checkpoint: no committed owner checkpoint; requires an approved roadmap change if automatic reconciliation is added.
+- Closure criteria: an approved checkpoint supplies provider reconciliation, idempotency, security, failure recovery and acceptance evidence, or the manual boundary remains explicitly accepted.
+- Revalidation trigger: any payment-provider integration, confirmation-flow or reconciliation-policy change.
+- Last verified commit: `e330b616b277bde3bed2a46e71fe511cb4531ce8`.
+- Last verified time: `2026-07-31T14:32:44.841+07:00` read-only source review; runtime not executed.
+- Notes: this is an accepted operating boundary, not evidence of a payment defect.
+
+### POS-OPS-002 — Held sale is a durable snapshot, not a stock reservation
+
+- Stable ID: `POS-OPS-002`.
+- Title: Held sale is a durable snapshot, not a stock reservation.
+- Classification: Known Operational Limitation.
+- Status: Monitoring.
+- Severity: Low.
+- Affected area: held-sale resume, product availability and price review.
+- Evidence: `D:\Projects_1\POS_Enterprise_DotNet\src\POS.Application\Services\HeldSaleService.cs` — `HeldSaleService.CreateHeldSaleAsync`, `GetHeldSaleForResumeAsync`; `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\HeldSaleApplicationIntegrationTests.cs` — `HeldSaleApplicationIntegrationTests.Create_held_sale_persists_snapshot_without_business_mutation`, `Resume_reports_price_stock_and_unavailable_without_mutation`; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\DECISIONS.md` — `DEC-010`.
+- Observed or known condition: holding a cart does not reserve or reduce stock; resume revalidates active state, stock and price.
+- Expected condition or intended boundary: the operator must review unavailable, insufficient-stock or changed-price lines before checkout.
+- User/business impact: a held cart may not remain immediately sellable at its original price or quantity.
+- Trigger or reproduction precondition: another operation changes product availability, stock or price between hold and resume; no runtime reproduction was performed in R0.5D.
+- Workaround or recovery behavior: No verified workaround recorded.
+- Related invariant/decision/roadmap checkpoint: `INV-HELD-001`, `INV-HELD-002`; `DEC-010`.
+- Owner checkpoint: no committed reservation checkpoint; revisit only if an approved reservation policy is added.
+- Closure criteria: either the snapshot/no-reservation boundary remains accepted and correctly presented, or a new approved reservation design and acceptance evidence supersede it.
+- Revalidation trigger: held-sale lifecycle, stock policy, resume UI or reservation-policy change.
+- Last verified commit: `e330b616b277bde3bed2a46e71fe511cb4531ce8`.
+- Last verified time: `2026-07-31T14:32:44.841+07:00` read-only source review; runtime not executed.
+- Notes: stock change after hold is expected under the current design and is not itself a defect.
+
+### POS-OPS-003 — Physical receipt printing is a post-commit side effect
+
+- Stable ID: `POS-OPS-003`.
+- Title: Physical receipt printing is a post-commit side effect.
+- Classification: Known Operational Limitation.
+- Status: Monitoring.
+- Severity: Medium.
+- Affected area: checkout receipt printing and operator recovery.
+- Evidence: `D:\Projects_1\POS_Enterprise_DotNet\src\POS.Infrastructure\Printing\WpfReceiptService.cs` — `WpfReceiptService.PrintAsync`; `D:\Projects_1\POS_Enterprise_DotNet\src\POS.Wpf\Services\ReceiptPreviewService.cs` — `ReceiptPreviewService`; `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\ReceiptSnapshotPersistenceTests.cs` — `ReceiptSnapshotPersistenceTests.Checkout_service_must_not_depend_on_print_service`, `Persisted_snapshot_must_not_change_when_product_changes_after_checkout`; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\DECISIONS.md` — `DEC-007`, `DEC-008`.
+- Observed or known condition: sale and immutable receipt snapshot commit independently of the physical print operation; printer failure must not roll back or duplicate the sale.
+- Expected condition or intended boundary: UI must report print failure separately and preserve the committed transaction for later receipt access.
+- User/business impact: a sale can be successful while its first physical print is unavailable.
+- Trigger or reproduction precondition: printer unavailable, offline, paused, out of paper or in error after checkout commit; hardware reproduction was not performed in R0.5D.
+- Workaround or recovery behavior: No verified workaround recorded.
+- Related invariant/decision/roadmap checkpoint: `INV-CHECKOUT-002`, `INV-RECEIPT-001`, `INV-RECEIPT-002`; `DEC-007`, `DEC-008`; R11.
+- Owner checkpoint: R11 — Store and Hardware Acceptance.
+- Closure criteria: R11 printer scenarios prove print/reprint, offline, paper-out and post-commit failure behavior on target hardware without duplicate checkout.
+- Revalidation trigger: receipt schema, print orchestration, printer configuration or checkout transaction change.
+- Last verified commit: `e330b616b277bde3bed2a46e71fe511cb4531ce8`.
+- Last verified time: `2026-07-31T14:32:44.841+07:00` read-only source review; hardware not executed.
+- Notes: source existence proves a print pipeline, not physical printer acceptance.
+
+### POS-VER-001 — Real hardware, display and production-scale acceptance are not established
+
+- Stable ID: `POS-VER-001`.
+- Title: Real hardware, display and production-scale acceptance are not established.
+- Classification: Verification Gap.
+- Status: Not Revalidated.
+- Severity: Medium.
+- Affected area: scanner, K80 printer, label printer, cash drawer, DPI/display and production-scale performance.
+- Evidence: `D:\Projects_1\POS_Enterprise_DotNet\docs\project\ARCHITECTURE.md` — hardware/load boundaries; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\MASTER-ROADMAP.md` — R11 scope and manual acceptance.
+- Observed or known condition: Project Memory states that real hardware and load acceptance have not been established; R0.5D did not run WPF or hardware checks.
+- Expected condition or intended boundary: R11 exit criteria and its explicit manual scenarios must PASS before hardware/store readiness is claimed.
+- User/business impact: current automated/source evidence cannot guarantee behavior on target peripherals, display scaling or production-scale data.
+- Trigger or reproduction precondition: target hardware, display or load environment is required; no reproduction was performed in R0.5D.
+- Workaround or recovery behavior: No verified workaround recorded.
+- Related invariant/decision/roadmap checkpoint: `INV-RECEIPT-002`; `DEC-008`, `DEC-018`; R11.
+- Owner checkpoint: R11 — Store and Hardware Acceptance.
+- Closure criteria: all R11.1–R11.6 manual acceptance scenarios have recorded environment, actual result and PASS evidence.
+- Revalidation trigger: printer/scanner/cash-drawer code, UI layout, supported display matrix, performance target or deployment hardware change.
+- Last verified commit: `e330b616b277bde3bed2a46e71fe511cb4531ce8`.
+- Last verified time: `2026-07-31T14:32:44.841+07:00` Project Memory review; no hardware execution.
+- Notes: no physical-device failure was asserted.
+
+### POS-VER-002 — Real database applied state and store-data recovery are not verified
+
+- Stable ID: `POS-VER-002`.
+- Title: Real database applied state and store-data recovery are not verified.
+- Classification: Verification Gap.
+- Status: Not Revalidated.
+- Severity: Medium.
+- Affected area: EF applied migrations, real database integrity, restore and disaster recovery.
+- Evidence: `D:\Projects_1\POS_Enterprise_DotNet\src\POS.Infrastructure\Persistence\DatabaseInitializer.cs` — `DatabaseInitializer.InitializeAsync`; `D:\Projects_1\POS_Enterprise_DotNet\src\POS.Infrastructure\Persistence\SqliteDatabaseSafetyService.cs` — `SqliteDatabaseSafetyService.CreateVerifiedBackup`; `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\DatabaseInitializerSafetyTests.cs` — `DatabaseInitializerSafetyTests.Existing_database_with_pending_migrations_must_create_verified_backup`, `Backup_failure_must_block_migration`; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\ARCHITECTURE.md` — applied-state boundary; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\MASTER-ROADMAP.md` — R3.
+- Observed or known condition: source and accepted test evidence cover migration/backup logic, but R0.5D did not inspect a database, migration history, real rows or a restore drill.
+- Expected condition or intended boundary: applied state must come from authorized database evidence; R3 must prove backup, restore, rollback and disaster recovery on test data before readiness claims.
+- User/business impact: source-level safety does not establish recoverability of an actual store database.
+- Trigger or reproduction precondition: database upgrade, restore or disaster-recovery exercise; none was performed in R0.5D.
+- Workaround or recovery behavior: No verified workaround recorded.
+- Related invariant/decision/roadmap checkpoint: `INV-MIGRATION-001`, `INV-BACKUP-001`, `INV-MIGRATION-002`; `DEC-014`, `DEC-015`; R3.
+- Owner checkpoint: R3 — Backup and Restore.
+- Closure criteria: authorized migration/applied-state evidence plus R3 restore and disaster-recovery acceptance PASS without reading or exporting production customer data into Project Memory.
+- Revalidation trigger: migration, ModelSnapshot, database initializer, backup/restore code, SQLite version or database-path policy change.
+- Last verified commit: `e330b616b277bde3bed2a46e71fe511cb4531ce8`.
+- Last verified time: `2026-07-31T14:32:44.841+07:00` read-only source review; database not read.
+- Notes: migration source existence does not prove migration application.
+
+### POS-VER-003 — Universal log and support-output redaction is only partially enforced
+
+- Stable ID: `POS-VER-003`.
+- Title: Universal log and support-output redaction is only partially enforced.
+- Classification: Verification Gap.
+- Status: Open.
+- Severity: Medium.
+- Affected area: logging, support bundles, reports and exported diagnostic content.
+- Evidence: `D:\Projects_1\POS_Enterprise_DotNet\src\POS.Application\Common\PosLog.cs` — centralized logging helpers; `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\ReceiptSnapshotPersistenceTests.cs` — `ReceiptSnapshotPersistenceTests.Persisted_payload_must_not_contain_cost_price_or_known_secrets`; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\BUSINESS-INVARIANTS.md` — `INV-SECURITY-002` is Partially Enforced; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\DECISIONS.md` — universal logging redaction has insufficient source evidence.
+- Observed or known condition: receipt payload has direct safeguards, but no universal redaction guard or direct global log-sanitization test was established by the source audit.
+- Expected condition or intended boundary: all logs, support/report output and exports must sanitize secrets and sensitive customer/payment values.
+- User/business impact: incomplete coverage creates an unverified disclosure boundary; no actual secret disclosure was observed.
+- Trigger or reproduction precondition: new logging, support-bundle, report or exporter output; no runtime reproduction was performed in R0.5D.
+- Workaround or recovery behavior: No verified workaround recorded.
+- Related invariant/decision/roadmap checkpoint: `INV-SECURITY-001`, `INV-SECURITY-002`; R0.5F and R2.3.
+- Owner checkpoint: R0.5F for Project Memory/export scan; R2.3 for logging and Support Bundle.
+- Closure criteria: repository-wide output inventory, automated sensitive-field tests and required secret scans PASS, with failures blocking commit/release as applicable.
+- Revalidation trigger: any new log template, support bundle, report, export, receipt schema or secret-bearing configuration.
+- Last verified commit: `e330b616b277bde3bed2a46e71fe511cb4531ce8`.
+- Last verified time: `2026-07-31T14:32:44.841+07:00` read-only source review.
+- Notes: this record is a verification gap, not a confirmed leak.
+
+### POS-VER-004 — Direct concurrent over-return regression evidence is not established
+
+- Stable ID: `POS-VER-004`.
+- Title: Direct concurrent over-return regression evidence is not established.
+- Classification: Verification Gap.
+- Status: Open.
+- Severity: Medium.
+- Affected area: concurrent order returns, refund balance and stock reversal.
+- Evidence: `D:\Projects_1\POS_Enterprise_DotNet\src\POS.Application\Services\OrderReturnService.cs` — `OrderReturnService.ProcessAsync`; `D:\Projects_1\POS_Enterprise_DotNet\src\POS.Infrastructure\Persistence\Configurations\OrderReturnBalanceConfiguration.cs` — balance constraints/concurrency token; `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\OrderReturnPersistenceTests.cs` — `OrderReturnPersistenceTests.Client_request_id_unique_index_must_reject_duplicate`, `Return_balance_constraints_must_reject_negative_values`; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\BUSINESS-INVARIANTS.md` — `INV-RETURN-001` gap/revisit.
+- Observed or known condition: source has transaction, idempotency, balance and concurrency guards, but the audited evidence does not cite a direct concurrent over-return integration test.
+- Expected condition or intended boundary: concurrent requests must not over-return quantity, double-refund or double-restock.
+- User/business impact: the critical concurrency behavior is source-guarded but lacks direct regression proof identified by this audit; no over-return defect was observed.
+- Trigger or reproduction precondition: two overlapping return requests against the same remaining order-item balance; no runtime reproduction was performed in R0.5D.
+- Workaround or recovery behavior: No verified workaround recorded.
+- Related invariant/decision/roadmap checkpoint: `INV-RETURN-001`, `INV-RETURN-002`; `DEC-013`; R9.
+- Owner checkpoint: R9 — Documents, Cashbook and Daily Close.
+- Closure criteria: a direct concurrency regression test proves exactly one valid business outcome, correct replay/conflict semantics and atomic stock/refund state, then required gates PASS.
+- Revalidation trigger: return transaction, balance concurrency token, client-request fingerprint, stock-restock or refund allocation change.
+- Last verified commit: `e330b616b277bde3bed2a46e71fe511cb4531ce8`.
+- Last verified time: `2026-07-31T14:32:44.841+07:00` static test/source review; tests not run.
+- Notes: missing direct evidence is not proof of incorrect runtime behavior.
+
+### POS-VER-005 — Bootstrap script contained a non-placeholder default admin password literal
+
+- Stable ID: `POS-VER-005`.
+- Title: Bootstrap script contained a non-placeholder default admin password literal.
+- Classification: Verification Gap.
+- Status: Resolved locally; closeout commit/push pending.
+- Severity: Medium.
+- Affected area: Project Context export, repository secret hygiene and bootstrap tooling.
+- Evidence: `D:\Projects_1\POS_Enterprise_DotNet\Create-POS-Enterprise-Structure.DO-NOT-RUN.ps1` — authorized local remediation disables default administrator seeding and removes the fixed credential; `D:\Projects_1\POS_Enterprise_DotNet\scripts\Export-ProjectContext.ps1` — latest pack reports security finding count `0`, without recording the former value.
+- Observed or known condition: the former non-placeholder literal is no longer present in the live bootstrap script; no raw value is retained in Project Memory or the Context Pack.
+- Expected condition or intended boundary: no non-placeholder password literal may remain in a tracked source or bootstrap script used by a context export.
+- User/business impact: a copied or reused bootstrap credential could weaken initial account security; no evidence establishes that the value was used in production.
+- Trigger or reproduction precondition: run the R0.5E exporter against the current repository; no database or runtime credential was accessed.
+- Workaround or recovery behavior: bootstrap script remains `DO-NOT-RUN`; no default administrator is seeded.
+- Related invariant/decision/roadmap checkpoint: `INV-SECURITY-001`, `INV-SECURITY-002`; R0.5E/R0.5F.
+- Owner checkpoint: R0.5E/R0.5F security review.
+- Closure criteria: authorized remediation removes the non-placeholder literal or establishes an approved non-secret input boundary; exporter exit code `0`, security finding count `0`, manifest/coverage checks PASS, and required review evidence is recorded. These local criteria and R0.5F review are met in the closeout payload; repository closure remains pending until commit/push.
+- Revalidation trigger: change to bootstrap scripts, exporter redaction rules, authentication setup or Project Memory export policy.
+- Last verified commit/base: `70523861949aeb5eefe981633db33f50bc890145`; remediation remains uncommitted by DEC-017.
+- Last verified time: `2026-08-01` latest R0.5E exporter execution; former value intentionally not retained.
+- Notes: this is a source/export security verification gap, not a claim of production exposure.
+
+### POS-ROAD-001 — R1 CI runtime is partially verified; repository closeout and later subcheckpoints remain
+
+- Stable ID: `POS-ROAD-001`.
+- Title: R1 CI runtime is partially verified; repository closeout and later subcheckpoints remain.
+- Classification: Verification Gap.
+- Status: In Progress.
+- Severity: Informational.
+- Affected area: automated push pipeline, repository standards and CI artifacts.
+- Evidence: Policy/roadmap evidence at `D:\Projects_1\POS_Enterprise_DotNet\docs\project\MASTER-ROADMAP.md` — R1; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\DECISIONS.md` — `DEC-018`.
+- Observed or known condition: supplied Jenkins evidence establishes R1.1 runtime E2E PASS at `afdda252ce124413b9190607a96a0046cf5097e7`, including normal success and intentional failure propagation. R1.1 formal repository closeout is still pending; R1.2 and R1.3 are Not Started.
+- Expected condition or intended boundary: a separate post-R0.5 checkpoint must close R1.1 repository evidence before R1.2 starts; full R1 completion still requires R1.1–R1.3 exit criteria.
+- User/business impact: current readiness claims cannot rely on an accepted automated push pipeline.
+- Trigger or reproduction precondition: R1.1 repository closeout after the R0.5 commit/push.
+- Workaround or recovery behavior: No verified workaround recorded.
+- Related invariant/decision/roadmap checkpoint: `INV-MIGRATION-002`; `DEC-018`; R1.
+- Owner checkpoint: R1.
+- Closure criteria: R1.1–R1.3 exit criteria and manual pipeline acceptance PASS.
+- Revalidation trigger: start or change of R1 scope, Jenkinsfile, repository standards or CI artifact policy.
+- Last verified commit: `e330b616b277bde3bed2a46e71fe511cb4531ce8`.
+- Last verified time: `2026-07-31T14:32:44.841+07:00` roadmap review.
+- Notes: reconciled verification gap, not a runtime bug and not a claim that all of R1 is complete.
+
+### POS-ROAD-002 — R2–R4 operational hardening, recovery and store administration are deferred
+
+- Stable ID: `POS-ROAD-002`.
+- Title: R2–R4 operational hardening, recovery and store administration are deferred.
+- Classification: Deferred Roadmap Capability.
+- Status: Deferred.
+- Severity: Informational.
+- Affected area: single instance, SQLite busy/locked UX, support bundle, disk monitoring, backup/restore, store setup, employees, roles and audit UI.
+- Evidence: Policy/roadmap evidence at `D:\Projects_1\POS_Enterprise_DotNet\docs\project\MASTER-ROADMAP.md` — R2, R3 and R4; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\DECISIONS.md` — decisions not reconstructed and `DEC-018`.
+- Observed or known condition: R2, R3 and R4 are Not Started although some lower-level foundation exists.
+- Expected condition or intended boundary: each stage must meet its own exit criteria and manual acceptance.
+- User/business impact: foundation source cannot be promoted to operational/store-management completion.
+- Trigger or reproduction precondition: entry into R2, R3 or R4 after dependency stages PASS.
+- Workaround or recovery behavior: No verified workaround recorded.
+- Related invariant/decision/roadmap checkpoint: `INV-BACKUP-001`, `INV-AUTH-001` to `INV-AUTH-003`, `INV-SECURITY-002`; R2–R4.
+- Owner checkpoint: R2, R3 and R4 respectively.
+- Closure criteria: every named stage meets its exit criteria, required gates and manual acceptance.
+- Revalidation trigger: start of R2–R4 or any relevant reliability, database-recovery, authentication or administration change.
+- Last verified commit: `e330b616b277bde3bed2a46e71fe511cb4531ce8`.
+- Last verified time: `2026-07-31T14:32:44.841+07:00` roadmap review.
+- Notes: deferred capability group, not a list of observed defects.
+
+### POS-ROAD-003 — R5–R7 product operations, supply chain and customer capability are deferred
+
+- Stable ID: `POS-ROAD-003`.
+- Title: R5–R7 product operations, supply chain and customer capability are deferred.
+- Classification: Deferred Roadmap Capability.
+- Status: Deferred.
+- Severity: Informational.
+- Affected area: product import/export/bulk/labels, suppliers/purchases/lots/expiry, customers/loyalty.
+- Evidence: Policy/roadmap evidence at `D:\Projects_1\POS_Enterprise_DotNet\docs\project\MASTER-ROADMAP.md` — R5, R6 and R7; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\DECISIONS.md` — `DEC-018`.
+- Observed or known condition: R5, R6 and R7 are Not Started; isolated models or screens do not establish commercial-stage completion.
+- Expected condition or intended boundary: implementation and acceptance follow roadmap order and stage contracts.
+- User/business impact: these capabilities are not part of the accepted current product-stage baseline.
+- Trigger or reproduction precondition: entry into R5, R6 or R7 after dependencies PASS.
+- Workaround or recovery behavior: No verified workaround recorded.
+- Related invariant/decision/roadmap checkpoint: stock/held-sale boundaries; `DEC-018`; R5–R7.
+- Owner checkpoint: R5, R6 and R7 respectively.
+- Closure criteria: every named stage meets its exit criteria, automated gates and manual acceptance.
+- Revalidation trigger: start or scope change of R5–R7.
+- Last verified commit: `e330b616b277bde3bed2a46e71fe511cb4531ce8`.
+- Last verified time: `2026-07-31T14:32:44.841+07:00` roadmap review.
+- Notes: deferred capability group, not a runtime bug.
+
+### POS-ROAD-004 — R8–R10 pricing, documents and reporting capability are deferred
+
+- Stable ID: `POS-ROAD-004`.
+- Title: R8–R10 pricing, documents and reporting capability are deferred.
+- Classification: Deferred Roadmap Capability.
+- Status: Deferred.
+- Severity: Informational.
+- Affected area: line discounts, coupon/voucher/promotion, return receipt, cashbook, daily close and reports.
+- Evidence: Policy/roadmap evidence at `D:\Projects_1\POS_Enterprise_DotNet\docs\project\MASTER-ROADMAP.md` — R8, R9 and R10; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\ARCHITECTURE.md` — existing controlled-discount/return foundation boundaries; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\DECISIONS.md` — `DEC-012`, `DEC-013`, `DEC-018`.
+- Observed or known condition: controlled discount and return foundation exists, but R8–R10 are Not Started and their broader scope/acceptance is incomplete.
+- Expected condition or intended boundary: future stage completion must use immutable historical evidence, correct allocation and named acceptance; gross profit must not be called net profit.
+- User/business impact: existing foundation must not be advertised as complete promotion, cashbook, close or reporting capability.
+- Trigger or reproduction precondition: entry into R8, R9 or R10 after dependencies PASS.
+- Workaround or recovery behavior: No verified workaround recorded.
+- Related invariant/decision/roadmap checkpoint: `INV-DISCOUNT-001`, `INV-DISCOUNT-002`, `INV-RETURN-001` to `INV-RETURN-003`; R8–R10.
+- Owner checkpoint: R8, R9 and R10 respectively.
+- Closure criteria: every named stage meets its exit criteria, regression gates and manual acceptance.
+- Revalidation trigger: pricing, discount, return, receipt, close or reporting scope change.
+- Last verified commit: `e330b616b277bde3bed2a46e71fe511cb4531ce8`.
+- Last verified time: `2026-07-31T14:32:44.841+07:00` source/roadmap review.
+- Notes: partial source is neither a completed commercial checkpoint nor a confirmed defect.
+
+### POS-ROAD-005 — R11–R13 hardware, release and pilot capability are deferred
+
+- Stable ID: `POS-ROAD-005`.
+- Title: R11–R13 hardware, release and pilot capability are deferred.
+- Classification: Deferred Roadmap Capability.
+- Status: Deferred.
+- Severity: Informational.
+- Affected area: hardware/load acceptance, installer/license/update and store pilot.
+- Evidence: Policy/roadmap evidence at `D:\Projects_1\POS_Enterprise_DotNet\docs\project\MASTER-ROADMAP.md` — R11, R12 and R13; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\DECISIONS.md` — `DEC-008`, `DEC-018`.
+- Observed or known condition: R11, R12 and R13 are Not Started; no R0.5D hardware, installer, upgrade or store-pilot execution occurred.
+- Expected condition or intended boundary: physical devices, target displays/load, release/update/rollback and pilot operations require their explicit acceptance evidence.
+- User/business impact: the current baseline is not a release or pilot acceptance claim.
+- Trigger or reproduction precondition: entry into R11, R12 or R13 after dependency stages PASS.
+- Workaround or recovery behavior: No verified workaround recorded.
+- Related invariant/decision/roadmap checkpoint: receipt hardware boundary; `DEC-008`, `DEC-018`; R11–R13.
+- Owner checkpoint: R11, R12 and R13 respectively.
+- Closure criteria: all stage exit criteria, manual acceptance and release/pilot evidence PASS in roadmap order.
+- Revalidation trigger: hardware, supported environment, installer, license, update, release or pilot plan change.
+- Last verified commit: `e330b616b277bde3bed2a46e71fe511cb4531ce8`.
+- Last verified time: `2026-07-31T14:32:44.841+07:00` roadmap review.
+- Notes: deferred capability group, not a runtime bug.
+
+## 6. Roadmap and evidence boundary
+
+- R1.2, R1.3 and R2–R13 being Not Started does not mean every item in those scopes is a bug; R1.1 runtime E2E is separately reconciled as PASS with repository closeout pending.
+- Foundation source may exist while its commercial checkpoint remains Not Started.
+- Completed architecture foundation does not mean hardware, manual or store acceptance has passed.
+- Source existence does not equal runtime acceptance.
+- Test source existence does not mean tests were freshly run.
+- Roadmap completion depends on the checkpoint exit criteria, required gates and manual acceptance.
+- Manual VietQR confirmation is not bank API confirmation.
+- Receipt printing source is not physical-printer acceptance.
+- Return business state is not proof of external refund execution or an immutable printed return receipt.
+- Migration and ModelSnapshot source are not proof of migration application to a real database.
+
+## 7. Closure discipline
+
+An issue may change to `Resolved` only when its closure criteria are met and the evidence is recorded. A future session must:
+
+1. Re-read the live issue record and related invariant/decision.
+2. Reproduce or verify the condition in an authorized checkpoint.
+3. Add regression or manual acceptance evidence appropriate to the boundary.
+4. Run all required gates.
+5. Record the accepted commit and evidence time.
+6. Update this register and related Project Memory in the same checkpoint.
+
+## 8. Recounted summary
+
+| Dimension | Value |
+|---|---:|
+| Total records | 13 |
+| Confirmed Defect | 0 |
+| Known Operational Limitation | 3 |
+| Verification Gap | 6 |
+| Deferred Roadmap Capability | 4 |
+| Resolved Historical Issue | 0 |
+| Open | 2 |
+| Monitoring | 3 |
+| In Progress | 1 |
+| Deferred | 4 |
+| Resolved | 0 |
+| Resolved locally; closeout commit/push pending | 1 |
+| Not Revalidated | 2 |
+| Critical | 0 |
+| High | 0 |
+| Medium | 7 |
+| Low | 1 |
+| Informational | 5 |
+
+The counts above were recounted directly from these 13 stable IDs: `POS-OPS-001`, `POS-OPS-002`, `POS-OPS-003`, `POS-VER-001`, `POS-VER-002`, `POS-VER-003`, `POS-VER-004`, `POS-VER-005`, `POS-ROAD-001`, `POS-ROAD-002`, `POS-ROAD-003`, `POS-ROAD-004`, `POS-ROAD-005`. There are no confirmed open runtime defects in this register.

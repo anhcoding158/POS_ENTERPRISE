@@ -508,9 +508,9 @@ Set-TextFile "src/POS.Wpf/appsettings.json" @'
     "DatabasePath": "data/pos-enterprise.db",
     "DatabaseTimeoutSeconds": 30,
     "ApplyMigrationsOnStartup": true,
-    "SeedDefaultAdministrator": true,
+     "SeedDefaultAdministrator": false,
     "DefaultAdminUsername": "admin",
-    "DefaultAdminPassword": "admin123",
+     "DefaultAdminPassword": "",
     "DefaultAdminFullName": "Quản trị viên hệ thống"
   },
   "Store": {
