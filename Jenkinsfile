@@ -48,10 +48,10 @@ if not "%DOTNET_MAJOR%"=="10" (
 
 if not exist "POS.Enterprise.slnx" exit /b 1
 if not exist "dotnet-tools.json" exit /b 1
-if not exist "scripts\Test-QualityGate.ps1" exit /b 1
-if not exist "src\POS.Infrastructure\POS.Infrastructure.csproj" exit /b 1
-if not exist "src\POS.Wpf\POS.Wpf.csproj" exit /b 1
-if not exist "tests\POS.Architecture.Tests\POS.Architecture.Tests.csproj" exit /b 1
+if not exist "scripts/Test-QualityGate.ps1" exit /b 1
+if not exist "src/POS.Infrastructure/POS.Infrastructure.csproj" exit /b 1
+if not exist "src/POS.Wpf/POS.Wpf.csproj" exit /b 1
+if not exist "tests/POS.Architecture.Tests/POS.Architecture.Tests.csproj" exit /b 1
 
 endlocal
 '''
@@ -78,7 +78,7 @@ endlocal
 
         stage('Quality Gate') {
             steps {
-                bat label: 'Run Quality Gate with EF check', script: 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "scripts\Test-QualityGate.ps1"'
+                bat label: 'Run Quality Gate with EF check', script: 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "scripts/Test-QualityGate.ps1"'
             }
         }
     }
