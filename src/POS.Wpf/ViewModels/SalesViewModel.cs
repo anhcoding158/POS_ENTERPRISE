@@ -1416,7 +1416,8 @@ public sealed class SalesViewModel :
                 return;
             }
 
-            var shown = await dialog.ShowPresentationAsync(
+            var shown = await ShowPersistedVietQrPresentationAsync(
+                latest.Value,
                 new VietQrPaymentPresentation(
                     latest.Value.Amount,
                     latest.Value.DisplayCode,
@@ -1427,21 +1428,15 @@ public sealed class SalesViewModel :
                     AccountName = latest.Value.AccountName,
                     RecipientInformationMessage =
                         $"Tài khoản {latest.Value.AccountNumber}"
-                });
-            if (shown.IsFailure)
+                },
+                id => intents.MarkPresentedAsync(id),
+                presentation => dialog.ShowPresentationAsync(presentation));
+            if (shown.Result.IsFailure)
             {
-                ShowError("Không thể mở màn hình VietQR. Vui lòng thử lại.");
+                ShowError(shown.DialogAttempted
+                    ? "Không thể mở màn hình VietQR. Vui lòng thử lại."
+                    : shown.Result.AppError.Message);
                 return;
-            }
-
-            if (latest.Value.Status == PaymentIntentStatus.Created)
-            {
-                var presented = await intents.MarkPresentedAsync(pending.Id);
-                if (presented.IsFailure)
-                {
-                    ShowError(presented.AppError.Message);
-                    return;
-                }
             }
 
             await LoadPaymentIntentRecoveryAsync();
@@ -3749,7 +3744,8 @@ public sealed class SalesViewModel :
             return Result.Failure<SalesPaymentAuthorizationOutcome>(
                 png.AppError);
 
-        var dialogResult = await dialog.ShowPresentationAsync(
+        var presentation = await ShowPersistedVietQrPresentationAsync(
+            created.Value,
             new VietQrPaymentPresentation(
                 created.Value.Amount,
                 created.Value.DisplayCode,
@@ -3760,17 +3756,15 @@ public sealed class SalesViewModel :
                 AccountName = created.Value.AccountName,
                 RecipientInformationMessage =
                     $"Tài khoản {created.Value.AccountNumber}"
-            });
+            },
+            id => intentService.MarkPresentedAsync(id),
+            value => dialog.ShowPresentationAsync(value));
 
-        if (dialogResult.IsFailure)
+        if (presentation.Result.IsFailure)
             return Result.Failure<SalesPaymentAuthorizationOutcome>(
-                dialogResult.AppError);
+                presentation.Result.AppError);
 
-        var presented = await intentService.MarkPresentedAsync(
-            created.Value.Id);
-        if (presented.IsFailure)
-            return Result.Failure<SalesPaymentAuthorizationOutcome>(
-                presented.AppError);
+        var dialogResult = presentation.Result;
 
         if (!dialogResult.Value.Confirmed)
         {
@@ -3800,6 +3794,37 @@ public sealed class SalesViewModel :
                     confirmedPaymentAmount: totalAmount,
                     paymentReference: confirmed.Value.DisplayCode,
                     transferContent: confirmed.Value.TransferContent)));
+    }
+
+    private static async Task<(
+        Result<VietQrPaymentDialogResult> Result,
+        bool DialogAttempted)> ShowPersistedVietQrPresentationAsync(
+        PaymentIntentDto intent,
+        VietQrPaymentPresentation presentation,
+        Func<int, Task<Result<PaymentIntentDto>>> markPresentedAsync,
+        Func<VietQrPaymentPresentation, Task<Result<VietQrPaymentDialogResult>>>
+            showPresentationAsync)
+    {
+        if (intent.Status == PaymentIntentStatus.Created)
+        {
+            var presented = await markPresentedAsync(intent.Id);
+            if (presented.IsFailure)
+                return (
+                    Result.Failure<VietQrPaymentDialogResult>(
+                        presented.AppError),
+                    false);
+        }
+        else if (intent.Status != PaymentIntentStatus.Presented)
+        {
+            return (
+                Result.Failure<VietQrPaymentDialogResult>(
+                    new AppError(
+                        "PAYMENT_INTENT.INVALID_TRANSITION",
+                        "Yêu cầu VietQR không thể hiển thị.")),
+                false);
+        }
+
+        return (await showPresentationAsync(presentation), true);
     }
 
     private static bool IsPaymentIntentSchemaCompatibilityFailure(

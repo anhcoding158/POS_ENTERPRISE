@@ -66,17 +66,43 @@ public sealed class PaymentIntentRecoveryActionTests
     }
 
     [Fact]
-    public void Created_recovery_render_success_marks_presented_once()
+    public void Recovery_routes_created_and_presented_through_the_guarded_presentation_flow()
     {
         var source = Read("src", "POS.Wpf", "ViewModels", "SalesViewModel.cs");
         var method = Slice(source, "private async Task ShowPaymentIntentQrAsync()",
             "private async Task ConfirmPaymentIntentRecoveryAsync()");
-        var dialog = method.IndexOf("ShowPresentationAsync(", StringComparison.Ordinal);
-        var mark = method.IndexOf("MarkPresentedAsync(pending.Id)", StringComparison.Ordinal);
+        var render = method.IndexOf("gateway.RenderPng(latest.Value.PayloadText)",
+            StringComparison.Ordinal);
+        var createdOnly = method.IndexOf(
+            "latest.Value.Status is not (PaymentIntentStatus.Created or PaymentIntentStatus.Presented)",
+            StringComparison.Ordinal);
+        var presentation = method.IndexOf(
+            "ShowPersistedVietQrPresentationAsync(",
+            StringComparison.Ordinal);
 
-        Assert.True(dialog >= 0);
-        Assert.True(dialog < mark);
-        Assert.Equal(mark, method.LastIndexOf("MarkPresentedAsync(pending.Id)", StringComparison.Ordinal));
+        Assert.True(render >= 0);
+        Assert.True(createdOnly >= 0);
+        Assert.True(presentation >= 0);
+        Assert.True(createdOnly < render);
+        Assert.True(render < presentation);
+        Assert.Equal(presentation,
+            method.LastIndexOf("ShowPersistedVietQrPresentationAsync(", StringComparison.Ordinal));
+        Assert.Contains("id => intents.MarkPresentedAsync(id)", method,
+            StringComparison.Ordinal);
+        Assert.Equal(1,
+            method.Split("intents.MarkPresentedAsync(",
+                StringSplitOptions.None).Length - 1);
+        Assert.DoesNotContain("await intents.MarkPresentedAsync(", method,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "presentation => dialog.ShowPresentationAsync(presentation)",
+            method,
+            StringComparison.Ordinal);
+        Assert.Equal(1,
+            method.Split("dialog.ShowPresentationAsync(",
+                StringSplitOptions.None).Length - 1);
+        Assert.DoesNotContain("await dialog.ShowPresentationAsync(", method,
+            StringComparison.Ordinal);
     }
 
     [Fact]

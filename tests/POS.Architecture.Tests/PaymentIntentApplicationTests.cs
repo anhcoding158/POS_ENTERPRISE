@@ -1,7 +1,10 @@
 using Microsoft.EntityFrameworkCore;
+using POS.Application.Common;
 using POS.Application.DTOs.Checkout;
 using POS.Application.DTOs.Payments;
 using POS.Domain.Enums;
+using POS.Wpf.Services;
+using POS.Wpf.ViewModels;
 using Xunit;
 
 namespace POS.Architecture.Tests;
@@ -203,7 +206,140 @@ public sealed class PaymentIntentApplicationTests
 public sealed class PaymentIntentUiTests
 {
     [Fact]
-    public void VietQR_flow_renders_persisted_payload_before_manual_confirmation_and_checkout()
+    public async Task Created_intent_is_persisted_as_presented_before_dialog()
+    {
+        var calls = new List<string>();
+
+        var result = await PresentAsync(
+            Intent(PaymentIntentStatus.Created),
+            id =>
+            {
+                calls.Add($"mark:{id}");
+                return Task.FromResult(Result.Success(
+                    Intent(PaymentIntentStatus.Presented)));
+            },
+            _ =>
+            {
+                calls.Add("dialog");
+                return Task.FromResult(DialogSuccess());
+            });
+
+        Assert.True(result.Result.IsSuccess);
+        Assert.True(result.DialogAttempted);
+        Assert.Equal(["mark:17", "dialog"], calls);
+    }
+
+    [Fact]
+    public async Task Mark_presented_failure_does_not_open_dialog()
+    {
+        var calls = new List<string>();
+
+        var result = await PresentAsync(
+            Intent(PaymentIntentStatus.Created),
+            _ =>
+            {
+                calls.Add("mark");
+                return Task.FromResult(
+                    Result.Failure<PaymentIntentDto>(
+                        new AppError("TEST.MARK_FAILED", "mark failed")));
+            },
+            _ =>
+            {
+                calls.Add("dialog");
+                return Task.FromResult(DialogSuccess());
+            });
+
+        Assert.True(result.Result.IsFailure);
+        Assert.Equal("TEST.MARK_FAILED", result.Result.AppError.Code);
+        Assert.False(result.DialogAttempted);
+        Assert.Equal(["mark"], calls);
+    }
+
+    [Fact]
+    public async Task Presented_replay_opens_dialog_without_marking_again()
+    {
+        var calls = new List<string>();
+
+        var result = await PresentAsync(
+            Intent(PaymentIntentStatus.Presented),
+            _ =>
+            {
+                calls.Add("mark");
+                return Task.FromResult(Result.Success(
+                    Intent(PaymentIntentStatus.Presented)));
+            },
+            _ =>
+            {
+                calls.Add("dialog");
+                return Task.FromResult(DialogSuccess());
+            });
+
+        Assert.True(result.Result.IsSuccess);
+        Assert.True(result.DialogAttempted);
+        Assert.Equal(["dialog"], calls);
+    }
+
+    [Fact]
+    public async Task Dialog_failure_occurs_after_presented_state_is_persisted()
+    {
+        var calls = new List<string>();
+        var persistedStatus = PaymentIntentStatus.Created;
+
+        var result = await PresentAsync(
+            Intent(PaymentIntentStatus.Created),
+            _ =>
+            {
+                calls.Add("mark");
+                persistedStatus = PaymentIntentStatus.Presented;
+                return Task.FromResult(Result.Success(
+                    Intent(persistedStatus)));
+            },
+            _ =>
+            {
+                calls.Add("dialog");
+                Assert.Equal(PaymentIntentStatus.Presented, persistedStatus);
+                return Task.FromResult(
+                    Result.Failure<VietQrPaymentDialogResult>(
+                        new AppError("TEST.DIALOG_FAILED", "dialog failed")));
+            });
+
+        Assert.True(result.Result.IsFailure);
+        Assert.Equal("TEST.DIALOG_FAILED", result.Result.AppError.Code);
+        Assert.True(result.DialogAttempted);
+        Assert.Equal(PaymentIntentStatus.Presented, persistedStatus);
+        Assert.Equal(["mark", "dialog"], calls);
+    }
+
+    [Theory]
+    [InlineData(PaymentIntentStatus.Confirmed)]
+    [InlineData(PaymentIntentStatus.Completed)]
+    public async Task Confirmed_or_completed_intent_is_not_presented_or_opened(
+        PaymentIntentStatus status)
+    {
+        var calls = new List<string>();
+
+        var result = await PresentAsync(
+            Intent(status),
+            _ =>
+            {
+                calls.Add("mark");
+                return Task.FromResult(Result.Success(
+                    Intent(PaymentIntentStatus.Presented)));
+            },
+            _ =>
+            {
+                calls.Add("dialog");
+                return Task.FromResult(DialogSuccess());
+            });
+
+        Assert.True(result.Result.IsFailure);
+        Assert.Equal("PAYMENT_INTENT.INVALID_TRANSITION", result.Result.AppError.Code);
+        Assert.False(result.DialogAttempted);
+        Assert.Empty(calls);
+    }
+
+    [Fact]
+    public void VietQR_checkout_routes_presentation_before_manual_confirmation()
     {
         var source = File.ReadAllText(Path.Combine(
             FindRepositoryRoot(),
@@ -212,21 +348,49 @@ public sealed class PaymentIntentUiTests
             "ViewModels",
             "SalesViewModel.cs"));
 
-        var method = source[source.IndexOf(
+        var methodStart = source.IndexOf(
             "AuthorizePaymentIntentAsync(",
             source.IndexOf("private async Task<Result<SalesPaymentAuthorizationOutcome>>", StringComparison.Ordinal),
-            StringComparison.Ordinal)..];
+            StringComparison.Ordinal);
+
+        Assert.True(methodStart >= 0);
+
+        var methodEnd = source.IndexOf(
+            "private static async Task<(",
+            methodStart,
+            StringComparison.Ordinal);
+
+        Assert.True(methodEnd > methodStart);
+
+        var method = source[methodStart..methodEnd];
         var create = method.IndexOf("intentService.CreateAsync(", StringComparison.Ordinal);
         var render = method.IndexOf("gateway.RenderPng(created.Value.PayloadText)", StringComparison.Ordinal);
-        var presented = method.IndexOf("intentService.MarkPresentedAsync(", StringComparison.Ordinal);
-        var dialog = method.IndexOf("dialog.ShowPresentationAsync(", StringComparison.Ordinal);
+        var presentation = method.IndexOf("ShowPersistedVietQrPresentationAsync(", StringComparison.Ordinal);
         var confirmed = method.IndexOf("intentService.ConfirmReceivedAsync(", StringComparison.Ordinal);
 
         Assert.True(create >= 0);
+        Assert.True(render >= 0);
+        Assert.True(presentation >= 0);
+        Assert.True(confirmed >= 0);
         Assert.True(create < render);
-        Assert.True(render < dialog);
-        Assert.True(dialog < presented);
-        Assert.True(dialog < confirmed);
+        Assert.True(render < presentation);
+        Assert.True(presentation < confirmed);
+        Assert.Equal(presentation,
+            method.LastIndexOf("ShowPersistedVietQrPresentationAsync(", StringComparison.Ordinal));
+        Assert.Contains("id => intentService.MarkPresentedAsync(id)", method,
+            StringComparison.Ordinal);
+        Assert.Equal(1,
+            method.Split("intentService.MarkPresentedAsync(",
+                StringSplitOptions.None).Length - 1);
+        Assert.DoesNotContain("await intentService.MarkPresentedAsync(", method,
+            StringComparison.Ordinal);
+        Assert.Contains("value => dialog.ShowPresentationAsync(value)", method,
+            StringComparison.Ordinal);
+        Assert.Equal(1,
+            method.Split("dialog.ShowPresentationAsync(",
+                StringSplitOptions.None).Length - 1);
+        Assert.DoesNotContain("await dialog.ShowPresentationAsync(", method,
+            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -261,4 +425,56 @@ public sealed class PaymentIntentUiTests
 
         throw new DirectoryNotFoundException("Không tìm thấy repository root.");
     }
+
+    private static async Task<(
+        Result<VietQrPaymentDialogResult> Result,
+        bool DialogAttempted)> PresentAsync(
+        PaymentIntentDto intent,
+        Func<int, Task<Result<PaymentIntentDto>>> markPresentedAsync,
+        Func<VietQrPaymentPresentation, Task<Result<VietQrPaymentDialogResult>>>
+            showPresentationAsync)
+    {
+        var method = typeof(SalesViewModel).GetMethod(
+            "ShowPersistedVietQrPresentationAsync",
+            System.Reflection.BindingFlags.NonPublic |
+            System.Reflection.BindingFlags.Static);
+
+        Assert.NotNull(method);
+
+        var task = method.Invoke(
+            null,
+            [intent, Presentation(), markPresentedAsync, showPresentationAsync]);
+
+        return await Assert.IsType<Task<(
+            Result<VietQrPaymentDialogResult>,
+            bool)>>(task);
+    }
+
+    private static PaymentIntentDto Intent(PaymentIntentStatus status) =>
+        new(
+            17,
+            "VQ-0017",
+            status,
+            35_000,
+            "VND",
+            "PAY persisted",
+            "payload-persisted",
+            "970415",
+            "123",
+            "POS TEST",
+            new DateTimeOffset(2026, 7, 30, 1, 2, 3, TimeSpan.Zero),
+            new DateTimeOffset(2026, 7, 30, 1, 2, 3, TimeSpan.Zero),
+            new DateTimeOffset(2026, 7, 30, 1, 17, 3, TimeSpan.Zero),
+            null,
+            null,
+            false);
+
+    private static VietQrPaymentPresentation Presentation() =>
+        new(35_000, "VQ-0017", "PAY persisted", [1, 2, 3]);
+
+    private static Result<VietQrPaymentDialogResult> DialogSuccess() =>
+        Result.Success(new VietQrPaymentDialogResult(
+            false,
+            "VQ-0017",
+            "PAY persisted"));
 }
