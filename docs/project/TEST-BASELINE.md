@@ -9,15 +9,15 @@
 - Branch: `main`.
 - CapturedAtLocal: `2026-07-31T14:32:44.841+07:00`.
 - Context Pack baseline HEAD: `70523861949aeb5eefe981633db33f50bc890145`.
-- Live HEAD after R1.1 closeout: `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`.
-- Live origin/main after R1.1 closeout: `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`.
+- Live HEAD after R1.3 implementation: `8bebb3ebc2b61c4de2fd8d97dc4c0b6944281bb6`.
+- Live origin/main after R1.3 implementation: `8bebb3ebc2b61c4de2fd8d97dc4c0b6944281bb6`.
 - R0.5 formal closeout commit: `dfb0eb7a000054664aa7feccb51778fe80aa32a7`.
 - R1.1 formal repository closeout commit: `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`.
 - Ahead/behind: `0/0`.
 - Baseline commit: `e330b616b277bde3bed2a46e71fe511cb4531ce8`.
 - Baseline relationship: R0 historical baseline is at `e330b616`; R0.5 Context Pack and its historical verification evidence are at `7052386`; live pre-closeout Git is at `afdda252`. These commits are not interchangeable.
 - Baseline type: Accepted Historical R0 Baseline.
-- Current checkpoint: R1.3 — CI Artifacts reconciliation; R1.1 and R1.2 are Closed / Committed / Pushed / Git-clean.
+- Current checkpoint: R1.3/R1 Project Memory formal closeout preparation; R1.1 and R1.2 are Closed / Committed / Pushed / Git-clean.
 - R0.5D execution policy: read-only evidence audit; restore, build, tests, Quality Gate, EF commands, migrations, database access and application execution were prohibited.
 - RuntimeExecutedInR0.5D: No.
 - DatabaseReadInR0.5D: No.
@@ -107,7 +107,7 @@ The following build/test/gate/manual results were supplied as completed live-run
 - Runtime evidence remains attributed to `afdda252ce124413b9190607a96a0046cf5097e7`; the R0.5 Context Pack baseline remains `70523861949aeb5eefe981633db33f50bc890145`.
 - The accepted Jenkins evidence covers SCM checkout, Windows agent, .NET SDK `10.0.302`, Release build with 0 warnings/0 errors, 975/975 tests, Quality Gate, vulnerability scan, EF pending-model check, failure propagation and final normal rerun.
 - Manual UI acceptance for this docs-only repository-closeout payload: N/A. This does not replace the accepted Jenkins runtime evidence.
-- R1 remains In Progress. R1.2 is Closed / Committed / Pushed / Git-clean at `7490e87a2b5381f6e030ef0948b5b6be0dd2e77d`. R1.3 CI Artifacts is Implemented / local verification PASS / staged review pending after owner correction: native publish output `POS.Enterprise.exe`, `POS.Enterprise.dll`, `POS.Enterprise.deps.json` and `POS.Enterprise.runtimeconfig.json` are the required root files; live Jenkins remains PENDING POST-PUSH CI RUN.
+- R1 remains In Progress. R1.2 is Closed / Committed / Pushed / Git-clean at `7490e87a2b5381f6e030ef0948b5b6be0dd2e77d`. R1.3 CI Artifacts is implemented and locally verified; the live Jenkins verification below is now PASS on the exact pushed revision, while formal R1 closeout still requires the Project Memory closeout commit/push and Git-clean verification.
 - Final local verification in this R1.1 turn: explicit restore PASS; explicit Release build PASS with 0 warnings/0 errors; explicit Release full tests PASS with 975 passed, 0 failed and 0 skipped.
 - Quality Gate first sandbox attempt reached restore/build/tests but the network-dependent vulnerability scan exited `1`; the complete rerun with NuGet access exited `0`, without `-SkipEfCheck`, and passed dependency scan, local tool restore, EF pending-model check, Git whitespace and Git status checks. Its internal build had 0 warnings/0 errors and tests had 975 passed, 0 failed and 0 skipped.
 - Replay-probe check returned `rg` exit `1` with no match, which is the required absent result. `git diff -- Jenkinsfile` was empty.
@@ -123,7 +123,7 @@ The following build/test/gate/manual results were supplied as completed live-run
 - Quality Gate: PASS, exit code `0`, without `-SkipEfCheck`; Debug build 0 warnings/0 errors, 975/975 tests, vulnerability scan PASS, local tool restore PASS, EF pending-model check PASS and Git checks PASS.
 - Jenkinsfile diff: empty. Replay-probe search: absent (`rg` exit `1`).
 - Manual UI acceptance: N/A; this payload changes repository metadata and Project Memory only.
-- R1.2 formal repository baseline is closed at `7490e87a2b5381f6e030ef0948b5b6be0dd2e77d`. R1.3 local artifact implementation and verification PASS; live Jenkins remains PENDING POST-PUSH CI RUN and formal closeout is pending.
+- R1.2 formal repository baseline is closed at `7490e87a2b5381f6e030ef0948b5b6be0dd2e77d`. The statements in this historical section predate the live R1.3 run recorded below.
 
 ## 3H. R1.3 CI artifact local verification — 2026-08-01
 
@@ -135,7 +135,31 @@ The following build/test/gate/manual results were supplied as completed live-run
 - Native publish: 50 files, 11,807,483 bytes; required root files are `POS.Enterprise.exe` (162,304), `POS.Enterprise.dll` (703,488), `POS.Enterprise.deps.json` (39,586) and `POS.Enterprise.runtimeconfig.json` (588). `appsettings.json` is 829 bytes; PDB count `0`; database/backup-like denylist count `0`; allowlist/denylist validation PASS.
 - Contract artifact total: 13,233,046 bytes. `failure-probe.log` was 47 bytes only during the controlled probe, is excluded from the contract total and was deleted afterward.
 - Failure propagation: controlled `cmd.exe /c exit 23` probe returned exact exit code `23`. Generated `_ci_artifacts` was deleted safely at the exact root; it is not staged.
-- Live Jenkins artifact publication: PENDING POST-PUSH CI RUN. Formal R1.3 closeout remains pending staged review, commit, push, live Jenkins verification and Git-clean verification. Manual UI: N/A; this checkpoint changes CI/repository metadata only.
+- Local manual UI acceptance: N/A; this local checkpoint changed CI/repository metadata only.
+
+## 3I. R1.3 live Jenkins verification and artifact smoke test — 2026-08-02
+
+Evidence source: user-supplied live Jenkins evidence; this preparation turn did not rerun the pipeline.
+
+- Job: `POS_ENTERPRISE_R1_1_CI`.
+- Build: `#5`; URL: `http://localhost:8080/job/POS_ENTERPRISE_R1_1_CI/5/`.
+- Result: `SUCCESS`.
+- SCM revision: `8bebb3ebc2b61c4de2fd8d97dc4c0b6944281bb6`.
+- Release build: 0 warnings, 0 errors.
+- Tests: total `975`, executed `975`, passed `975`, failed `0`, skipped/notExecuted `0`.
+- Quality Gate: `PASS`.
+- Vulnerability scan: `PASS`.
+- EF pending model changes: none.
+- Publish win-x64: `PASS`.
+- Artifact contract validator: `PASS`.
+- Archive/fingerprint: `PASS`.
+- Publish: `50` files, `11,807,483` bytes.
+- Complete archived contract: `56` files, `13,291,155` bytes.
+- Artifact ZIP SHA-256: `38adf83096b23b19b3e17ee5fc143025cbf15bcbbb12cdb688efe160414c848d`.
+
+Manual artifact smoke test: downloaded the Jenkins ZIP, extracted it completely, and opened `POS.Enterprise.exe`; basic operation was stable. The test used an existing Windows user profile. Clean Windows profile/clean-machine first-run behavior remains `Not Revalidated`; customer clean-install acceptance is not claimed. The archived `appsettings.json` contains blank values for `Payment.BankBin`, `Payment.AccountNumber`, `Payment.AccountName` and `Infrastructure.DefaultAdminPassword`. The ZIP contains no database. VietQR recipient values that reappeared after extraction came from configuration previously persisted under the existing Windows user profile, not from the ZIP. No actual bank, account-holder, account, password or QR values are recorded here.
+
+Forgot password and change password are not implemented. Store/VietQR first-run setup and account/password-management gaps belong to R4 under the current Master Roadmap. R1.3/R1 remains formally open until the Project Memory closeout commit/push and final Git-clean verification; R2 remains Not Started.
 
 ## 4. Baseline result table
 
@@ -248,7 +272,7 @@ Revalidate the applicable gates when:
 - baseline evidence and current HEAD are no longer the same commit;
 - a known issue closure criterion requires new evidence.
 
-Both R0.5F fresh-session checks PASS. R0.5 was Closed / Committed / Pushed at `dfb0eb7a000054664aa7feccb51778fe80aa32a7`. R1.1 and R1.2 are closed at their corresponding commits. R1.3 is in staged review; commit/push, live Jenkins verification and Git-clean verification remain pending before formal closeout.
+Both R0.5F fresh-session checks PASS. R0.5 was Closed / Committed / Pushed at `dfb0eb7a000054664aa7feccb51778fe80aa32a7`. R1.1 and R1.2 are closed at their corresponding commits. R1.3 live Jenkins verification is PASS at build #5 on `8bebb3ebc2b61c4de2fd8d97dc4c0b6944281bb6`; Project Memory closeout commit/push and Git-clean verification remain pending before formal R1 closeout. No pipeline was rerun in this documentation turn.
 
 ## 10. Future failure handling
 

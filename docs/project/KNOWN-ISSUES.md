@@ -9,15 +9,15 @@
 - Branch: `main`.
 - CapturedAtLocal: `2026-07-31T14:32:44.841+07:00`.
 - Context Pack baseline HEAD: `70523861949aeb5eefe981633db33f50bc890145`.
-- Live HEAD after R1.2 closeout: `7490e87a2b5381f6e030ef0948b5b6be0dd2e77d`.
-- Live origin/main after R1.2 closeout: `7490e87a2b5381f6e030ef0948b5b6be0dd2e77d`.
+- Live HEAD after R1.3 implementation: `8bebb3ebc2b61c4de2fd8d97dc4c0b6944281bb6`.
+- Live origin/main after R1.3 implementation: `8bebb3ebc2b61c4de2fd8d97dc4c0b6944281bb6`.
 - Ahead/behind: `0/0`.
-- EvidenceMode: Read-only source and Project Memory audit.
+- EvidenceMode: Read-only source/Project Memory audit plus user-supplied live Jenkins and artifact-smoke evidence.
 - RuntimeExecutedInR0.5D: No.
 - DatabaseReadInR0.5D: No.
 - ExporterExecutedInR0.5E: Yes; latest pack exit code `0`, secret scan `0 findings`, coverage `501/501`, manifest/integrity/exclusion checks passed.
 - DatabaseReadInR0.5E: No.
-- CurrentCheckpoint: R1.3 — CI Artifacts — In Progress after owner correction to native `POS.Enterprise.*` output names.
+- CurrentCheckpoint: R1.3/R1 Project Memory formal closeout preparation; live Jenkins verification PASS, formal closeout pending commit/push and Git-clean verification.
 - Scope: inventory evidence-supported operating conditions only; R0.5D did not reproduce runtime failures, run gates, open a real database, inspect database rows or perform hardware/store acceptance.
 
 Source-of-truth order:
@@ -246,17 +246,17 @@ Severity describes supported impact, not roadmap priority. Insufficient evidence
 - Severity: Informational.
 - Affected area: automated push pipeline, repository standards and CI artifacts.
 - Evidence: Policy/roadmap evidence at `D:\Projects_1\POS_Enterprise_DotNet\docs\project\MASTER-ROADMAP.md` — R1; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\DECISIONS.md` — `DEC-018`.
-- Observed or known condition: supplied Jenkins evidence establishes R1.1 runtime E2E PASS at `afdda252ce124413b9190607a96a0046cf5097e7`, including normal success and intentional failure propagation. R1.1 repository closeout is Closed / Committed / Pushed / Git-clean at `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`. R1.2 is Closed / Committed / Pushed / Git-clean at `7490e87a2b5381f6e030ef0948b5b6be0dd2e77d`. The binary-name blocker is resolved by owner decision to use native `POS.Enterprise.*`; R1.3 local artifact verification PASS, staged review, commit/push, live Jenkins verification and formal closeout remain pending.
-- Expected condition or intended boundary: complete R1.3 staged review, commit/push and live Jenkins artifact verification; full R1 completion still requires R1.1–R1.3 exit criteria.
-- User/business impact: current readiness claims cannot rely on an accepted automated push pipeline.
+- Observed or known condition: supplied Jenkins evidence establishes R1.1 runtime E2E PASS at `afdda252ce124413b9190607a96a0046cf5097e7`, including normal success and intentional failure propagation. R1.1 repository closeout is Closed / Committed / Pushed / Git-clean at `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`. R1.2 is Closed / Committed / Pushed / Git-clean at `7490e87a2b5381f6e030ef0948b5b6be0dd2e77d`. R1.3 live Jenkins job `POS_ENTERPRISE_R1_1_CI` build `#5` is SUCCESS on exact revision `8bebb3ebc2b61c4de2fd8d97dc4c0b6944281bb6`, with all five artifact groups validated and the downloaded ZIP smoke-tested using an existing Windows profile. The binary-name blocker is resolved; only formal Project Memory closeout commit/push and Git-clean verification remain.
+- Expected condition or intended boundary: preserve the exact Jenkins/artifact evidence, complete the Project Memory closeout commit/push, verify Git-clean, and only then close R1. R2 remains Not Started until that sequence is complete.
+- User/business impact: R1 readiness is evidenced by the live run, but R1 must not be reported Closed before the required repository closeout mechanics.
 - Trigger or reproduction precondition: R1.2 standards change or R1.3 CI artifact implementation/closeout.
 - Workaround or recovery behavior: No verified workaround recorded.
 - Related invariant/decision/roadmap checkpoint: `INV-MIGRATION-002`; `DEC-018`, `DEC-022`; R1.
 - Owner checkpoint: R1.
 - Closure criteria: R1.1–R1.3 exit criteria and manual pipeline acceptance PASS.
 - Revalidation trigger: start or change of R1 scope, Jenkinsfile, repository standards or CI artifact policy.
-- Last verified commit: `7490e87a2b5381f6e030ef0948b5b6be0dd2e77d`.
-- Last verified time: `2026-08-01` R1.3 owner contract correction.
+- Last verified commit: `8bebb3ebc2b61c4de2fd8d97dc4c0b6944281bb6`.
+- Last verified time: `2026-08-02` user-supplied Jenkins build #5 and artifact smoke evidence.
 - Notes: reconciled verification gap, not a runtime bug and not a claim that all of R1 is complete.
 
 ### POS-ROAD-002 — R2–R4 operational hardening, recovery and store administration are deferred
@@ -266,10 +266,10 @@ Severity describes supported impact, not roadmap priority. Insufficient evidence
 - Classification: Deferred Roadmap Capability.
 - Status: Deferred.
 - Severity: Informational.
-- Affected area: single instance, SQLite busy/locked UX, support bundle, disk monitoring, backup/restore, store setup, employees, roles and audit UI.
+- Affected area: single instance, SQLite busy/locked UX, support bundle, disk monitoring, backup/restore, first-run store/VietQR setup, employees, accounts, password management, roles and audit UI.
 - Evidence: Policy/roadmap evidence at `D:\Projects_1\POS_Enterprise_DotNet\docs\project\MASTER-ROADMAP.md` — R2, R3 and R4; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\DECISIONS.md` — decisions not reconstructed and `DEC-018`.
-- Observed or known condition: R2, R3 and R4 are Not Started although some lower-level foundation exists.
-- Expected condition or intended boundary: each stage must meet its own exit criteria and manual acceptance.
+- Observed or known condition: R2, R3 and R4 are Not Started although some lower-level foundation exists. Forgot password and change password are not implemented. Clean-profile first-run behavior was not revalidated: the artifact has blank VietQR recipient configuration and blank default-admin-password configuration, and no database; prior VietQR values that reappeared came from an existing Windows profile’s persisted configuration. This is a readiness/verification gap, not evidence that a clean install failed.
+- Expected condition or intended boundary: each stage must meet its own exit criteria and manual acceptance. R4.1 covers typed/validated store and VietQR setup; R4.2 covers employee/account workflows including password reset/management; clean-profile first-run acceptance must be performed before customer clean-install claims.
 - User/business impact: foundation source cannot be promoted to operational/store-management completion.
 - Trigger or reproduction precondition: entry into R2, R3 or R4 after dependency stages PASS.
 - Workaround or recovery behavior: No verified workaround recorded.
@@ -277,8 +277,8 @@ Severity describes supported impact, not roadmap priority. Insufficient evidence
 - Owner checkpoint: R2, R3 and R4 respectively.
 - Closure criteria: every named stage meets its exit criteria, required gates and manual acceptance.
 - Revalidation trigger: start of R2–R4 or any relevant reliability, database-recovery, authentication or administration change.
-- Last verified commit: `e330b616b277bde3bed2a46e71fe511cb4531ce8`.
-- Last verified time: `2026-07-31T14:32:44.841+07:00` roadmap review.
+- Last verified commit: `8bebb3ebc2b61c4de2fd8d97dc4c0b6944281bb6`.
+- Last verified time: `2026-08-02` roadmap review plus user-supplied R1.3 artifact smoke evidence.
 - Notes: deferred capability group, not a list of observed defects.
 
 ### POS-ROAD-003 — R5–R7 product operations, supply chain and customer capability are deferred
@@ -349,7 +349,7 @@ Severity describes supported impact, not roadmap priority. Insufficient evidence
 
 ## 6. Roadmap and evidence boundary
 
-- R1.3 being In Progress and R2–R13 being Not Started does not mean every item in those scopes is a bug; R1.1 and R1.2 are separately reconciled as Closed / Committed / Pushed / Git-clean, while R1.3 local artifact verification PASS; staged review, commit/push, live Jenkins verification and formal closeout remain pending.
+- R1.3/R1 formal closeout preparation and R2–R13 being Not Started does not mean every item in those scopes is a bug; R1.1 and R1.2 are separately Closed / Committed / Pushed / Git-clean, R1.3 live Jenkins build #5 and artifact smoke evidence are PASS, and only the closeout commit/push plus Git-clean verification remain.
 - Foundation source may exist while its commercial checkpoint remains Not Started.
 - Completed architecture foundation does not mean hardware, manual or store acceptance has passed.
 - Source existence does not equal runtime acceptance.
