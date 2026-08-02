@@ -1,5 +1,18 @@
 # ARCHITECTURE — POS ENTERPRISE RETAIL V1
 
+## R2.1 Windows process ownership and activation boundary
+
+`POS.Wpf.App` is the composition root for single-instance ownership. It loads configuration, resolves `Infrastructure.DatabasePath` to `DatabaseIdentity`, and asks `WindowsSingleInstanceCoordinator` to acquire ownership before `Host.StartAsync`, database initialization or SQLite access.
+
+- `DatabasePathResolver` produces the same absolute path used by persistence.
+- `DatabaseIdentity` canonicalizes the Windows path and derives SHA-256-scoped mutex/pipe names without exposing the raw path.
+- `WindowsSingleInstanceCoordinator` owns the mutex and current-user-only named-pipe listener. Same identity is mutually exclusive; different identities remain independent; abandoned ownership is recoverable after crash.
+- A contender sends only the fixed activation payload. It does not initialize Host or access the database.
+- `WindowActivationCoordinator` retains at most one pending activation across setup/login/shell target transitions. `WindowActivationService` restores minimized windows, attempts foreground activation and falls back to taskbar attention without putting business logic in code-behind.
+- Listener cancellation is awaited and named resources are disposed before ownership release. Tests use unique identities and signal readiness only after listener startup returns.
+
+This boundary completes R2.1 only. SQLite busy/locked classification and UX belong to R2.2 and are not implemented here.
+
 ## 1. Mục đích và evidence boundary
 
 Đây là bản đồ kiến trúc được tái dựng từ source live, không phải thiết kế suy đoán.

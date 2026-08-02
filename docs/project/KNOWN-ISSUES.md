@@ -17,7 +17,7 @@
 - DatabaseReadInR0.5D: No.
 - ExporterExecutedInR0.5E: Yes; latest pack exit code `0`, secret scan `0 findings`, coverage `501/501`, manifest/integrity/exclusion checks passed.
 - DatabaseReadInR0.5E: No.
-- CurrentCheckpoint: R1.3/R1 Project Memory formal closeout preparation; live Jenkins verification PASS, formal closeout pending commit/push and Git-clean verification.
+- CurrentCheckpoint: R2.1 Single-instance Application COMPLETE; R2.2 — SQLite Busy/Locked UX is next and Not Started.
 - Scope: inventory evidence-supported operating conditions only; R0.5D did not reproduce runtime failures, run gates, open a real database, inspect database rows or perform hardware/store acceptance.
 
 Source-of-truth order:
@@ -259,26 +259,26 @@ Severity describes supported impact, not roadmap priority. Insufficient evidence
 - Last verified time: `2026-08-02` user-supplied Jenkins build #5 and artifact smoke evidence.
 - Notes: reconciled verification gap, not a runtime bug and not a claim that all of R1 is complete.
 
-### POS-ROAD-002 — R2–R4 operational hardening, recovery and store administration are deferred
+### POS-ROAD-002 — Remaining R2.2–R4 operational hardening, recovery and store administration are deferred
 
 - Stable ID: `POS-ROAD-002`.
-- Title: R2–R4 operational hardening, recovery and store administration are deferred.
+- Title: Remaining R2.2–R4 operational hardening, recovery and store administration are deferred.
 - Classification: Deferred Roadmap Capability.
 - Status: Deferred.
 - Severity: Informational.
-- Affected area: single instance, SQLite busy/locked UX, support bundle, disk monitoring, backup/restore, first-run store/VietQR setup, employees, accounts, password management, roles and audit UI.
+- Affected area: SQLite busy/locked UX, support bundle, disk monitoring, backup/restore, first-run store/VietQR setup, employees, accounts, password management, roles and audit UI.
 - Evidence: Policy/roadmap evidence at `D:\Projects_1\POS_Enterprise_DotNet\docs\project\MASTER-ROADMAP.md` — R2, R3 and R4; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\DECISIONS.md` — decisions not reconstructed and `DEC-018`.
-- Observed or known condition: R2, R3 and R4 are Not Started although some lower-level foundation exists. Forgot password and change password are not implemented. Clean-profile first-run behavior was not revalidated: the artifact has blank VietQR recipient configuration and blank default-admin-password configuration, and no database; prior VietQR values that reappeared came from an existing Windows profile’s persisted configuration. This is a readiness/verification gap, not evidence that a clean install failed.
+- Observed or known condition: R2.1 Single-instance Application is COMPLETE with automated and manual multi-process/crash evidence. R2.2–R2.4, R3 and R4 remain Not Started. Forgot password and change password are not implemented. Clean-profile first-run behavior was not revalidated: the artifact has blank VietQR recipient configuration and blank default-admin-password configuration, and no database; prior VietQR values that reappeared came from an existing Windows profile’s persisted configuration. This is a readiness/verification gap, not evidence that a clean install failed.
 - Expected condition or intended boundary: each stage must meet its own exit criteria and manual acceptance. R4.1 covers typed/validated store and VietQR setup; R4.2 covers employee/account workflows including password reset/management; clean-profile first-run acceptance must be performed before customer clean-install claims.
 - User/business impact: foundation source cannot be promoted to operational/store-management completion.
-- Trigger or reproduction precondition: entry into R2, R3 or R4 after dependency stages PASS.
+- Trigger or reproduction precondition: entry into R2.2–R2.4, R3 or R4 after dependency stages PASS.
 - Workaround or recovery behavior: No verified workaround recorded.
-- Related invariant/decision/roadmap checkpoint: `INV-BACKUP-001`, `INV-AUTH-001` to `INV-AUTH-003`, `INV-SECURITY-002`; R2–R4.
+- Related invariant/decision/roadmap checkpoint: `INV-BACKUP-001`, `INV-AUTH-001` to `INV-AUTH-003`, `INV-SECURITY-002`; `DEC-023`; R2.2–R4.
 - Owner checkpoint: R2, R3 and R4 respectively.
 - Closure criteria: every named stage meets its exit criteria, required gates and manual acceptance.
 - Revalidation trigger: start of R2–R4 or any relevant reliability, database-recovery, authentication or administration change.
-- Last verified commit: `8bebb3ebc2b61c4de2fd8d97dc4c0b6944281bb6`.
-- Last verified time: `2026-08-02` roadmap review plus user-supplied R1.3 artifact smoke evidence.
+- Last verified base/closeout: R2.1 base `b437be5de3a3f6deb03b142c88dd913610ebc834`; R2.1 source and memory close together in the commit containing this record.
+- Last verified time: `2026-08-02` R2.1 automated gates and manual Tests A/B/C/D.
 - Notes: deferred capability group, not a list of observed defects.
 
 ### POS-ROAD-003 — R5–R7 product operations, supply chain and customer capability are deferred

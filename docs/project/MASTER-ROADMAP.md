@@ -57,9 +57,9 @@ Bản cài đầu tiên đủ an toàn cho một cửa hàng bán lẻ, một ch
 | R12 | Not Started |
 | R13 | Not Started |
 
-Không đánh dấu stage hoàn thành chỉ vì một phần tính năng đã tồn tại. Controlled Discount đã có nhưng R8 vẫn Not Started vì còn line discount, coupon, voucher và Promotion Engine. Return đã có nhưng R9 vẫn Not Started vì còn immutable return receipt, Cashbook Lite và Daily Close. Receipt printing đã có nhưng R11 vẫn Not Started vì hardware acceptance thực tế chưa hoàn thành. R1.3 và toàn bộ R1 đã Closed / Committed / Pushed / Git-clean tại `b9e382550e2e4abcf7a93ed6c5352322dc967668`; R2 đang In Progress tại current executable checkpoint R2.1B, sau khi R2.1A discovery/baseline đã Completed.
+Không đánh dấu stage hoàn thành chỉ vì một phần tính năng đã tồn tại. Controlled Discount đã có nhưng R8 vẫn Not Started vì còn line discount, coupon, voucher và Promotion Engine. Return đã có nhưng R9 vẫn Not Started vì còn immutable return receipt, Cashbook Lite và Daily Close. Receipt printing đã có nhưng R11 vẫn Not Started vì hardware acceptance thực tế chưa hoàn thành. R1 đã Closed tại `b9e382550e2e4abcf7a93ed6c5352322dc967668`; R2 đang In Progress overall, R2.1 đã COMPLETE và R2.2 là checkpoint tiếp theo nhưng chưa bắt đầu.
 
-Manual acceptance của stage tương lai chỉ là tiêu chí phải đạt; không được ghi PASS trước khi chạy thật. R1.3 live Jenkins build #5 is the executed evidence for the R1 artifact acceptance; R1 formal closeout is Closed at `b9e382550e2e4abcf7a93ed6c5352322dc967668`. R2.1A discovery/baseline completed with Release build 0 warnings/0 errors, 975/975 tests PASS and final Quality Gate rerun PASS; implementation and acceptance remain pending.
+Manual acceptance của stage tương lai chỉ là tiêu chí phải đạt; không được ghi PASS trước khi chạy thật. R1 formal closeout is Closed at `b9e382550e2e4abcf7a93ed6c5352322dc967668`. R2.1 Single-instance Application is COMPLETE with 992/992 full Release tests, final Quality Gate/vulnerability/EF/security checks and manual Tests A/B/C/D PASS. R2.2 — SQLite Busy/Locked UX is next and remains Not Started.
 
 ## R0 — VIETQR RUNTIME CLOSEOUT
 
@@ -151,7 +151,8 @@ R1.3 owner-approved artifact contract:
 - **Dependencies:** R1.
 - **Entry criteria:** R1 PASS and formally Closed / Committed / Pushed / Git-clean at `b9e382550e2e4abcf7a93ed6c5352322dc967668`.
 - **Exit criteria:** hoàn thành R2.1–R2.4 và đáp ứng toàn bộ guardrail nêu trên.
-- **Current checkpoint:** R2.1B — Single-instance Application Implementation & Automated Tests. R2.1A discovery/baseline is Completed; R2.1 implementation, automated tests and manual multi-process/crash acceptance are Not Started.
+- **Completed checkpoint:** R2.1 — Single-instance Application. Database-scoped mutex/pipe ownership, current-user ACL, second-instance activation, crash takeover, automated tests and manual multi-process/crash acceptance PASS.
+- **Current/next checkpoint:** R2.2 — SQLite Busy/Locked UX — Not Started. No R2.2 implementation is included in the R2.1 closeout.
 - **Manual acceptance:** thử phiên thứ hai, busy/locked, disk full/corruption presentation, cart preservation, log/support bundle và cảnh báo disk space.
 
 ## R3 — BACKUP VÀ RESTORE

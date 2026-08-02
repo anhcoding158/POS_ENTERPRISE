@@ -9,10 +9,14 @@ using POS.Application.Abstractions.Services;
 using POS.Application.Services;
 using POS.Infrastructure;
 using POS.Infrastructure.Payments;
+using POS.Infrastructure.Platform;
 using POS.Infrastructure.Persistence;
 using POS.Wpf.Services;
 using POS.Wpf.ViewModels;
 using POS.Wpf.Views;
+
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(
+    "POS.Architecture.Tests")]
 
 namespace POS.Wpf;
 
@@ -29,6 +33,13 @@ public partial class App :
     global::System.Windows.Application
 {
     private IHost? _host;
+    private WindowsSingleInstanceCoordinator?
+        _singleInstanceCoordinator;
+    private readonly WindowActivationCoordinator
+        _windowActivationCoordinator =
+            new(new WindowActivationService());
+    private global::System.Windows.Window?
+        _activationWindow;
 
     protected override async void OnStartup(
         global::System.Windows.StartupEventArgs e)
@@ -58,6 +69,50 @@ public partial class App :
 
             ConfigureApplicationConfiguration(
                 builder);
+
+            var databaseIdentity =
+                ResolveDatabaseIdentity(
+                    builder.Configuration);
+
+            var singleInstanceCoordinator =
+                new WindowsSingleInstanceCoordinator(
+                    databaseIdentity);
+
+            if (!singleInstanceCoordinator.TryAcquire())
+            {
+                var activationRequested =
+                    await WindowsSingleInstanceCoordinator
+                        .RequestActivationAsync(
+                            databaseIdentity);
+
+                var message =
+                    activationRequested
+                        ? "Ứng dụng đang chạy với dữ liệu cửa hàng này. " +
+                          "Cửa sổ đang mở đã được yêu cầu đưa lên phía trước."
+                        : "Ứng dụng đang chạy với dữ liệu cửa hàng này. " +
+                          "Vui lòng chuyển sang cửa sổ ứng dụng đang mở.";
+
+                singleInstanceCoordinator.Dispose();
+
+                global::System.Windows.MessageBox.Show(
+                    message,
+                    "POS Enterprise",
+                    global::System.Windows
+                        .MessageBoxButton.OK,
+                    global::System.Windows
+                        .MessageBoxImage.Information);
+
+                Shutdown(0);
+
+                return;
+            }
+
+            _singleInstanceCoordinator =
+                singleInstanceCoordinator;
+
+            singleInstanceCoordinator
+                .StartActivationListener(
+                    HandleActivationRequestAsync);
 
             ConfigureApplicationServices(
                 builder.Services,
@@ -101,6 +156,25 @@ public partial class App :
         _host =
             null;
 
+        var singleInstanceCoordinator =
+            _singleInstanceCoordinator;
+
+        _singleInstanceCoordinator =
+            null;
+
+        try
+        {
+            if (singleInstanceCoordinator is not null)
+            {
+                await singleInstanceCoordinator
+                    .StopActivationListenerAsync();
+            }
+        }
+        catch
+        {
+            // Listener shutdown is best-effort during application exit.
+        }
+
         if (host is not null)
         {
             /*
@@ -135,13 +209,73 @@ public partial class App :
             finally
             {
                 host.Dispose();
+
+                singleInstanceCoordinator?
+                    .Dispose();
             }
+        }
+        else
+        {
+            singleInstanceCoordinator?
+                .Dispose();
         }
 
         base.OnExit(e);
     }
 
-    private static void
+    private static DatabaseIdentity
+        ResolveDatabaseIdentity(
+            ConfigurationManager configuration)
+    {
+        ArgumentNullException.ThrowIfNull(
+            configuration);
+
+        var options =
+            new InfrastructureOptions();
+
+        configuration
+            .GetSection(
+                InfrastructureOptions.SectionName)
+            .Bind(options);
+
+        options.Validate();
+
+        return DatabasePathResolver
+            .ResolveDatabaseIdentity(
+                options.DatabasePath);
+    }
+
+    private Task HandleActivationRequestAsync()
+    {
+        void RequestActivation()
+        {
+            _windowActivationCoordinator
+                .RequestActivation();
+        }
+
+        if (Dispatcher.CheckAccess())
+        {
+            RequestActivation();
+
+            return Task.CompletedTask;
+        }
+
+        try
+        {
+            Dispatcher.BeginInvoke(
+                RequestActivation,
+                global::System.Windows.Threading
+                    .DispatcherPriority.Normal);
+        }
+        catch (InvalidOperationException)
+        {
+            // The dispatcher is already shutting down.
+        }
+
+        return Task.CompletedTask;
+    }
+
+    internal static void
         ConfigureApplicationConfiguration(
             HostApplicationBuilder builder)
     {
@@ -161,7 +295,8 @@ public partial class App :
                 optional:
                     true,
                 reloadOnChange:
-                    true);
+                    true)
+            .AddEnvironmentVariables();
     }
 
     private static void ConfigureApplicationServices(
@@ -712,8 +847,8 @@ public partial class App :
                 .GetRequiredService<
                     FirstRunSetupWindow>();
 
-        MainWindow =
-            setupWindow;
+        SetMainWindowReference(
+            setupWindow);
 
         return setupWindow.ShowDialog() ==
                true;
@@ -737,8 +872,8 @@ public partial class App :
                 .GetRequiredService<
                     LoginWindow>();
 
-        MainWindow =
-            loginWindow;
+        SetMainWindowReference(
+            loginWindow);
 
         return loginWindow.ShowDialog() ==
                true;
@@ -763,8 +898,8 @@ public partial class App :
                 .GetRequiredService<
                     ShellWindow>();
 
-        MainWindow =
-            shellWindow;
+        SetMainWindowReference(
+            shellWindow);
 
         shellWindow.ShowDialog();
 
@@ -797,8 +932,75 @@ public partial class App :
         }
     }
 
+    private void SetMainWindowReference(
+        global::System.Windows.Window window)
+    {
+        ArgumentNullException.ThrowIfNull(
+            window);
+
+        ClearMainWindowReference();
+
+        MainWindow =
+            window;
+
+        _activationWindow =
+            window;
+
+        window.Loaded +=
+            OnActivationWindowLoaded;
+
+        window.Closed +=
+            OnActivationWindowClosed;
+
+        _windowActivationCoordinator
+            .SetTarget(
+                new WpfWindowActivationTarget(
+                    window));
+    }
+
+    private void OnActivationWindowLoaded(
+        object sender,
+        global::System.Windows.RoutedEventArgs e)
+    {
+        _windowActivationCoordinator
+            .NotifyTargetReady();
+    }
+
+    private void OnActivationWindowClosed(
+        object? sender,
+        EventArgs e)
+    {
+        if (!ReferenceEquals(
+                sender,
+                _activationWindow))
+        {
+            return;
+        }
+
+        _windowActivationCoordinator
+            .ClearTarget();
+
+        _activationWindow =
+            null;
+    }
+
     private void ClearMainWindowReference()
     {
+        if (_activationWindow is not null)
+        {
+            _activationWindow.Loaded -=
+                OnActivationWindowLoaded;
+
+            _activationWindow.Closed -=
+                OnActivationWindowClosed;
+
+            _activationWindow =
+                null;
+        }
+
+        _windowActivationCoordinator
+            .ClearTarget();
+
         MainWindow =
             null;
     }

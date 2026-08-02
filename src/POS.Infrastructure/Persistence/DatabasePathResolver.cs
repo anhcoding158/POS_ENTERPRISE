@@ -72,6 +72,17 @@ public sealed class DatabasePathResolver
     }
 
     /// <summary>
+    /// Resolve the same absolute path used by the runtime and derive its
+    /// process-ownership identity without opening SQLite.
+    /// </summary>
+    public static DatabaseIdentity ResolveDatabaseIdentity(
+        string configuredPath)
+    {
+        return DatabaseIdentity.FromResolvedPath(
+            ResolveDatabasePath(configuredPath));
+    }
+
+    /// <summary>
     /// Tạo connection string SQLite bằng builder
     /// để tránh lỗi ký tự đặc biệt và connection-string injection.
     /// </summary>

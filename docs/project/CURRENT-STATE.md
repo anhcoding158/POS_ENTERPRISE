@@ -7,6 +7,7 @@
 - ReviewedAtLocal: `2026-08-01` (Asia/Saigon, UTC+07:00).
 - ReconciledAtLocal: `2026-08-02` (Asia/Saigon, UTC+07:00).
 - FormalCloseoutPrepAtLocal: `2026-08-02` (Asia/Saigon, UTC+07:00).
+- R2.1CloseoutAtLocal: `2026-08-02` (Asia/Saigon, UTC+07:00).
 - Current repository HEAD after the R1 formal-closeout commit: `b9e382550e2e4abcf7a93ed6c5352322dc967668`.
 - R0.5 formal closeout commit: `dfb0eb7a000054664aa7feccb51778fe80aa32a7`.
 - R1.1 formal repository closeout commit: `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`.
@@ -20,16 +21,16 @@
 - Solution: `D:\Projects_1\POS_Enterprise_DotNet\POS.Enterprise.slnx`
 - Branch: `main`
 - Upstream: `origin/main`
-- Live HEAD after R1.3 implementation: `8bebb3ebc2b61c4de2fd8d97dc4c0b6944281bb6`
-- Live origin/main after R1.3 implementation: `8bebb3ebc2b61c4de2fd8d97dc4c0b6944281bb6`
+- R2.1 implementation base HEAD: `b437be5de3a3f6deb03b142c88dd913610ebc834`
+- R2.1 source and Project Memory are committed together by the closeout commit containing this document.
 - Ahead/behind: `0/0`
 
 ## 3. Checkpoint status
 
 - Project: POS Enterprise Retail V1
-- Current checkpoint: R2.1B — Single-instance Application Implementation & Automated Tests; R2.1 is In Progress, while R2.1A discovery/baseline is Completed and implementation, automated tests and manual multi-process/crash acceptance are Not Started.
+- Current checkpoint: R2.1 — Single-instance Application — COMPLETE.
 - Previous checkpoint: R1.2 — Repository Standards — Closed / Committed / Pushed / Git-clean at `7490e87a2b5381f6e030ef0948b5b6be0dd2e77d`.
-- Next checkpoint: R2.1B — Single-instance Application Implementation & Automated Tests.
+- Next checkpoint: R2.2 — SQLite Busy/Locked UX — Not Started.
 - R1.2 is Closed / Committed / Pushed / Git-clean at `7490e87a2b5381f6e030ef0948b5b6be0dd2e77d`; R1.3 implementation and live Jenkins build #5 passed on `8bebb3ebc2b61c4de2fd8d97dc4c0b6944281bb6`; R1.3 and the entire R1 are Closed by formal-closeout commit `b9e382550e2e4abcf7a93ed6c5352322dc967668`.
 
 Completed subcheckpoints in the R0.5 closeout payload:
@@ -55,11 +56,19 @@ R1.3 live Jenkins verification supplied for job `POS_ENTERPRISE_R1_1_CI`, build 
 
 Manual artifact smoke test: Jenkins ZIP download, complete extraction and `POS.Enterprise.exe` launch/basic operation PASS using an existing Windows user profile. Clean Windows profile/clean-machine first-run behavior remains Not Revalidated and customer clean-install acceptance is not claimed. The artifact `appsettings.json` has blank `Payment.BankBin`, `Payment.AccountNumber`, `Payment.AccountName` and `Infrastructure.DefaultAdminPassword` values and the ZIP contains no database. Previously displayed VietQR values came from configuration persisted under the existing Windows user profile, not from the ZIP. Forgot password and change password are not implemented; first-run store/VietQR setup and account/password-management gaps remain deferred to R4 under the current roadmap.
 
-R2.1A discovery/baseline on the post-closeout repository completed without implementation changes: Release build 0 warnings/0 errors; 975/975 tests PASS; final Quality Gate rerun PASS; vulnerability scan PASS; EF pending model changes none. Discovery identified that future single-instance ownership must be acquired before `Host.StartAsync` and before `InitializeDatabaseAsync`/SQLite access. R2.1 implementation, automated single-instance tests and manual multi-process/crash acceptance remain Not Started.
+Historical R2.1A discovery/baseline completed without implementation changes: Release build 0 warnings/0 errors; 975/975 tests PASS; final Quality Gate rerun PASS; vulnerability scan PASS; EF pending model changes none. At that capture time, implementation and acceptance were Not Started; discovery established that ownership must be acquired before `Host.StartAsync` and before `InitializeDatabaseAsync`/SQLite access. The completed implementation is recorded below.
+
+R2.1 implementation and closeout on `2026-08-02`: database paths are canonicalized into a SHA-256-scoped identity; a current-user Windows mutex and ACL-restricted named pipe enforce one owner per database while allowing different database identities to run independently; ownership is acquired before `Host.StartAsync`, database initialization and SQLite access. A second same-identity launch requests foreground activation and exits without opening the database. Window activation supports setup, login and shell targets, restores minimized windows and uses taskbar attention as a best-effort fallback.
+
+R2.1 automated verification: `git diff --check` PASS; Release rebuild PASS with 0 warnings/0 errors; both named-pipe tests PASS individually; `SingleInstanceInfrastructureTests` PASS 11/11; the two IPC tests PASS 10/10 finite stability rounds; full Release tests PASS 992/992 with 0 failed/0 skipped. The earlier sandboxed full run failed 2/992 because the execution sandbox denied even a minimal local named-pipe client connection; the same tests passed outside the sandbox. The test harness was made deterministic by signaling readiness only after `StartActivationListener` returned, removing the arbitrary post-malformed-payload delay and disposing request cancellation deterministically. No production ACL or current-user isolation was weakened.
+
+R2.1 final Quality Gate PASS without `-SkipEfCheck`: restore PASS; build PASS with 0 warnings/0 errors; 992/992 tests PASS; all five projects report no vulnerable packages; local tool restore PASS; EF pending-model check reports no changes since the last migration; Git checks PASS. Final post-memory Project Context export also PASSed with 100% coverage, final manifest verification PASS and `SecurityFindingCount=0`; generated packs remain ignored and are not staged.
+
+R2.1 manual multi-process/crash acceptance: Tests A/B/C PASS. Test D attempt 1 remains INCOMPLETE / NOT PROVEN. Test D attempt 2 PASS at `C:\Users\Dell\AppData\Local\Temp\POS-R21-Acceptance-20260802-Final`: old Store A PID `23292` at `2026-08-02T20:40:18.4019720+07:00` used the expected Release executable and Store A database identity, then exited with `HANDLE_SIGNALED_AND_OS_PID_ABSENT`; Store A relaunched as PID `15524` at `2026-08-02T20:40:56.1570299+07:00` and returned to Login; Store B remained PID `13056` with unchanged start time/path and GUI state. ETL SHA-256 is `DF08062C04E37BFAD920A2405713DA59DC6E17AD63A673F65C9F22340FB7560C`; bounded tracerpt records `buffers=808`, `events=3119706`, `lostEvents=0` and `skippedEvents=0`. Zero is claimed only for those two explicit loss counters; full multi-gigabyte XML/FileIO export was not an R2.1 acceptance requirement.
 
 ## 4. Working-tree state
 
-Entry state before this reconciliation: **Clean**. The reconciliation payload is Project Memory only; source, tests, projects, packages, migrations, Jenkins implementation and scripts are not changed. `HEAD` and `origin/main` are `b9e382550e2e4abcf7a93ed6c5352322dc967668`, ahead/behind is `0/0`, `_ci_artifacts` is absent, and `artifacts/project-context/` remains ignored and is not staged. This turn stages exactly four Project Memory files; commit and push require separate authorization.
+R2.1 entry base was clean at `b437be5de3a3f6deb03b142c88dd913610ebc834`. The closeout payload contains only reviewed R2.1 source, tests and affected Project Memory. It contains no package, SDK, target-framework, schema, migration, database, customer data or R2.2 implementation change. Generated Project Context packs and manual evidence remain outside Git.
 
 ## 5. R0 authoritative baseline
 
@@ -106,20 +115,28 @@ Architecture audit chi tiết, gồm service map, transaction map và business i
 
 ## 9. Files changed in current subcheckpoint
 
+- `D:\Projects_1\POS_Enterprise_DotNet\src\POS.Infrastructure\Persistence\DatabaseIdentity.cs`
+- `D:\Projects_1\POS_Enterprise_DotNet\src\POS.Infrastructure\Persistence\DatabasePathResolver.cs`
+- `D:\Projects_1\POS_Enterprise_DotNet\src\POS.Infrastructure\Platform\WindowsSingleInstanceCoordinator.cs`
+- `D:\Projects_1\POS_Enterprise_DotNet\src\POS.Wpf\App.xaml.cs`
+- `D:\Projects_1\POS_Enterprise_DotNet\src\POS.Wpf\Services\WindowActivationService.cs`
+- `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\SingleInstanceInfrastructureTests.cs`
+- `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\WindowActivationCoordinatorTests.cs`
 - `D:\Projects_1\POS_Enterprise_DotNet\docs\project\CHECKPOINT-WORKFLOW.md`
 - `D:\Projects_1\POS_Enterprise_DotNet\docs\project\CURRENT-STATE.md`
 - `D:\Projects_1\POS_Enterprise_DotNet\docs\project\DECISIONS.md`
+- `D:\Projects_1\POS_Enterprise_DotNet\docs\project\ARCHITECTURE.md`
 - `D:\Projects_1\POS_Enterprise_DotNet\docs\project\KNOWN-ISSUES.md`
 - `D:\Projects_1\POS_Enterprise_DotNet\docs\project\MASTER-ROADMAP.md`
 - `D:\Projects_1\POS_Enterprise_DotNet\docs\project\TEST-BASELINE.md`
 
-- Production source changed: No.
-- Tests changed: No.
+- Production source changed: Yes — database identity, database-scoped Windows ownership/activation and WPF activation composition only.
+- Tests changed: Yes — single-instance identity, mutex, ACL, activation, lifecycle, crash takeover and window activation coverage.
 - Migrations changed: No.
 - Package/SDK/target framework changed: No.
 - Repository standards changed in R1.3: No.
 - CI artifact configuration and Project Memory changed: CI artifact implementation is already committed at the current HEAD; only Project Memory is changed in this preparation turn.
-- Product behavior changed: No.
+- Product behavior changed: Yes — one owner per database identity and second-instance activation behavior for R2.1.
 
 ## 10. Prohibited next actions
 
@@ -128,9 +145,9 @@ Architecture audit chi tiết, gồm service map, transaction map và business i
 - Context Pack đã tạo trong `artifacts/project-context/`, thư mục này bị ignore và không được stage.
 - Không chạy database update.
 - Không đọc dữ liệu database thật.
-- Không commit hoặc push trong lượt này; formal closeout commit/push requires separate authorization after staged review.
-- R2 is In Progress at current executable checkpoint R2.1B; R2.1A discovery/baseline is Completed and R2.1 implementation, automated tests and manual multi-process/crash acceptance are Not Started.
+- R2.1 closeout commit/push đã được cho phép sau khi review chính xác staged scope; không amend hoặc force-push.
+- R2.1 is COMPLETE. R2.2 — SQLite Busy/Locked UX is next and remains Not Started.
 
 ## 11. Closeout note
 
-R1.1 closeout is the repository baseline at `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`; R1.2 closeout is at `7490e87a2b5381f6e030ef0948b5b6be0dd2e77d`; R1.3 implementation HEAD is `8bebb3ebc2b61c4de2fd8d97dc4c0b6944281bb6`; and the R1.3/R1 formal-closeout commit is `b9e382550e2e4abcf7a93ed6c5352322dc967668`. Live Jenkins build #5 and artifact smoke test PASS, with the smoke test explicitly limited to an existing profile. R2 is In Progress at current executable checkpoint R2.1B; R2.1A discovery/baseline is Completed and R2.1 implementation, automated tests and manual multi-process/crash acceptance are Not Started.
+R1 remains Closed at `b9e382550e2e4abcf7a93ed6c5352322dc967668`. R2.1 is COMPLETE with source, automated gates and manual Tests A/B/C/D recorded above. R2.2 — SQLite Busy/Locked UX is next and has not started.

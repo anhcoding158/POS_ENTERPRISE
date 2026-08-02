@@ -1,5 +1,20 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R2.1 closeout baseline — 2026-08-02
+
+- `git diff --check`: PASS.
+- Release rebuild: PASS, 0 warnings, 0 errors.
+- Targeted named-pipe tests: 2/2 PASS individually outside the IPC-restricted execution sandbox.
+- `SingleInstanceInfrastructureTests`: 11/11 PASS.
+- Finite IPC stability: 10/10 rounds PASS, 2/2 tests per round.
+- Full Release tests: 992/992 PASS, 0 failed, 0 skipped.
+- Full Quality Gate via `powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\Test-QualityGate.ps1`: PASS without `-SkipEfCheck`; its repeated full test run passed 992/992.
+- Dependency vulnerability scan: PASS; no vulnerable packages in the five solution projects.
+- EF pending-model check: PASS; no changes since the last migration.
+- Final post-memory Project Context security scan: PASS; coverage 100%, manifest verification PASS, `SecurityFindingCount=0`; generated packs are ignored/not staged.
+- Manual R2.1 Tests A/B/C: PASS. Test D attempt 1 remains INCOMPLETE / NOT PROVEN. Test D attempt 2 PASS with old owner exit classification `HANDLE_SIGNALED_AND_OS_PID_ABSENT`, new Store A PID and Login confirmation, unchanged Store B identity/GUI, ETL SHA-256 `DF08062C04E37BFAD920A2405713DA59DC6E17AD63A673F65C9F22340FB7560C`, `lostEvents=0` and `skippedEvents=0` in the bounded report.
+- The first sandboxed full run reported 990/992 because the sandbox denied local named-pipe client access; a minimal pipe reproduced the same denial. Outside the sandbox, both affected tests passed before deterministic harness cleanup. This is environment evidence, not an application runtime failure.
+
 ## 1. Metadata
 
 - Document: `TEST-BASELINE.md`.
