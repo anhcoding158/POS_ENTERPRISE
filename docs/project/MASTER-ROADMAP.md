@@ -43,8 +43,8 @@ Bản cài đầu tiên đủ an toàn cho một cửa hàng bán lẻ, một ch
 |---|---|
 | R0 | Completed |
 | R0.5 | Closed / Committed / Pushed |
-| R1 | In Progress |
-| R2 | Not Started |
+| R1 | Closed |
+| R2 | In Progress |
 | R3 | Not Started |
 | R4 | Not Started |
 | R5 | Not Started |
@@ -57,9 +57,9 @@ Bản cài đầu tiên đủ an toàn cho một cửa hàng bán lẻ, một ch
 | R12 | Not Started |
 | R13 | Not Started |
 
-Không đánh dấu stage hoàn thành chỉ vì một phần tính năng đã tồn tại. Controlled Discount đã có nhưng R8 vẫn Not Started vì còn line discount, coupon, voucher và Promotion Engine. Return đã có nhưng R9 vẫn Not Started vì còn immutable return receipt, Cashbook Lite và Daily Close. Receipt printing đã có nhưng R11 vẫn Not Started vì hardware acceptance thực tế chưa hoàn thành. R1 hiện In Progress; R1.1 và R1.2 đã Closed / Committed / Pushed / Git-clean, còn R1.3 đang In Progress sau owner correction của binary-name contract.
+Không đánh dấu stage hoàn thành chỉ vì một phần tính năng đã tồn tại. Controlled Discount đã có nhưng R8 vẫn Not Started vì còn line discount, coupon, voucher và Promotion Engine. Return đã có nhưng R9 vẫn Not Started vì còn immutable return receipt, Cashbook Lite và Daily Close. Receipt printing đã có nhưng R11 vẫn Not Started vì hardware acceptance thực tế chưa hoàn thành. R1.3 và toàn bộ R1 đã Closed / Committed / Pushed / Git-clean tại `b9e382550e2e4abcf7a93ed6c5352322dc967668`; R2 đang In Progress tại current executable checkpoint R2.1B, sau khi R2.1A discovery/baseline đã Completed.
 
-Manual acceptance của stage tương lai chỉ là tiêu chí phải đạt; không được ghi PASS trước khi chạy thật. R1.3 live Jenkins build #5 is the executed evidence for the current R1 artifact acceptance; R1 formal closeout is still pending repository memory closeout mechanics.
+Manual acceptance của stage tương lai chỉ là tiêu chí phải đạt; không được ghi PASS trước khi chạy thật. R1.3 live Jenkins build #5 is the executed evidence for the R1 artifact acceptance; R1 formal closeout is Closed at `b9e382550e2e4abcf7a93ed6c5352322dc967668`. R2.1A discovery/baseline completed with Release build 0 warnings/0 errors, 975/975 tests PASS and final Quality Gate rerun PASS; implementation and acceptance remain pending.
 
 ## R0 — VIETQR RUNTIME CLOSEOUT
 
@@ -126,7 +126,7 @@ Checkpoint state after reconciliation:
 
 - R1.1 — Jenkins CI Pipeline runtime E2E: PASS from supplied Jenkins evidence at `afdda252ce124413b9190607a96a0046cf5097e7`; SCM checkout, Windows agent, .NET SDK `10.0.302`, Release build/test, Quality Gate, vulnerability scan, EF pending-model check, intentional failure propagation and final normal rerun were verified. Repository closeout is Closed / Committed / Pushed / Git-clean at `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`.
 - R1.2 — Repository Standards: Closed / Committed / Pushed / Git-clean at `7490e87a2b5381f6e030ef0948b5b6be0dd2e77d`. Added minimal text/binary and LF policy (`.gitattributes`), editor policy (`.editorconfig`), SDK pin (`global.json` at `10.0.302`), changelog convention (`CHANGELOG.md`) and `_audit_temp` ignore protection. Existing deterministic/CI build metadata was retained; no product version was invented or changed. Restore, Release build, full tests and Quality Gate all PASS.
-- R1.3 — CI Artifacts: implementation/local verification PASS and live Jenkins verification PASS on job `POS_ENTERPRISE_R1_1_CI` build `#5` at `http://localhost:8080/job/POS_ENTERPRISE_R1_1_CI/5/`, exact SCM revision `8bebb3ebc2b61c4de2fd8d97dc4c0b6944281bb6`. Build/tests/gates/artifact validation/archive all passed; the complete archived contract was `56` files / `13,291,155` bytes and the artifact ZIP SHA-256 was `38adf83096b23b19b3e17ee5fc143025cbf15bcbbb12cdb688efe160414c848d`. Download/extraction/application smoke test PASS used an existing Windows profile only; clean-profile first-run remains Not Revalidated. R1 formal closeout remains pending the Project Memory closeout commit/push and final Git-clean verification.
+- R1.3 — CI Artifacts: implementation/local verification PASS and live Jenkins verification PASS on job `POS_ENTERPRISE_R1_1_CI` build `#5` at `http://localhost:8080/job/POS_ENTERPRISE_R1_1_CI/5/`, exact SCM revision `8bebb3ebc2b61c4de2fd8d97dc4c0b6944281bb6`. Build/tests/gates/artifact validation/archive all passed; the complete archived contract was `56` files / `13,291,155` bytes and the artifact ZIP SHA-256 was `38adf83096b23b19b3e17ee5fc143025cbf15bcbbb12cdb688efe160414c848d`. Download/extraction/application smoke test PASS used an existing Windows profile only; clean-profile first-run remains Not Revalidated. R1 formal closeout is Closed / Committed / Pushed / Git-clean at `b9e382550e2e4abcf7a93ed6c5352322dc967668`.
 
 R1.3 owner-approved artifact contract:
 
@@ -140,17 +140,18 @@ R1.3 owner-approved artifact contract:
 - Retention keeps metadata/console for 30 builds and archived artifacts for 10 builds via the equivalent `buildDiscarder(logRotator(...))` policy; no new plugin is introduced.
 - All safe artifacts are archived on success or failure when created; missing artifacts from stages not reached are not fabricated. Publication or validation failure fails the build and never changes a prior failure to success.
 - Databases, backups, secrets, credentials, customer data, source archives, workspace-wide files, coverage/JUnit/HTML reports and installers are excluded.
-- Formal R1.3 closeout requires a successful live Jenkins run on the exact pushed commit with all five artifact groups validated; that live requirement is now PASS at build #5. Formal R1 closeout still requires the Project Memory closeout commit/push and final Git-clean verification. R2 remains Not Started until those mechanics complete.
+- Formal R1.3 closeout required a successful live Jenkins run on the exact pushed implementation commit with all five artifact groups validated; that live requirement is PASS at build #5. The Project Memory formal-closeout commit/push and final Git-clean verification are complete at `b9e382550e2e4abcf7a93ed6c5352322dc967668`.
 
 ## R2 — PLATFORM HARDENING
 
-- **Status:** Not Started.
+- **Status:** In Progress.
 - **Objective:** harden runtime Windows/SQLite và khả năng support.
 - **Scope/checkpoints:** R2.1 Single-instance Application; R2.2 SQLite Busy/Locked UX; R2.3 Logging and Support Bundle; R2.4 Disk Space and Database Growth. Gồm mutex theo database/store identity; phiên thứ hai có thông báo rõ; không kill process mù; phân biệt busy, locked, disk full và corruption; retry có giới hạn, không retry checkout mù; không làm mất cart; log rotation/sanitize; Support Bundle an toàn; disk-space monitoring; không tự xóa dữ liệu bán hàng.
 - **Out of scope:** backup/restore workflow R3.
 - **Dependencies:** R1.
-- **Entry criteria:** R1 PASS.
+- **Entry criteria:** R1 PASS and formally Closed / Committed / Pushed / Git-clean at `b9e382550e2e4abcf7a93ed6c5352322dc967668`.
 - **Exit criteria:** hoàn thành R2.1–R2.4 và đáp ứng toàn bộ guardrail nêu trên.
+- **Current checkpoint:** R2.1B — Single-instance Application Implementation & Automated Tests. R2.1A discovery/baseline is Completed; R2.1 implementation, automated tests and manual multi-process/crash acceptance are Not Started.
 - **Manual acceptance:** thử phiên thứ hai, busy/locked, disk full/corruption presentation, cart preservation, log/support bundle và cảnh báo disk space.
 
 ## R3 — BACKUP VÀ RESTORE
