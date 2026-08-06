@@ -1,5 +1,17 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## R2.2 closeout — 2026-08-06
+
+- Current checkpoint: R2.2 — SQLite Busy/Locked UX — COMPLETE/CLOSED.
+- Next checkpoint: R2.3 — Logging and Support Bundle — NOT STARTED.
+- R2.2 classifies SQLite busy, locked, disk-full, corruption/not-a-database and unknown provider failures by numeric base code; persistence boundaries translate failures while preserving the technical cause for logging. Checkout writes are not retried blindly. Retry is bounded and restricted to explicitly safe operations.
+- Sales checkout presents sanitized, actionable messages and preserves cart, quantity, payment input and method after database failure. Checkout state is released and receipt/success flow does not run after failure. Startup presents a sanitized blocking error before the session loop when the database cannot be opened safely.
+- Acceptance Test A: **Manual PASS**. A real `BEGIN IMMEDIATE` lock produced the expected bounded failure UX, preserved two cart lines/quantity 3, `85.000 đ` cash input and Cash method, opened no receipt/success flow, restored checkout UI, persisted `0/0/0/0` while locked, and after lock release/retry persisted exactly Orders `1`, OrderItems `2`, InventoryMovements `2`, ReceiptSnapshots `1`. Evidence directory `POS-R22-Acceptance-20260806-Manual1` remains outside Git.
+- Acceptance Tests B/C/D: **NOT MANUALLY RUN**. **Covered by equivalent deterministic automated acceptance: PASS**. They must not be described as Manual PASS.
+- Automated acceptance uses only isolated databases under TEMP, creates its own data, acquires/releases a real SQLite lock, verifies before/after atomic counts and duplicate rejection, simulates `SQLITE_FULL` by error code without consuming disk, hashes a separate not-a-database file with SHA-256 before/after, verifies startup blocking/window ordering and cleans its generated TEMP directories deterministically.
+- Final verification: targeted R2.2 acceptance `27/27` PASS; full Release `1019/1019` PASS with 0 failed/0 skipped; Quality Gate PASS without `-SkipEfCheck`; gate build 0 warnings/0 errors; vulnerability scan PASS for 5/5 projects; EF pending-model consistency PASS; changed-file security/secret scan PASS with 0 high-confidence findings; `git diff --check` PASS (CRLF/LF notices are not whitespace errors).
+- Residual boundary: manual B/C/D were intentionally not run; their acceptance is equivalent deterministic automation, not manual evidence. Logging/Support Bundle remains R2.3 and disk-space monitoring/growth remains R2.4; neither is implemented by R2.2.
+
 ## 1. Metadata
 
 - Document purpose: bản tóm tắt sự thật để chuyển giao giữa các session.
@@ -28,9 +40,9 @@
 ## 3. Checkpoint status
 
 - Project: POS Enterprise Retail V1
-- Current checkpoint: R2.1 — Single-instance Application — COMPLETE.
+- Current checkpoint: R2.2 — SQLite Busy/Locked UX — COMPLETE/CLOSED.
 - Previous checkpoint: R1.2 — Repository Standards — Closed / Committed / Pushed / Git-clean at `7490e87a2b5381f6e030ef0948b5b6be0dd2e77d`.
-- Next checkpoint: R2.2 — SQLite Busy/Locked UX — Not Started.
+- Next checkpoint: R2.3 — Logging and Support Bundle — NOT STARTED.
 - R1.2 is Closed / Committed / Pushed / Git-clean at `7490e87a2b5381f6e030ef0948b5b6be0dd2e77d`; R1.3 implementation and live Jenkins build #5 passed on `8bebb3ebc2b61c4de2fd8d97dc4c0b6944281bb6`; R1.3 and the entire R1 are Closed by formal-closeout commit `b9e382550e2e4abcf7a93ed6c5352322dc967668`.
 
 Completed subcheckpoints in the R0.5 closeout payload:
@@ -146,8 +158,8 @@ Architecture audit chi tiết, gồm service map, transaction map và business i
 - Không chạy database update.
 - Không đọc dữ liệu database thật.
 - R2.1 closeout commit/push đã được cho phép sau khi review chính xác staged scope; không amend hoặc force-push.
-- R2.1 is COMPLETE. R2.2 — SQLite Busy/Locked UX is next and remains Not Started.
+- R2.1 and R2.2 are COMPLETE/CLOSED. R2.3 — Logging and Support Bundle is next and NOT STARTED.
 
 ## 11. Closeout note
 
-R1 remains Closed at `b9e382550e2e4abcf7a93ed6c5352322dc967668`. R2.1 is COMPLETE with source, automated gates and manual Tests A/B/C/D recorded above. R2.2 — SQLite Busy/Locked UX is next and has not started.
+R1 remains Closed at `b9e382550e2e4abcf7a93ed6c5352322dc967668`. R2.1 and R2.2 are COMPLETE/CLOSED with the distinct acceptance provenance recorded above. R2.3 — Logging and Support Bundle is next and NOT STARTED.

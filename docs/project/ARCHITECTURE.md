@@ -1,5 +1,16 @@
 # ARCHITECTURE — POS ENTERPRISE RETAIL V1
 
+## R2.2 SQLite failure and UX boundary
+
+- `POS.Application` owns `IDatabaseFailureClassifier`, `DatabaseFailureKind` and `DatabaseOperationException`; it remains independent of SQLite/EF/WPF.
+- `POS.Infrastructure.Persistence.SqliteFailureClassifier` maps numeric SQLite base codes: busy `5`, locked `6`, disk full `13`, corruption/not-a-database `11/26`, other SQLite failures to unknown. `EfUnitOfWork` and `EfApplicationTransaction` translate classified begin/save/commit failures while retaining the provider exception as the inner cause.
+- `SqliteSafeOperationRetry` is finite (maximum three attempts, fixed 100 ms delay) and only for operations the caller has proved read-only/idempotent. Checkout writes and commit are deliberately not routed through it.
+- `DatabaseFailurePresenter` supplies sanitized WPF messages. `SalesViewModel` preserves cart/payment state and re-enables checkout after failure; receipt preview remains post-success only. `App` blocks startup before `RunSessionLoopAsync` for unsafe database failures.
+- Deterministic acceptance uses only TEMP databases and synthetic data. It covers real persistent locking, atomic four-table counts, duplicate rejection, safe `SQLITE_FULL` simulation, corruption startup blocking, SHA-256 preservation and cleanup.
+- Acceptance provenance: Test A Manual PASS; Tests B/C/D NOT MANUALLY RUN and covered by equivalent deterministic automated acceptance PASS.
+
+This boundary completes/closes R2.2 only. R2.3 Logging and Support Bundle is NOT STARTED.
+
 ## R2.1 Windows process ownership and activation boundary
 
 `POS.Wpf.App` is the composition root for single-instance ownership. It loads configuration, resolves `Infrastructure.DatabasePath` to `DatabaseIdentity`, and asks `WindowsSingleInstanceCoordinator` to acquire ownership before `Host.StartAsync`, database initialization or SQLite access.

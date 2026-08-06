@@ -1,5 +1,20 @@
 # BUSINESS INVARIANTS — POS ENTERPRISE RETAIL V1
 
+## R2.2 operational persistence invariants
+
+### INV-DB-FAILURE-001 — Checkout database failure cannot become partial success
+
+- **Statement:** A busy/locked/disk-full/corruption failure cannot be presented as checkout success, cannot open receipt flow, and cannot leave a partial Order/OrderItem/InventoryMovement/ReceiptSnapshot set. Cart, quantities and payment input remain available for an explicit user retry.
+- **Enforcement:** EF transaction boundary plus classified exception translation and `SalesViewModel` success-only clearing/receipt flow. Checkout writes are not automatically retried.
+- **Direct test evidence:** `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\SqliteBusyLockedUxTests.cs`; `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\SalesBarcodeCartUxTests.cs`.
+- **Acceptance:** Test A Manual PASS. Tests B/C/D NOT MANUALLY RUN; covered by equivalent deterministic automated acceptance PASS.
+
+### INV-DB-FAILURE-002 — Corrupt database startup is fail-closed and non-destructive
+
+- **Statement:** A corrupt/not-a-database file blocks startup before Shell/SalesWindow and is not deleted, recreated or overwritten.
+- **Enforcement/evidence:** startup ordering plus deterministic TEMP file test comparing SHA-256 and length before/after initialization failure in `SqliteBusyLockedUxTests.cs`.
+- **Boundary:** Backup/restore remains R3; R2.2 does not attempt automatic repair.
+
 ## 1. Metadata và evidence boundary
 
 - CapturedAtLocal: `2026-07-31T11:49:51.828+07:00`.

@@ -25,13 +25,20 @@ public sealed class EfUnitOfWork :
     private readonly PosDbContext
         _dbContext;
 
+    private readonly SqliteFailureClassifier
+        _failureClassifier;
+
     public EfUnitOfWork(
-        PosDbContext dbContext)
+        PosDbContext dbContext,
+        SqliteFailureClassifier? failureClassifier = null)
     {
         _dbContext =
             dbContext ??
             throw new ArgumentNullException(
                 nameof(dbContext));
+
+        _failureClassifier =
+            failureClassifier ?? new SqliteFailureClassifier();
     }
 
     public async Task<int> SaveChangesAsync(
@@ -59,6 +66,11 @@ public sealed class EfUnitOfWork :
                     exception,
                     out var target))
             {
+                if (_failureClassifier.Classify(exception) is not null)
+                {
+                    throw _failureClassifier.Translate(exception);
+                }
+
                 throw;
             }
 
@@ -67,6 +79,15 @@ public sealed class EfUnitOfWork :
                 "Dữ liệu bị trùng với một bản ghi đã tồn tại.",
                 target,
                 exception);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception exception) when (
+            _failureClassifier.Classify(exception) is not null)
+        {
+            throw _failureClassifier.Translate(exception);
         }
     }
 
@@ -81,13 +102,26 @@ public sealed class EfUnitOfWork :
                 "DbContext hiện đã có một transaction đang hoạt động.");
         }
 
-        var transaction =
-            await _dbContext.Database
-                .BeginTransactionAsync(
-                    cancellationToken);
+        Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction;
+
+        try
+        {
+            transaction = await _dbContext.Database
+                .BeginTransactionAsync(cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception exception) when (
+            _failureClassifier.Classify(exception) is not null)
+        {
+            throw _failureClassifier.Translate(exception);
+        }
 
         return new EfApplicationTransaction(
-            transaction);
+            transaction,
+            _failureClassifier);
     }
 
     private static bool

@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.Payments;
+using POS.Application.Abstractions.Persistence;
 using POS.Application.Abstractions.Services;
 using POS.Application.Common;
 using POS.Application.DTOs.Checkout;
@@ -3127,7 +3128,26 @@ public sealed class SalesViewModel :
                 exception,
                 "Thanh toán từ giao diện bán hàng thất bại.");
 
-            if (IsPaymentIntentSchemaCompatibilityFailure(
+            var databaseFailure = exception as DatabaseOperationException;
+            using var failureClassificationScope = _scopeFactory.CreateScope();
+
+            var rawDatabaseKind = databaseFailure is null
+                ? failureClassificationScope.ServiceProvider
+                    .GetRequiredService<IDatabaseFailureClassifier>()
+                    .Classify(exception)
+                : null;
+
+            if (databaseFailure is not null)
+            {
+                var presentation = DatabaseFailurePresenter.Present(databaseFailure.Kind);
+                ShowError(presentation.Message);
+            }
+            else if (rawDatabaseKind is not null)
+            {
+                var presentation = DatabaseFailurePresenter.Present(rawDatabaseKind.Value);
+                ShowError(presentation.Message);
+            }
+            else if (IsPaymentIntentSchemaCompatibilityFailure(
                     exception))
             {
                 ShowError(

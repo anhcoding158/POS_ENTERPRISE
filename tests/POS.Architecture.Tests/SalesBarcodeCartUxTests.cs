@@ -4,9 +4,11 @@ using System.Xml.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using POS.Application.Abstractions.Authentication;
+using POS.Application.Abstractions.Persistence;
 using POS.Application.Abstractions.Services;
 using POS.Application.Common;
 using POS.Application.DTOs.Authentication;
+using POS.Application.DTOs.Checkout;
 using POS.Application.DTOs.Payments;
 using POS.Application.DTOs.Products;
 using POS.Domain.Enums;
@@ -419,6 +421,47 @@ public sealed class SalesBarcodeCartUxTests
         Assert.DoesNotContain(
             header.AncestorsAndSelf(),
             element => Attribute(element, "HorizontalAlignment") == "Center");
+    }
+
+    [Fact]
+    public async Task Database_failure_preserves_cart_cash_method_and_reenables_checkout()
+    {
+        var product = Product("LOCKED", stock: 10);
+        var productService = new ProductServiceFake([product]);
+        var checkout = new DatabaseFailureCheckoutFake(DatabaseFailureKind.DiskFull);
+        var payment = new SuccessfulCashPaymentFake();
+        var receipt = new ReceiptFake();
+        var services = new ServiceCollection()
+            .AddSingleton<IProductService>(productService)
+            .AddSingleton<ICheckoutService>(checkout)
+            .AddSingleton<IDatabaseFailureClassifier, NoDatabaseFailureClassifier>()
+            .BuildServiceProvider();
+        var currentUser = new CurrentUserService();
+        currentUser.SetCurrentUser(new AuthenticatedUserDto(
+            1, "cashier", "Thu ngÃ¢n", Role.Cashier, DateTimeOffset.UtcNow));
+        var viewModel = new SalesViewModel(
+            services.GetRequiredService<IServiceScopeFactory>(), currentUser,
+            receipt, payment, NullLogger<SalesViewModel>.Instance,
+            new ConfirmationFake(false));
+
+        await viewModel.ProcessScanOrSearchAsync("LOCKED");
+        viewModel.CartLines[0].TryIncrease();
+        viewModel.CashReceivedText = "85000";
+        viewModel.CheckoutCommand.Execute(null);
+        for (var attempt = 0; attempt < 100 && (checkout.Calls == 0 || viewModel.IsCheckingOut); attempt++)
+        {
+            await Task.Delay(10);
+        }
+
+        Assert.Equal(1, checkout.Calls);
+        Assert.Equal(2, viewModel.CartLines[0].Quantity);
+        Assert.Equal("85000", viewModel.CashReceivedText);
+        Assert.Equal(PaymentMethod.Cash, viewModel.SelectedPaymentMethod);
+        Assert.False(viewModel.IsCheckingOut);
+        Assert.True(viewModel.CheckoutCommand.CanExecute(null));
+        Assert.True(viewModel.IsStatusError);
+        Assert.Contains("l\u01B0u d\u1EEF li\u1EC7u", viewModel.StatusMessage, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(0, receipt.Calls);
     }
 
     [Fact]
@@ -944,7 +987,37 @@ public sealed class SalesBarcodeCartUxTests
 
     private sealed class ReceiptFake : IReceiptPreviewService
     {
-        public Task ShowAsync(POS.Application.DTOs.Printing.ReceiptRequest request, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public int Calls { get; private set; }
+        public Task ShowAsync(POS.Application.DTOs.Printing.ReceiptRequest request, CancellationToken cancellationToken = default)
+        {
+            Calls++;
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class SuccessfulCashPaymentFake : ISalesPaymentFlowService
+    {
+        public bool IsVietQrEnabled => false;
+        public Task<Result<SalesPaymentAuthorizationOutcome>> AuthorizeAsync(
+            SalesPaymentAuthorizationRequest request, CancellationToken cancellationToken = default) =>
+            Task.FromResult(Result.Success(SalesPaymentAuthorizationOutcome.Authorized(
+                new SalesPaymentAuthorization(PaymentMethod.Cash, request.CashReceived))));
+    }
+
+    private sealed class DatabaseFailureCheckoutFake(DatabaseFailureKind kind) : ICheckoutService
+    {
+        public int Calls { get; private set; }
+        public Task<Result<CheckoutResultDto>> CheckoutAsync(
+            CheckoutRequest request, CancellationToken cancellationToken = default)
+        {
+            Calls++;
+            throw new DatabaseOperationException(kind, "safe", new InvalidOperationException("sensitive"));
+        }
+    }
+
+    private sealed class NoDatabaseFailureClassifier : IDatabaseFailureClassifier
+    {
+        public DatabaseFailureKind? Classify(Exception exception) => null;
     }
 
     private sealed class PaymentFake : ISalesPaymentFlowService

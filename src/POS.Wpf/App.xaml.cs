@@ -131,13 +131,16 @@ public partial class App :
         }
         catch (Exception exception)
         {
-            var rootException =
-                exception.GetBaseException();
+            var classifier = new POS.Infrastructure.Persistence.SqliteFailureClassifier();
+            var kind = classifier.Classify(exception);
+            var presentation = kind is null
+                ? null
+                : POS.Wpf.Services.DatabaseFailurePresenter.Present(kind.Value);
 
             global::System.Windows.MessageBox.Show(
-                $"Ứng dụng không thể khởi động.\n\n" +
-                $"{rootException.Message}",
-                "POS Enterprise",
+                presentation?.Message ??
+                    "Ứng dụng không thể khởi động an toàn. Vui lòng liên hệ quản trị viên.",
+                presentation?.Title ?? "POS Enterprise",
                 global::System.Windows
                     .MessageBoxButton.OK,
                 global::System.Windows

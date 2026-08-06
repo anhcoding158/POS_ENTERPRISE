@@ -1,5 +1,19 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R2.2 closeout baseline — 2026-08-06
+
+- Targeted R2.2 deterministic automated acceptance: 27/27 PASS.
+- Full Release suite: 1019/1019 PASS, 0 failed, 0 skipped. The first sandboxed run passed 1017/1019 and failed only the two known R2.1 named-pipe tests because local IPC access was denied; the complete outside-sandbox rerun is the accepted result.
+- Full Quality Gate: PASS without `-SkipEfCheck`; repeated tests 1019/1019 PASS and build 0 warnings/0 errors.
+- Dependency vulnerability scan: PASS; 5/5 solution projects have no vulnerable package from the configured sources.
+- EF pending-model consistency: PASS; no changes since the latest migration.
+- Changed-file security/secret scan: PASS; 12 R2.2 code/test files scanned, 0 high-confidence secret findings.
+- `git diff --check`: PASS; CRLF/LF conversion notices are not whitespace errors.
+- Acceptance Test A: **Manual PASS** with real SQLite `BEGIN IMMEDIATE`, preserved cart/input/method, no false success/receipt, no partial persistence, bounded recovery and one successful retry. Evidence directory `POS-R22-Acceptance-20260806-Manual1` remains outside Git.
+- Acceptance Tests B/C/D: **NOT MANUALLY RUN**; **Covered by equivalent deterministic automated acceptance: PASS**. This is not Manual PASS.
+- Harness boundary: isolated TEMP databases only; self-created acceptance data and lock; before/after atomic and duplicate checks; safe error-code simulation for `SQLITE_FULL`; separate not-a-database file with invariant SHA-256/length; deterministic disposal/pool clearing/cleanup. No development database was used.
+- R2.2 is COMPLETE/CLOSED. R2.3 — Logging and Support Bundle is NOT STARTED.
+
 ## R2.1 closeout baseline — 2026-08-02
 
 - `git diff --check`: PASS.

@@ -151,6 +151,11 @@ public static class DependencyInjection
         services.AddSingleton<
             SqliteDatabaseSafetyService>();
 
+        services.AddSingleton<SqliteFailureClassifier>();
+        services.AddSingleton<IDatabaseFailureClassifier>(serviceProvider =>
+            serviceProvider.GetRequiredService<SqliteFailureClassifier>());
+        services.AddSingleton<SqliteSafeOperationRetry>();
+
         services.AddSingleton<
             AuditableEntityInterceptor>();
 

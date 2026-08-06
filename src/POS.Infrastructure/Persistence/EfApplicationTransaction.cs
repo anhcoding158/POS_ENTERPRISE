@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
 using POS.Application.Abstractions.Persistence;
+using POS.Application.Common;
 
 namespace POS.Infrastructure.Persistence;
 
@@ -11,14 +12,18 @@ public sealed class EfApplicationTransaction :
     IApplicationTransaction
 {
     private IDbContextTransaction? _transaction;
+    private readonly SqliteFailureClassifier _failureClassifier;
 
     public EfApplicationTransaction(
-        IDbContextTransaction transaction)
+        IDbContextTransaction transaction,
+        SqliteFailureClassifier? failureClassifier = null)
     {
         _transaction =
             transaction ??
             throw new ArgumentNullException(
                 nameof(transaction));
+
+        _failureClassifier = failureClassifier ?? new SqliteFailureClassifier();
     }
 
     public bool IsCompleted { get; private set; }
@@ -29,8 +34,19 @@ public sealed class EfApplicationTransaction :
         var transaction =
             GetActiveTransaction();
 
-        await transaction.CommitAsync(
-            cancellationToken);
+        try
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception exception) when (
+            _failureClassifier.Classify(exception) is not null)
+        {
+            throw _failureClassifier.Translate(exception);
+        }
 
         IsCompleted = true;
     }

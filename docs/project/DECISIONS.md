@@ -1,5 +1,13 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-024 — SQLite operational failures use provider classification and safe presentation
+
+- **Status:** Accepted for R2.2 on `2026-08-06`.
+- **Decision:** Keep the provider-neutral failure kind/exception contract in Application, classify SQLite numeric base codes in Infrastructure, translate at EF save/begin/commit boundaries, and present only sanitized actionable text in WPF. Preserve technical exceptions only as inner causes for controlled logging. Never retry checkout/transaction commit blindly; bounded retry is available only to callers that establish a read-only or idempotent safe operation.
+- **Startup:** Database initialization must complete before the session loop. Corruption/not-a-database blocks startup and must not trigger delete, recreate or overwrite behavior.
+- **Acceptance:** Test A is Manual PASS. Tests B/C/D are NOT MANUALLY RUN and are covered by equivalent deterministic automated acceptance PASS. Targeted 27/27, full Release 1019/1019 and Quality Gate without `-SkipEfCheck` PASS.
+- **Consequences:** R2.2 is COMPLETE/CLOSED. R2.3 — Logging and Support Bundle is NOT STARTED. R2.2 does not claim global log sanitization, Support Bundle, disk monitoring or database-growth handling.
+
 ## DEC-023 — Single-instance ownership is scoped to canonical database identity
 
 - **Status:** Accepted for R2.1 on `2026-08-02`.
@@ -8,7 +16,7 @@
 - **Lifecycle:** The owner awaits listener cancellation/disposal and releases the mutex deterministically; abandoned mutex ownership is recoverable after crash. WPF keeps one current activation target across setup/login/shell transitions and restores or requests attention best-effort.
 - **Evidence:** Release rebuild 0 warnings/0 errors; targeted IPC tests PASS; class 11/11 PASS; 10/10 finite IPC stability rounds; full Release and Quality Gate tests 992/992 PASS; vulnerability/EF/security checks PASS; manual Tests A/B/C/D PASS. Test D attempt 1 remains incomplete; attempt 2 proves old owner exit, new PID relaunch/Login and unchanged Store B identity.
 - **Environment note:** The tool execution sandbox denies local named-pipe client access and caused a reproducible 990/992 false failure. Verification requiring named pipes runs outside that sandbox; production ACL semantics remain unchanged.
-- **Consequences:** R2.1 is COMPLETE. R2.2 — SQLite Busy/Locked UX is next and remains Not Started.
+- **Consequences:** R2.1 is COMPLETE. R2.2 later completed/closed under `DEC-024`; R2.3 is next and NOT STARTED.
 
 ## 1. Metadata và cách dùng
 
@@ -335,7 +343,7 @@ Current closeout evidence: Presented PaymentIntent is persisted before the QR di
 - **Failure contract:** Artifact preparation, command, validation or archive failures are non-zero failures. Existing build/test/Quality Gate failures remain failures; publication must not make a red build green or replace the root failure.
 - **Evidence boundary:** Local artifact production/parse/allowlist verification establishes implementation evidence. Live Jenkins publication on the exact pushed commit was observed in job `POS_ENTERPRISE_R1_1_CI` build `#5` at `http://localhost:8080/job/POS_ENTERPRISE_R1_1_CI/5/`, SCM revision `8bebb3ebc2b61c4de2fd8d97dc4c0b6944281bb6`, with all five artifact groups validated. Formal R1 closeout is Closed / Committed / Pushed / Git-clean at `b9e382550e2e4abcf7a93ed6c5352322dc967668`.
 - **Local/live evidence:** SDK `10.0.302`; Release build 0 warnings/0 errors; 975/975 tests; valid five-project vulnerability JSON; Quality Gate exit `0` with EF check; native publish validation PASS with 50 files and required `POS.Enterprise.*` root files; controlled exit-23 probe preserved the non-zero result; generated `_ci_artifacts` was removed after local verification. Live build #5 reports 50 published files / 11,807,483 bytes, complete archived contract 56 files / 13,291,155 bytes, and ZIP SHA-256 `38adf83096b23b19b3e17ee5fc143025cbf15bcbbb12cdb688efe160414c848d`. Download/extraction/application smoke test PASS used an existing profile; clean-profile first-run remains Not Revalidated.
-- **Consequences:** R1 and R1.3 are Closed / Committed / Pushed / Git-clean at `b9e382550e2e4abcf7a93ed6c5352322dc967668`; the binary-name blocker is resolved by the owner-approved correction to native `POS.Enterprise.*` output. R1.3 does not include an assembly identity change, `AssemblyName`/`TargetName` override, binary copy/rename, coverage, JUnit conversion, HTML reports, installer/package release, product behavior, database/migration or SDK/package changes. Later R2.1 completion is governed by `DEC-023`; R2.2 remains Not Started.
+- **Consequences:** R1 and R1.3 are Closed / Committed / Pushed / Git-clean at `b9e382550e2e4abcf7a93ed6c5352322dc967668`; the binary-name blocker is resolved by the owner-approved correction to native `POS.Enterprise.*` output. R1.3 does not include an assembly identity change, `AssemblyName`/`TargetName` override, binary copy/rename, coverage, JUnit conversion, HTML reports, installer/package release, product behavior, database/migration or SDK/package changes. Later R2.1 completion is governed by `DEC-023` and R2.2 completion by `DEC-024`.
 - **Related constraints/invariants:** `DEC-021`; R1 scope and exact artifact contract in `MASTER-ROADMAP.md`; Jenkins failure propagation and Project Memory evidence rules in `CHECKPOINT-WORKFLOW.md`.
 - **Revisit trigger/checkpoint:** R1.3 formal closeout or a later owner-approved CI artifact policy change.
 - **Supersedes/superseded by:** Does not supersede historical decisions.
@@ -348,7 +356,7 @@ Current closeout evidence: Presented PaymentIntent is persisted before the QR di
 - R0.5E pack: `project-context-20260801T0647171300576Z`, baseline `70523861949aeb5eefe981633db33f50bc890145`, exporter exit code `0`, security findings `0`, coverage `501/501`, excluded candidates `0`, manifest integrity `16/16` PASS.
 - R0.5F: ChatGPT and Codex fresh-session verifications both PASS on `2026-08-01`.
 - R1: Closed / Committed / Pushed / Git-clean at `b9e382550e2e4abcf7a93ed6c5352322dc967668`. R1.1 is Closed / Committed / Pushed / Git-clean at `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`; runtime E2E remains attributed to `afdda252ce124413b9190607a96a0046cf5097e7`. R1.2 is Closed / Committed / Pushed / Git-clean at `7490e87a2b5381f6e030ef0948b5b6be0dd2e77d`. R1.3 implementation and live Jenkins build #5 are PASS on `8bebb3ebc2b61c4de2fd8d97dc4c0b6944281bb6`; its formal closeout is the R1 closeout commit above.
-- R2: In Progress overall. R2.1 Single-instance Application is COMPLETE under `DEC-023`; R2.2–R2.4 and R3–R13 remain Not Started.
+- R2: In Progress overall. R2.1 is COMPLETE under `DEC-023`; R2.2 is COMPLETE/CLOSED under `DEC-024`; R2.3–R2.4 and R3–R13 remain Not Started.
 - Partial feature không làm future stage Completed.
 
 ## 3. Decisions not reconstructed
