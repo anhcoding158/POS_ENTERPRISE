@@ -14,6 +14,40 @@ namespace POS.Architecture.Tests;
 public sealed class ProductArchivingUiContractTests
 {
     [Fact]
+    public void Product_list_layout_must_keep_search_geometry_and_column_rhythm_stable()
+    {
+        var source = File.ReadAllText(
+            Path.Combine(
+                FindRepositoryRoot(),
+                "src",
+                "POS.Wpf",
+                "Views",
+                "ShellWindow.xaml"));
+
+        Assert.Contains("Width=\"380\"", source, StringComparison.Ordinal);
+        Assert.Contains("MinWidth=\"320\"", source, StringComparison.Ordinal);
+        Assert.Contains("MaxWidth=\"400\"", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("MaxWidth=\"520\"", source, StringComparison.Ordinal);
+        Assert.Contains("GridLinesVisibility=\"All\"", source, StringComparison.Ordinal);
+        Assert.Contains(
+            "VerticalGridLinesBrush=\"{StaticResource BorderBrush}\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "BasedOn=\"{StaticResource LeftAlignedTableTextStyle}\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Equal(
+            4,
+            source.Split("BorderThickness=\"0,0,1,0\"").Length - 1);
+
+        foreach (var width in new[] { "2.6*", "1.4*", "1*", "1.15*" })
+        {
+            Assert.Contains($"Width=\"{width}\"", source, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
     public void Product_more_actions_entry_point_is_labeled_and_keeps_commands()
     {
         var source = File.ReadAllText(
