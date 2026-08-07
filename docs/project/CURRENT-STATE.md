@@ -1,5 +1,14 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## Corrective Order History and Product List UX closeout — 2026-08-08
+
+- This is a narrow corrective UX closeout after R2.2; it does not start or complete R2.3 and does not change the roadmap checkpoint state.
+- Order History corrective source commit: `9211b9e0fbbb8c020c55377916048c1dd1244ff4`; integrated `main` commit: `1c048ec381d5ccd48b1433aaa77d61a91ec1c262`. Product List UX source commit: `f09377525e9b6a5f83229fdcdc7a8c15af15c18b`; integrated `main` commit: `352d2814ba8b194c8abf875852462f16f05153d4`.
+- User manual acceptance: **PASS** for the Order History panel proportions, financial summary, table height, action bar and small-window layout; **PASS** for stable Product search width during focus/text entry, revised column proportions and light vertical separators.
+- Integrated-main verification: `OrderHistoryUiContractTests` 43/43 PASS; `ProductArchivingUiContractTests` 9/9 PASS; POS.Wpf Release build PASS with 0 warnings/0 errors; full Release suite 1026/1026 PASS with 0 failed/0 skipped.
+- Full Quality Gate PASS without `-SkipEfCheck`: repeated tests 1026/1026 PASS, build 0 warnings/0 errors, dependency vulnerability scan PASS for 5/5 projects, EF pending-model check PASS, and Git checks PASS.
+- No WPF application, migration, database update or database-row inspection was performed during integration verification. No push was performed.
+
 ## R2.2 closeout — 2026-08-06
 
 - Current checkpoint: R2.2 — SQLite Busy/Locked UX — COMPLETE/CLOSED.

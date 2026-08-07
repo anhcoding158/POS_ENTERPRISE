@@ -1,5 +1,12 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## Corrective UX closeout note — 2026-08-08
+
+- User manual acceptance PASS for the corrective Order History and Product List UX batches integrated on local `main`.
+- Automated verification and the complete Quality Gate PASS at the integrated source commit `352d2814ba8b194c8abf875852462f16f05153d4`.
+- No new confirmed runtime defect or verification gap was established by these two corrective batches. Existing stable issue records and the R2.3/R2.4 deferred boundaries remain unchanged.
+- A runtime database was detected by file metadata only in the retained Product worktree; its rows were not opened or inspected, and the worktree must not be removed automatically.
+
 ## R2.2 closeout note — 2026-08-06
 
 - R2.2 — SQLite Busy/Locked UX is COMPLETE/CLOSED.

@@ -1,5 +1,17 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## Corrective UX integration baseline — 2026-08-08
+
+- Verified integrated `main` source at `352d2814ba8b194c8abf875852462f16f05153d4` before this documentation-only closeout commit.
+- Targeted Order History UI contracts: 43/43 PASS, 0 failed, 0 skipped.
+- Targeted Product archiving/UI contracts: 9/9 PASS, 0 failed, 0 skipped.
+- POS.Wpf Release build: PASS, 0 warnings, 0 errors.
+- Full Release suite: 1026/1026 PASS, 0 failed, 0 skipped; this is seven tests above the accepted R2.2 baseline of 1019.
+- Full Quality Gate: PASS without `-SkipEfCheck`; repeated tests 1026/1026 PASS and build 0 warnings/0 errors.
+- Dependency vulnerability scan: PASS; 5/5 solution projects have no vulnerable package from the configured sources.
+- EF pending-model consistency: PASS; no changes since the latest migration. This did not apply migrations or open the development database.
+- `git diff --check`: PASS. User manual acceptance for both corrective UX batches: PASS.
+
 ## R2.2 closeout baseline — 2026-08-06
 
 - Targeted R2.2 deterministic automated acceptance: 27/27 PASS.
