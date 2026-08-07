@@ -14,4 +14,6 @@ public sealed record OrderHistoryLineDto(
     long LineDiscountAmount,
     long NetAmount,
     string? Notes,
-    IReadOnlyList<OrderHistoryModifierDto> Modifiers);
+    IReadOnlyList<OrderHistoryModifierDto> Modifiers,
+    int ReturnedQuantity = 0,
+    long RefundedAmount = 0);

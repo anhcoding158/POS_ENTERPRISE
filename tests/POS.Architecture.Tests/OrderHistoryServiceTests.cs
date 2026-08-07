@@ -25,8 +25,8 @@ public sealed class OrderHistoryServiceTests
     public async Task Search_must_filter_by_order_code()
     {
         await using var database = await TestDatabase.CreateAsync();
-        await database.AddOrderAsync("HD-TARGET-01", OrderStatus.Draft);
-        await database.AddOrderAsync("HD-OTHER-02", OrderStatus.Draft);
+        await database.AddOrderAsync("HD-TARGET-01", OrderStatus.Completed);
+        await database.AddOrderAsync("HD-OTHER-02", OrderStatus.Completed);
 
         var result = await database.CreateService().SearchAsync(
             new(SearchTerm: "TARGET"));
@@ -43,7 +43,7 @@ public sealed class OrderHistoryServiceTests
         await database.AddOrderAsync("HD-COMPLETE", OrderStatus.Completed);
 
         var result = await database.CreateService().SearchAsync(
-            new(Status: OrderStatus.Completed));
+            new(Status: OrderHistoryStatus.Completed));
 
         Assert.True(result.IsSuccess);
         Assert.All(result.Value.Items,
@@ -76,10 +76,10 @@ public sealed class OrderHistoryServiceTests
     {
         await using var database = await TestDatabase.CreateAsync();
         var secondCashier = await database.AddCashierAsync("Thu ngân Hai");
-        await database.AddOrderAsync("HD-ONE", OrderStatus.Draft);
+        await database.AddOrderAsync("HD-ONE", OrderStatus.Completed);
         await database.AddOrderAsync(
             "HD-TWO",
-            OrderStatus.Draft,
+            OrderStatus.Completed,
             cashierId: secondCashier);
 
         var result = await database.CreateService().SearchAsync(
@@ -95,11 +95,11 @@ public sealed class OrderHistoryServiceTests
         var inside = TestDatabase.UtcNow;
         await database.AddOrderAsync(
             "HD-INSIDE",
-            OrderStatus.Draft,
+            OrderStatus.Completed,
             createdAtUtc: inside);
         await database.AddOrderAsync(
             "HD-OUTSIDE",
-            OrderStatus.Draft,
+            OrderStatus.Completed,
             createdAtUtc: inside.AddDays(-2));
 
         var result = await database.CreateService().SearchAsync(
@@ -129,7 +129,7 @@ public sealed class OrderHistoryServiceTests
 
         var result = await database.CreateService().SearchAsync(
             new(
-                Status: OrderStatus.Completed,
+                Status: OrderHistoryStatus.Completed,
                 PaymentMethod: PaymentMethod.Cash,
                 PageSize: 1));
 
@@ -144,11 +144,11 @@ public sealed class OrderHistoryServiceTests
         await using var database = await TestDatabase.CreateAsync();
         await database.AddOrderAsync(
             "HD-OLD",
-            OrderStatus.Draft,
+            OrderStatus.Completed,
             createdAtUtc: TestDatabase.UtcNow.AddHours(-1));
         await database.AddOrderAsync(
             "HD-NEW",
-            OrderStatus.Draft,
+            OrderStatus.Completed,
             createdAtUtc: TestDatabase.UtcNow);
 
         var result = await database.CreateService().SearchAsync(new());
@@ -162,13 +162,38 @@ public sealed class OrderHistoryServiceTests
     public async Task Search_must_not_deserialize_receipt_payload_for_list()
     {
         await using var database = await TestDatabase.CreateAsync();
-        await database.AddOrderAsync("HD-LIST", OrderStatus.Draft);
+        await database.AddOrderAsync("HD-LIST", OrderStatus.Completed);
         var serializer = new RecordingSerializer();
 
         var result = await database.CreateService(serializer).SearchAsync(new());
 
         Assert.True(result.IsSuccess);
         Assert.Equal(0, serializer.DeserializeCalls);
+    }
+
+    [Fact]
+    public async Task Returned_filters_must_derive_partial_and_full_from_balances()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        var untouched = await database.AddOrderAsync("HD-NONE", OrderStatus.Completed, quantity: 2);
+        var partial = await database.AddOrderAsync("HD-PARTIAL", OrderStatus.Completed, quantity: 2);
+        var full = await database.AddOrderAsync("HD-FULL", OrderStatus.Completed, quantity: 2);
+        await database.AddReturnBalanceAsync(partial, 1);
+        await database.AddReturnBalanceAsync(full, 2);
+
+        var partialResult = await database.CreateService().SearchAsync(
+            new(SearchTerm: "PARTIAL", Status: OrderHistoryStatus.PartiallyReturned,
+                PaymentMethod: PaymentMethod.Cash,
+                FromUtc: TestDatabase.UtcNow.AddMinutes(-1),
+                ToUtc: TestDatabase.UtcNow.AddMinutes(1), PageNumber: 1, PageSize: 1));
+        var fullResult = await database.CreateService().SearchAsync(
+            new(Status: OrderHistoryStatus.FullyReturned));
+
+        Assert.Equal("HD-PARTIAL", Assert.Single(partialResult.Value.Items).OrderCode);
+        Assert.Equal(OrderStatus.PartiallyRefunded, partialResult.Value.Items[0].Status);
+        Assert.Equal("HD-FULL", Assert.Single(fullResult.Value.Items).OrderCode);
+        Assert.Equal(OrderStatus.Refunded, fullResult.Value.Items[0].Status);
+        Assert.DoesNotContain(partialResult.Value.Items, item => item.OrderId == untouched);
     }
 
     [Theory]
@@ -247,6 +272,21 @@ public sealed class OrderHistoryServiceTests
         var line = Assert.Single(result.Value.Lines);
         Assert.Equal("Ít đá", line.Notes);
         Assert.Equal("Trân châu", Assert.Single(line.Modifiers).ModifierName);
+    }
+
+    [Fact]
+    public async Task Details_must_preserve_persisted_line_discount_separately_from_order_discount()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        var orderId = await database.AddOrderAsync(
+            "HD-LINE-DISCOUNT", OrderStatus.Completed, lineDiscountAmount: 5_000);
+
+        var result = await database.CreateService().GetDetailsAsync(orderId);
+
+        var line = Assert.Single(result.Value.Lines);
+        Assert.Equal(5_000, line.LineDiscountAmount);
+        Assert.Equal(20_000, line.NetAmount);
+        Assert.Equal(0, result.Value.DiscountAmount);
     }
 
     [Fact]
@@ -711,7 +751,8 @@ public sealed class OrderHistoryServiceTests
             return new OrderHistoryService(
                 new OrderRepository(context),
                 new OrderReceiptSnapshotRepository(context),
-                serializer ?? new ReceiptSnapshotJsonSerializer());
+                serializer ?? new ReceiptSnapshotJsonSerializer(),
+                new OrderReturnRepository(context));
         }
 
         public async Task<int> AddCashierAsync(string name)
@@ -735,7 +776,9 @@ public sealed class OrderHistoryServiceTests
             int? cashierId = null,
             DateTimeOffset? createdAtUtc = null,
             bool includeModifier = false,
-            bool addSnapshot = false)
+            bool addSnapshot = false,
+            int quantity = 1,
+            long lineDiscountAmount = 0)
         {
             await using var context = CreateContext();
             var created = createdAtUtc ?? UtcNow;
@@ -751,7 +794,7 @@ public sealed class OrderHistoryServiceTests
                     "SP-CAFE",
                     "Cà phê sữa",
                     "Ly",
-                    1,
+                    quantity,
                     10_000,
                     25_000,
                     created,
@@ -768,12 +811,16 @@ public sealed class OrderHistoryServiceTests
                         0,
                         created);
                 }
+                if (lineDiscountAmount > 0)
+                {
+                    order.ApplyItemDiscount(item, lineDiscountAmount, created.AddSeconds(30));
+                }
                 order.PrepareForPayment(created.AddMinutes(1));
                 if (status != OrderStatus.PendingPayment)
                 {
                     order.MarkPaid(
                         paymentMethod,
-                        paymentMethod == PaymentMethod.Cash ? 30_000 : 0,
+                        paymentMethod == PaymentMethod.Cash ? quantity * 30_000L : 0,
                         created.AddMinutes(2));
                     if (status == OrderStatus.Completed)
                     {
@@ -795,6 +842,16 @@ public sealed class OrderHistoryServiceTests
                 await context.SaveChangesAsync();
             }
             return order.Id;
+        }
+
+        public async Task AddReturnBalanceAsync(int orderId, int returnedQuantity)
+        {
+            await using var context = CreateContext();
+            var item = await context.OrderItems.SingleAsync(value => value.OrderId == orderId);
+            var balance = new OrderReturnBalance(item.Id);
+            balance.Register(returnedQuantity, returnedQuantity * 25_000L, item.Quantity, item.NetAmount);
+            context.OrderReturnBalances.Add(balance);
+            await context.SaveChangesAsync();
         }
 
         public async Task ChangeLiveProductAsync()

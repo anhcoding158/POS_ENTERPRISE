@@ -210,7 +210,7 @@ public sealed class OrderHistoryUiContractTests
 
         Assert.Equal(DateTime.Today, viewModel.FromDate);
         Assert.Equal(DateTime.Today, viewModel.ToDate);
-        Assert.Equal(OrderStatus.Completed, viewModel.SelectedStatusFilter.Value);
+        Assert.Equal(OrderHistoryStatus.Completed, viewModel.SelectedStatusFilter.Value);
         Assert.Null(viewModel.SelectedPaymentMethodFilter.Value);
         Assert.Equal(25, viewModel.PageSize);
     }
@@ -254,7 +254,7 @@ public sealed class OrderHistoryUiContractTests
         Assert.Contains(viewModel.StatusFilters, option => option.Value is null);
         Assert.Contains(
             viewModel.StatusFilters,
-            option => option.Value == OrderStatus.Completed);
+            option => option.Value == OrderHistoryStatus.Completed);
     }
 
     [Fact]
@@ -468,6 +468,61 @@ public sealed class OrderHistoryUiContractTests
 
         Assert.DoesNotContain("UnitCostPrice", names);
         Assert.DoesNotContain("CostPrice", names);
+    }
+
+    [Fact]
+    public void Order_history_line_details_must_show_fallback_discount_and_return()
+    {
+        var empty = new OrderHistoryLineViewModel(new OrderHistoryLineDto(
+            1, 1, "SP-1", "Sản phẩm", "Cái", 2, 10_000, 0, 10_000,
+            20_000, 0, 20_000, null, []));
+        var returned = new OrderHistoryLineViewModel(new OrderHistoryLineDto(
+            1, 1, "SP-1", "Sản phẩm", "Cái", 2, 10_000, 0, 10_000,
+            20_000, 2_000, 18_000, null, [], 1, 9_000));
+
+        Assert.Equal("—", empty.LineDetailsText);
+        Assert.Contains("Giảm 2.000 ₫", returned.LineDetailsText);
+        Assert.Contains("Đã trả 1/2", returned.LineDetailsText);
+        Assert.Contains("hoàn 9.000 ₫", returned.LineDetailsText);
+    }
+
+    [Fact]
+    public void Order_level_discount_must_not_be_presented_as_line_discount()
+    {
+        var line = new OrderHistoryLineViewModel(new OrderHistoryLineDto(
+            1, 1, "SP-1", "Sản phẩm", "Cái", 1, 110_000, 0, 110_000,
+            110_000, 0, 110_000, null, []));
+
+        Assert.Equal("—", line.LineDetailsText);
+        Assert.DoesNotContain("11.000", line.LineDetailsText);
+    }
+
+    [Fact]
+    public void Fully_returned_line_must_show_explicit_full_return_state()
+    {
+        var line = new OrderHistoryLineViewModel(new OrderHistoryLineDto(
+            1, 1, "SP-1", "Sản phẩm", "Cái", 2, 10_000, 0, 10_000,
+            20_000, 0, 20_000, null, [], 2, 20_000));
+
+        Assert.Contains("Đã trả toàn bộ 2/2", line.LineDetailsText);
+        Assert.Contains("hoàn 20.000 ₫", line.LineDetailsText);
+    }
+
+    [Fact]
+    public void Order_history_layout_must_keep_master_detail_lines_and_actions()
+    {
+        var document = LoadOrderHistoryXaml();
+        var names = document.Descendants().SelectMany(element => element.Attributes())
+            .Where(attribute => attribute.Name.LocalName == "Name")
+            .Select(attribute => attribute.Value).ToHashSet(StringComparer.Ordinal);
+
+        Assert.Contains("OrdersGrid", names);
+        Assert.Contains("DetailsPanel", names);
+        Assert.Contains("OrderLinesGrid", names);
+        Assert.Contains("OrderActionsPanel", names);
+        Assert.Contains(document.Descendants(), element =>
+            element.Name.LocalName == "DataGridTemplateColumn" &&
+            (string?)element.Attribute("Header") == "Trả hàng / ghi chú");
     }
 
     [Fact]

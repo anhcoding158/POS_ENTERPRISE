@@ -38,6 +38,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="2*" />
@@ -49,34 +50,51 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
+                <TextBlock Text="Mã đơn, thu ngân hoặc sản phẩm" Style="{StaticResource CaptionTextStyle}" />
+                <TextBlock Grid.Column="1" Text="Từ ngày" Style="{StaticResource CaptionTextStyle}" />
+                <TextBlock Grid.Column="2" Text="Đến ngày" Style="{StaticResource CaptionTextStyle}" />
+                <TextBlock Grid.Column="3" Text="Trạng thái" Style="{StaticResource CaptionTextStyle}" />
+                <TextBlock Grid.Column="4" Text="Phương thức thanh toán" Style="{StaticResource CaptionTextStyle}" />
                 <TextBox
+                    Grid.Row="1"
                     Margin="0,0,8,0"
                     Padding="10,7"
                     Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                    ToolTip="Tìm mã đơn hoặc tên thu ngân" />
+                    ToolTip="Tìm mã đơn, tên thu ngân, mã hoặc tên sản phẩm">
+                    <TextBox.InputBindings>
+                        <KeyBinding Key="Enter" Command="{Binding SearchCommand}" />
+                    </TextBox.InputBindings>
+                </TextBox>
                 <DatePicker
+                    Grid.Row="1"
                     Grid.Column="1"
                     Margin="0,0,8,0"
                     SelectedDate="{Binding FromDate, Mode=TwoWay}"
-                    ToolTip="Từ ngày" />
+                    Language="vi-VN"
+                    ToolTip="Từ ngày (dd/MM/yyyy)" />
                 <DatePicker
+                    Grid.Row="1"
                     Grid.Column="2"
                     Margin="0,0,8,0"
                     SelectedDate="{Binding ToDate, Mode=TwoWay}"
-                    ToolTip="Đến ngày" />
+                    Language="vi-VN"
+                    ToolTip="Đến ngày (dd/MM/yyyy)" />
                 <ComboBox
+                    Grid.Row="1"
                     Grid.Column="3"
                     Margin="0,0,8,0"
                     ItemsSource="{Binding StatusFilters}"
                     DisplayMemberPath="DisplayName"
                     SelectedItem="{Binding SelectedStatusFilter, Mode=TwoWay}" />
                 <ComboBox
+                    Grid.Row="1"
                     Grid.Column="4"
                     Margin="0,0,8,0"
                     ItemsSource="{Binding PaymentMethodFilters}"
                     DisplayMemberPath="DisplayName"
                     SelectedItem="{Binding SelectedPaymentMethodFilter, Mode=TwoWay}" />
                 <Button
+                    Grid.Row="1"
                     Grid.Column="5"
                     Margin="0,0,8,0"
                     Padding="18,7"
@@ -84,13 +102,14 @@
                     Content="Tìm kiếm"
                     Style="{StaticResource PrimaryButtonStyle}" />
                 <Button
+                    Grid.Row="1"
                     Grid.Column="6"
                     Padding="18,7"
                     Command="{Binding ResetFiltersCommand}"
                     Content="Xóa lọc"
                     Style="{StaticResource SecondaryButtonStyle}" />
                 <TextBlock
-                    Grid.Row="1"
+                    Grid.Row="2"
                     Grid.ColumnSpan="7"
                     Margin="0,8,0,0"
                     Text="Ngày được tính theo múi giờ Windows của máy."
@@ -100,13 +119,15 @@
 
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="3*" />
-                <ColumnDefinition Width="12" />
-                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="5*" MinWidth="610" />
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="3*" MinWidth="430" />
             </Grid.ColumnDefinitions>
 
             <Border Padding="10" Style="{StaticResource CardStyle}">
                 <DataGrid
+                    x:Name="OrdersGrid"
+                    RowHeight="34"
                     ItemsSource="{Binding Orders}"
                     SelectedItem="{Binding SelectedOrder, Mode=TwoWay}"
                     AutoGenerateColumns="False"
@@ -114,16 +135,35 @@
                     SelectionMode="Single">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Thời gian" Binding="{Binding CreatedAtText}" Width="130" />
-                        <DataGridTextColumn Header="Mã đơn" Binding="{Binding OrderCode}" Width="*" />
-                        <DataGridTextColumn Header="Thu ngân" Binding="{Binding CashierName}" Width="*" />
-                        <DataGridTextColumn Header="Thanh toán" Binding="{Binding PaymentText}" Width="110" />
-                        <DataGridTextColumn Header="Trạng thái" Binding="{Binding StatusText}" Width="110" />
-                        <DataGridTextColumn Header="Tổng tiền" Binding="{Binding TotalAmountText}" Width="120" />
+                        <DataGridTemplateColumn Header="Mã đơn" Width="*" MinWidth="150">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding OrderCode}" TextTrimming="CharacterEllipsis"
+                                               ToolTip="{Binding OrderCode}" VerticalAlignment="Center" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="Thu ngân" Binding="{Binding CashierName}" Width="135" />
+                        <DataGridTextColumn Header="Thanh toán" Binding="{Binding PaymentText}" Width="105" />
+                        <DataGridTextColumn Header="Trạng thái" Binding="{Binding StatusText}" Width="105" />
+                        <DataGridTextColumn Header="Tổng tiền" Binding="{Binding TotalAmountText}" Width="118">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="HorizontalAlignment" Value="Right" />
+                                    <Setter Property="VerticalAlignment" Value="Center" />
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
                     </DataGrid.Columns>
                 </DataGrid>
             </Border>
 
-            <Border Grid.Column="2" Padding="14" Style="{StaticResource CardStyle}">
+            <GridSplitter Grid.Column="1" Width="8" HorizontalAlignment="Stretch"
+                          VerticalAlignment="Stretch" ResizeDirection="Columns"
+                          ResizeBehavior="PreviousAndNext" Background="Transparent"
+                          Focusable="False" />
+
+            <Border x:Name="DetailsPanel" Grid.Column="2" Padding="14" Style="{StaticResource CardStyle}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -134,104 +174,106 @@
                     </Grid.RowDefinitions>
                     <TextBlock
                         Text="{Binding SelectedOrder.OrderCode, TargetNullValue=Chọn một đơn để xem chi tiết}"
-                        Style="{StaticResource SectionTitleTextStyle}" />
-                    <StackPanel Grid.Row="1" Margin="0,8,0,10">
-                        <TextBlock Text="{Binding SelectedOrder.CashierName, StringFormat=Thu ngân: {0}}" />
-                        <TextBlock Text="{Binding SelectedOrder.PaymentText, StringFormat=Thanh toán: {0}}" />
-                        <TextBlock Text="{Binding SelectedVietQrReferenceText, StringFormat=Mã tham chiếu VietQR: {0}}"
+                        Style="{StaticResource SectionTitleTextStyle}"
+                        TextTrimming="CharacterEllipsis"
+                        ToolTip="{Binding SelectedOrder.OrderCode}" />
+                    <Grid Grid.Row="1" Margin="0,8,0,10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding SelectedOrder.CashierName, StringFormat=Thu ngân: {0}}"
+                                   TextTrimming="CharacterEllipsis" ToolTip="{Binding SelectedOrder.CashierName}" />
+                        <TextBlock Grid.Column="2" Text="{Binding SelectedOrder.PaymentText, StringFormat=Thanh toán: {0}}" />
+                        <TextBlock Grid.Row="1" Grid.ColumnSpan="3" Margin="0,3,0,0"
+                                   Text="{Binding SelectedVietQrReferenceText, StringFormat=Mã tham chiếu VietQR: {0}}"
                                    Visibility="{Binding HasSelectedVietQrReference, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                        <TextBlock Text="{Binding SelectedOrder.TotalAmountText, StringFormat=Tổng tiền: {0}}" />
-                        <Border Margin="0,8,0,0" Padding="10" Background="{StaticResource GoldSoftBrush}"
-                                Visibility="{Binding HasSelectedOrderDiscount, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <StackPanel>
-                                <TextBlock Text="Giảm giá" FontWeight="Bold"/>
-                                <TextBlock Text="{Binding SelectedOrderDiscountText, Mode=OneWay}"
-                                           Margin="0,4,0,0" TextWrapping="Wrap"/>
-                            </StackPanel>
+
+                        <Border Grid.Row="2" Grid.ColumnSpan="3" Margin="0,8,0,0" Padding="10"
+                                Background="{StaticResource SurfaceMutedBrush}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="16" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Tạm tính" Foreground="{StaticResource TextSecondaryBrush}" />
+                                <TextBlock Grid.Column="1" Text="{Binding SelectedSubtotalText}" HorizontalAlignment="Right" />
+                                <TextBlock Grid.Column="3" Text="Giảm giá" Foreground="{StaticResource TextSecondaryBrush}" />
+                                <TextBlock Grid.Column="4" Text="{Binding SelectedDiscountAmountText}" HorizontalAlignment="Right" />
+                                <TextBlock Grid.Row="1" Text="Tổng thanh toán" Foreground="{StaticResource TextSecondaryBrush}" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedOriginalTotalText}" HorizontalAlignment="Right" FontWeight="SemiBold" />
+                                <TextBlock Grid.Row="1" Grid.Column="3" Text="Đã hoàn" Foreground="{StaticResource TextSecondaryBrush}" />
+                                <TextBlock Grid.Row="1" Grid.Column="4" Text="{Binding SelectedRefundedAmountText}" HorizontalAlignment="Right" />
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Khách đưa" Foreground="{StaticResource TextSecondaryBrush}" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedCashReceivedText}" HorizontalAlignment="Right" />
+                                <TextBlock Grid.Row="2" Grid.Column="3" Text="Tiền thừa" Foreground="{StaticResource TextSecondaryBrush}" />
+                                <TextBlock Grid.Row="2" Grid.Column="4" Text="{Binding SelectedChangeAmountText}" HorizontalAlignment="Right" />
+                            </Grid>
                         </Border>
-                        <TextBlock
-                            Margin="0,6,0,0"
-                            Foreground="{StaticResource TextSecondaryBrush}"
-                            Text="{Binding ReceiptAvailabilityMessage}" />
-                    </StackPanel>
-                    <Border
-                        Grid.Row="2"
-                        Margin="0,0,0,10"
-                        Padding="10"
-                        Background="{StaticResource SurfaceMutedBrush}"
-                        BorderBrush="{StaticResource BorderBrush}"
-                        BorderThickness="1"
-                        CornerRadius="4">
+
+                        <Grid Grid.Row="3" Grid.ColumnSpan="3" Margin="0,8,0,0">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="8" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <Border Padding="8" Background="{StaticResource GoldSoftBrush}"
+                                    Visibility="{Binding HasSelectedOrderDiscount, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <StackPanel><TextBlock Text="Giảm giá toàn đơn" FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,3,0,0" Text="{Binding SelectedOrderDiscountText}" TextWrapping="Wrap" /></StackPanel>
+                            </Border>
+                            <Border Grid.Column="2" Padding="8" Background="{StaticResource SurfaceMutedBrush}"
+                                    Visibility="{Binding HasSelectedOrderNotes, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <StackPanel><TextBlock Text="Ghi chú đơn hàng" FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,3,0,0" Text="{Binding SelectedOrderNotes}" TextWrapping="Wrap" /></StackPanel>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                    <Border Grid.Row="2" Margin="0,0,0,8" Padding="8" Background="{StaticResource SurfaceMutedBrush}">
                         <Border.Style>
-                            <Style TargetType="{x:Type Border}">
-                                <Setter Property="Visibility" Value="Visible" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding HasSelectedOrderNotes}" Value="False">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                </Style.Triggers>
+                            <Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers><DataTrigger Binding="{Binding HasSelectedReturns}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers>
                             </Style>
                         </Border.Style>
-                        <StackPanel>
-                            <TextBlock
-                                Text="Ghi chú đơn hàng"
-                                FontWeight="SemiBold"
-                                Foreground="{StaticResource TextSecondaryBrush}" />
-                            <TextBlock
-                                Margin="0,4,0,0"
-                                Text="{Binding SelectedOrderNotes, Mode=OneWay}"
-                                TextWrapping="Wrap" />
-                        </StackPanel>
+                        <StackPanel><TextBlock Text="Lịch sử trả hàng / hoàn tiền" FontWeight="SemiBold" />
+                            <ScrollViewer MaxHeight="72" VerticalScrollBarVisibility="Auto">
+                                <TextBlock Margin="0,3,0,0" Text="{Binding SelectedReturnsText}" TextWrapping="Wrap" />
+                            </ScrollViewer></StackPanel>
                     </Border>
                     <DataGrid
+                        x:Name="OrderLinesGrid"
                         Grid.Row="3"
                         ItemsSource="{Binding SelectedOrderLines}"
                         AutoGenerateColumns="False"
-                        IsReadOnly="True">
+                        IsReadOnly="True" RowHeight="42" MinHeight="150">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Sản phẩm" Binding="{Binding ProductName}" Width="*" />
                             <DataGridTextColumn Header="SL" Binding="{Binding Quantity}" Width="45" />
                             <DataGridTextColumn Header="Đơn giá" Binding="{Binding FinalUnitPriceText}" Width="100" />
                             <DataGridTextColumn Header="Thành tiền" Binding="{Binding NetAmountText}" Width="105" />
-                            <DataGridTemplateColumn Header="Chi tiết dòng" Width="*">
+                            <DataGridTemplateColumn Header="Trả hàng / ghi chú" Width="1.35*">
+                                <DataGridTemplateColumn.HeaderTemplate>
+                                    <DataTemplate><TextBlock Text="Trả hàng / ghi chú"
+                                        ToolTip="Hiển thị trả hàng, modifier, ghi chú và giảm dòng nếu đã được lưu." /></DataTemplate>
+                                </DataGridTemplateColumn.HeaderTemplate>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <StackPanel Margin="4,2">
-                                            <TextBlock TextWrapping="Wrap">
-                                                <Run Text="Tùy chọn: " FontWeight="SemiBold" />
-                                                <Run Text="{Binding ModifierSummary, Mode=OneWay}" />
-                                                <TextBlock.Style>
-                                                    <Style TargetType="{x:Type TextBlock}">
-                                                        <Setter Property="Visibility" Value="Visible" />
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding HasModifiers}" Value="False">
-                                                                <Setter Property="Visibility" Value="Collapsed" />
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                            <TextBlock TextWrapping="Wrap" Margin="0,2,0,0">
-                                                <Run Text="Ghi chú dòng: " FontWeight="SemiBold" />
-                                                <Run Text="{Binding Notes, Mode=OneWay}" />
-                                                <TextBlock.Style>
-                                                    <Style TargetType="{x:Type TextBlock}">
-                                                        <Setter Property="Visibility" Value="Visible" />
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding HasNotes}" Value="False">
-                                                                <Setter Property="Visibility" Value="Collapsed" />
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                        </StackPanel>
+                                        <TextBlock Margin="4,2" Text="{Binding LineDetailsText, Mode=OneWay}"
+                                                   TextWrapping="Wrap" ToolTip="{Binding LineDetailsText}" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                     <StackPanel
+                        x:Name="OrderActionsPanel"
                         Grid.Row="4"
                         Margin="0,12,0,0"
                         HorizontalAlignment="Right"
@@ -240,6 +282,7 @@
                             Margin="0,0,8,0"
                             Padding="16,9"
                             Command="{Binding OpenReturnCommand}"
+                            ToolTip="{Binding ReturnAvailabilityMessage}"
                             Content="Trả hàng / hoàn tiền"
                             Style="{StaticResource SecondaryButtonStyle}" />
                         <Button

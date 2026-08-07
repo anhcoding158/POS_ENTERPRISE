@@ -18,6 +18,9 @@ public sealed class OrderHistoryLineViewModel
         FinalUnitPrice = source.FinalUnitPrice;
         NetAmount = source.NetAmount;
         Notes = source.Notes;
+        LineDiscountAmount = source.LineDiscountAmount;
+        ReturnedQuantity = source.ReturnedQuantity;
+        RefundedAmount = source.RefundedAmount;
         ModifierSummary = string.Join(
             ", ",
             source.Modifiers.Select(modifier =>
@@ -32,8 +35,27 @@ public sealed class OrderHistoryLineViewModel
     public long NetAmount { get; }
     public string? Notes { get; }
     public string ModifierSummary { get; }
+    public long LineDiscountAmount { get; }
+    public int ReturnedQuantity { get; }
+    public long RefundedAmount { get; }
     public bool HasNotes => !string.IsNullOrWhiteSpace(Notes);
     public bool HasModifiers => !string.IsNullOrWhiteSpace(ModifierSummary);
+    public string LineDetailsText
+    {
+        get
+        {
+            var parts = new List<string>();
+            if (LineDiscountAmount > 0) parts.Add($"Giảm {LineDiscountAmount.ToString("N0", VietnameseCulture)} ₫");
+            if (ReturnedQuantity > 0)
+            {
+                var returnState = ReturnedQuantity >= Quantity ? "Đã trả toàn bộ" : "Đã trả";
+                parts.Add($"{returnState} {ReturnedQuantity:N0}/{Quantity:N0} · hoàn {RefundedAmount.ToString("N0", VietnameseCulture)} ₫");
+            }
+            if (HasModifiers) parts.Add($"Tùy chọn: {ModifierSummary}");
+            if (HasNotes) parts.Add($"Ghi chú: {Notes}");
+            return parts.Count == 0 ? "—" : string.Join("\n", parts);
+        }
+    }
     public string FinalUnitPriceText =>
         FinalUnitPrice.ToString("N0", VietnameseCulture) + " ₫";
     public string NetAmountText =>

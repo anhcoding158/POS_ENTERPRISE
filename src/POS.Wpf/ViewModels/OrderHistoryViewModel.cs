@@ -12,7 +12,7 @@ namespace POS.Wpf.ViewModels;
 
 public sealed record OrderStatusFilterOption(
     string DisplayName,
-    OrderStatus? Value);
+    OrderHistoryStatus? Value);
 
 public sealed record PaymentMethodFilterOption(
     string DisplayName,
@@ -60,13 +60,9 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
         StatusFilters =
         [
             new("Tất cả trạng thái", null),
-            new("Hoàn thành", OrderStatus.Completed),
-            new("Đã thanh toán", OrderStatus.Paid),
-            new("Chờ thanh toán", OrderStatus.PendingPayment),
-            new("Nháp", OrderStatus.Draft),
-            new("Đã hủy", OrderStatus.Cancelled),
-            new("Hoàn một phần", OrderStatus.PartiallyRefunded),
-            new("Đã hoàn", OrderStatus.Refunded)
+            new("Hoàn thành", OrderHistoryStatus.Completed),
+            new("Hoàn một phần", OrderHistoryStatus.PartiallyReturned),
+            new("Đã hoàn", OrderHistoryStatus.FullyReturned)
         ];
         PaymentMethodFilters =
         [
@@ -77,7 +73,7 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
             new("Thẻ", PaymentMethod.Card)
         ];
         _selectedStatusFilter = StatusFilters.Single(
-            option => option.Value == OrderStatus.Completed);
+            option => option.Value == OrderHistoryStatus.Completed);
         _selectedPaymentMethodFilter = PaymentMethodFilters[0];
         LoadCommand = new AsyncRelayCommand(LoadAsync, () => !IsLoading, OnCommandError);
         SearchCommand = new AsyncRelayCommand(SearchAsync, () => !IsLoading, OnCommandError);
@@ -121,35 +117,31 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
     public string SearchText
     {
         get => _searchText;
-        set => SetProperty(ref _searchText, value ?? string.Empty);
+        set { if (SetProperty(ref _searchText, value ?? string.Empty)) CurrentPage = 1; }
     }
 
     public DateTime? FromDate
     {
         get => _fromDate;
-        set => SetProperty(ref _fromDate, value);
+        set { if (SetProperty(ref _fromDate, value)) CurrentPage = 1; }
     }
 
     public DateTime? ToDate
     {
         get => _toDate;
-        set => SetProperty(ref _toDate, value);
+        set { if (SetProperty(ref _toDate, value)) CurrentPage = 1; }
     }
 
     public OrderStatusFilterOption SelectedStatusFilter
     {
         get => _selectedStatusFilter;
-        set => SetProperty(
-            ref _selectedStatusFilter,
-            value ?? throw new ArgumentNullException(nameof(value)));
+        set { if (SetProperty(ref _selectedStatusFilter, value ?? throw new ArgumentNullException(nameof(value)))) CurrentPage = 1; }
     }
 
     public PaymentMethodFilterOption SelectedPaymentMethodFilter
     {
         get => _selectedPaymentMethodFilter;
-        set => SetProperty(
-            ref _selectedPaymentMethodFilter,
-            value ?? throw new ArgumentNullException(nameof(value)));
+        set { if (SetProperty(ref _selectedPaymentMethodFilter, value ?? throw new ArgumentNullException(nameof(value)))) CurrentPage = 1; }
     }
 
     public bool IsLoading
@@ -230,6 +222,44 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
             : null;
     public bool HasSelectedOrderNotes =>
         !string.IsNullOrWhiteSpace(SelectedOrderNotes);
+    public string SelectedSubtotalText => FormatSelectedMoney(details => details.Subtotal);
+    public string SelectedDiscountAmountText => FormatSelectedMoney(details => details.DiscountAmount);
+    public string SelectedOriginalTotalText => FormatSelectedMoney(details => details.TotalAmount);
+    public string SelectedRefundedAmountText => FormatSelectedMoney(details => details.Lines.Sum(line => line.RefundedAmount));
+    public string SelectedRemainingValueText => FormatSelectedMoney(details =>
+        Math.Max(0, details.TotalAmount - details.Lines.Sum(line => line.RefundedAmount)));
+    public string SelectedCashReceivedText => FormatSelectedMoney(details => details.CashReceived);
+    public string SelectedChangeAmountText => FormatSelectedMoney(details => details.ChangeAmount);
+    public string SelectedOrderTotalsText
+    {
+        get
+        {
+            var details = _selectedDetails;
+            if (details is null || details.OrderId != SelectedOrder?.OrderId) return string.Empty;
+            var refunded = details.Lines.Sum(line => line.RefundedAmount);
+            var remaining = Math.Max(0, details.TotalAmount - refunded);
+            return $"Tạm tính: {details.Subtotal:N0} ₫\n" +
+                   $"Giảm giá: {details.DiscountAmount:N0} ₫\n" +
+                   $"Tổng tiền gốc: {details.TotalAmount:N0} ₫\n" +
+                   $"Đã hoàn: {refunded:N0} ₫\n" +
+                   $"Giá trị còn lại: {remaining:N0} ₫\n" +
+                   $"Khách đưa: {details.CashReceived:N0} ₫ · Tiền thừa: {details.ChangeAmount:N0} ₫";
+        }
+    }
+    public bool HasSelectedReturns => _selectedDetails?.Returns?.Count > 0;
+    public string SelectedReturnsText => _selectedDetails?.Returns is not { Count: > 0 } values
+        ? "Không có dữ liệu trả hàng."
+        : string.Join("\n", values.Select(value =>
+            $"{value.CreatedAtUtc.ToLocalTime():dd/MM/yyyy HH:mm} · {value.ProcessedBy} · " +
+            $"SL {value.ReturnedQuantity:N0} · {value.RefundedAmount:N0} ₫ · {value.Reason}"));
+
+    private string FormatSelectedMoney(Func<OrderHistoryDetailsDto, long> selector)
+    {
+        var details = _selectedDetails;
+        return details is null || details.OrderId != SelectedOrder?.OrderId
+            ? "—"
+            : $"{selector(details):N0} ₫";
+    }
     public bool HasSelectedVietQrReference
     {
         get
@@ -285,9 +315,13 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
         _returnWindow is not null &&
         _permissions?.HasPermission(SystemCapability.ProcessReturns) == true &&
         _selectedDetails?.OrderId == SelectedOrder?.OrderId &&
-        _selectedDetails?.Status == OrderStatus.Completed &&
-        _selectedDetails.Lines.Any(line => line.Quantity > 0) &&
+        _selectedDetails?.Status != OrderStatus.Refunded &&
+        _selectedDetails?.Lines.Any(line => line.ReturnedQuantity < line.Quantity) == true &&
         !IsLoading && !IsLoadingDetails;
+    public string ReturnAvailabilityMessage => !HasSelectedOrder ? "Chọn đơn để trả hàng."
+        : IsLoadingDetails ? "Đang kiểm tra khả năng trả hàng."
+        : _selectedDetails?.Lines.Any(line => line.ReturnedQuantity < line.Quantity) != true
+            ? "Đơn đã hoàn toàn bộ, không còn số lượng có thể trả." : string.Empty;
     public string ReceiptAvailabilityMessage =>
         HasSelectedOrder && !IsLoadingDetails && !HasReceiptSnapshot
             ? "Đơn cũ chưa có snapshot hóa đơn để in lại."
@@ -332,7 +366,7 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
         FromDate = DateTime.Today;
         ToDate = DateTime.Today;
         SelectedStatusFilter = StatusFilters.Single(
-            option => option.Value == OrderStatus.Completed);
+            option => option.Value == OrderHistoryStatus.Completed);
         SelectedPaymentMethodFilter = PaymentMethodFilters[0];
         CurrentPage = 1;
         await LoadAsync();
@@ -414,6 +448,10 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
         _selectedDetails = null;
         OnPropertyChanged(nameof(SelectedOrderNotes));
         OnPropertyChanged(nameof(HasSelectedOrderNotes));
+        OnPropertyChanged(nameof(SelectedOrderTotalsText));
+        NotifyFinancialSummary();
+        OnPropertyChanged(nameof(HasSelectedReturns));
+        OnPropertyChanged(nameof(SelectedReturnsText));
         OnPropertyChanged(nameof(HasSelectedOrderDiscount));
         OnPropertyChanged(nameof(SelectedOrderDiscountText));
         OnPropertyChanged(nameof(HasSelectedVietQrReference));
@@ -441,6 +479,10 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
             _selectedDetails = result.Value;
             OnPropertyChanged(nameof(SelectedOrderNotes));
             OnPropertyChanged(nameof(HasSelectedOrderNotes));
+            OnPropertyChanged(nameof(SelectedOrderTotalsText));
+            NotifyFinancialSummary();
+            OnPropertyChanged(nameof(HasSelectedReturns));
+            OnPropertyChanged(nameof(SelectedReturnsText));
             OnPropertyChanged(nameof(HasSelectedOrderDiscount));
             OnPropertyChanged(nameof(SelectedOrderDiscountText));
             OnPropertyChanged(nameof(HasSelectedVietQrReference));
@@ -539,6 +581,10 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
         _selectedDetails = null;
         OnPropertyChanged(nameof(SelectedOrderNotes));
         OnPropertyChanged(nameof(HasSelectedOrderNotes));
+        OnPropertyChanged(nameof(SelectedOrderTotalsText));
+        NotifyFinancialSummary();
+        OnPropertyChanged(nameof(HasSelectedReturns));
+        OnPropertyChanged(nameof(SelectedReturnsText));
         NotifySelectionState();
     }
 
@@ -548,9 +594,21 @@ public sealed class OrderHistoryViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(HasReceiptSnapshot));
         OnPropertyChanged(nameof(CanOpenReceipt));
         OnPropertyChanged(nameof(CanOpenReturn));
+        OnPropertyChanged(nameof(ReturnAvailabilityMessage));
         OnPropertyChanged(nameof(ReceiptAvailabilityMessage));
         OpenReceiptCommand.NotifyCanExecuteChanged();
         OpenReturnCommand.NotifyCanExecuteChanged();
+    }
+
+    private void NotifyFinancialSummary()
+    {
+        OnPropertyChanged(nameof(SelectedSubtotalText));
+        OnPropertyChanged(nameof(SelectedDiscountAmountText));
+        OnPropertyChanged(nameof(SelectedOriginalTotalText));
+        OnPropertyChanged(nameof(SelectedRefundedAmountText));
+        OnPropertyChanged(nameof(SelectedRemainingValueText));
+        OnPropertyChanged(nameof(SelectedCashReceivedText));
+        OnPropertyChanged(nameof(SelectedChangeAmountText));
     }
 
     private void NotifyCommands()

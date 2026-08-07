@@ -2,6 +2,8 @@
 using POS.Domain.Entities;
 using POS.Domain.Enums;
 
+using POS.Application.DTOs.Orders;
+
 namespace POS.Application.Abstractions.Persistence;
 
 /// <summary>
@@ -64,6 +66,15 @@ public interface IOrderRepository
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken = default);
+
+    Task<PagedResult<Order>> SearchHistoryAsync(
+        string? searchTerm, OrderHistoryStatus? status, int? cashierUserId,
+        DateTimeOffset? fromUtc, DateTimeOffset? toUtc, PaymentMethod? paymentMethod,
+        int pageNumber, int pageSize, CancellationToken cancellationToken = default) =>
+        SearchAsync(searchTerm,
+            status == OrderHistoryStatus.Completed ? OrderStatus.Completed : null,
+            null, cashierUserId, fromUtc, toUtc, paymentMethod,
+            pageNumber, pageSize, cancellationToken);
 
     /// <summary>
     /// Kiểm tra mã đơn hàng đã tồn tại hay chưa.

@@ -15,15 +15,18 @@ public sealed class OrderHistoryService : IOrderHistoryService
     private readonly IOrderRepository _orders;
     private readonly IOrderReceiptSnapshotRepository _snapshots;
     private readonly IReceiptSnapshotSerializer _serializer;
+    private readonly IOrderReturnRepository? _returns;
 
     public OrderHistoryService(
         IOrderRepository orders,
         IOrderReceiptSnapshotRepository snapshots,
-        IReceiptSnapshotSerializer serializer)
+        IReceiptSnapshotSerializer serializer,
+        IOrderReturnRepository? returns = null)
     {
         _orders = orders ?? throw new ArgumentNullException(nameof(orders));
         _snapshots = snapshots ?? throw new ArgumentNullException(nameof(snapshots));
         _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
+        _returns = returns;
     }
 
     public async Task<Result<PagedResult<OrderHistoryListItemDto>>> SearchAsync(
@@ -38,10 +41,9 @@ public sealed class OrderHistoryService : IOrderHistoryService
             return Result.Failure<PagedResult<OrderHistoryListItemDto>>(error);
         }
 
-        var page = await _orders.SearchAsync(
+        var page = await _orders.SearchHistoryAsync(
             request.SearchTerm,
             request.Status,
-            customerId: null,
             request.CashierUserId,
             request.FromUtc,
             request.ToUtc,
@@ -50,7 +52,10 @@ public sealed class OrderHistoryService : IOrderHistoryService
             request.PageSize,
             cancellationToken);
 
-        return Result.Success(page.Map(MapListItem));
+        var balances = _returns is null || page.Items.Count == 0
+            ? new Dictionary<int, OrderReturnBalance>()
+            : await _returns.GetBalancesForOrdersAsync(page.Items.Select(order => order.Id).ToArray(), cancellationToken);
+        return Result.Success(page.Map(order => MapListItem(order, balances)));
     }
 
     public async Task<Result<OrderHistoryDetailsDto>> GetDetailsAsync(
@@ -90,7 +95,15 @@ public sealed class OrderHistoryService : IOrderHistoryService
             }
         }
 
-        return Result.Success(MapDetails(order, snapshot is not null, receipt));
+        var balances = _returns is null
+            ? new Dictionary<int, OrderReturnBalance>()
+            : await _returns.GetBalancesForOrderAsync(orderId, cancellationToken);
+        var returns = _returns is null
+            ? Array.Empty<OrderReturn>()
+            : await _returns.GetByOrderIdReadOnlyAsync(orderId, cancellationToken);
+        var hasValidReceipt = snapshot is not null && receipt is not null &&
+            receipt.OrderId == orderId && receipt.SnapshotVersion == snapshot.SnapshotVersion;
+        return Result.Success(MapDetails(order, hasValidReceipt, receipt, balances, returns));
     }
 
     public async Task<Result<ReceiptRequest>> GetReprintReceiptAsync(
@@ -162,7 +175,7 @@ public sealed class OrderHistoryService : IOrderHistoryService
         return null;
     }
 
-    private static OrderHistoryListItemDto MapListItem(Order order) =>
+    private static OrderHistoryListItemDto MapListItem(Order order, IReadOnlyDictionary<int, OrderReturnBalance> balances) =>
         new(
             order.Id,
             order.OrderCode,
@@ -170,7 +183,7 @@ public sealed class OrderHistoryService : IOrderHistoryService
             order.PaidAtUtc,
             order.CashierUserId,
             order.CashierUser?.FullName ?? $"#{order.CashierUserId}",
-            order.Status,
+            GetDisplayStatus(order, balances),
             order.PaymentMethod,
             order.Subtotal,
             order.DiscountAmount,
@@ -181,7 +194,9 @@ public sealed class OrderHistoryService : IOrderHistoryService
     private static OrderHistoryDetailsDto MapDetails(
         Order order,
         bool hasReceiptSnapshot,
-        ReceiptRequest? receipt) =>
+        ReceiptRequest? receipt,
+        IReadOnlyDictionary<int, OrderReturnBalance> balances,
+        IReadOnlyList<OrderReturn> returns) =>
         new(
             order.Id,
             order.OrderCode,
@@ -189,7 +204,7 @@ public sealed class OrderHistoryService : IOrderHistoryService
             order.PaidAtUtc,
             order.CashierUserId,
             order.CashierUser?.FullName ?? $"#{order.CashierUserId}",
-            order.Status,
+            GetDisplayStatus(order, balances),
             order.PaymentMethod,
             order.Subtotal,
             order.DiscountAmount,
@@ -224,7 +239,9 @@ public sealed class OrderHistoryService : IOrderHistoryService
                             modifier.ModifierName,
                             modifier.Quantity,
                             modifier.UnitAdditionalPrice,
-                            modifier.AmountPerProductUnit)).ToArray())).ToArray(),
+                            modifier.AmountPerProductUnit)).ToArray(),
+                    balances.TryGetValue(item.Id, out var balance) ? balance.ReturnedQuantity : 0,
+                    balances.TryGetValue(item.Id, out balance) ? balance.RefundedAmount : 0)).ToArray(),
             order.DiscountSnapshot?.Type ?? POS.Domain.Enums.SalesDiscountType.None,
             order.DiscountSnapshot?.RequestedValue ?? 0,
             order.DiscountSnapshot?.Reason,
@@ -233,7 +250,25 @@ public sealed class OrderHistoryService : IOrderHistoryService
             order.DiscountSnapshot?.AppliedAtUtc,
             receipt?.PaymentIntentId,
             receipt?.PaymentIntentDisplayCode,
-            receipt?.PaymentConfirmedAtUtc);
+            receipt?.PaymentConfirmedAtUtc,
+            returns.Select(value => new OrderHistoryReturnDto(
+                value.CreatedAtUtc,
+                value.ProcessedByUser?.FullName ?? $"#{value.ProcessedByUserId}",
+                value.Items.Sum(item => item.ReturnQuantity),
+                value.TotalRefundAmount,
+                value.Reason,
+                value.RefundMethod)).ToArray());
+
+    private static POS.Domain.Enums.OrderStatus GetDisplayStatus(
+        Order order, IReadOnlyDictionary<int, OrderReturnBalance> balances)
+    {
+        if (order.Status != POS.Domain.Enums.OrderStatus.Completed) return order.Status;
+        var sold = order.Items.Sum(item => item.Quantity);
+        var returned = order.Items.Sum(item => balances.TryGetValue(item.Id, out var balance) ? balance.ReturnedQuantity : 0);
+        return returned <= 0 ? POS.Domain.Enums.OrderStatus.Completed
+            : returned >= sold ? POS.Domain.Enums.OrderStatus.Refunded
+            : POS.Domain.Enums.OrderStatus.PartiallyRefunded;
+    }
 
     private static Result<T> ValidationFailure<T>(string message) =>
         Result.Failure<T>(

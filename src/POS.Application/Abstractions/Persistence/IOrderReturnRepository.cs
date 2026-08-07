@@ -9,5 +9,7 @@ public interface IOrderReturnRepository
     Task<OrderReturn?> GetByClientRequestIdAsync(Guid clientRequestId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<OrderReturn>> GetByOrderIdReadOnlyAsync(int orderId, CancellationToken cancellationToken = default);
     Task<IReadOnlyDictionary<int, OrderReturnBalance>> GetBalancesForOrderAsync(int orderId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyDictionary<int, OrderReturnBalance>> GetBalancesForOrdersAsync(IReadOnlyCollection<int> orderIds, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyDictionary<int, OrderReturnBalance>>(new Dictionary<int, OrderReturnBalance>());
     Task<OrderReturnBalance> GetOrCreateTrackedBalanceAsync(int orderItemId, CancellationToken cancellationToken = default);
 }

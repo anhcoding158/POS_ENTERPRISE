@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using POS.Application.Abstractions.Persistence;
 using POS.Application.Common;
+using POS.Application.DTOs.Orders;
 using POS.Domain.Entities;
 using POS.Domain.Enums;
 
@@ -350,6 +351,56 @@ public sealed class OrderRepository :
             pageNumber,
             pageSize,
             totalCount);
+    }
+
+    public async Task<PagedResult<Order>> SearchHistoryAsync(
+        string? searchTerm, OrderHistoryStatus? status, int? cashierUserId,
+        DateTimeOffset? fromUtc, DateTimeOffset? toUtc, PaymentMethod? paymentMethod,
+        int pageNumber, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var from = NormalizeOptionalUtc(fromUtc, nameof(fromUtc));
+        var to = NormalizeOptionalUtc(toUtc, nameof(toUtc));
+        if (status.HasValue && !Enum.IsDefined(status.Value)) throw new ArgumentOutOfRangeException(nameof(status));
+        ValidateSearch(null, null, cashierUserId, from, to, paymentMethod, pageNumber, pageSize);
+        var skip = CalculateSkip(pageNumber, pageSize);
+        IQueryable<Order> query = _dbContext.Orders.AsNoTracking()
+            .Where(order => order.Status == OrderStatus.Completed);
+        if (status.HasValue)
+        {
+            query = status.Value switch
+            {
+                OrderHistoryStatus.Completed => query.Where(order => !order.Items.Any(item =>
+                    _dbContext.OrderReturnBalances.Any(balance => balance.OrderItemId == item.Id && balance.ReturnedQuantity > 0))),
+                OrderHistoryStatus.PartiallyReturned => query.Where(order =>
+                    order.Items.Sum(item => item.Quantity) > order.Items.Sum(item => _dbContext.OrderReturnBalances
+                        .Where(balance => balance.OrderItemId == item.Id).Select(balance => balance.ReturnedQuantity).FirstOrDefault()) &&
+                    order.Items.Sum(item => _dbContext.OrderReturnBalances
+                        .Where(balance => balance.OrderItemId == item.Id).Select(balance => balance.ReturnedQuantity).FirstOrDefault()) > 0),
+                OrderHistoryStatus.FullyReturned => query.Where(order => order.Items.Sum(item => item.Quantity) > 0 &&
+                    order.Items.Sum(item => item.Quantity) == order.Items.Sum(item => _dbContext.OrderReturnBalances
+                        .Where(balance => balance.OrderItemId == item.Id).Select(balance => balance.ReturnedQuantity).FirstOrDefault())),
+                _ => query
+            };
+        }
+        if (cashierUserId.HasValue) query = query.Where(order => order.CashierUserId == cashierUserId.Value);
+        if (paymentMethod.HasValue) query = query.Where(order => order.PaymentMethod == paymentMethod.Value);
+        if (from.HasValue) query = query.Where(order => order.CreatedAtUtc >= from.Value);
+        if (to.HasValue) query = query.Where(order => order.CreatedAtUtc <= to.Value);
+        var term = NormalizeSearchTerm(searchTerm);
+        if (term is not null)
+        {
+            var pattern = $"%{EscapeLikePattern(term)}%";
+            query = query.Where(order => EF.Functions.Like(order.OrderCode, pattern, LikeEscapeCharacter) ||
+                order.CashierUser != null && EF.Functions.Like(order.CashierUser.FullName, pattern, LikeEscapeCharacter) ||
+                order.Items.Any(item => EF.Functions.Like(item.ProductName, pattern, LikeEscapeCharacter) ||
+                                        EF.Functions.Like(item.ProductCode, pattern, LikeEscapeCharacter)));
+        }
+        var count = await query.CountAsync(cancellationToken);
+        var ids = await query.OrderByDescending(order => order.CreatedAtUtc).ThenByDescending(order => order.Id)
+            .Select(order => order.Id).Skip(skip).Take(pageSize).ToArrayAsync(cancellationToken);
+        var loaded = await CreateAggregateQuery(true).Where(order => ids.Contains(order.Id)).ToArrayAsync(cancellationToken);
+        var byId = loaded.ToDictionary(order => order.Id);
+        return new PagedResult<Order>(ids.Where(byId.ContainsKey).Select(id => byId[id]).ToArray(), pageNumber, pageSize, count);
     }
 
     public Task<bool> CodeExistsAsync(

@@ -33,6 +33,13 @@ public sealed class OrderReturnRepository(PosDbContext dbContext) :
             .Where(balance => balance.OrderItem!.OrderId == orderId)
             .ToDictionaryAsync(balance => balance.OrderItemId, cancellationToken);
 
+    public async Task<IReadOnlyDictionary<int, OrderReturnBalance>> GetBalancesForOrdersAsync(
+        IReadOnlyCollection<int> orderIds,
+        CancellationToken cancellationToken = default) =>
+        await dbContext.OrderReturnBalances.AsNoTracking()
+            .Where(balance => orderIds.Contains(balance.OrderItem!.OrderId))
+            .ToDictionaryAsync(balance => balance.OrderItemId, cancellationToken);
+
     public async Task<OrderReturnBalance> GetOrCreateTrackedBalanceAsync(
         int orderItemId,
         CancellationToken cancellationToken = default)
@@ -50,5 +57,6 @@ public sealed class OrderReturnRepository(PosDbContext dbContext) :
     private IQueryable<OrderReturn> ReadQuery() =>
         dbContext.OrderReturns.AsNoTracking()
             .AsSplitQuery()
+            .Include(entity => entity.ProcessedByUser)
             .Include(entity => entity.Items);
 }

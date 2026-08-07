@@ -30,4 +30,5 @@ public sealed record OrderHistoryDetailsDto(
     DateTimeOffset? DiscountAppliedAtUtc = null,
     int? PaymentIntentId = null,
     string? PaymentIntentDisplayCode = null,
-    DateTimeOffset? PaymentConfirmedAtUtc = null);
+    DateTimeOffset? PaymentConfirmedAtUtc = null,
+    IReadOnlyList<OrderHistoryReturnDto>? Returns = null);
