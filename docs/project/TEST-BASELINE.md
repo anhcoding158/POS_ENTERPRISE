@@ -1,5 +1,16 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R2.4A independent-review and closeout baseline — 2026-08-08
+
+- Entry branch/HEAD: `main` at `c687b2f0c2745f8be5c6e5e1b9450339a3309d6f`, aligned with local `origin/main`, with exactly the accepted 11-file R2.4A implementation and an empty index.
+- Independent review corrected ambiguous inaccessible-vs-missing metadata classification, added bounded parent-reparse revalidation, derived `CanProceed` from typed status and proved cancellation between metadata reads.
+- Exact final `DatabaseStorageMonitorTests`: `44/44` PASS, 0 failed, 0 skipped. Targeted storage/path/options/DI/architecture/configuration/DatabaseInitializer/SQLite UX regressions: `89/89` PASS, 0 failed, 0 skipped.
+- Release solution build: PASS, 0 warnings, 0 errors.
+- Full Quality Gate outside sandbox: PASS without `-SkipEfCheck`; `1114/1114` PASS, 0 failed, 0 skipped; gate build 0 warnings/0 errors; vulnerability scan PASS for 5/5 projects; EF pending-model and Git checks PASS.
+- Manual acceptance: **NOT APPLICABLE — no manual surface in R2.4A**. The WPF application was not run.
+- No package, schema, migration or ModelSnapshot changed. The main database was not opened, read, copied, hashed, renamed, modified, deleted or migrated; no database/WAL/SHM/journal was created.
+- R2.4A is COMPLETED; R2.4 remains IN PROGRESS; R2.4B and R3 are NOT STARTED. Startup integration, UI, backup/restore and cleanup were not implemented.
+
 ## R2.3D manual acceptance and final closeout baseline — 2026-08-08
 
 - Manual acceptance M01–M09: PASS with no observed issue. Authenticated Shell placement, modal ownership, disclosure/consent, initial state, picker cancellation, two successful unique exports, reset, cancellation/close behavior and post-close Shell smoke behavior were accepted.

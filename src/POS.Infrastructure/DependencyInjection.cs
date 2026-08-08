@@ -21,6 +21,7 @@ using POS.Infrastructure.Persistence;
 using POS.Infrastructure.Persistence.Repositories;
 using POS.Infrastructure.Printing;
 using POS.Infrastructure.Support;
+using POS.Infrastructure.Storage;
 
 namespace POS.Infrastructure;
 
@@ -63,6 +64,31 @@ public static class DependencyInjection
                 },
                 "Cấu hình Infrastructure không hợp lệ.")
             .ValidateOnStart();
+
+        services
+            .AddOptions<DatabaseStorageOptions>()
+            .Bind(configuration.GetSection(DatabaseStorageOptions.SectionName))
+            .Validate(
+                options =>
+                {
+                    try
+                    {
+                        options.Validate();
+                        return true;
+                    }
+                    catch
+                    {
+                        return false;
+                    }
+                },
+                "Cấu hình theo dõi dung lượng database không hợp lệ.")
+            .ValidateOnStart();
+
+        services.TryAddSingleton(TimeProvider.System);
+        services.TryAddSingleton<IStorageMetadataProvider,
+            SystemStorageMetadataProvider>();
+        services.TryAddSingleton<IDatabaseStorageMonitor,
+            DatabaseStorageMonitor>();
 
         services
             .AddOptions<SupportBundleOptions>()

@@ -1,5 +1,14 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## R2.4A Typed Storage Snapshot Foundation — COMPLETED — 2026-08-08
+
+- R2.4 remains **IN PROGRESS**. R2.4A is completed; R2.4B is the next checkpoint and is **NOT STARTED**. R3 remains **NOT STARTED**.
+- Application now owns typed database-storage snapshot and operation-preflight contracts. Infrastructure provides a metadata-only monitor over the canonical database path, exact SQLite WAL/SHM/journal siblings and containing-volume capacity without opening or reading database content.
+- Production policy warns at 5 GiB absolute free space or 10% available capacity, reserves 512 MiB operational headroom, and estimates a future pre-migration backup as footprint plus `max(256 MiB, ceil(10% of footprint))`. Arithmetic is overflow-safe; unavailable metrics remain permitted for the future startup-migration integration.
+- R2.4A does not connect the monitor to `DatabaseInitializer`, change startup behavior, add UI, implement backup/restore or cleanup, or modify packages/schema/migrations. Manual acceptance is **NOT APPLICABLE — no manual surface in R2.4A**.
+- Independent-review fixes prevent inaccessible metadata from being reported as a missing file, revalidate parent reparse points before returning a snapshot, observe cancellation between metadata reads, and derive `CanProceed` from typed preflight status.
+- Fresh verification: exact `DatabaseStorageMonitorTests` `44/44` PASS; targeted storage/path/options/DI/architecture/security/initializer/SQLite regressions `89/89` PASS; Release build 0 warnings/0 errors; complete outside-sandbox Quality Gate `1114/1114` PASS with 0 failed/0 skipped, vulnerability scan PASS for 5/5 projects, EF pending-model check PASS and Git checks PASS.
+
 ## R2.3 Logging and Support Bundle — COMPLETE — 2026-08-08
 
 - R2.3A Safe Logging Foundation, R2.3B Safe Support Bundle Composition & Export Service and R2.3C Support Bundle UI all have automated verification PASS. R2.3D manual acceptance M01–M09 is PASS with no observed issue.

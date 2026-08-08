@@ -1,5 +1,11 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## R2.4A verification note — 2026-08-08
+
+- No confirmed R2.4A runtime defect remains after independent review. Ambiguous existence probes, parent-reparse revalidation, cancellation-between-reads coverage and derived preflight `CanProceed` semantics were corrected within the checkpoint.
+- Typed metadata-only snapshots and preflight policy passed targeted `89/89`, Release build and full Quality Gate `1114/1114`; vulnerability and EF pending-model checks passed.
+- R2.4 remains IN PROGRESS. R2.4B startup/presentation integration is NOT STARTED; backup/restore and cleanup remain outside R2.4A. No existing issue ID is closed or renumbered by this note.
+
 ## R2.3C verification note — 2026-08-08
 
 - No new confirmed runtime defect was established. R2.3A/B/C have automated verification PASS; R2.3C manual acceptance and R2.3D remain outstanding, so R2.3 stays IN PROGRESS.
@@ -51,7 +57,7 @@
 - DatabaseReadInR0.5D: No.
 - ExporterExecutedInR0.5E: Yes; latest pack exit code `0`, secret scan `0 findings`, coverage `501/501`, manifest/integrity/exclusion checks passed.
 - DatabaseReadInR0.5E: No.
-- CurrentCheckpoint: R2.3 Logging and Support Bundle IN PROGRESS; R2.3A/B/C automated verification PASS; R2.3C manual acceptance and R2.3D NOT STARTED.
+- CurrentCheckpoint: R2.4 Disk Space and Database Growth IN PROGRESS; R2.4A COMPLETED; R2.4B NOT STARTED. R2.3 is COMPLETED.
 - Scope: inventory evidence-supported operating conditions only; R0.5D did not reproduce runtime failures, run gates, open a real database, inspect database rows or perform hardware/store acceptance.
 
 Source-of-truth order:
@@ -302,7 +308,7 @@ Severity describes supported impact, not roadmap priority. Insufficient evidence
 - Severity: Informational.
 - Affected area: SQLite busy/locked UX, support bundle, disk monitoring, backup/restore, first-run store/VietQR setup, employees, accounts, password management, roles and audit UI.
 - Evidence: Policy/roadmap evidence at `D:\Projects_1\POS_Enterprise_DotNet\docs\project\MASTER-ROADMAP.md` — R2, R3 and R4; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\DECISIONS.md` — decisions not reconstructed and `DEC-018`.
-- Observed or known condition: R2.1 and R2.2 are COMPLETE/CLOSED. R2.3 is IN PROGRESS with R2.3A/B/C automated-verified; R2.3C manual acceptance, R2.3D, R2.4, R3 and R4 remain Not Started. Forgot password and change password are not implemented. Clean-profile first-run behavior was not revalidated: the artifact has blank VietQR recipient configuration and blank default-admin-password configuration, and no database; prior VietQR values that reappeared came from an existing Windows profile’s persisted configuration. This is a readiness/verification gap, not evidence that a clean install failed.
+- Observed or known condition: R2.1 and R2.2 are COMPLETE/CLOSED; R2.3 is COMPLETED. R2.4 is IN PROGRESS with R2.4A completed and R2.4B not started; R3 and R4 remain Not Started. Forgot password and change password are not implemented. Clean-profile first-run behavior was not revalidated: the artifact has blank VietQR recipient configuration and blank default-admin-password configuration, and no database; prior VietQR values that reappeared came from an existing Windows profile’s persisted configuration. This is a readiness/verification gap, not evidence that a clean install failed.
 - Expected condition or intended boundary: each stage must meet its own exit criteria and manual acceptance. R4.1 covers typed/validated store and VietQR setup; R4.2 covers employee/account workflows including password reset/management; clean-profile first-run acceptance must be performed before customer clean-install claims.
 - User/business impact: foundation source cannot be promoted to operational/store-management completion.
 - Trigger or reproduction precondition: entry into R2.3–R2.4, R3 or R4 after dependency stages PASS.

@@ -27,6 +27,24 @@ public sealed class DatabasePathResolver
     public static string ResolveDatabasePath(
         string configuredPath)
     {
+        var fullPath = ResolveDatabasePathWithoutCreatingDirectory(
+            configuredPath);
+
+        var databaseDirectory =
+            Path.GetDirectoryName(fullPath)!;
+
+        Directory.CreateDirectory(databaseDirectory);
+
+        return fullPath;
+    }
+
+    /// <summary>
+    /// Canonicalizes and validates the configured database path without
+    /// creating a directory or file. Metadata-only diagnostics use this API.
+    /// </summary>
+    public static string ResolveDatabasePathWithoutCreatingDirectory(
+        string configuredPath)
+    {
         if (string.IsNullOrWhiteSpace(configuredPath))
         {
             throw new ArgumentException(
@@ -65,8 +83,6 @@ public sealed class DatabasePathResolver
             throw new InvalidOperationException(
                 "Không xác định được thư mục chứa database.");
         }
-
-        Directory.CreateDirectory(databaseDirectory);
 
         return fullPath;
     }
@@ -214,9 +230,6 @@ public sealed class DatabasePathResolver
             Path.Combine(
                 localApplicationData,
                 "POS Enterprise");
-
-        Directory.CreateDirectory(
-            applicationDataDirectory);
 
         return Path.GetFullPath(
             applicationDataDirectory);

@@ -1,5 +1,13 @@
 # ARCHITECTURE — POS ENTERPRISE RETAIL V1
 
+## R2.4A typed storage-monitoring boundary
+
+- `POS.Application` owns `IDatabaseStorageMonitor` and typed snapshot/preflight DTOs only. It exposes no EF, WPF, `FileInfo`, `DirectoryInfo` or `DriveInfo` implementation type and carries no raw exception detail.
+- `POS.Infrastructure.Storage` owns the validated policy and framework metadata adapter. It resolves the same canonical database path through a side-effect-free `DatabasePathResolver` API, checks only the main file and exact `-wal`, `-shm` and `-journal` siblings, rejects reparse points and returns typed unavailable states for unsafe or unstable metadata.
+- The monitor is metadata-only: it does not open SQLite or file streams, enumerate directories, read rows/content, create missing paths, or delete database artifacts. Existing runtime callers retain the original directory-creation behavior through `ResolveDatabasePath`.
+- Warning policy is 5 GiB absolute or 10% available capacity, with 512 MiB reserved headroom. Future backup estimation is footprint plus `max(256 MiB, ceil(10% of footprint))`; checked/saturating arithmetic prevents wrap. `MetricsUnavailable` permits future startup behavior to continue, but R2.4A does not integrate with `DatabaseInitializer`.
+- The stateless monitor, metadata provider and framework `TimeProvider` are singleton registrations; options bind under `Infrastructure:DatabaseStorage` with startup validation. R2.4A adds no UI, schema, migration, package, backup/restore or cleanup workflow.
+
 ## R2.3C Support Bundle presentation boundary
 
 - Placement is a minimal navigation entry in the authenticated Shell because no Help/Settings/Admin module or support permission exists. Shell authentication remains the access boundary; R2.3C adds no role, capability, schema or migration.
