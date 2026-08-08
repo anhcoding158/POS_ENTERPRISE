@@ -639,6 +639,30 @@
                             </StackPanel>
                         </Button>
 
+                        <Button
+                            x:Name="StorageStatusNavigationButton"
+                            Click="OnOpenStorageStatusClick"
+                            Style="{StaticResource NavigationButtonStyle}"
+                            ToolTip="Xem trạng thái dung lượng database và ổ đĩa">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock
+                                    Text="&#xEDA2;"
+                                    FontFamily="Segoe MDL2 Assets"
+                                    FontSize="17"
+                                    Width="32"
+                                    VerticalAlignment="Center" />
+                                <StackPanel>
+                                    <TextBlock Text="Dung lượng" />
+                                    <TextBlock
+                                        Text="{Binding StatusText}"
+                                        FontSize="10"
+                                        Opacity="0.78"
+                                        TextTrimming="CharacterEllipsis"
+                                        MaxWidth="145" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Button>
+
                         <!-- Quote -->
 
                         <Border

@@ -1,8 +1,18 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## R2.4C Authenticated Storage Status UI — COMPLETED — 2026-08-08
+
+- R2.4 remains **IN PROGRESS**. R2.4A, R2.4B and R2.4C are completed; R2.4D is the next checkpoint and remains **NOT STARTED**. R3 and R4 remain **NOT STARTED**.
+- The authenticated Shell now exposes a compact `Dung lượng` status entry and an owner-centered detail modal. The UI reuses the production `IDatabaseStorageMonitor` contract and does not replace R2.4B startup-preflight authority.
+- Presentation is typed and fail-safe: initial, loading, healthy, warning, insufficient and unavailable states are explicit; refresh is asynchronous, single-flight and retryable after unavailable results. Main database size and total SQLite footprint are labelled separately, and unavailable values are not shown as zero.
+- The surface contains no database/backup path, connection string, raw exception, backup/restore/cleanup/delete control or new permission/schema. Existing authenticated Shell authorization, modal ownership and DI conventions are reused.
+- Independent review and automated re-verification passed. R2.4C targeted tests: `18/18` PASS; combined regression: `166/166` PASS; POS.Wpf Release build: 0 warnings/0 errors; outside-sandbox Full Quality Gate: `1142/1142` PASS; vulnerability scan PASS; EF pending-model check PASS.
+- Manual acceptance passed for Shell entry, authorization, modal ownership/single-instance behavior, repeated open/close, layout and Vietnamese wording, displayed metrics, refresh, privacy/forbidden controls, Shell navigation and application shutdown. No manual acceptance remains pending for R2.4C.
+- A separate authentication incident remains under investigation and is not a confirmed R2.4C defect or root-cause finding.
+
 ## R2.4B Startup Migration Storage Preflight — COMPLETED — 2026-08-08
 
-- R2.4 remains **IN PROGRESS**. R2.4A and R2.4B are completed; R2.4C and R2.4D are **NOT STARTED**. R3 and R4 remain **NOT STARTED**.
+- R2.4 remains **IN PROGRESS**. R2.4A, R2.4B and R2.4C are completed; R2.4D is **NOT STARTED**. R3 and R4 remain **NOT STARTED**.
 - Startup storage preflight runs only after pending migrations are confirmed and before integrity checking, the existing verified pre-migration backup, `MigrateAsync`, or any schema mutation. With no pending migration, the monitor and backup remain untouched.
 - Existing databases use the production footprint-plus-padding estimate; unknown existing footprint fails safe when free-space metrics are available. Fresh/missing databases request zero additional backup bytes and do not create a pre-migration backup. `Allowed`, `AllowedWithWarning`, and `MetricsUnavailable` continue; `Insufficient` throws a typed safe exception before mutation. Unknown status values fail closed.
 - Cancellation is propagated unchanged. New logs contain only typed status and no database/backup path, volume root, connection string, identity, or raw exception detail. No UI, new backup/restore workflow, retention, package, schema, migration, or ModelSnapshot change is included. Manual acceptance is **NOT APPLICABLE — no manual surface in R2.4B**.

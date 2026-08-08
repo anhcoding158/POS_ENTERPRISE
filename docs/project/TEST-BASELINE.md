@@ -1,5 +1,15 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R2.4C closeout baseline — 2026-08-08
+
+- R2.4C authenticated storage status UI implementation, independent review and automated re-verification passed on the accepted unstaged R2.4C working tree at HEAD `166be3ec8cce555f772c6d068147d1eb8cd13f09`, aligned with local `origin/main`, with an empty index before closeout.
+- Targeted R2.4C tests: `18/18` PASS, 0 failed, 0 skipped. Combined regression: `166/166` PASS, 0 failed, 0 skipped.
+- POS.Wpf Release build: PASS, 0 warnings, 0 errors. Full Quality Gate outside sandbox: `1142/1142` PASS without `-SkipEfCheck`; vulnerability scan PASS; EF pending-model check PASS. Any sandbox-only named-pipe provenance remains the accepted R2.1 environment boundary; production IPC was unchanged.
+- Manual acceptance: PASS for the authenticated Shell entry, modal owner/single-instance behavior, repeated open/close, layout and wording, metrics, refresh, privacy/forbidden controls, Shell navigation and application shutdown.
+- The UI uses production storage-monitor contracts, has no backup/restore/cleanup/delete controls, exposes no database path or connection string, and does not alter startup migration authority. No package, schema, migration or ModelSnapshot changed; no database operation was performed for this checkpoint.
+- A separate authentication incident is not treated as a confirmed R2.4C defect or root cause.
+- R2.4A, R2.4B and R2.4C are COMPLETED; R2.4D is the next checkpoint and NOT STARTED. R3 and R4 remain NOT STARTED.
+
 ## R2.4B independent-review and closeout baseline — 2026-08-08
 
 - Entry branch/HEAD: `main` at `42664fd89c7214682ad5d0c7de327ec8a9a7271d`, aligned with local `origin/main`, with exactly three unstaged R2.4B implementation files and an empty index.

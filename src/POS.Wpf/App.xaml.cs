@@ -598,6 +598,10 @@ public partial class App :
         services.AddScoped<
             ISupportBundleDialogService,
             SupportBundleDialogService>();
+
+        services.AddScoped<
+            IStorageStatusDialogService,
+            StorageStatusDialogService>();
     }
 
     private static void ConfigureViewModelsAndWindows(
@@ -662,6 +666,12 @@ public partial class App :
 
         services.AddTransient<
             SupportBundleWindow>();
+
+        services.AddScoped<
+            StorageStatusViewModel>();
+
+        services.AddTransient<
+            StorageStatusWindow>();
 
         /*
          * Main Shell.

@@ -1,5 +1,12 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## R2.4C closeout note — 2026-08-08
+
+- R2.4C authenticated storage status UI passed independent review, automated re-verification (`18/18` targeted; `166/166` combined), Release build, outside-sandbox Quality Gate `1142/1142`, vulnerability scan, EF pending-model check and manual acceptance.
+- No confirmed R2.4C runtime defect was established. The UI reuses the production storage monitor, keeps startup-preflight authority in R2.4B, and adds no backup/restore/cleanup/delete behavior.
+- A separate authentication incident remains an investigation item; its root cause is not confirmed and it does not invalidate R2.4C acceptance.
+- R2.4 remains IN PROGRESS; R2.4D is the next checkpoint. No existing issue ID is closed or renumbered by this note.
+
 ## R2.4B verification note — 2026-08-08
 
 - Independent review found and corrected two in-scope fail-safe defects: unknown preflight enum values could proceed, and an existing database with unavailable footprint metadata could be evaluated as requiring zero additional bytes. Regression tests now prove both paths stop before backup/schema mutation.

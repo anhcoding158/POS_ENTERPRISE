@@ -35,6 +35,12 @@ public partial class ShellWindow :
     private readonly ISupportBundleDialogService
         _supportBundleDialogService;
 
+    private readonly StorageStatusViewModel
+        _storageStatusViewModel;
+
+    private readonly IStorageStatusDialogService
+        _storageStatusDialogService;
+
     private global::System.Windows.Controls.Button?
         _logoutButton;
 
@@ -47,7 +53,9 @@ public partial class ShellWindow :
         ICurrentUserService currentUserService,
         IPermissionService permissionService,
         IServiceScopeFactory scopeFactory,
-        ISupportBundleDialogService supportBundleDialogService)
+        ISupportBundleDialogService supportBundleDialogService,
+        StorageStatusViewModel storageStatusViewModel,
+        IStorageStatusDialogService storageStatusDialogService)
     {
         _viewModel =
             viewModel ??
@@ -73,6 +81,12 @@ public partial class ShellWindow :
             supportBundleDialogService ??
             throw new ArgumentNullException(nameof(supportBundleDialogService));
 
+        _storageStatusViewModel = storageStatusViewModel ??
+            throw new ArgumentNullException(nameof(storageStatusViewModel));
+
+        _storageStatusDialogService = storageStatusDialogService ??
+            throw new ArgumentNullException(nameof(storageStatusDialogService));
+
         if (!_currentUserService.IsAuthenticated)
         {
             throw new InvalidOperationException(
@@ -83,6 +97,9 @@ public partial class ShellWindow :
 
         DataContext =
             _viewModel;
+
+        StorageStatusNavigationButton.DataContext =
+            _storageStatusViewModel;
 
         Loaded +=
             OnWindowLoaded;
@@ -98,6 +115,14 @@ public partial class ShellWindow :
         object sender,
         global::System.Windows.RoutedEventArgs e) =>
         _supportBundleDialogService.Show(this);
+
+    private void OnOpenStorageStatusClick(
+        object sender,
+        global::System.Windows.RoutedEventArgs e)
+    {
+        if (!_currentUserService.IsAuthenticated) return;
+        _storageStatusDialogService.Show(this);
+    }
 
     /// <summary>
     /// True khi Shell đóng do người dùng đăng xuất.
@@ -133,6 +158,7 @@ public partial class ShellWindow :
                 .DispatcherPriority.Loaded);
 
         await _viewModel.InitializeAsync();
+        await _storageStatusViewModel.RefreshAsync();
     }
 
     /// <summary>
@@ -911,6 +937,8 @@ public partial class ShellWindow :
 
         PreviewKeyDown -=
             OnPreviewKeyDown;
+
+        _storageStatusViewModel.Dispose();
 
         if (_logoutButton is not null)
         {
