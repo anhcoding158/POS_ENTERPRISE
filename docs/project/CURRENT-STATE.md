@@ -1,5 +1,13 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## R2.4B Startup Migration Storage Preflight — COMPLETED — 2026-08-08
+
+- R2.4 remains **IN PROGRESS**. R2.4A and R2.4B are completed; R2.4C and R2.4D are **NOT STARTED**. R3 and R4 remain **NOT STARTED**.
+- Startup storage preflight runs only after pending migrations are confirmed and before integrity checking, the existing verified pre-migration backup, `MigrateAsync`, or any schema mutation. With no pending migration, the monitor and backup remain untouched.
+- Existing databases use the production footprint-plus-padding estimate; unknown existing footprint fails safe when free-space metrics are available. Fresh/missing databases request zero additional backup bytes and do not create a pre-migration backup. `Allowed`, `AllowedWithWarning`, and `MetricsUnavailable` continue; `Insufficient` throws a typed safe exception before mutation. Unknown status values fail closed.
+- Cancellation is propagated unchanged. New logs contain only typed status and no database/backup path, volume root, connection string, identity, or raw exception detail. No UI, new backup/restore workflow, retention, package, schema, migration, or ModelSnapshot change is included. Manual acceptance is **NOT APPLICABLE — no manual surface in R2.4B**.
+- Independent review corrected fail-open unknown-status handling and a zero-byte estimate for an existing database with unavailable footprint metadata. Fresh verification: `DatabaseInitializerSafetyTests` `15/15` PASS; combined storage/path/options/DI/architecture/configuration/SQLite regressions `99/99` PASS; Release build 0 warnings/0 errors; complete outside-sandbox Quality Gate `1124/1124` PASS with 0 failed/0 skipped, vulnerability scan PASS for 5/5 projects, EF pending-model check PASS and Git checks PASS. The sandbox run reached 1122 PASS/2 environment-only R2.1 named-pipe failures; production IPC was unchanged.
+
 ## R2.4A Typed Storage Snapshot Foundation — COMPLETED — 2026-08-08
 
 - R2.4 remains **IN PROGRESS**. R2.4A is completed; R2.4B is the next checkpoint and is **NOT STARTED**. R3 remains **NOT STARTED**.

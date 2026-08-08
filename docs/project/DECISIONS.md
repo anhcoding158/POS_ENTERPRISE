@@ -1,13 +1,14 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
-## DEC-028 — Database storage monitoring is typed, metadata-only and overflow-safe
+## DEC-028 — Database storage monitoring and startup migration preflight are typed, metadata-only and overflow-safe
 
-- **Status:** Accepted for R2.4A on `2026-08-08`; R2.4 remains IN PROGRESS.
+- **Status:** Accepted for R2.4A and R2.4B on `2026-08-08`; R2.4 remains IN PROGRESS.
 - **Decision:** Keep snapshot/preflight contracts in Application and filesystem/volume metadata in Infrastructure. Resolve the canonical database path without side effects; inspect only main database metadata and exact WAL/SHM/journal siblings; never open database content, enumerate directories, follow reparse points or create/delete storage artifacts.
 - **Policy:** Warn when free space is at or below 5 GiB or 10%; classify below 512 MiB reserved headroom as insufficient. A future backup estimate is footprint plus `max(256 MiB, ceil(10% of footprint))`. Required-operation arithmetic is overflow-safe, equality at required-plus-reserve is allowed, and unavailable metrics have `CanProceed=true` for the future startup-migration integration.
 - **Reliability/privacy:** Metadata failure and bounded races return typed safe reasons without raw exception/path logging. Missing main database is distinct from zero bytes; missing exact sidecars contribute zero. Application exposes no filesystem implementation types.
-- **Evidence:** independent review fixes plus targeted regressions `89/89`, Release build 0 warnings/0 errors, and outside-sandbox Quality Gate `1114/1114` PASS with vulnerability 5/5, EF pending-model and Git checks PASS.
-- **Consequences:** R2.4A is COMPLETED. R2.4B is NOT STARTED. No `DatabaseInitializer` integration, startup behavior change, UI, backup/restore, cleanup, package, schema or migration is included.
+- **Startup integration:** Run preflight only after pending migrations are confirmed and before integrity, the existing verified backup, or schema mutation. Existing databases use the production backup estimate; unknown footprint follows a saturating fail-safe estimate. Fresh/missing databases request zero additional backup bytes and create no pre-migration backup. Allowed, warning, and unavailable metrics continue; insufficient and unknown statuses fail closed. Cancellation is not translated.
+- **Evidence:** R2.4B independent review plus `DatabaseInitializerSafetyTests` `15/15`, combined regressions `99/99`, Release build 0 warnings/0 errors, and outside-sandbox Quality Gate `1124/1124` PASS with vulnerability 5/5, EF pending-model and Git checks PASS.
+- **Consequences:** R2.4A and R2.4B are COMPLETED. R2.4C/D are NOT STARTED. No storage UI, new backup/restore/retention workflow, package, schema or migration is included.
 
 ## DEC-027 — Support Bundle UI is an authenticated owner-modal with explicit per-operation consent
 

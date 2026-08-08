@@ -1,5 +1,11 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## R2.4B verification note — 2026-08-08
+
+- Independent review found and corrected two in-scope fail-safe defects: unknown preflight enum values could proceed, and an existing database with unavailable footprint metadata could be evaluated as requiring zero additional bytes. Regression tests now prove both paths stop before backup/schema mutation.
+- No confirmed R2.4B runtime defect remains after targeted `15/15`, combined `99/99`, Release build and outside-sandbox Quality Gate `1124/1124` all passed; vulnerability and EF pending-model checks passed.
+- The sandbox-only two R2.1 named-pipe failures recurred without production IPC changes. R2.4 remains IN PROGRESS; R2.4C/D, storage UI, backup/restore and retention remain outstanding. No existing issue ID is closed or renumbered by this note.
+
 ## R2.4A verification note — 2026-08-08
 
 - No confirmed R2.4A runtime defect remains after independent review. Ambiguous existence probes, parent-reparse revalidation, cancellation-between-reads coverage and derived preflight `CanProceed` semantics were corrected within the checkpoint.

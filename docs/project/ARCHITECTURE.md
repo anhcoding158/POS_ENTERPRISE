@@ -1,5 +1,12 @@
 # ARCHITECTURE — POS ENTERPRISE RETAIL V1
 
+## R2.4B startup migration storage-preflight boundary
+
+- `DatabaseInitializer` remains scoped and receives the singleton `IDatabaseStorageMonitor` by constructor injection. It checks pending migrations first; only a non-empty pending set triggers one snapshot, one production backup estimate for an existing database, and one preflight evaluation.
+- The order is storage snapshot/estimate/evaluation, pre-migration integrity, existing verified backup, `MigrateAsync`, then post-migration integrity. `Allowed`, `AllowedWithWarning`, and `MetricsUnavailable` proceed. `Insufficient` raises a typed Application exception before integrity/backup/schema mutation; unknown status values fail closed.
+- An existing database with unavailable footprint metadata uses the monitor's saturating estimate path rather than assuming zero bytes. A fresh/missing database requests zero additional backup bytes and retains the existing no-backup initialization flow. Reserved headroom remains owned by the monitor and is not double-counted in the initializer.
+- Cancellation flows unchanged and status-only structured logging does not expose paths, volume roots, connection strings, identities, or raw exception details. R2.4B adds no UI, package, schema/migration, backup/restore workflow, retention, mutable global state, or service locator.
+
 ## R2.4A typed storage-monitoring boundary
 
 - `POS.Application` owns `IDatabaseStorageMonitor` and typed snapshot/preflight DTOs only. It exposes no EF, WPF, `FileInfo`, `DirectoryInfo` or `DriveInfo` implementation type and carries no raw exception detail.

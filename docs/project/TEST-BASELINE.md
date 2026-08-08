@@ -1,5 +1,16 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R2.4B independent-review and closeout baseline — 2026-08-08
+
+- Entry branch/HEAD: `main` at `42664fd89c7214682ad5d0c7de327ec8a9a7271d`, aligned with local `origin/main`, with exactly three unstaged R2.4B implementation files and an empty index.
+- Independent review corrected fail-open unknown-status handling and the zero-byte request used when an existing database footprint was unavailable. The final flow performs preflight only for pending migrations and before integrity, verified backup, or schema mutation; cancellation remains unchanged.
+- Exact `DatabaseInitializerSafetyTests`: `15/15` PASS, 0 failed, 0 skipped. Combined storage/path/options/DI/architecture/configuration/SQLite regressions: `99/99` PASS, 0 failed, 0 skipped.
+- Release solution build: PASS, 0 warnings, 0 errors.
+- Full Quality Gate outside sandbox: PASS without `-SkipEfCheck`; `1124/1124` PASS, 0 failed, 0 skipped; gate build 0 warnings/0 errors; vulnerability scan PASS for 5/5 projects; EF pending-model and Git checks PASS. The sandbox attempt had 1122 PASS/2 FAIL only at the accepted R2.1 named-pipe environment boundary; production IPC was unchanged.
+- Manual acceptance: **NOT APPLICABLE — no manual surface in R2.4B**. The WPF application was not run.
+- No package, schema, migration or ModelSnapshot changed. Tests used isolated TEMP databases; the main database was not opened, read, copied, hashed, renamed, modified, deleted, backed up, or migrated.
+- R2.4A and R2.4B are COMPLETED; R2.4 remains IN PROGRESS; R2.4C/D, R3 and R4 are NOT STARTED.
+
 ## R2.4A independent-review and closeout baseline — 2026-08-08
 
 - Entry branch/HEAD: `main` at `c687b2f0c2745f8be5c6e5e1b9450339a3309d6f`, aligned with local `origin/main`, with exactly the accepted 11-file R2.4A implementation and an empty index.

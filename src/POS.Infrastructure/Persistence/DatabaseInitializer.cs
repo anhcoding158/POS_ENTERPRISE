@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using POS.Application.Abstractions.DateTime;
+using POS.Application.Abstractions.Services;
 using POS.Domain.Entities;
 using System.IO;
 
@@ -19,6 +20,7 @@ public sealed class DatabaseInitializer
     private readonly InfrastructureOptions _options;
     private readonly DatabasePathResolver _databasePathResolver;
     private readonly SqliteDatabaseSafetyService _databaseSafetyService;
+    private readonly IDatabaseStorageMonitor _databaseStorageMonitor;
     private readonly IClock _clock;
     private readonly ILogger<DatabaseInitializer> _logger;
 
@@ -27,6 +29,7 @@ public sealed class DatabaseInitializer
         IOptions<InfrastructureOptions> options,
         DatabasePathResolver databasePathResolver,
         SqliteDatabaseSafetyService databaseSafetyService,
+        IDatabaseStorageMonitor databaseStorageMonitor,
         IClock clock,
         ILogger<DatabaseInitializer> logger)
     {
@@ -48,6 +51,11 @@ public sealed class DatabaseInitializer
             databaseSafetyService ??
             throw new ArgumentNullException(
                 nameof(databaseSafetyService));
+
+        _databaseStorageMonitor =
+            databaseStorageMonitor ??
+            throw new ArgumentNullException(
+                nameof(databaseStorageMonitor));
 
         _clock =
             clock ??
@@ -127,6 +135,42 @@ public sealed class DatabaseInitializer
 
             return;
         }
+
+        var storageSnapshot =
+            await _databaseStorageMonitor.GetSnapshotAsync(
+                cancellationToken);
+
+        var requiredAdditionalBytes =
+            databaseExistedBeforeMigrationCheck
+                ? _databaseStorageMonitor.EstimatePreMigrationBackupBytes(
+                    storageSnapshot.TotalStorageFootprintBytes ?? long.MaxValue)
+                : 0L;
+
+        var storagePreflight =
+            _databaseStorageMonitor.EvaluatePreflight(
+                storageSnapshot,
+                new StoragePreflightRequest(requiredAdditionalBytes));
+
+        if (storagePreflight.Status is StoragePreflightStatus.Insufficient)
+        {
+            global::POS.Application.Common.PosLog.Error(_logger,
+                "Storage preflight trước migration trả về {PreflightStatus}. " +
+                "Backup và migration đã bị chặn.",
+                storagePreflight.Status);
+
+            throw new StoragePreflightException(storagePreflight);
+        }
+
+        if (!storagePreflight.CanProceed)
+        {
+            throw new InvalidOperationException(
+                "Kết quả storage preflight không hợp lệ. Startup đã bị chặn.");
+        }
+
+        global::POS.Application.Common.PosLog.Information(_logger,
+            "Storage preflight trước migration trả về {PreflightStatus}. " +
+            "Tiếp tục startup migration.",
+            storagePreflight.Status);
 
         string? backupPath = null;
 
