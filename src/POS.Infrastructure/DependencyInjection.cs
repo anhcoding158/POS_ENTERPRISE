@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.Authorization;
@@ -13,11 +14,13 @@ using POS.Application.Abstractions.Services;
 using POS.Application.Services;
 using POS.Infrastructure.Authentication;
 using POS.Infrastructure.Common;
+using POS.Infrastructure.Logging;
 using POS.Infrastructure.Orders;
 using POS.Infrastructure.Payments;
 using POS.Infrastructure.Persistence;
 using POS.Infrastructure.Persistence.Repositories;
 using POS.Infrastructure.Printing;
+using POS.Infrastructure.Support;
 
 namespace POS.Infrastructure;
 
@@ -60,6 +63,27 @@ public static class DependencyInjection
                 },
                 "Cấu hình Infrastructure không hợp lệ.")
             .ValidateOnStart();
+
+        services
+            .AddOptions<SupportBundleOptions>()
+            .Bind(configuration.GetSection(SupportBundleOptions.SectionName))
+            .Validate(options =>
+            {
+                try { options.Validate(); return true; }
+                catch { return false; }
+            }, "Cấu hình Support Bundle không hợp lệ.")
+            .ValidateOnStart();
+
+        if (!services.Any(descriptor =>
+                descriptor.ServiceType == typeof(SafeFileLoggerOptions)))
+        {
+            var safeFileOptions = new SafeFileLoggerOptions();
+            configuration.GetSection(SafeFileLoggerOptions.SectionName).Bind(safeFileOptions);
+            safeFileOptions.Validate();
+            services.AddSingleton(safeFileOptions);
+        }
+
+        services.TryAddScoped<ISupportBundleService, SupportBundleService>();
 
         var receiptStoreSection =
             configuration.GetSection(

@@ -1,0 +1,184 @@
+<Window
+    x:Class="POS.Wpf.Views.SupportBundleWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Gói hỗ trợ"
+    Width="720"
+    Height="690"
+    MinWidth="640"
+    MinHeight="600"
+    WindowStartupLocation="CenterOwner"
+    ResizeMode="CanResize"
+    ShowInTaskbar="False"
+    Background="{StaticResource AppBackgroundBrush}">
+
+    <Grid Margin="28">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel>
+            <TextBlock
+                Text="Gói hỗ trợ"
+                Style="{StaticResource PageTitleTextStyle}" />
+            <TextBlock
+                Margin="0,8,0,0"
+                Text="Tạo tệp chẩn đoán an toàn để hỗ trợ xử lý sự cố. Tệp không được tự động gửi đi."
+                Foreground="{StaticResource TextSecondaryBrush}"
+                FontSize="13"
+                TextWrapping="Wrap" />
+        </StackPanel>
+
+        <ScrollViewer
+            Grid.Row="1"
+            Margin="0,22,0,18"
+            VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <Border
+                    Padding="18"
+                    Background="{StaticResource SurfaceBrush}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="12">
+                    <StackPanel>
+                        <TextBlock
+                            Text="Thông tin minh bạch"
+                            FontSize="15"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource TextPrimaryBrush}" />
+                        <TextBlock
+                            Margin="0,12,0,0"
+                            FontSize="13"
+                            Foreground="{StaticResource TextSecondaryBrush}"
+                            TextWrapping="Wrap"
+                            LineHeight="21">
+                            <Run Text="• Gói hỗ trợ chứa thông tin kỹ thuật về phiên bản ứng dụng, runtime, cấu hình an toàn, migration, kiểm tra tính toàn vẹn và log đã được xử lý." />
+                            <LineBreak />
+                            <Run Text="• Không chứa database bán hàng hoặc bản sao WAL/SHM/journal/backup." />
+                            <LineBreak />
+                            <Run Text="• Không tự động tải lên hoặc gửi cho bất kỳ ai." />
+                            <LineBreak />
+                            <Run Text="• Bạn tự chọn thư mục lưu." />
+                            <LineBreak />
+                            <Run Text="• Dữ liệu nhạy cảm được lọc theo shared diagnostic policy." />
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock
+                    Margin="0,20,0,8"
+                    Text="Thư mục lưu"
+                    FontSize="13"
+                    FontWeight="SemiBold"
+                    Foreground="{StaticResource TextPrimaryBrush}" />
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox
+                        Text="{Binding DestinationDisplay, Mode=OneWay}"
+                        IsReadOnly="True"
+                        IsEnabled="{Binding CanPickDestination}"
+                        Style="{StaticResource SearchTextBoxStyle}"
+                        KeyboardNavigation.TabIndex="1" />
+                    <Button
+                        Grid.Column="1"
+                        Margin="10,0,0,0"
+                        MinWidth="132"
+                        Content="Chọn thư mục"
+                        Command="{Binding PickDestinationCommand}"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        KeyboardNavigation.TabIndex="2" />
+                </Grid>
+
+                <CheckBox
+                    Margin="0,18,0,0"
+                    Content="Tôi đã đọc và đồng ý tạo gói chẩn đoán để hỗ trợ xử lý sự cố."
+                    IsChecked="{Binding ConsentAccepted, Mode=TwoWay}"
+                    IsEnabled="{Binding CanChangeConsent}"
+                    Foreground="{StaticResource TextPrimaryBrush}"
+                    FontSize="13"
+                    KeyboardNavigation.TabIndex="3" />
+
+                <ProgressBar
+                    Margin="0,20,0,0"
+                    Height="8"
+                    IsIndeterminate="{Binding IsProgressIndeterminate}"
+                    Visibility="{Binding IsProgressVisible, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+                <Border
+                    Margin="0,18,0,0"
+                    Padding="14"
+                    Background="{StaticResource SurfaceMutedBrush}"
+                    CornerRadius="9">
+                    <StackPanel>
+                        <TextBlock
+                            Text="{Binding StatusMessage}"
+                            FontSize="13"
+                            Foreground="{StaticResource TextPrimaryBrush}"
+                            TextWrapping="Wrap" />
+                        <TextBlock
+                            Margin="0,8,0,0"
+                            Text="{Binding ArchiveName, StringFormat=Tệp: {0}}"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource SuccessBrush}"
+                            TextWrapping="Wrap" />
+                        <TextBlock
+                            Margin="0,4,0,0"
+                            Text="{Binding ArchivePath, StringFormat=Đường dẫn: {0}}"
+                            Foreground="{StaticResource TextSecondaryBrush}"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <Button
+                Grid.Column="1"
+                Margin="0,0,10,0"
+                MinWidth="105"
+                Content="Tạo lại"
+                Command="{Binding ResetCommand}"
+                Style="{StaticResource SecondaryButtonStyle}"
+                KeyboardNavigation.TabIndex="6" />
+            <Button
+                Grid.Column="2"
+                Margin="0,0,10,0"
+                MinWidth="105"
+                Content="Hủy"
+                Command="{Binding CancelCommand}"
+                Style="{StaticResource SecondaryButtonStyle}"
+                KeyboardNavigation.TabIndex="5" />
+            <Button
+                Grid.Column="3"
+                MinWidth="130"
+                Content="Tạo gói hỗ trợ"
+                Command="{Binding GenerateCommand}"
+                IsDefault="True"
+                Visibility="{Binding ShowGenerateButton, Converter={StaticResource BooleanToVisibilityConverter}}"
+                Style="{StaticResource PrimaryButtonStyle}"
+                KeyboardNavigation.TabIndex="4" />
+            <Button
+                Grid.Column="3"
+                MinWidth="105"
+                Content="Đóng"
+                Click="OnCloseClick"
+                IsCancel="True"
+                Visibility="{Binding ShowCloseButton, Converter={StaticResource BooleanToVisibilityConverter}}"
+                Style="{StaticResource SecondaryButtonStyle}"
+                KeyboardNavigation.TabIndex="7" />
+        </Grid>
+    </Grid>
+</Window>

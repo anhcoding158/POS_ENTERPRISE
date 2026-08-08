@@ -1,5 +1,45 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## R2.3 Logging and Support Bundle — COMPLETE — 2026-08-08
+
+- R2.3A Safe Logging Foundation, R2.3B Safe Support Bundle Composition & Export Service and R2.3C Support Bundle UI all have automated verification PASS. R2.3D manual acceptance M01–M09 is PASS with no observed issue.
+- The locally generated manual archive was inspected read-only outside the repository: ZIP structure, fixed JSON entries, dynamic managed-log entry boundary, database-artifact exclusion, path safety, manifest database exclusion and temporary-file absence all PASS. Raw bundle content and the machine-specific archive path are not retained in Project Memory.
+- Final verification: R2.3C `21/21`, R2.3B `12/12`, R2.3A `11/11`, exact corrective tests `2/2`, R2.2 live `26/26`, architecture/privacy/security `22/22`; all PASS with 0 failed/0 skipped. POS.Wpf Release build PASS with 0 warnings/0 errors.
+- Final Quality Gate outside sandbox PASS without `-SkipEfCheck`: `1070/1070` PASS, 0 failed/0 skipped; gate build 0 warnings/0 errors; vulnerability scan PASS for 5/5 projects; EF pending-model and Git checks PASS. The accepted sandbox provenance remains 1068 PASS/2 environment-only R2.1 named-pipe failures; production IPC was not changed.
+- The Support Bundle excludes the sales database and database sidecars/backups, uses safe diagnostic filtering, and never automatically uploads or sends the archive. No package or migration was added and the main database was not read, copied, hashed, modified or deleted during closeout.
+- R2.3 is **COMPLETED**. R2 remains IN PROGRESS because R2.4 Disk Space and Database Growth is **NOT STARTED**; no R2.4 implementation occurred.
+
+## R2.3C Support Bundle UI, consent, progress and cancellation UX — automated verification — 2026-08-08
+
+- Current checkpoint: R2.3 — Logging and Support Bundle — **IN PROGRESS**. R2.3A, R2.3B and R2.3C have automated verification PASS; R2.3C manual acceptance and R2.3D are not performed, so R2.3 is not complete.
+- The authenticated Shell now has a minimal `Gói hỗ trợ` entry available to signed-in users without inventing a permission or schema. It opens an owner-centered modal through the existing WPF dialog/DI conventions.
+- The Vietnamese disclosure states the fixed technical contents, database/WAL/SHM/journal/backup exclusion, no automatic upload/send, user-selected destination and shared diagnostic filtering. Consent defaults false and is reset after every terminal operation.
+- `SupportBundleViewModel` depends only on `ISupportBundleService` and a thin WPF folder-picker adapter. Its finite states are Idle, Ready, Running, Cancelling, Success, Cancelled and Failed. It enforces one async operation, indeterminate progress, typed safe result mapping, fixed `IncludeDatabase=false`, per-operation CTS lifecycle and close-after-terminal cancellation behavior.
+- Verification: targeted R2.3C `21/21` PASS; R2.3B `12/12`; R2.3A `11/11`; corrective ownership `2/2`; R2.2 live `26/26`; architecture/privacy/security `22/22`; POS.Wpf Release build PASS with 0 warnings/0 errors.
+- Full Quality Gate outside sandbox PASS without `-SkipEfCheck`: `1070/1070` PASS, 0 failed/0 skipped; vulnerability scan PASS for 5/5 projects; EF pending-model and Git checks PASS. The sandbox run reached 1068 PASS/2 FAIL only in the accepted R2.1 named-pipe environment boundary; IPC was unchanged.
+- No WPF application/manual UI run, package change, migration/database update, main database access, R2.3D or R2.4 work occurred. No stage/commit/push/merge occurred.
+
+## R2.3B Safe Support Bundle Composition & Export Service — automated verification — 2026-08-08
+
+- Current checkpoint: R2.3 — Logging and Support Bundle — **IN PROGRESS**. R2.3A and R2.3B have automated verification PASS; R2.3C/D, UI and manual R2.3 acceptance are not performed, so R2.3 is not complete.
+- `ISupportBundleService` exposes typed request/result contracts in Application. Database inclusion defaults false and `IncludeDatabase=true` fails closed before destination, collector, temporary file, ZIP or database access.
+- Infrastructure creates only a fixed, versioned diagnostic schema plus top-level managed logs. It uses a unique destination-local `CreateNew` temporary file, closes and flushes the ZIP before a no-overwrite final move, removes only an operation-owned temp on failure/cancellation and never exposes a partial final filename.
+- Diagnostics are allow-listed and normalized: product/version, EF known/applied/pending migration identifiers, bounded SQLite `PRAGMA quick_check`, safe configuration limits and OS/runtime facts. No migration is applied, SQL generated, business row read, raw configuration/environment serialized, or user/machine/path/command-line value exported.
+- Log export reuses the R2.3A managed-file ownership policy and shared sanitizer. It is top-level-only, newest-first, snapshot- and 20 MiB-budget-bounded, revalidates before/after open and before read, streams complete UTF-8 records with bounded overlong-record discard, and tolerates active append/source size changes without following reparse points.
+- Verification: targeted R2.3B `12/12` PASS; targeted R2.3A `11/11` PASS; corrective ownership tests `2/2` PASS; live R2.2 class `26/26` PASS; related architecture/privacy/security `22/22` PASS; POS.Wpf Release build PASS with 0 warnings/0 errors.
+- Full Quality Gate outside sandbox PASS without `-SkipEfCheck`: `1049/1049` PASS, build 0 warnings/0 errors, vulnerability scan PASS for 5/5 projects, EF pending-model PASS and Git checks PASS. The sandbox run had only the accepted R2.1 named-pipe environment failures (1047 passed/2 failed); production IPC was not changed.
+- No WPF UI/application launch, package change, migration, database update, main database read/copy/hash, R2.3C/D or R2.4 work occurred. No stage/commit/push/merge occurred.
+
+## R2.3A Safe Logging Foundation — automated verification — 2026-08-08
+
+- Current checkpoint: R2.3 — Logging and Support Bundle — **IN PROGRESS**. R2.3A Safe Logging Foundation is implemented and automated-verification PASS; R2.3B/C/D are not started and R2.3 is not complete.
+- Corrective security verification: managed-log enumeration now accepts only canonical direct-child regular files, rejects directories/reparse points before reading size/time metadata, and revalidates the same ownership guard immediately before delete. New-file creation uses `CreateNew`, so a foreign/reparse entry occupying a managed-looking sequence is never followed or overwritten.
+- The Microsoft Extensions logging stack now has one DI-registered, fail-safe rotating file provider. Production logs resolve to `%LocalAppData%\POS Enterprise\logs`; no current-working-directory, database/data, backup, source, bin or obj location is used.
+- Policy defaults are typed and configurable: 5 MiB per segment, 10 managed segments, 50 MiB total and 14 days. UTC-day or size starts a new system-named segment; oldest managed files are removed first and foreign files are never deleted.
+- `PosLog` redacts sensitive property names/values and never forwards raw exceptions. SQLite diagnostics retain exception type and numeric primary/extended codes without provider message, SQL or database path. Trace fallbacks likewise emit exception type only.
+- Verification after corrective pass: targeted R2.3A `11/11` PASS; live R2.2 class regression `26/26` PASS; related privacy/architecture `14/14` PASS; POS.Wpf Release build PASS with 0 warnings/0 errors; complete outside-sandbox Quality Gate PASS without `-SkipEfCheck`, full `1037/1037`, vulnerability scan PASS for 5/5 projects, EF pending-model PASS and Git whitespace check PASS. The two-test increase is the reparse/ownership regression coverage.
+- No WPF application, migration, database update or main database read/copy/modification/deletion occurred. No Support Bundle UI, R2.4 work, package change, commit, push or merge occurred.
+
 ## Corrective Order History and Product List UX closeout — 2026-08-08
 
 - This is a narrow corrective UX closeout after R2.2; it does not start or complete R2.3 and does not change the roadmap checkpoint state.
@@ -11,8 +51,8 @@
 
 ## R2.2 closeout — 2026-08-06
 
-- Current checkpoint: R2.2 — SQLite Busy/Locked UX — COMPLETE/CLOSED.
-- Next checkpoint: R2.3 — Logging and Support Bundle — NOT STARTED.
+- Current checkpoint: R2.3 — Logging and Support Bundle — IN PROGRESS; R2.3A automated verification PASS.
+- Next subcheckpoint: R2.3B — NOT STARTED; no R2.3B work is authorized by this handoff.
 - R2.2 classifies SQLite busy, locked, disk-full, corruption/not-a-database and unknown provider failures by numeric base code; persistence boundaries translate failures while preserving the technical cause for logging. Checkout writes are not retried blindly. Retry is bounded and restricted to explicitly safe operations.
 - Sales checkout presents sanitized, actionable messages and preserves cart, quantity, payment input and method after database failure. Checkout state is released and receipt/success flow does not run after failure. Startup presents a sanitized blocking error before the session loop when the database cannot be opened safely.
 - Acceptance Test A: **Manual PASS**. A real `BEGIN IMMEDIATE` lock produced the expected bounded failure UX, preserved two cart lines/quantity 3, `85.000 đ` cash input and Cash method, opened no receipt/success flow, restored checkout UI, persisted `0/0/0/0` while locked, and after lock release/retry persisted exactly Orders `1`, OrderItems `2`, InventoryMovements `2`, ReceiptSnapshots `1`. Evidence directory `POS-R22-Acceptance-20260806-Manual1` remains outside Git.
@@ -49,9 +89,9 @@
 ## 3. Checkpoint status
 
 - Project: POS Enterprise Retail V1
-- Current checkpoint: R2.2 — SQLite Busy/Locked UX — COMPLETE/CLOSED.
+- Current checkpoint: R2.3 — Logging and Support Bundle — IN PROGRESS; R2.3A, R2.3B and R2.3C have automated verification PASS.
 - Previous checkpoint: R1.2 — Repository Standards — Closed / Committed / Pushed / Git-clean at `7490e87a2b5381f6e030ef0948b5b6be0dd2e77d`.
-- Next checkpoint: R2.3 — Logging and Support Bundle — NOT STARTED.
+- Next subcheckpoint: R2.3D — NOT STARTED; R2.3C manual acceptance is not performed.
 - R1.2 is Closed / Committed / Pushed / Git-clean at `7490e87a2b5381f6e030ef0948b5b6be0dd2e77d`; R1.3 implementation and live Jenkins build #5 passed on `8bebb3ebc2b61c4de2fd8d97dc4c0b6944281bb6`; R1.3 and the entire R1 are Closed by formal-closeout commit `b9e382550e2e4abcf7a93ed6c5352322dc967668`.
 
 Completed subcheckpoints in the R0.5 closeout payload:
@@ -167,8 +207,8 @@ Architecture audit chi tiết, gồm service map, transaction map và business i
 - Không chạy database update.
 - Không đọc dữ liệu database thật.
 - R2.1 closeout commit/push đã được cho phép sau khi review chính xác staged scope; không amend hoặc force-push.
-- R2.1 and R2.2 are COMPLETE/CLOSED. R2.3 — Logging and Support Bundle is next and NOT STARTED.
+- R2.1 and R2.2 are COMPLETE/CLOSED. R2.3 is IN PROGRESS with R2.3A/B/C automated verification PASS; R2.3C manual acceptance and R2.3D are NOT STARTED.
 
 ## 11. Closeout note
 
-R1 remains Closed at `b9e382550e2e4abcf7a93ed6c5352322dc967668`. R2.1 and R2.2 are COMPLETE/CLOSED with the distinct acceptance provenance recorded above. R2.3 — Logging and Support Bundle is next and NOT STARTED.
+R1 remains Closed at `b9e382550e2e4abcf7a93ed6c5352322dc967668`. R2.1 and R2.2 are COMPLETE/CLOSED with the distinct acceptance provenance recorded above. R2.3 is IN PROGRESS; R2.3A/B/C have automated verification PASS, while R2.3C manual acceptance and R2.3D remain outstanding.

@@ -1,5 +1,30 @@
 # ARCHITECTURE — POS ENTERPRISE RETAIL V1
 
+## R2.3C Support Bundle presentation boundary
+
+- Placement is a minimal navigation entry in the authenticated Shell because no Help/Settings/Admin module or support permission exists. Shell authentication remains the access boundary; R2.3C adds no role, capability, schema or migration.
+- `SupportBundleViewModel` depends only on the Application `ISupportBundleService` contract and the WPF `ISupportBundleFolderPicker` adapter. The adapter owns `Microsoft.Win32.OpenFolderDialog`; the ViewModel has no Infrastructure/EF/SQLite/ZIP/options/service-locator dependency.
+- The modal window uses the existing owner-centered dialog, transient ViewModel/window, scoped service and shared theme conventions. UI states are finite and single-flight. Progress is indeterminate because the Application contract has no percentage progress.
+- Consent is explicit and false by default. The UI has no database option and always constructs `SupportBundleRequest(..., IncludeDatabase: false)`. Typed results map to fixed Vietnamese presentation; only typed Success supplies archive path/name, and raw exceptions are contained without message logging.
+- Window close/X/Esc while busy is deferred: the ViewModel requests its current CTS cancellation, remains alive until a typed terminal result, then signals the Window to close. A late cancellation followed by Success remains Success. CTS instances are operation-scoped, disposed and never reused.
+- R2.3C is automated-verified only. Manual DPI, focus/tab, visual wording, owner, close/cancel and real export acceptance belongs to R2.3D.
+
+## R2.3B safe Support Bundle boundary
+
+- Application owns only `ISupportBundleService` and typed request/result contracts. It has no Infrastructure, EF, SQLite, ZIP or WPF dependency; only `Success` carries an absolute archive path.
+- Infrastructure owns composition and export. `IncludeDatabase=true` fails before every artifact/collector/database boundary. The service creates a destination-local unique temporary file with `CreateNew`, writes a fixed entry allow-list, closes/flushes, then commits with a no-overwrite move. Cancellation/failure removes only a temp created by that operation; late cancellation after commit cannot delete the completed archive.
+- Diagnostic collectors export typed safe codes/values only: version allow-list; EF known/applied/pending migration IDs; normalized bounded `PRAGMA quick_check`; selected numeric/boolean configuration policy; OS/runtime description and architecture. Individual collector failure becomes `unavailable` while destination/archive failure remains typed at the operation level.
+- R2.3A logger and R2.3B exporter share `SafeDiagnosticPolicy` and `ManagedLogPolicy`; there is no second regex/path ownership policy. Logs are top-level managed direct-child regular files only, revalidated around open/read, newest-first and bounded by snapshot length/output budget. Streaming record handling is bounded, UTF-8 aware, replaces overlong records and sanitizes again before ZIP output.
+- `POS.Infrastructure.DependencyInjection.AddInfrastructure` registers the scoped service once and validates bounded options. No Support Bundle UI is introduced; R2.3C/D remain separate.
+
+## R2.3A safe logging boundary
+
+- `POS.Application.Common.PosLog` is the centralized allow/deny boundary for structured property rendering. Sensitive names and unsafe values become `[REDACTED]`; raw exceptions are never forwarded. Only exception type and, when present, SQLite primary/extended numeric codes are retained.
+- `POS.Infrastructure.Logging.SafeFileLoggerProvider` owns non-recursive, top-directory-only managed files under `%LocalAppData%\POS Enterprise\logs`. It is thread-safe, synchronously bounded, fail-closed on I/O errors, rotates by UTC day/size, flushes on dispose and deletes only exact managed names by oldest-first retention/quota policy.
+- Managed ownership additionally requires a canonical direct parent and regular non-reparse attributes before metadata reads. The provider repeats that guard immediately before delete and opens new system-named segments with create-new semantics. Unsafe/disappeared candidates are ignored; no symbolic-link target is resolved or followed intentionally.
+- `POS.Wpf.App` registers the provider once through the existing Generic Host composition root. Domain and Application gain no Infrastructure/WPF dependency. Existing Debug fallback receives the already-sanitized `PosLog` state; Trace fallbacks emit exception type only.
+- R2.3A provides the managed log source consumed by the R2.3B export service; Support Bundle UI remains unimplemented.
+
 ## R2.2 SQLite failure and UX boundary
 
 - `POS.Application` owns `IDatabaseFailureClassifier`, `DatabaseFailureKind` and `DatabaseOperationException`; it remains independent of SQLite/EF/WPF.
@@ -9,7 +34,7 @@
 - Deterministic acceptance uses only TEMP databases and synthetic data. It covers real persistent locking, atomic four-table counts, duplicate rejection, safe `SQLITE_FULL` simulation, corruption startup blocking, SHA-256 preservation and cleanup.
 - Acceptance provenance: Test A Manual PASS; Tests B/C/D NOT MANUALLY RUN and covered by equivalent deterministic automated acceptance PASS.
 
-This boundary completes/closes R2.2 only. R2.3 Logging and Support Bundle is NOT STARTED.
+This boundary completes/closes R2.2 only. R2.3 is now IN PROGRESS through the separate R2.3A boundary above.
 
 ## R2.1 Windows process ownership and activation boundary
 

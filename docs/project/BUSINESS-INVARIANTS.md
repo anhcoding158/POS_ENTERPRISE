@@ -409,12 +409,12 @@ Current R0 closeout evidence confirms the Presented transition is persisted befo
 - **Statement:** Log/report không được xuất password, secret hoặc full customer/payment-sensitive values.
 - **Rationale:** Hạn chế disclosure.
 - **Scope/trigger:** Logging, support/report/export.
-- **Enforcing code:** `D:\Projects_1\POS_Enterprise_DotNet\src\POS.Application\Common\PosLog.cs` — centralized log-message helpers; `D:\Projects_1\POS_Enterprise_DotNet\src\POS.Application\DTOs\Printing\ReceiptRequest.cs` — allow-listed receipt DTO; `D:\Projects_1\POS_Enterprise_DotNet\AGENTS.md` — Security và privacy policy.
-- **Persistence/schema guard:** Không có universal redaction guard được xác minh.
-- **Direct test evidence:** `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\ReceiptSnapshotPersistenceTests.cs` — `ReceiptSnapshotPersistenceTests.Persisted_payload_must_not_contain_cost_price_or_known_secrets`; không có direct global log-sanitization test trong source audit hiện tại.
+- **Enforcing code:** `D:\Projects_1\POS_Enterprise_DotNet\src\POS.Application\Common\SafeDiagnosticPolicy.cs` — shared sanitizer; `D:\Projects_1\POS_Enterprise_DotNet\src\POS.Application\Common\PosLog.cs` — centralized log helpers; `D:\Projects_1\POS_Enterprise_DotNet\src\POS.Infrastructure\Support\SupportBundleService.cs` — fixed-schema bounded export; `D:\Projects_1\POS_Enterprise_DotNet\AGENTS.md` — Security và privacy policy.
+- **Persistence/schema guard:** `SafeFileLoggerProvider` and `SupportBundleService` reuse the same exact managed-file ownership and sanitizer policies; raw exception, configuration, environment, database content and unknown archive entries are excluded.
+- **Direct test evidence:** `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\SafeFileLoggingTests.cs` verifies file-log privacy/ownership; `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\SafeSupportBundleTests.cs` opens ZIPs, verifies entry names and scans every text entry for raw canaries; `ReceiptSnapshotPersistenceTests.cs` retains receipt-payload protection.
 - **Failure/recovery:** Review/sanitize output.
-- **Status:** Partially Enforced.
-- **Gap/revisit:** R0.5F exporter/closeout scan PASS; universal logging/support-bundle redaction remains a gap for R2.3.
+- **Status:** Partially Enforced: application file logging, Support Bundle export and its fixed safe UI result mapping are enforced by R2.3A/B/C; manual acceptance and future report/export surfaces remain outstanding.
+- **Gap/revisit:** R2.3D and later report/export work must preserve and manually verify the same safe boundary.
 
 ## 3. Traceability summary
 

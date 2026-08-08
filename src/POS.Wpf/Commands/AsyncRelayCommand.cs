@@ -86,8 +86,8 @@ public sealed class AsyncRelayCommand : ICommand
             else
             {
                 Trace.TraceError(
-                    "AsyncRelayCommand failed: {0}",
-                    exception);
+                    "AsyncRelayCommand failed. ExceptionType={0}",
+                    exception.GetType().FullName);
             }
         }
         finally

@@ -1,5 +1,59 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R2.3D manual acceptance and final closeout baseline — 2026-08-08
+
+- Manual acceptance M01–M09: PASS with no observed issue. Authenticated Shell placement, modal ownership, disclosure/consent, initial state, picker cancellation, two successful unique exports, reset, cancellation/close behavior and post-close Shell smoke behavior were accepted.
+- The manual archive remained outside the repository and was inspected locally read-only with permission. ZIP open/path/allow-list rules, all six fixed JSON entries, managed-log entry boundary, database/WAL/SHM/journal/backup exclusion, manifest database exclusion and no temporary archive all PASS. No raw bundle content or machine-specific path is recorded here.
+- Final targeted verification: R2.3C 21/21; R2.3B 12/12; R2.3A 11/11; exact corrective tests 2/2; R2.2 live 26/26; architecture/privacy/security 22/22. Every group has 0 failed/0 skipped.
+- POS.Wpf Release build: PASS, 0 warnings, 0 errors.
+- Final Quality Gate outside sandbox: PASS without `-SkipEfCheck`; full suite 1070/1070 PASS, 0 failed/0 skipped; build 0 warnings/0 errors; vulnerability scan PASS for 5/5 projects; EF pending-model consistency and Git checks PASS.
+- The earlier sandbox provenance remains 1068 PASS/2 FAIL only at the accepted R2.1 named-pipe environment boundary. The outside-sandbox result is authoritative and production IPC was unchanged.
+- No package or migration change was introduced. The main database was not read, copied, hashed, modified or deleted. R2.3 is COMPLETE; R2.4 remains NOT STARTED.
+
+## R2.3C Support Bundle UI automated baseline — 2026-08-08
+
+- Entry branch/HEAD: `main` at `e8d8d20395227736072175ad147a11752f54b0b4`, aligned with `origin/main`, retaining the accepted uncommitted R2.3A/B working tree and empty index.
+- Targeted R2.3C: 21/21 PASS, 0 failed, 0 skipped. Tests use fake `ISupportBundleService`, fake folder picker and controllable tasks; no ZIP, database, runtime log directory, user profile or real destination is used.
+- Coverage includes initial/consent/readiness, picker cancellation/validation, fixed database exclusion, async single-flight, indeterminate progress, control locking, cancellation/Cancelling, late-success boundary, all typed results, exception-canary containment, close-while-running, CTS renewal/reset, XAML disclosure/no-network/no-database controls, authenticated Shell placement, abstraction-only ViewModel dependencies and exact DI registration.
+- Regressions: R2.3B 12/12; R2.3A 11/11; exact corrective tests 2/2; R2.2 live 26/26; architecture/privacy/security 22/22. All have 0 failed/0 skipped.
+- POS.Wpf Release build: PASS, 0 warnings, 0 errors.
+- Full Quality Gate outside sandbox: PASS without `-SkipEfCheck`; 1070/1070 PASS, 0 failed/0 skipped; build 0 warnings/0 errors; vulnerability scan PASS for 5/5 projects; EF pending-model and Git checks PASS.
+- Sandbox provenance: build passed and 1068 tests passed; only the two accepted R2.1 named-pipe tests failed because sandbox pipe access was denied. The outside-sandbox result is authoritative and production IPC was unchanged.
+- Manual R2.3C acceptance was not run. R2.3D and R2.4 were not started; no WPF launch, package/schema/migration/database/main-data operation, stage/commit/push occurred.
+
+## R2.3B Safe Support Bundle automated baseline — 2026-08-08
+
+- Entry branch/HEAD: `main` at `e8d8d20395227736072175ad147a11752f54b0b4`, aligned with `origin/main`, retaining the accepted uncommitted R2.3A working tree and empty index.
+- Targeted R2.3B: 12/12 PASS, 0 failed, 0 skipped. Coverage includes typed outcomes, fixed ZIP schema, privacy scan of all text entries, destination/temp/final collision ownership, database exclusion, cancellation, partial diagnostics, bounded managed-log export, active writer sharing, non-recursive selection, second-pass shared sanitization and DI/layering.
+- R2.3A regression: 11/11 PASS; exact two corrective ownership tests 2/2 PASS. R2.2 live class: 26/26 PASS. Related architecture/privacy/security: 22/22 PASS.
+- POS.Wpf Release build: PASS, 0 warnings, 0 errors.
+- Full Quality Gate outside sandbox: PASS without `-SkipEfCheck`; full suite 1049/1049 PASS, build 0 warnings/0 errors, vulnerability scan PASS for 5/5 projects, EF pending-model consistency PASS and Git checks PASS.
+- Sandbox gate provenance: restore/build passed; full suite reached 1047 PASS/2 FAIL only in the accepted R2.1 named-pipe tests because sandbox pipe access was denied. The complete outside-sandbox rerun is authoritative; production IPC was unchanged.
+- Tests used only self-created TEMP directories and isolated SQLite files. No WPF app, migration/update, main database operation, UI/manual acceptance, package change, stage/commit/push occurred.
+
+## R2.3A corrective managed-log ownership baseline — 2026-08-08
+
+- Corrective scope: reject managed-looking directories/reparse points, require canonical direct-parent ownership, defer length/time reads until after the guard, revalidate before delete and create active segments with `FileMode.CreateNew`.
+- Targeted R2.3A: 11/11 PASS, 0 failed, 0 skipped; increased from 9 by two ownership/path regression tests.
+- Current-source R2.2 regression: 26/26 PASS, 0 failed, 0 skipped. Historical accepted R2.2 closeout remains 27/27.
+- Related receipt-privacy/infrastructure-registration tests: 14/14 PASS, 0 failed, 0 skipped.
+- POS.Wpf Release build: PASS, 0 warnings, 0 errors.
+- Complete Quality Gate outside sandbox: PASS without `-SkipEfCheck`; full suite 1037/1037 PASS, 0 failed, 0 skipped; gate build 0 warnings/0 errors; dependency vulnerability scan PASS for 5/5 projects; EF pending-model consistency PASS.
+- No WPF application, migration, database update, database read/hash/copy or ZIP/Support Bundle operation was performed. R2.3B remains NOT STARTED.
+
+## R2.3A Safe Logging Foundation baseline — 2026-08-08
+
+- Entry branch/HEAD: `main` at `e8d8d20395227736072175ad147a11752f54b0b4`, aligned with `origin/main`, clean before implementation.
+- Targeted R2.3A behavior/filesystem/privacy/DI tests: 9/9 PASS, 0 failed, 0 skipped.
+- Current-source R2.2 regression class: 26/26 PASS, 0 failed, 0 skipped. The historical accepted R2.2 closeout remains 27/27; the live class in this run discovered 26 cases.
+- POS.Wpf Release build: PASS, 0 warnings, 0 errors.
+- Complete Quality Gate outside sandbox: PASS without `-SkipEfCheck`; repeated full suite 1035/1035 PASS, 0 failed, 0 skipped; gate build 0 warnings/0 errors.
+- Dependency vulnerability scan: PASS; 5/5 solution projects have no vulnerable package from configured sources. No package was added or upgraded.
+- EF pending-model consistency: PASS; no changes since the latest migration. No migration or database update was run.
+- `git diff --check` and the Quality Gate Git check: PASS. Final cached check is recorded at handoff after memory edits.
+- Environment note: the first sandboxed gate attempt timed out after a sandbox-only 2-test named-pipe failure. The exact `SingleInstanceInfrastructureTests` class passed 11/11 outside sandbox; the complete outside-sandbox gate is the accepted result.
+- R2.3 remains IN PROGRESS. R2.3A has automated verification PASS; R2.3B/C/D and manual R2.3 acceptance are not performed.
+
 ## Corrective UX integration baseline — 2026-08-08
 
 - Verified integrated `main` source at `352d2814ba8b194c8abf875852462f16f05153d4` before this documentation-only closeout commit.

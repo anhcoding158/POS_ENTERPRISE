@@ -40,7 +40,8 @@ public sealed class WindowsSingleInstanceCoordinator :
             listenerErrorHandler ??
             (exception =>
                 Trace.WriteLine(
-                    $"Single-instance activation listener fault: {exception.GetType().Name}: {exception.Message}"));
+                    $"Single-instance activation listener fault. " +
+                    $"ExceptionType={exception.GetType().FullName}"));
     }
 
     public DatabaseIdentity Identity =>

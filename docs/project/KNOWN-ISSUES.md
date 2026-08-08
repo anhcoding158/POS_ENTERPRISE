@@ -1,5 +1,25 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## R2.3C verification note — 2026-08-08
+
+- No new confirmed runtime defect was established. R2.3A/B/C have automated verification PASS; R2.3C manual acceptance and R2.3D remain outstanding, so R2.3 stays IN PROGRESS.
+- The authenticated Support Bundle modal has explicit consent, fixed database exclusion, safe typed presentation, single-flight cancellation and deferred-close automated coverage.
+- `POS-VER-003` remains open only for manual R2.3D verification and future report/export surfaces beyond the automated R2.3A/B/C boundaries.
+
+## R2.3B verification note — 2026-08-08
+
+- R2.3 remains IN PROGRESS. R2.3A/B/C have automated verification PASS; R2.3C manual acceptance and R2.3D remain outstanding.
+- Safe Support Bundle composition/export now has typed fail-closed outcomes, fixed allow-listed diagnostics, database exclusion, bounded shared-policy log export, atomic no-overwrite commit and cancellation/temp ownership coverage.
+- `POS-VER-003` remains open only for R2.3D manual verification and future report/export surfaces outside the automated R2.3A/B/C boundaries; no confirmed disclosure was found.
+- The sandbox-only R2.1 named-pipe failures recurred as expected; the complete outside-sandbox Quality Gate passed 1049/1049 without changing IPC.
+
+## R2.3A verification note — 2026-08-08
+
+- R2.3 is IN PROGRESS. R2.3A Safe Logging Foundation has automated verification PASS; no new confirmed runtime defect was found.
+- File rotation, retention/quota, cleanup boundary, sensitive-data redaction, SQLite safe diagnostics, concurrency, flush, I/O failure containment, invalid options and idempotent DI registration are automated-covered.
+- `POS-VER-003` remains open only for the not-yet-built Support Bundle/report/export boundary. It no longer describes the rotating application file-log foundation as lacking a direct sanitizer test.
+- R2.3B/C/D, manual R2.3 acceptance and R2.4 remain outstanding.
+
 ## Corrective UX closeout note — 2026-08-08
 
 - User manual acceptance PASS for the corrective Order History and Product List UX batches integrated on local `main`.
@@ -31,7 +51,7 @@
 - DatabaseReadInR0.5D: No.
 - ExporterExecutedInR0.5E: Yes; latest pack exit code `0`, secret scan `0 findings`, coverage `501/501`, manifest/integrity/exclusion checks passed.
 - DatabaseReadInR0.5E: No.
-- CurrentCheckpoint: R2.2 SQLite Busy/Locked UX COMPLETE/CLOSED; R2.3 — Logging and Support Bundle is next and NOT STARTED.
+- CurrentCheckpoint: R2.3 Logging and Support Bundle IN PROGRESS; R2.3A/B/C automated verification PASS; R2.3C manual acceptance and R2.3D NOT STARTED.
 - Scope: inventory evidence-supported operating conditions only; R0.5D did not reproduce runtime failures, run gates, open a real database, inspect database rows or perform hardware/store acceptance.
 
 Source-of-truth order:
@@ -185,26 +205,26 @@ Severity describes supported impact, not roadmap priority. Insufficient evidence
 - Last verified time: `2026-07-31T14:32:44.841+07:00` read-only source review; database not read.
 - Notes: migration source existence does not prove migration application.
 
-### POS-VER-003 — Universal log and support-output redaction is only partially enforced
+### POS-VER-003 — Support-output redaction remains to be enforced
 
 - Stable ID: `POS-VER-003`.
-- Title: Universal log and support-output redaction is only partially enforced.
+- Title: Remaining future support/report output redaction must preserve the shared policy.
 - Classification: Verification Gap.
 - Status: Open.
 - Severity: Medium.
-- Affected area: logging, support bundles, reports and exported diagnostic content.
+- Affected area: R2.3D manual Support Bundle verification and future reports/exported diagnostic content outside R2.3C.
 - Evidence: `D:\Projects_1\POS_Enterprise_DotNet\src\POS.Application\Common\PosLog.cs` — centralized logging helpers; `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\ReceiptSnapshotPersistenceTests.cs` — `ReceiptSnapshotPersistenceTests.Persisted_payload_must_not_contain_cost_price_or_known_secrets`; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\BUSINESS-INVARIANTS.md` — `INV-SECURITY-002` is Partially Enforced; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\DECISIONS.md` — universal logging redaction has insufficient source evidence.
-- Observed or known condition: receipt payload has direct safeguards, but no universal redaction guard or direct global log-sanitization test was established by the source audit.
+- Observed or known condition: R2.3A/B/C enforce automated logging, safe Support Bundle composition/export and safe UI presentation. Manual R2.3D and future report/export surfaces remain unverified.
 - Expected condition or intended boundary: all logs, support/report output and exports must sanitize secrets and sensitive customer/payment values.
 - User/business impact: incomplete coverage creates an unverified disclosure boundary; no actual secret disclosure was observed.
-- Trigger or reproduction precondition: new logging, support-bundle, report or exporter output; no runtime reproduction was performed in R0.5D.
+- Trigger or reproduction precondition: R2.3D manual UI/export acceptance or future report/export output beyond R2.3C.
 - Workaround or recovery behavior: No verified workaround recorded.
 - Related invariant/decision/roadmap checkpoint: `INV-SECURITY-001`, `INV-SECURITY-002`; R0.5F and R2.3.
 - Owner checkpoint: R0.5F for Project Memory/export scan; R2.3 for logging and Support Bundle.
 - Closure criteria: repository-wide output inventory, automated sensitive-field tests and required secret scans PASS, with failures blocking commit/release as applicable.
 - Revalidation trigger: any new log template, support bundle, report, export, receipt schema or secret-bearing configuration.
-- Last verified commit: `e330b616b277bde3bed2a46e71fe511cb4531ce8`.
-- Last verified time: `2026-07-31T14:32:44.841+07:00` read-only source review.
+- Last verified base: `e8d8d20395227736072175ad147a11752f54b0b4` with uncommitted R2.3A/B/C working tree.
+- Last verified time: `2026-08-08` automated R2.3A/B/C verification and full Quality Gate PASS.
 - Notes: this record is a verification gap, not a confirmed leak.
 
 ### POS-VER-004 — Direct concurrent over-return regression evidence is not established
@@ -282,7 +302,7 @@ Severity describes supported impact, not roadmap priority. Insufficient evidence
 - Severity: Informational.
 - Affected area: SQLite busy/locked UX, support bundle, disk monitoring, backup/restore, first-run store/VietQR setup, employees, accounts, password management, roles and audit UI.
 - Evidence: Policy/roadmap evidence at `D:\Projects_1\POS_Enterprise_DotNet\docs\project\MASTER-ROADMAP.md` — R2, R3 and R4; `D:\Projects_1\POS_Enterprise_DotNet\docs\project\DECISIONS.md` — decisions not reconstructed and `DEC-018`.
-- Observed or known condition: R2.1 and R2.2 are COMPLETE/CLOSED. R2.3–R2.4, R3 and R4 remain Not Started. Forgot password and change password are not implemented. Clean-profile first-run behavior was not revalidated: the artifact has blank VietQR recipient configuration and blank default-admin-password configuration, and no database; prior VietQR values that reappeared came from an existing Windows profile’s persisted configuration. This is a readiness/verification gap, not evidence that a clean install failed.
+- Observed or known condition: R2.1 and R2.2 are COMPLETE/CLOSED. R2.3 is IN PROGRESS with R2.3A/B/C automated-verified; R2.3C manual acceptance, R2.3D, R2.4, R3 and R4 remain Not Started. Forgot password and change password are not implemented. Clean-profile first-run behavior was not revalidated: the artifact has blank VietQR recipient configuration and blank default-admin-password configuration, and no database; prior VietQR values that reappeared came from an existing Windows profile’s persisted configuration. This is a readiness/verification gap, not evidence that a clean install failed.
 - Expected condition or intended boundary: each stage must meet its own exit criteria and manual acceptance. R4.1 covers typed/validated store and VietQR setup; R4.2 covers employee/account workflows including password reset/management; clean-profile first-run acceptance must be performed before customer clean-install claims.
 - User/business impact: foundation source cannot be promoted to operational/store-management completion.
 - Trigger or reproduction precondition: entry into R2.3–R2.4, R3 or R4 after dependency stages PASS.

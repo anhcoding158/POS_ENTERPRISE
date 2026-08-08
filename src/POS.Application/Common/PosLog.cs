@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
@@ -10,8 +9,9 @@ public static partial class PosLog
 {
     private static readonly ConcurrentDictionary<LogLevel, Action<ILogger, string, Exception?>>
         Writers = new();
+    public const string Redacted = SafeDiagnosticPolicy.Redacted;
     private static readonly Regex Placeholder = new(
-        @"\{[^{}]+\}",
+        @"\{(?<name>[^{}:,]+)(?:[^{}]*)\}",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     public static void Information(
@@ -77,30 +77,58 @@ public static partial class PosLog
                 value,
                 new EventId(0, "POS"),
                 "{RenderedMessage}"));
-        writer(logger, Render(messageTemplate, arguments), exception);
+        writer(logger, Render(messageTemplate, arguments, exception), null);
     }
 
-    private static string Render(string template, object?[] arguments)
+    private static string Render(
+        string template,
+        object?[] arguments,
+        Exception? exception)
     {
-        if (arguments.Length == 0)
-            return template;
-
         var index = 0;
         var rendered = Placeholder.Replace(
             template,
             match => index < arguments.Length
-                ? Convert.ToString(arguments[index++], CultureInfo.InvariantCulture)
-                    ?? string.Empty
+                ? SafeDiagnosticPolicy.Sanitize(match.Groups["name"].Value, arguments[index++])
                 : match.Value);
-        if (index >= arguments.Length)
-            return rendered;
 
         var builder = new StringBuilder(rendered);
         for (; index < arguments.Length; index++)
         {
             builder.Append(" | ");
-            builder.Append(Convert.ToString(arguments[index], CultureInfo.InvariantCulture));
+            builder.Append(Redacted);
         }
+
+        if (exception is not null)
+        {
+            builder.Append(" | ExceptionType=");
+            builder.Append(exception.GetType().FullName ?? exception.GetType().Name);
+            AppendNumericExceptionProperty(builder, exception, "SqliteErrorCode");
+            AppendNumericExceptionProperty(builder, exception, "SqliteExtendedErrorCode");
+        }
+
         return builder.ToString();
+    }
+
+    private static void AppendNumericExceptionProperty(
+        StringBuilder builder,
+        Exception exception,
+        string propertyName)
+    {
+        try
+        {
+            var property = exception.GetType().GetProperty(propertyName);
+            if (property?.PropertyType == typeof(int) && property.GetValue(exception) is int value)
+            {
+                builder.Append(" | ");
+                builder.Append(propertyName);
+                builder.Append('=');
+                builder.Append(value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            }
+        }
+        catch
+        {
+            // Exception inspection is optional and must never affect the caller.
+        }
     }
 }

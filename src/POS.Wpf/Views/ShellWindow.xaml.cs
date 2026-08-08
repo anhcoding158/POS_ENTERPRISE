@@ -32,6 +32,9 @@ public partial class ShellWindow :
     private readonly IServiceScopeFactory
         _scopeFactory;
 
+    private readonly ISupportBundleDialogService
+        _supportBundleDialogService;
+
     private global::System.Windows.Controls.Button?
         _logoutButton;
 
@@ -43,7 +46,8 @@ public partial class ShellWindow :
         ShellViewModel viewModel,
         ICurrentUserService currentUserService,
         IPermissionService permissionService,
-        IServiceScopeFactory scopeFactory)
+        IServiceScopeFactory scopeFactory,
+        ISupportBundleDialogService supportBundleDialogService)
     {
         _viewModel =
             viewModel ??
@@ -65,6 +69,10 @@ public partial class ShellWindow :
             throw new ArgumentNullException(
                 nameof(scopeFactory));
 
+        _supportBundleDialogService =
+            supportBundleDialogService ??
+            throw new ArgumentNullException(nameof(supportBundleDialogService));
+
         if (!_currentUserService.IsAuthenticated)
         {
             throw new InvalidOperationException(
@@ -85,6 +93,11 @@ public partial class ShellWindow :
         PreviewKeyDown +=
             OnPreviewKeyDown;
     }
+
+    private void OnOpenSupportBundleClick(
+        object sender,
+        global::System.Windows.RoutedEventArgs e) =>
+        _supportBundleDialogService.Show(this);
 
     /// <summary>
     /// True khi Shell đóng do người dùng đăng xuất.

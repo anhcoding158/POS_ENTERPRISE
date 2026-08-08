@@ -11,6 +11,7 @@ using POS.Infrastructure;
 using POS.Infrastructure.Payments;
 using POS.Infrastructure.Platform;
 using POS.Infrastructure.Persistence;
+using POS.Infrastructure.Logging;
 using POS.Wpf.Services;
 using POS.Wpf.ViewModels;
 using POS.Wpf.Views;
@@ -69,6 +70,9 @@ public partial class App :
 
             ConfigureApplicationConfiguration(
                 builder);
+
+            builder.Logging.AddPosSafeFile(
+                builder.Configuration);
 
             var databaseIdentity =
                 ResolveDatabaseIdentity(
@@ -586,6 +590,14 @@ public partial class App :
         services.AddSingleton<
             ICheckoutRecoveryConfirmationService,
             CheckoutRecoveryConfirmationService>();
+
+        services.AddSingleton<
+            ISupportBundleFolderPicker,
+            SupportBundleFolderPicker>();
+
+        services.AddScoped<
+            ISupportBundleDialogService,
+            SupportBundleDialogService>();
     }
 
     private static void ConfigureViewModelsAndWindows(
@@ -644,6 +656,12 @@ public partial class App :
 
         services.AddTransient<
             OrderHistoryWindow>();
+
+        services.AddTransient<
+            SupportBundleViewModel>();
+
+        services.AddTransient<
+            SupportBundleWindow>();
 
         /*
          * Main Shell.

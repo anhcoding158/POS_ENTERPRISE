@@ -620,6 +620,25 @@
                             </StackPanel>
                         </Button>
 
+                        <Button
+                            x:Name="SupportBundleNavigationButton"
+                            Click="OnOpenSupportBundleClick"
+                            Style="{StaticResource NavigationButtonStyle}"
+                            ToolTip="Tạo gói chẩn đoán an toàn để hỗ trợ xử lý sự cố">
+
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock
+                                    Text="&#xE946;"
+                                    FontFamily="Segoe MDL2 Assets"
+                                    FontSize="17"
+                                    Width="32"
+                                    VerticalAlignment="Center" />
+                                <TextBlock
+                                    Text="Gói hỗ trợ"
+                                    VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
                         <!-- Quote -->
 
                         <Border

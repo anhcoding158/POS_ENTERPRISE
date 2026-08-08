@@ -1,5 +1,32 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-027 — Support Bundle UI is an authenticated owner-modal with explicit per-operation consent
+
+- **Status:** Accepted for R2.3C automated UI on `2026-08-08`; R2.3 remains IN PROGRESS.
+- **Placement/access:** Add the smallest `Gói hỗ trợ` entry to the authenticated Shell. No suitable Help/Settings/Admin module and no support capability exists, so all signed-in users receive access; no new permission, role, database table or migration is invented.
+- **Interaction:** Use the existing modal-owner, DI, theme and `AsyncRelayCommand` conventions plus `Microsoft.Win32.OpenFolderDialog`. Consent is never prechecked and resets after each terminal operation. Destination selection alone never starts export; the UI always hard-codes `IncludeDatabase=false`.
+- **Lifecycle/privacy:** A finite single-flight ViewModel owns one CTS per operation, shows indeterminate progress, maps typed results to fixed Vietnamese messages and never exposes raw exception detail. Close while busy requests cancellation and waits for terminal completion; late Success remains Success. No Explorer launch, upload, send, retry background or network action is added.
+- **Evidence:** R2.3C 21/21, R2.3B 12/12, R2.3A 11/11, corrective 2/2, R2.2 live 26/26, architecture/privacy/security 22/22, Release build 0 warnings/0 errors and outside-sandbox Quality Gate 1070/1070 with vulnerability 5/5 and EF pending-model PASS.
+- **Consequences:** R2.3C automated verification PASS; manual acceptance is not performed and R2.3D remains NOT STARTED. R2.3 is not complete.
+
+## DEC-026 — Support Bundle export is fixed-schema, database-excluding and atomically committed
+
+- **Status:** Accepted for R2.3B automated service on `2026-08-08`; R2.3 overall remains IN PROGRESS.
+- **Decision:** Keep typed contracts in Application and composition in Infrastructure. Export only the fixed manifest/diagnostic allow-list and R2.3A-managed logs. Database inclusion is unsupported and fails before artifact or database access; no database/WAL/SHM/journal/backup content is copied or hashed.
+- **Privacy and bounds:** Reuse the exact R2.3A managed-file and sanitizer policies. Snapshot top-level regular logs newest-first, cap exported output at 20 MiB by default, stream bounded UTF-8 records, discard overlong records safely and sanitize a second time. Diagnostics contain only versioned typed values/codes; raw configuration, environment, paths, identities, command lines, exception/provider details, SQL and business rows are forbidden.
+- **Atomicity:** Create one unique operation-owned temporary file in the caller's existing destination with `CreateNew`; close and flush ZIP before a no-overwrite final move. Failure/cancellation may delete only that owned temp. A foreign temp/final collision is preserved and returned as a typed failure; no partial archive receives the final name.
+- **Evidence:** targeted R2.3B 12/12, R2.3A 11/11, corrective 2/2, R2.2 live 26/26, architecture/privacy/security 22/22, POS.Wpf Release 0 warnings/0 errors, and complete outside-sandbox Quality Gate 1049/1049 with vulnerability 5/5 and EF pending-model PASS.
+- **Consequences:** R2.3B automated verification is complete. R2.3C/D, UI/manual acceptance and R2.4 are not started/completed; R2.3 remains IN PROGRESS.
+
+## DEC-025 — Safe application logs use the built-in logging stack and bounded managed files
+
+- **Status:** Accepted for R2.3A automated foundation on `2026-08-08`; R2.3 overall remains IN PROGRESS.
+- **Decision:** Reuse Microsoft Extensions Logging without a new package. Register one Infrastructure file provider in the WPF composition root. Store system-named files under `%LocalAppData%\POS Enterprise\logs`; rotate on UTC day or 5 MiB; retain at most 10 segments, 50 MiB and 14 days, with the strictest condition winning and oldest managed files removed first.
+- **Privacy:** `PosLog` sanitizes structured properties before all providers and never forwards raw exceptions. SQLite diagnostics retain only classification context supplied by call sites, exception type and numeric primary/extended codes. Exact foreign files are never cleanup candidates; raw SQL, messages, paths, credentials and customer/payment payloads are forbidden.
+- **Reliability:** Provider I/O is locked, bounded and exception-contained; directory/write/cleanup failure disables file output without affecting business results. Host disposal flushes/closes the writer. Existing type-only Trace/Debug fallback remains safe when file output is unavailable.
+- **Evidence:** corrective targeted 11/11 (including reparse/direct-parent ownership), current-source R2.2 regression 26/26, related privacy/architecture 14/14, POS.Wpf Release 0 warnings/0 errors, full Quality Gate 1037/1037, vulnerability 5/5 and EF pending-model PASS.
+- **Consequences:** R2.3A is automated-complete. Support Bundle UI/export, R2.3B/C/D, manual R2.3 acceptance and R2.4 are not implemented.
+
 ## DEC-024 — SQLite operational failures use provider classification and safe presentation
 
 - **Status:** Accepted for R2.2 on `2026-08-06`.
@@ -356,7 +383,7 @@ Current closeout evidence: Presented PaymentIntent is persisted before the QR di
 - R0.5E pack: `project-context-20260801T0647171300576Z`, baseline `70523861949aeb5eefe981633db33f50bc890145`, exporter exit code `0`, security findings `0`, coverage `501/501`, excluded candidates `0`, manifest integrity `16/16` PASS.
 - R0.5F: ChatGPT and Codex fresh-session verifications both PASS on `2026-08-01`.
 - R1: Closed / Committed / Pushed / Git-clean at `b9e382550e2e4abcf7a93ed6c5352322dc967668`. R1.1 is Closed / Committed / Pushed / Git-clean at `9e96ff2409e97bd8bbb3a3455bf398a283f23ca4`; runtime E2E remains attributed to `afdda252ce124413b9190607a96a0046cf5097e7`. R1.2 is Closed / Committed / Pushed / Git-clean at `7490e87a2b5381f6e030ef0948b5b6be0dd2e77d`. R1.3 implementation and live Jenkins build #5 are PASS on `8bebb3ebc2b61c4de2fd8d97dc4c0b6944281bb6`; its formal closeout is the R1 closeout commit above.
-- R2: In Progress overall. R2.1 is COMPLETE under `DEC-023`; R2.2 is COMPLETE/CLOSED under `DEC-024`; R2.3–R2.4 and R3–R13 remain Not Started.
+- R2: In Progress overall. R2.1 is COMPLETE under `DEC-023`; R2.2 is COMPLETE/CLOSED under `DEC-024`; R2.3 is IN PROGRESS under `DEC-025`–`DEC-027` with R2.3A/B/C automated-verified; R2.3C manual acceptance, R2.3D, R2.4 and R3–R13 remain Not Started.
 - Partial feature không làm future stage Completed.
 
 ## 3. Decisions not reconstructed
