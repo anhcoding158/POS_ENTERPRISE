@@ -1,5 +1,11 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## R3.1 closeout note — 2026-08-09
+
+- The full R3.1 implementation audit, official Quality Gate (`1183/1183`, `0` failed, `0` skipped), and isolated MB1 manual acceptance are PASS. The exact final artifact independently matched the UI path, `372736`-byte length and SHA-256, the fixture was unchanged, and no partial/temp or second destination entry remained.
+- Product source and executed regression evidence prove that integrity and schema compatibility are checked before `ManualBackupResult.Success`, with positive length and SHA-256 required. The separate arbitrary-artifact SQLite probe remains **NOT RUN**; absence of a command-line probe is not classified as a product defect.
+- No new confirmed R3.1 defect or known issue was established by the closeout audit. No official MB2 contract exists. R3.2 Automatic Backup and Retention remains **NOT STARTED**; no existing issue ID is closed or renumbered by this note.
+
 ## R2.4D closeout note — 2026-08-09
 
 - Automated database runtime hardening is PASS at the current working tree, including source/test/publish path matrix, stale override blocking, isolated-mode validation, startup ordering and metadata-only diagnostics.

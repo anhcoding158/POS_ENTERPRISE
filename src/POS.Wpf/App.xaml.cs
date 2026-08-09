@@ -781,9 +781,17 @@ public partial class App :
             ISupportBundleFolderPicker,
             SupportBundleFolderPicker>();
 
+        services.AddSingleton<
+            IManualBackupFolderPicker,
+            ManualBackupFolderPicker>();
+
         services.AddScoped<
             ISupportBundleDialogService,
             SupportBundleDialogService>();
+
+        services.AddScoped<
+            IManualBackupDialogService,
+            ManualBackupDialogService>();
 
         services.AddScoped<
             IStorageStatusDialogService,
@@ -852,6 +860,12 @@ public partial class App :
 
         services.AddTransient<
             SupportBundleWindow>();
+
+        services.AddTransient<
+            ManualBackupViewModel>();
+
+        services.AddTransient<
+            ManualBackupWindow>();
 
         services.AddScoped<
             StorageStatusViewModel>();

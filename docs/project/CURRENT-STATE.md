@@ -1,8 +1,17 @@
 # CURRENT STATE — POS ENTERPRISE
 
-## R2.4D Database Runtime Hardening — COMPLETED LOCALLY — 2026-08-09
+## R3.1 Manual Backup — COMPLETED LOCALLY — 2026-08-09
 
-- R2.4A, R2.4B, R2.4C and R2.4D are completed locally. R2.4 is completed locally, but this checkpoint is not yet Closed/Committed/Pushed because the user explicitly forbids staging, commit and push in this turn. R3 and R4 remain NOT STARTED.
+- R3.1 formal closeout audit is PASS at HEAD `ff91ab515507666a3fb3b01fc28e7ad0f6241d59`. The authenticated Shell exposes an owner-modal manual-backup workflow with explicit destination selection and consent, single-flight execution, typed fail-closed results, deferred close while work is running, and success presentation containing the final path, UTC completion time, exact byte length and SHA-256.
+- `ManualBackupService` resolves the active runtime database from `InfrastructureOptions`; validates source and destination; requires source integrity and schema compatibility; delegates to the existing SQLite backup primitive that creates a unique temporary file, verifies it before a no-overwrite final move, verifies the final file and cleans operation-owned failed output; then rechecks final integrity/schema, positive length and SHA-256 before returning `Success`. No automatic scheduling or retention behavior is included.
+- Official Quality Gate on the exact product/script working tree PASSed with exit code `0`: restore PASS; Debug build `0` warnings/`0` errors; `1183/1183` tests PASS with `0` failed/`0` skipped; vulnerability scan PASS for `5/5` projects; local tools restore PASS; EF pending-model check PASS; Git checks PASS.
+- MB1 backup action = PASS — Independently Verified. The isolated synthetic fixture remained `372736` bytes with SHA-256 `0B7CF7803264B3F909FCB8ECA97607124D40066EA9E23DCE27FF4DEA354AA34E`. Destination contained exactly one final artifact and no partial/temp output; the artifact was `372736` bytes with SHA-256 `96D79B539267E762096A5B594363D78C9CBB71A36112E04D1BCA4A0FEBF23EB8`, matching the UI evidence.
+- Independent arbitrary-artifact SQLite integrity/schema probe = **NOT RUN** because the repository has no safe command-line probe for an arbitrary artifact and this closeout did not create a harness or open the application. This is non-blocking for R3.1 because the live product path and the executed happy-path regression prove integrity/schema verification before success; it is not recorded as an independent probe PASS.
+- No official MB2 contract exists in live source or Project Memory. R3.1 is Completed Locally with formal acceptance PASS and awaits user-authorized staging/commit/push before the workflow state `Closed`. R3.2 Automatic Backup and Retention is **NOT STARTED** and is the exact next checkpoint.
+
+## R2.4D Database Runtime Hardening — CLOSED — 2026-08-09
+
+- R2.4A, R2.4B, R2.4C and R2.4D are complete. R2.4 and R2 are Closed / Committed / Pushed at `ff91ab515507666a3fb3b01fc28e7ad0f6241d59`.
 - Runtime path resolution keeps source/test build output on the repository database, keeps EF tooling semantics, and routes standard publish output to `%LocalAppData%\\POS Enterprise`. Publish output under the repository, outside it, with a renamed executable, or with a different working directory does not select the repository database.
 - An external `Infrastructure__DatabasePath` is blocked before host start, database identity acquisition, `DbContext`, SQLite open/create, integrity checking or migration unless the child process is an explicit source-output `IsolatedTest` with an absolute non-canonical path. Published output is blocked even if `DOTNET_ENVIRONMENT=Development` or the test mode variable is present.
 - Startup diagnostics are allow-listed metadata only: safe environment name, provider category, runtime mode and override-present boolean. No database path, executable path, working directory or raw environment value is logged.
@@ -14,7 +23,7 @@
 ## R2.4D closeout evidence
 
 - User-observed manual evidence is recorded for M1–M5. M1 was rerun from a clean state with exactly one WPF instance after an earlier duplicate-launch observation; only the clean rerun is accepted. M2 and M5 showed the safety block without exposing path/cwd/executable/raw environment values. M6 found no new repository or publish database/WAL/SHM artifacts, and protected database hashes/metadata remained unchanged.
-- The checkpoint remains Completed Locally rather than Closed until the exact unstaged scope is reviewed and the user separately authorizes staging/commit/push.
+- The checkpoint closeout is recorded at `ff91ab515507666a3fb3b01fc28e7ad0f6241d59`.
 
 ## R2.4C Authenticated Storage Status UI — COMPLETED — 2026-08-08
 

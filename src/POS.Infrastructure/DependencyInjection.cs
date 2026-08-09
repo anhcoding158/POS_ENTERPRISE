@@ -110,6 +110,7 @@ public static class DependencyInjection
         }
 
         services.TryAddScoped<ISupportBundleService, SupportBundleService>();
+        services.TryAddScoped<IManualBackupService, ManualBackupService>();
 
         var receiptStoreSection =
             configuration.GetSection(

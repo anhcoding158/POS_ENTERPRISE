@@ -1,5 +1,7 @@
 [CmdletBinding()]
 param(
+    [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
     [string] $SourceDatabasePath,
     [ValidateSet('Debug', 'Release')]
     [string] $Configuration = 'Release',
@@ -7,12 +9,10 @@ param(
     [string[]] $AdditionalArgument
 )
 
+$ErrorActionPreference = 'Stop'
+
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $projectPath = Join-Path $repositoryRoot 'src\POS.Wpf\POS.Wpf.csproj'
-
-if ([string]::IsNullOrWhiteSpace($SourceDatabasePath)) {
-    $SourceDatabasePath = Join-Path $repositoryRoot 'data\pos-enterprise.db'
-}
 
 $source = Get-Item -LiteralPath ([IO.Path]::GetFullPath($SourceDatabasePath)) -ErrorAction Stop
 if (-not $source.PSIsContainer -and
@@ -44,6 +44,30 @@ function ConvertTo-ProcessArgument {
     }
 
     return '"' + $Value.Replace('"', '\"') + '"'
+}
+
+function Resolve-WindowsAbsolutePath {
+    param([Parameter(Mandatory = $true)][string] $Value)
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        throw 'The isolated-test database path must not be empty.'
+    }
+
+    $isDriveQualified = $Value -match '^[A-Za-z]:[\\/]'
+    $isUnc = $Value -match '^[\\/]{2}[^\\/]+[\\/]+[^\\/]+'
+
+    if (-not $isDriveQualified -and -not $isUnc) {
+        throw 'The isolated-test database path must be an absolute Windows path.'
+    }
+
+    $fullPath = [IO.Path]::GetFullPath($Value)
+    $pathRoot = [IO.Path]::GetPathRoot($fullPath)
+
+    if ([string]::IsNullOrWhiteSpace($pathRoot)) {
+        throw 'The isolated-test database path must have an absolute Windows root.'
+    }
+
+    return $fullPath
 }
 
 $arguments = @(
@@ -86,7 +110,7 @@ function Get-ChildEnvironment {
                     $environment.Add([string]$entry.Key, [string]$entry.Value)
                 }
             }
-            return $environment
+            return (, $environment)
         }
     }
 
@@ -104,21 +128,39 @@ function Get-ChildEnvironment {
             }
         }
         $field.SetValue($ProcessStartInfo, $environment)
-        return $environment
+        return (, $environment)
     }
 
     $environment = $ProcessStartInfo.EnvironmentVariables
     if ($null -eq $environment) {
         throw 'The child process environment could not be initialized.'
     }
-    return $environment
+    return (, $environment)
 }
 
 # These values exist only in the child process. The parent PowerShell
 # environment is never assigned, restored or otherwise mutated.
 $childEnvironment = Get-ChildEnvironment $processStartInfo
+
+if ($null -eq $childEnvironment -or
+    $childEnvironment -is [Array]) {
+    throw 'The child process environment must be a single non-array collection.'
+}
+
+$canonicalTestDatabasePath = Resolve-WindowsAbsolutePath $testDatabasePath
 $childEnvironment['POS_RUNTIME_MODE'] = 'IsolatedTest'
-$childEnvironment['Infrastructure__DatabasePath'] = $testDatabasePath
+$childEnvironment['Infrastructure__DatabasePath'] = $canonicalTestDatabasePath
+
+if ($childEnvironment['POS_RUNTIME_MODE'] -cne 'IsolatedTest' -or
+    $childEnvironment['Infrastructure__DatabasePath'] -cne $canonicalTestDatabasePath) {
+    throw 'The child process environment failed its isolated-test verification.'
+}
+
+if ((Resolve-WindowsAbsolutePath (
+        [string]$childEnvironment['Infrastructure__DatabasePath'])) -cne
+        $canonicalTestDatabasePath) {
+    throw 'The child process database path failed its isolated-test verification.'
+}
 
 $process = [System.Diagnostics.Process]::Start($processStartInfo)
 try {

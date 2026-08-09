@@ -640,6 +640,25 @@
                         </Button>
 
                         <Button
+                            x:Name="ManualBackupNavigationButton"
+                            Click="OnOpenManualBackupClick"
+                            Style="{StaticResource NavigationButtonStyle}"
+                            ToolTip="Sao lưu dữ liệu SQLite đã verify">
+
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock
+                                    Text="&#xE8D2;"
+                                    FontFamily="Segoe MDL2 Assets"
+                                    FontSize="17"
+                                    Width="32"
+                                    VerticalAlignment="Center" />
+                                <TextBlock
+                                    Text="Sao lưu dữ liệu"
+                                    VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button
                             x:Name="StorageStatusNavigationButton"
                             Click="OnOpenStorageStatusClick"
                             Style="{StaticResource NavigationButtonStyle}"

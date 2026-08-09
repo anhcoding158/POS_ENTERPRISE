@@ -35,6 +35,9 @@ public partial class ShellWindow :
     private readonly ISupportBundleDialogService
         _supportBundleDialogService;
 
+    private readonly IManualBackupDialogService
+        _manualBackupDialogService;
+
     private readonly StorageStatusViewModel
         _storageStatusViewModel;
 
@@ -54,6 +57,7 @@ public partial class ShellWindow :
         IPermissionService permissionService,
         IServiceScopeFactory scopeFactory,
         ISupportBundleDialogService supportBundleDialogService,
+        IManualBackupDialogService manualBackupDialogService,
         StorageStatusViewModel storageStatusViewModel,
         IStorageStatusDialogService storageStatusDialogService)
     {
@@ -80,6 +84,10 @@ public partial class ShellWindow :
         _supportBundleDialogService =
             supportBundleDialogService ??
             throw new ArgumentNullException(nameof(supportBundleDialogService));
+
+        _manualBackupDialogService =
+            manualBackupDialogService ??
+            throw new ArgumentNullException(nameof(manualBackupDialogService));
 
         _storageStatusViewModel = storageStatusViewModel ??
             throw new ArgumentNullException(nameof(storageStatusViewModel));
@@ -115,6 +123,11 @@ public partial class ShellWindow :
         object sender,
         global::System.Windows.RoutedEventArgs e) =>
         _supportBundleDialogService.Show(this);
+
+    private void OnOpenManualBackupClick(
+        object sender,
+        global::System.Windows.RoutedEventArgs e) =>
+        _manualBackupDialogService.Show(this);
 
     private void OnOpenStorageStatusClick(
         object sender,

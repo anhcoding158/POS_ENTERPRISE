@@ -2,8 +2,9 @@
 
 ## Latest checkpoint position — 2026-08-09
 
-- R2.4A, R2.4B, R2.4C and R2.4D Database Runtime Hardening are Completed Locally, including the required M1–M6 manual closeout evidence. R2.4 is Completed Locally but not yet Closed/Committed/Pushed because Git writes are forbidden in this turn.
-- The next valid checkpoint is R3.1 Manual Backup; R3 Backup and Restore remains NOT STARTED. No R3 or R4 work was started in this turn.
+- R2.4 is Closed / Committed / Pushed at `ff91ab515507666a3fb3b01fc28e7ad0f6241d59`.
+- R3.1 Manual Backup is Completed Locally with formal acceptance PASS: official Quality Gate `1183/1183` and MB1 independently verified. It awaits user-authorized staging/commit/push before the workflow state `Closed`.
+- R3 Backup and Restore is IN PROGRESS only through R3.1. R3.2 Automatic Backup and Retention is NOT STARTED and is the exact next checkpoint; R3.3, R3.4 and R4 remain NOT STARTED.
 
 ## Governance
 
@@ -49,8 +50,8 @@ Bản cài đầu tiên đủ an toàn cho một cửa hàng bán lẻ, một ch
 | R0 | Completed |
 | R0.5 | Closed / Committed / Pushed |
 | R1 | Closed |
-| R2 | In Progress |
-| R3 | Not Started |
+| R2 | Closed |
+| R3 | In Progress — R3.1 Completed Locally |
 | R4 | Not Started |
 | R5 | Not Started |
 | R6 | Not Started |
@@ -149,22 +150,23 @@ R1.3 owner-approved artifact contract:
 
 ## R2 — PLATFORM HARDENING
 
-- **Status:** In Progress.
+- **Status:** Closed / Committed / Pushed at `ff91ab515507666a3fb3b01fc28e7ad0f6241d59`.
 - **Objective:** harden runtime Windows/SQLite và khả năng support.
 - **Scope/checkpoints:** R2.1 Single-instance Application; R2.2 SQLite Busy/Locked UX; R2.3 Logging and Support Bundle; R2.4 Disk Space and Database Growth. Gồm mutex theo database/store identity; phiên thứ hai có thông báo rõ; không kill process mù; phân biệt busy, locked, disk full và corruption; retry có giới hạn, không retry checkout mù; không làm mất cart; log rotation/sanitize; Support Bundle an toàn; disk-space monitoring; không tự xóa dữ liệu bán hàng.
 - **Out of scope:** backup/restore workflow R3.
 - **Dependencies:** R1.
 - **Entry criteria:** R1 PASS and formally Closed / Committed / Pushed / Git-clean at `b9e382550e2e4abcf7a93ed6c5352322dc967668`.
 - **Exit criteria:** hoàn thành R2.1–R2.4 và đáp ứng toàn bộ guardrail nêu trên.
-- **Completed checkpoints:** R2.1 — Single-instance Application; R2.2 — SQLite Busy/Locked UX — COMPLETE/CLOSED; R2.3 — Logging and Support Bundle — COMPLETE. R2.3 acceptance provenance: R2.3A/B/C automated verification PASS; R2.3D M01–M09 manual PASS; local read-only ZIP inspection PASS; final full Quality Gate 1070/1070 PASS with vulnerability and EF pending-model checks PASS. The bundle excludes the sales database and does not automatically upload or send artifacts.
-- **Current/next checkpoint:** R2.4 — Disk Space and Database Growth — IN PROGRESS. R2.4A Typed Storage Snapshot Foundation, R2.4B Startup Migration Storage Preflight and R2.4C Authenticated Storage Status UI are COMPLETED; R2.4D is the next checkpoint and remains NOT STARTED. Startup preflight runs only for pending migrations and before the existing verified backup/schema mutation; backup/restore and retention remain unimplemented.
+- **Completed checkpoints:** R2.1 Single-instance Application, R2.2 SQLite Busy/Locked UX, R2.3 Logging and Support Bundle, and R2.4 Disk Space and Database Growth are complete. R2.4D and its M1–M6 manual evidence closed with R2 at `ff91ab515507666a3fb3b01fc28e7ad0f6241d59`.
 - **Manual acceptance:** thử phiên thứ hai, busy/locked, disk full/corruption presentation, cart preservation, log/support bundle và cảnh báo disk space.
 
 ## R3 — BACKUP VÀ RESTORE
 
-- **Status:** Not Started.
+- **Status:** In Progress — R3.1 Completed Locally; R3.2 Not Started.
 - **Objective:** bảo vệ dữ liệu bằng backup/restore có verify và recovery.
 - **Scope/checkpoints:** R3.1 Manual Backup; R3.2 Automatic Backup and Retention; R3.3 Restore Wizard; R3.4 Disaster Recovery Drill.
+- **Completed checkpoint:** R3.1 Manual Backup — formal acceptance PASS with official Quality Gate `1183/1183` and MB1 independently verified. The product verifies integrity/schema, positive byte length and SHA-256 before success; the independent arbitrary-artifact SQLite probe remains NOT RUN and is not represented as PASS. Git closeout remains pending user authorization.
+- **Next checkpoint:** R3.2 Automatic Backup and Retention — NOT STARTED.
 - **Out of scope:** store/employee management R4.
 - **Dependencies:** R2.
 - **Entry criteria:** R2 PASS.
