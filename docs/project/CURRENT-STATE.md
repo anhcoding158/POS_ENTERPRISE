@@ -1,5 +1,21 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## R2.4D Database Runtime Hardening — COMPLETED LOCALLY — 2026-08-09
+
+- R2.4A, R2.4B, R2.4C and R2.4D are completed locally. R2.4 is completed locally, but this checkpoint is not yet Closed/Committed/Pushed because the user explicitly forbids staging, commit and push in this turn. R3 and R4 remain NOT STARTED.
+- Runtime path resolution keeps source/test build output on the repository database, keeps EF tooling semantics, and routes standard publish output to `%LocalAppData%\\POS Enterprise`. Publish output under the repository, outside it, with a renamed executable, or with a different working directory does not select the repository database.
+- An external `Infrastructure__DatabasePath` is blocked before host start, database identity acquisition, `DbContext`, SQLite open/create, integrity checking or migration unless the child process is an explicit source-output `IsolatedTest` with an absolute non-canonical path. Published output is blocked even if `DOTNET_ENVIRONMENT=Development` or the test mode variable is present.
+- Startup diagnostics are allow-listed metadata only: safe environment name, provider category, runtime mode and override-present boolean. No database path, executable path, working directory or raw environment value is logged.
+- The child-process scripts use direct process environment construction, retain isolated snapshots, propagate exit codes and do not mutate the parent PowerShell environment. The Windows PowerShell fixed-size environment-collection failure was corrected by initializing and copying the mutable legacy child collection; clean M1 and M3 launches completed without that error.
+- Manual acceptance passed: M1 clean Normal source run, M2 stale override block, M3 valid Isolated Test, M4-A standard publish with different cwd, M4-B relocated publish, M4-C renamed executable, and M5 published override with `DOTNET_ENVIRONMENT=Development`. M6 filesystem/hash audit also passed.
+- Fresh verification: targeted runtime/database/storage regressions `105/105` PASS; Release build `0` warnings/`0` errors; Release full regression `1164/1164` PASS with `0` failed/`0` skipped; outside-sandbox Quality Gate Debug regression `1164/1164` PASS with EF pending-model check, vulnerability scan `5/5`, and Git checks PASS.
+- The publish helper produced the expected POS.Enterprise payload; `appsettings.Development.json`, database artifacts and PDBs were absent. The full artifact contract was not rerun in this publish-only probe because TRX/log/report groups were not generated.
+
+## R2.4D closeout evidence
+
+- User-observed manual evidence is recorded for M1–M5. M1 was rerun from a clean state with exactly one WPF instance after an earlier duplicate-launch observation; only the clean rerun is accepted. M2 and M5 showed the safety block without exposing path/cwd/executable/raw environment values. M6 found no new repository or publish database/WAL/SHM artifacts, and protected database hashes/metadata remained unchanged.
+- The checkpoint remains Completed Locally rather than Closed until the exact unstaged scope is reviewed and the user separately authorizes staging/commit/push.
+
 ## R2.4C Authenticated Storage Status UI — COMPLETED — 2026-08-08
 
 - R2.4 remains **IN PROGRESS**. R2.4A, R2.4B and R2.4C are completed; R2.4D is the next checkpoint and remains **NOT STARTED**. R3 and R4 remain **NOT STARTED**.

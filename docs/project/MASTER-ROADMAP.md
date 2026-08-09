@@ -1,5 +1,10 @@
 # MASTER ROADMAP — POS ENTERPRISE RETAIL V1
 
+## Latest checkpoint position — 2026-08-09
+
+- R2.4A, R2.4B, R2.4C and R2.4D Database Runtime Hardening are Completed Locally, including the required M1–M6 manual closeout evidence. R2.4 is Completed Locally but not yet Closed/Committed/Pushed because Git writes are forbidden in this turn.
+- The next valid checkpoint is R3.1 Manual Backup; R3 Backup and Restore remains NOT STARTED. No R3 or R4 work was started in this turn.
+
 ## Governance
 
 - Roadmap gốc: 29/07/2026.

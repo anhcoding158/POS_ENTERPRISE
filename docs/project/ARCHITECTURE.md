@@ -1,5 +1,13 @@
 # ARCHITECTURE — POS ENTERPRISE RETAIL V1
 
+## R2.4D database runtime hardening boundary
+
+- The WPF composition root validates the effective database-path provider before safe logging registration, single-instance identity resolution, host start, `DbContext` construction, SQLite access or `DatabaseInitializer`. A non-JSON external provider is never silently accepted in normal or published runtime.
+- `IsolatedTest` is an explicit child-process contract: `POS_RUNTIME_MODE=IsolatedTest`, an absolute override path, source/test development output identified by the existing development configuration marker, and a path different from the canonical development/published database. Published output always fails closed for an external override, independent of `DOTNET_ENVIRONMENT`.
+- `DatabasePathResolver` uses the source/test output marker plus repository structure for development resolution, routes other application bases to `%LocalAppData%\\POS Enterprise`, and keeps the explicit `dotnet-ef` tooling fallback. Executable name and current working directory do not select published database storage.
+- `Start-POS-Normal.ps1` and `Start-POS-IsolatedTest.ps1` construct child environment state without assigning the parent environment. The isolated script copies only the main source database to a timestamped TEMP snapshot and never points the child at the canonical file.
+- Startup diagnostics use only allow-listed metadata and the safety block message contains no path or raw override. User-observed M1–M5 WPF/runtime acceptance and M6 filesystem/hash audit passed on 2026-08-09; Git closeout remains separate and is still pending.
+
 ## R2.4B startup migration storage-preflight boundary
 
 - `DatabaseInitializer` remains scoped and receives the singleton `IDatabaseStorageMonitor` by constructor injection. It checks pending migrations first; only a non-empty pending set triggers one snapshot, one production backup estimate for an existing database, and one preflight evaluation.

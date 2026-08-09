@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using POS.Application.Common;
 using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.Authorization;
 using POS.Application.Abstractions.Payments;
@@ -71,6 +72,10 @@ public partial class App :
             ConfigureApplicationConfiguration(
                 builder);
 
+            var databaseRuntimeState =
+                ValidateDatabaseRuntime(
+                    builder);
+
             builder.Logging.AddPosSafeFile(
                 builder.Configuration);
 
@@ -127,11 +132,27 @@ public partial class App :
 
             await _host.StartAsync();
 
+            LogStartupDiagnostics(
+                _host.Services.GetRequiredService<
+                    ILogger<App>>(),
+                builder,
+                databaseRuntimeState);
+
             await InitializeDatabaseAsync(
                 _host.Services);
 
             await RunSessionLoopAsync(
                 _host.Services);
+        }
+        catch (DatabaseSafetyBlockException exception)
+        {
+            global::System.Windows.MessageBox.Show(
+                exception.Message,
+                "POS Enterprise",
+                global::System.Windows.MessageBoxButton.OK,
+                global::System.Windows.MessageBoxImage.Warning);
+
+            Shutdown(-1);
         }
         catch (Exception exception)
         {
@@ -251,6 +272,171 @@ public partial class App :
             .ResolveDatabaseIdentity(
                 options.DatabasePath);
     }
+
+    internal static string
+        GetDatabasePathConfigurationProvider(
+            IConfiguration configuration)
+    {
+        ArgumentNullException.ThrowIfNull(
+            configuration);
+
+        if (configuration is not IConfigurationRoot root)
+        {
+            return "Unknown";
+        }
+
+        foreach (var provider in root.Providers.Reverse())
+        {
+            if (provider.TryGet(
+                    "Infrastructure:DatabasePath",
+                    out _))
+            {
+                return provider.GetType().Name switch
+                {
+                    "EnvironmentVariablesConfigurationProvider" =>
+                        "EnvironmentVariables",
+                    "CommandLineConfigurationProvider" =>
+                        "CommandLine",
+                    "JsonConfigurationProvider" =>
+                        "Json",
+                    "MemoryConfigurationProvider" =>
+                        "Memory",
+                    _ => "Other"
+                };
+            }
+        }
+
+        return "NotFound";
+    }
+
+    private static void LogStartupDiagnostics(
+        ILogger logger,
+        HostApplicationBuilder builder,
+        DatabaseRuntimeState databaseRuntimeState)
+    {
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(builder);
+        ArgumentNullException.ThrowIfNull(databaseRuntimeState);
+
+        PosLog.Information(
+            logger,
+            "EnvironmentName={EnvironmentName}; " +
+            "DatabasePathProvider={DatabasePathProvider}; " +
+            "RuntimeMode={RuntimeMode}; " +
+            "EnvironmentDatabasePathOverridePresent=" +
+            "{EnvironmentDatabasePathOverridePresent}",
+            GetSafeEnvironmentName(
+                builder.Environment.EnvironmentName),
+            GetDatabasePathConfigurationProvider(
+                builder.Configuration),
+            databaseRuntimeState.IsolatedTest
+                ? "IsolatedTest"
+                : "Normal",
+            !string.IsNullOrWhiteSpace(
+                Environment.GetEnvironmentVariable(
+                    DatabaseRuntimeGuard
+                        .DatabasePathEnvironmentVariable)));
+    }
+
+    internal static DatabaseRuntimeState
+        ValidateDatabaseRuntime(
+            HostApplicationBuilder builder)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+
+        var provider =
+            GetDatabasePathConfigurationProvider(
+                builder.Configuration);
+
+        var canonicalDatabasePath =
+            GetCanonicalDatabasePath(
+                builder.Configuration,
+                provider);
+
+        var state =
+            DatabaseRuntimeGuard.Validate(
+                provider,
+                builder.Configuration[
+                    "Infrastructure:DatabasePath"] ??
+                string.Empty,
+                DatabasePathResolver.ResolveDatabasePathWithoutCreatingDirectory(
+                    canonicalDatabasePath),
+                DatabasePathResolver.IsDevelopmentOutput(
+                    AppContext.BaseDirectory),
+                Environment.GetEnvironmentVariable(
+                    DatabaseRuntimeGuard
+                        .RuntimeModeEnvironmentVariable));
+
+        var options =
+            new InfrastructureOptions();
+
+        builder.Configuration
+            .GetSection(
+                InfrastructureOptions.SectionName)
+            .Bind(options);
+
+        options.Validate();
+
+        return state;
+    }
+
+    private static string GetCanonicalDatabasePath(
+        ConfigurationManager configuration,
+        string effectiveProvider)
+    {
+        if (string.Equals(
+                effectiveProvider,
+                "Json",
+                StringComparison.Ordinal))
+        {
+            var value = configuration[
+                "Infrastructure:DatabasePath"];
+
+            return string.IsNullOrWhiteSpace(value)
+                ? new InfrastructureOptions().DatabasePath
+                : value;
+        }
+
+        var root =
+            (IConfigurationRoot)configuration;
+        var providers =
+            root.Providers.ToArray();
+
+        for (var index = providers.Length - 1;
+             index >= 0;
+             index--)
+        {
+            var provider = providers[index];
+            var providerName = provider.GetType().Name;
+
+            if (providerName is
+                "EnvironmentVariablesConfigurationProvider" or
+                "CommandLineConfigurationProvider")
+            {
+                continue;
+            }
+
+            if (provider.TryGet(
+                    "Infrastructure:DatabasePath",
+                    out var value) &&
+                !string.IsNullOrWhiteSpace(value))
+            {
+                return value;
+            }
+        }
+
+        return new InfrastructureOptions().DatabasePath;
+    }
+
+    internal static string GetSafeEnvironmentName(
+        string? environmentName) =>
+        environmentName switch
+        {
+            "Development" => "Development",
+            "Staging" => "Staging",
+            "Production" => "Production",
+            _ => "Other"
+        };
 
     private Task HandleActivationRequestAsync()
     {

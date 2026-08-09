@@ -105,6 +105,83 @@ public sealed class WindowActivationCoordinatorTests
     }
 
     [Fact]
+    public void Database_path_diagnostic_identifies_highest_precedence_provider()
+    {
+        const string variableName =
+            "Infrastructure__DatabasePath";
+
+        var previousValue =
+            Environment.GetEnvironmentVariable(
+                variableName,
+                EnvironmentVariableTarget.Process);
+
+        var testRoot =
+            Path.Combine(
+                Path.GetTempPath(),
+                $"POS-Runtime-Diagnostics-{Guid.NewGuid():N}");
+
+        Directory.CreateDirectory(testRoot);
+
+        try
+        {
+            File.WriteAllText(
+                Path.Combine(
+                    testRoot,
+                    "appsettings.json"),
+                """
+                {
+                  "Infrastructure": {
+                    "DatabasePath": "json-default.db"
+                  }
+                }
+                """);
+
+            Environment.SetEnvironmentVariable(
+                variableName,
+                "environment-override.db",
+                EnvironmentVariableTarget.Process);
+
+            var builder =
+                CreateProductionConfigurationBuilder(
+                    testRoot);
+
+            Assert.Equal(
+                "EnvironmentVariables",
+                App.GetDatabasePathConfigurationProvider(
+                    builder.Configuration));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(
+                variableName,
+                previousValue,
+                EnvironmentVariableTarget.Process);
+
+            if (Directory.Exists(testRoot))
+            {
+                Directory.Delete(
+                    testRoot,
+                    recursive: true);
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData("Development", "Development")]
+    [InlineData("Staging", "Staging")]
+    [InlineData("Production", "Production")]
+    [InlineData("D:\\private\\environment", "Other")]
+    [InlineData(null, "Other")]
+    public void Startup_diagnostic_environment_is_allow_listed(
+        string? value,
+        string expected)
+    {
+        Assert.Equal(
+            expected,
+            App.GetSafeEnvironmentName(value));
+    }
+
+    [Fact]
     public void Request_before_target_ready_is_processed_after_target_registration()
     {
         var target =

@@ -1,5 +1,16 @@
 # BUSINESS INVARIANTS — POS ENTERPRISE RETAIL V1
 
+## INV-RUNTIME-001 — Database runtime selection is explicit and fail-closed
+
+- **Statement:** Normal development uses the repository canonical database; an external database override is accepted only for an explicitly declared isolated test child with a non-canonical absolute path; published runtime uses `%LocalAppData%\\POS Enterprise` and blocks external overrides before any database access.
+- **Rationale:** Prevent a stale PowerShell `Infrastructure__DatabasePath` from silently opening test data and prevent a published copy inside the checkout from selecting development storage.
+- **Scope/trigger:** WPF startup, source/test `dotnet run`, publish relocation/rename and isolated test scripts.
+- **Enforcing code:** `D:\\Projects_1\\POS_Enterprise_DotNet\\src\\POS.Infrastructure\\Persistence\\DatabaseRuntimeGuard.cs`; `D:\\Projects_1\\POS_Enterprise_DotNet\\src\\POS.Infrastructure\\Persistence\\DatabasePathResolver.cs`; `D:\\Projects_1\\POS_Enterprise_DotNet\\src\\POS.Wpf\\App.xaml.cs`.
+- **Direct test evidence:** `D:\\Projects_1\\POS_Enterprise_DotNet\\tests\\POS.Architecture.Tests\\DatabaseRuntimeGuardTests.cs`; `D:\\Projects_1\\POS_Enterprise_DotNet\\tests\\POS.Architecture.Tests\\DatabasePathResolverTests.cs`; targeted runtime/database/storage result `105/105` PASS.
+- **Failure/recovery:** Safe startup block with no SQLite open/create/migration; remove the external override and restart. Isolated snapshots are retained for explicit inspection/recovery.
+- **Status:** Enforced Locally: automated source/path/guard proof, user-observed M1–M5 WPF acceptance and M6 no-open/no-modify filesystem evidence are PASS. The checkpoint is not yet Closed because Git closeout actions remain pending.
+- **Gap/revisit:** Revisit only if publish/build identity or runtime environment contract changes; do not begin R3 in this turn.
+
 ## R2.2 operational persistence invariants
 
 ### INV-DB-FAILURE-001 — Checkout database failure cannot become partial success

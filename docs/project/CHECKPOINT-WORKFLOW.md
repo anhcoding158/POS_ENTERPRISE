@@ -1,5 +1,10 @@
 # CHECKPOINT WORKFLOW — POS ENTERPRISE RETAIL V1
 
+## Latest live checkpoint position — 2026-08-09
+
+- R2.4A, R2.4B, R2.4C and R2.4D Database Runtime Hardening are Completed Locally, including manual M1–M6 evidence. R2.4 is Completed Locally but not Closed/Committed/Pushed because those Git actions are forbidden in the current turn.
+- The next checkpoint is R3.1 Manual Backup. No R3 work is authorized in the current turn.
+
 ## 1. Metadata
 
 - Document: `CHECKPOINT-WORKFLOW.md`.

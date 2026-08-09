@@ -182,31 +182,56 @@ public sealed class DatabasePathResolver
 
     private static string ResolveApplicationBaseDirectory()
     {
+        return ResolveApplicationBaseDirectory(
+            Environment.CurrentDirectory,
+            AppContext.BaseDirectory);
+    }
+
+    internal static string ResolveApplicationBaseDirectory(
+        string currentDirectory,
+        string applicationBaseDirectory,
+        string? processPath = null,
+        string? entryAssemblyName = null)
+    {
         /*
-         * Khi chạy dotnet ef hoặc Visual Studio,
-         * Environment.CurrentDirectory thường nằm trong solution.
+         * Chỉ nhận solution-root khi executable nằm trong output build của
+         * source/test và không ở dưới nhánh publish. Published output dù được
+         * đặt dưới repository vẫn phải dùng LocalAppData để không mở nhầm
+         * database phát triển.
          */
         var solutionRoot =
-            FindSolutionRoot(
-                Environment.CurrentDirectory);
+            FindSolutionRoot(applicationBaseDirectory);
 
-        if (solutionRoot is not null)
+        if (solutionRoot is not null &&
+            IsDevelopmentOutput(applicationBaseDirectory))
         {
             return solutionRoot;
         }
 
         /*
-         * Khi chạy ứng dụng từ thư mục bin,
-         * ta tiếp tục tìm ngược từ AppContext.BaseDirectory.
+         * Nếu application base nằm trong repository nhưng không phải output
+         * phát triển của POS.Wpf thì đó là publish/artifact. Không được dùng
+         * solution-root chỉ vì artifact được giải nén bên trong checkout.
          */
-        solutionRoot =
-            FindSolutionRoot(
-                AppContext.BaseDirectory);
-
         if (solutionRoot is not null)
+        {
+            return ResolveLocalApplicationDataDirectory();
+        }
+
+        solutionRoot = FindSolutionRoot(currentDirectory);
+        if (solutionRoot is not null &&
+            IsRepositoryToolingProcess(
+                processPath,
+                entryAssemblyName))
         {
             return solutionRoot;
         }
+
+        return ResolveLocalApplicationDataDirectory();
+    }
+
+    private static string ResolveLocalApplicationDataDirectory()
+    {
 
         /*
  * Bản đóng gói không còn solution file:
@@ -233,6 +258,68 @@ public sealed class DatabasePathResolver
 
         return Path.GetFullPath(
             applicationDataDirectory);
+    }
+
+    /// <summary>
+    /// Identifies a source/test build output without using the current
+    /// directory, executable name or environment name.
+    /// </summary>
+    public static bool IsDevelopmentOutput(
+        string applicationBaseDirectory)
+    {
+        var solutionRoot =
+            FindSolutionRoot(applicationBaseDirectory);
+
+        return solutionRoot is not null &&
+            IsRepositoryDevelopmentOutput(
+                solutionRoot,
+                applicationBaseDirectory) &&
+            File.Exists(Path.Combine(
+                Path.GetFullPath(applicationBaseDirectory),
+                "appsettings.Development.json"));
+    }
+
+    private static bool IsRepositoryDevelopmentOutput(
+        string solutionRoot,
+        string applicationBaseDirectory)
+    {
+        var relativePath = Path.GetRelativePath(
+            Path.GetFullPath(solutionRoot),
+            Path.GetFullPath(applicationBaseDirectory));
+
+        var segments = relativePath.Split(
+            [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
+            StringSplitOptions.RemoveEmptyEntries);
+
+        return segments.Length >= 3 &&
+            (string.Equals(
+                segments[0],
+                "src",
+                StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(
+                segments[0],
+                "tests",
+                StringComparison.OrdinalIgnoreCase)) &&
+            segments.Any(segment =>
+                string.Equals(
+                    segment,
+                    "bin",
+                    StringComparison.OrdinalIgnoreCase)) &&
+            !segments.Any(segment =>
+                string.Equals(
+                    segment,
+                    "publish",
+                    StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool IsRepositoryToolingProcess(
+        string? processPath,
+        string? entryAssemblyName)
+    {
+        return string.Equals(
+            entryAssemblyName,
+            "dotnet-ef",
+            StringComparison.OrdinalIgnoreCase);
     }
 
     private static void

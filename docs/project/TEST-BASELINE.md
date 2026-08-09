@@ -1,5 +1,18 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R2.4D database runtime hardening baseline — 2026-08-09
+
+- Entry working tree contained the five user-reported scope items: four tracked modifications and one untracked test file. No index entries were present.
+- Final targeted runtime/database/storage regression: `105/105` PASS, `0` failed, `0` skipped.
+- Release build: PASS, `0` warnings, `0` errors. Release full regression: `1164/1164` PASS, `0` failed, `0` skipped, outside the IPC-restricted sandbox.
+- Official Quality Gate: PASS without `-SkipEfCheck`; Debug build `0/0`, repeated full tests `1164/1164`, vulnerability scan PASS for all `5/5` projects, local tool restore PASS, EF pending-model check PASS and Git checks PASS.
+- Sandbox full test observation was `1161/1163` with exactly two accepted R2.1 named-pipe access failures; the authoritative outside-sandbox rerun was `1163/1163` before the final diagnostics test, and the final Release/Quality Gate runs were `1164/1164`.
+- Publish helper: PASS. Publish root contained the required POS.Enterprise executable/assembly and appsettings, with no development appsettings, database artifacts or PDBs. The complete CI artifact contract was not asserted by the publish-only probe because TRX/log/report groups were not generated.
+- PowerShell script smoke: PASS for exit-code propagation and parent override/mode preservation. The probe intentionally passed an invalid `dotnet run` option, so it did not claim application/manual launch acceptance.
+- Manual acceptance: M1 clean Normal source run PASS; M2 stale override safety block PASS; M3 Isolated Test PASS; M4-A standard publish/different cwd PASS; M4-B relocated publish PASS; M4-C renamed executable PASS; M5 published override plus `DOTNET_ENVIRONMENT=Development` safety block PASS; M6 filesystem/hash audit PASS. All WPF observations were made by the user.
+- The earlier invalid-option smoke was not a valid non-launch probe because the argument was forwarded to the application and left a WPF process running; those owned processes were closed and the result was not counted as PASS. The fixed-size error was instead verified resolved by successful clean M1/M3 script launches.
+- EF tooling `dotnet ef --version`: PASS (`10.0.10`); no database update was run. Process/User/Machine `Infrastructure__DatabasePath`: UNSET/UNSET/UNSET after verification.
+
 ## R2.4C closeout baseline — 2026-08-08
 
 - R2.4C authenticated storage status UI implementation, independent review and automated re-verification passed on the accepted unstaged R2.4C working tree at HEAD `166be3ec8cce555f772c6d068147d1eb8cd13f09`, aligned with local `origin/main`, with an empty index before closeout.

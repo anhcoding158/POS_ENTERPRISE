@@ -1,5 +1,12 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## R2.4D closeout note — 2026-08-09
+
+- Automated database runtime hardening is PASS at the current working tree, including source/test/publish path matrix, stale override blocking, isolated-mode validation, startup ordering and metadata-only diagnostics.
+- Manual acceptance M1–M5 and the M6 no-open/no-modify filesystem/hash audit passed on 2026-08-09. The earlier duplicate M1 launch was discarded and the clean single-instance rerun was accepted.
+- The Windows PowerShell `Collection was of a fixed size` script failure was reproduced in the earlier helper path, traced to using the wrong/non-mutable `ProcessStartInfo` environment collection, corrected in both start scripts, and not reproduced by the clean M1/M3 launches.
+- R2.4D is Completed Locally; it is not yet Closed/Committed/Pushed because the current turn explicitly forbids those Git actions.
+
 ## R2.4C closeout note — 2026-08-08
 
 - R2.4C authenticated storage status UI passed independent review, automated re-verification (`18/18` targeted; `166/166` combined), Release build, outside-sandbox Quality Gate `1142/1142`, vulnerability scan, EF pending-model check and manual acceptance.

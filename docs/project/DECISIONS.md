@@ -1,5 +1,14 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-029 — External database overrides require an isolated child-process contract
+
+- **Status:** Accepted locally for R2.4D closeout on `2026-08-09`; user-observed M1–M5 manual acceptance and M6 filesystem/hash audit passed. Git closeout remains unstaged and uncommitted by instruction.
+- **Context/problem:** A long-lived PowerShell `Infrastructure__DatabasePath` could make an ordinary `dotnet run` open a test database, and a published copy inside the repository could inherit development path semantics.
+- **Decision:** Classify source/test output through the existing development configuration marker and route all other application bases to `%LocalAppData%\\POS Enterprise`. Block every external path provider before host/database startup unless the source-output child declares exact `POS_RUNTIME_MODE=IsolatedTest` and supplies an absolute path different from the canonical database. Do not use executable name or `DOTNET_ENVIRONMENT` as an override bypass.
+- **Evidence:** `DatabaseRuntimeGuard`, `DatabasePathResolver`, `App.xaml.cs`, the two child-process scripts, `DatabaseRuntimeGuardTests`, `DatabasePathResolverTests`, Release `1164/1164`, Quality Gate `1164/1164`, EF pending-model PASS and vulnerability scan `5/5` PASS.
+- **Consequences:** Normal stale overrides fail closed; isolated snapshots are process-scoped; published output cannot be redirected by environment override. M1–M5 WPF/runtime acceptance and M6 filesystem/hash audit are recorded as PASS.
+- **Revisit trigger/checkpoint:** R2.4D manual closeout or a future publish/build identity change.
+
 ## DEC-028 — Database storage monitoring and startup migration preflight are typed, metadata-only and overflow-safe
 
 - **Status:** Accepted for R2.4A and R2.4B on `2026-08-08`; R2.4 remains IN PROGRESS.
