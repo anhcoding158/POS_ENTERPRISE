@@ -15,6 +15,52 @@ namespace POS.Architecture.Tests;
 public sealed class ManualBackupServiceTests
 {
     [Fact]
+    public void Busy_is_distinct_typed_non_success_status()
+    {
+        var result = ManualBackupResult.Failure(ManualBackupStatus.Busy);
+        Assert.Equal(ManualBackupStatus.Busy, result.Status);
+        Assert.False(result.IsSuccess);
+    }
+
+    [Fact]
+    public async Task Busy_gate_returns_immediately_without_destination_or_source_side_effect()
+    {
+        var testDirectory = CreateTestDirectory();
+        var contextDirectory = CreateTestDirectory();
+        await using var context = await CreateSourceContextAsync(contextDirectory, "context");
+        using var coordinator = new BackupCoordinator();
+        Assert.True(coordinator.TryAcquire(out var held));
+        var destination = Path.Combine(testDirectory, "must-not-exist");
+        var service = CreateService(context, Path.Combine(testDirectory, "missing-source.db"),
+            new FixedClock(DateTimeOffset.UtcNow), coordinator);
+
+        var result = await service.BackupAsync(new ManualBackupRequest(destination));
+
+        Assert.Equal(ManualBackupStatus.Busy, result.Status);
+        Assert.False(Directory.Exists(destination));
+        held!.Dispose();
+        await context.DisposeAsync();
+        DeleteTestDirectory(contextDirectory);
+        DeleteTestDirectory(testDirectory);
+    }
+
+    [Fact]
+    public async Task Expected_failure_releases_gate_for_next_operation()
+    {
+        var testDirectory = CreateTestDirectory();
+        await using var context = await CreateSourceContextAsync(testDirectory, "release");
+        using var coordinator = new BackupCoordinator();
+        var service = CreateService(context, Path.Combine(testDirectory, "missing.db"),
+            new FixedClock(DateTimeOffset.UtcNow), coordinator);
+        var result = await service.BackupAsync(new ManualBackupRequest(testDirectory));
+        Assert.Equal(ManualBackupStatus.SourceUnavailable, result.Status);
+        Assert.True(coordinator.TryAcquire(out var lease));
+        lease!.Dispose();
+        await context.DisposeAsync();
+        DeleteTestDirectory(testDirectory);
+    }
+
+    [Fact]
     public async Task Manual_backup_success_must_create_verified_copy_with_hash_and_size()
     {
         var testDirectory = CreateTestDirectory();
@@ -170,7 +216,8 @@ public sealed class ManualBackupServiceTests
     private static ManualBackupService CreateService(
         PosDbContext dbContext,
         string sourcePath,
-        IClock clock)
+        IClock clock,
+        IBackupCoordinator? coordinator = null)
     {
         var options = Options.Create(new InfrastructureOptions
         {
@@ -178,7 +225,7 @@ public sealed class ManualBackupServiceTests
             DatabaseTimeoutSeconds = 1
         });
 
-        return new ManualBackupService(options, dbContext, clock);
+        return new ManualBackupService(options, dbContext, clock, coordinator ?? new BackupCoordinator());
     }
 
     private static async Task<PosDbContext> CreateSourceContextAsync(

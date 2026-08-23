@@ -249,6 +249,9 @@ public sealed class ManualBackupViewModel : ViewModelBase, IDisposable
 
         switch (result.Status)
         {
+            case ManualBackupStatus.Busy:
+                Fail("Đang có một tác vụ sao lưu khác chạy. Vui lòng thử lại sau.");
+                break;
             case ManualBackupStatus.Cancelled:
                 State = ManualBackupUiState.Cancelled;
                 StatusMessage = "Đã hủy sao lưu.";

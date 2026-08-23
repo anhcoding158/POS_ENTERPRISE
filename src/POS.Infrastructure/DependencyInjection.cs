@@ -111,6 +111,16 @@ public static class DependencyInjection
 
         services.TryAddScoped<ISupportBundleService, SupportBundleService>();
         services.TryAddScoped<IManualBackupService, ManualBackupService>();
+        services.TryAddSingleton<IBackupCoordinator, BackupCoordinator>();
+        services.TryAddSingleton(AutomaticBackupPolicy.Production);
+        services.TryAddSingleton(_ => AutomaticBackupPathProvider.CreateForRuntime(
+            Environment.GetEnvironmentVariable(DatabaseRuntimeGuard.RuntimeModeEnvironmentVariable),
+            configuration[$"{InfrastructureOptions.SectionName}:DatabasePath"],
+            AppContext.BaseDirectory));
+        services.TryAddSingleton<IAutomaticBackupStateStore, AutomaticBackupStateStore>();
+        services.TryAddSingleton<AutomaticBackupRetentionService>();
+        services.TryAddSingleton<IAutomaticBackupStatusSource, AutomaticBackupStatusSource>();
+        services.TryAddSingleton<IAutomaticBackupService, AutomaticBackupService>();
 
         var receiptStoreSection =
             configuration.GetSection(

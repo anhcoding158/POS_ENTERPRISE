@@ -5,6 +5,7 @@ namespace POS.Application.Abstractions.Services;
 public enum ManualBackupStatus
 {
     Success,
+    Busy,
     Cancelled,
     InvalidDestination,
     DestinationUnavailable,

@@ -1,10 +1,10 @@
 # MASTER ROADMAP — POS ENTERPRISE RETAIL V1
 
-## Latest checkpoint position — 2026-08-09
+## Latest checkpoint position — 2026-08-23
 
 - R2.4 is Closed / Committed / Pushed at `ff91ab515507666a3fb3b01fc28e7ad0f6241d59`.
 - R3.1 Manual Backup is Closed / Committed / Pushed at product checkpoint `1cbabbbb8928a29c520897c849c405f6ad6e16de` with formal acceptance PASS: official Quality Gate `1183/1183` and MB1 independently verified. A later docs-only synchronization commit records this post-push state.
-- R3 Backup and Restore is IN PROGRESS only through R3.1. R3.2 Automatic Backup and Retention is NOT STARTED and is the exact next checkpoint; R3.3, R3.4 and R4 remain NOT STARTED.
+- R3.2 Automatic Backup and Retention is Closed locally with daily 24-hour policy, verified single-flight execution, GFS 7/4/3 retention and secondary 2 GiB quota semantics. R3.3 Restore Wizard is NOT STARTED and is the exact next checkpoint; R3.4 and R4 remain NOT STARTED.
 
 ## Governance
 
@@ -162,11 +162,12 @@ R1.3 owner-approved artifact contract:
 
 ## R3 — BACKUP VÀ RESTORE
 
-- **Status:** In Progress — R3.1 Closed / Committed / Pushed; R3.2 Not Started.
+- **Status:** In Progress — R3.1 Closed / Committed / Pushed; R3.2 Closed locally.
 - **Objective:** bảo vệ dữ liệu bằng backup/restore có verify và recovery.
 - **Scope/checkpoints:** R3.1 Manual Backup; R3.2 Automatic Backup and Retention; R3.3 Restore Wizard; R3.4 Disaster Recovery Drill.
 - **Completed checkpoint:** R3.1 Manual Backup — Closed / Committed / Pushed at product checkpoint `1cbabbbb8928a29c520897c849c405f6ad6e16de`; formal acceptance PASS with official Quality Gate `1183/1183` and MB1 independently verified. The product verifies integrity/schema, positive byte length and SHA-256 before success; the independent arbitrary-artifact SQLite probe remains NOT RUN and is not represented as PASS. The later synchronization commit is docs-only.
-- **Next checkpoint:** R3.2 Automatic Backup and Retention — NOT STARTED.
+- **Completed checkpoint:** R3.2 Automatic Backup and Retention — daily 24-hour policy, verified single-flight automatic backup, GFS 7 latest / 4 weekly / 3 monthly, secondary 2 GiB quota warning semantics, and mixed human + user-approved machine-assisted acceptance PASS.
+- **Next checkpoint:** R3.3 Restore Wizard — NOT STARTED.
 - **Out of scope:** store/employee management R4.
 - **Dependencies:** R2.
 - **Entry criteria:** R2 PASS.

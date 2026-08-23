@@ -1,5 +1,12 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-030 — Automatic backup uses daily verified execution and protected GFS retention
+
+- **Status:** Accepted for R3.2 closeout on `2026-08-23`.
+- **Decision:** The 24-hour due interval is the R3.2 daily policy. Retain 7 latest, 4 distinct UTC ISO-week and 3 distinct UTC monthly verified owned artifacts. The 2 GiB quota remains secondary; required GFS snapshots and the newest verified artifact are never deleted solely to meet quota, and a typed warning is returned instead.
+- **Concurrency/scope:** Manual and automatic pipelines share one singleton coordinator. Store Setup configuration is deferred to R4.1, end-of-day backup to R9, and shutdown-triggered backup is not live R3.2 scope. Existing verified pre-migration ordering remains the migration safety boundary.
+- **Evidence:** targeted `76/76`, official Quality Gate `1240/1240`, ABM1/2 human + machine and ABM3–6 user-approved machine-assisted production-runtime acceptance.
+
 ## DEC-029 — External database overrides require an isolated child-process contract
 
 - **Status:** Accepted locally for R2.4D closeout on `2026-08-09`; user-observed M1–M5 manual acceptance and M6 filesystem/hash audit passed. Git closeout remains unstaged and uncommitted by instruction.

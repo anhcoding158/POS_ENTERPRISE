@@ -1,5 +1,11 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R3.2 Automatic Backup and Retention closeout baseline — 2026-08-23
+
+- Targeted R3.2 suite: `76/76` PASS, `0` failed, `0` skipped. Official outside-sandbox Quality Gate: `1240/1240` PASS, `0` failed, `0` skipped; restore/build, vulnerability scan, local tool restore, EF pending-model and Git checks PASS without `-SkipEfCheck`.
+- ABM1/ABM2 PASS with human + machine evidence; ABM3–ABM6 PASS with user-approved machine-assisted production-runtime evidence. ABM3-B proved concurrent typed `Busy` on the same production coordinator; ABM4-B protected sparse GFS snapshots above 2 GiB without following a junction; ABM5 proved fail-closed recovery and retention warning; ABM6 proved the 5-second drain and safe cancellation.
+- Canonical database remained `937984` bytes with SHA-256 `C1F4BCCF022F896DD0948F2E25AFABE831DF3EF9CE1B289E9D933F9A33BDDBED`; canonical automatic root remained absent.
+
 ## R3.1 Manual Backup closeout baseline — 2026-08-09
 
 - Product checkpoint commit `1cbabbbb8928a29c520897c849c405f6ad6e16de` contains the exact product/script source covered by the official Quality Gate via `powershell.exe -NoProfile -ExecutionPolicy Bypass -File D:\Projects_1\POS_Enterprise_DotNet\scripts\Test-QualityGate.ps1`: PASS, exit code `0`, without `-SkipEfCheck`; restore PASS; Debug build `0` warnings/`0` errors; `1183/1183` tests PASS, `0` failed, `0` skipped; vulnerability scan PASS for `5/5` projects; local tools restore PASS; EF pending-model and Git checks PASS.

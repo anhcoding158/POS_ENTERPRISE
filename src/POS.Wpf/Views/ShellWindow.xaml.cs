@@ -44,6 +44,9 @@ public partial class ShellWindow :
     private readonly IStorageStatusDialogService
         _storageStatusDialogService;
 
+    private readonly AutomaticBackupStatusViewModel
+        _automaticBackupStatusViewModel;
+
     private global::System.Windows.Controls.Button?
         _logoutButton;
 
@@ -59,7 +62,8 @@ public partial class ShellWindow :
         ISupportBundleDialogService supportBundleDialogService,
         IManualBackupDialogService manualBackupDialogService,
         StorageStatusViewModel storageStatusViewModel,
-        IStorageStatusDialogService storageStatusDialogService)
+        IStorageStatusDialogService storageStatusDialogService,
+        AutomaticBackupStatusViewModel automaticBackupStatusViewModel)
     {
         _viewModel =
             viewModel ??
@@ -95,6 +99,9 @@ public partial class ShellWindow :
         _storageStatusDialogService = storageStatusDialogService ??
             throw new ArgumentNullException(nameof(storageStatusDialogService));
 
+        _automaticBackupStatusViewModel = automaticBackupStatusViewModel ??
+            throw new ArgumentNullException(nameof(automaticBackupStatusViewModel));
+
         if (!_currentUserService.IsAuthenticated)
         {
             throw new InvalidOperationException(
@@ -108,6 +115,9 @@ public partial class ShellWindow :
 
         StorageStatusNavigationButton.DataContext =
             _storageStatusViewModel;
+
+        AutomaticBackupStatusSurface.DataContext =
+            _automaticBackupStatusViewModel;
 
         Loaded +=
             OnWindowLoaded;
@@ -952,6 +962,7 @@ public partial class ShellWindow :
             OnPreviewKeyDown;
 
         _storageStatusViewModel.Dispose();
+        _automaticBackupStatusViewModel.Dispose();
 
         if (_logoutButton is not null)
         {

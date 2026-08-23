@@ -1,5 +1,12 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## R3.2 Automatic Backup and Retention — CLOSED — 2026-08-23
+
+- R3.2 is complete locally: 24-hour daily policy, verified automatic artifacts, shared singleton coordination, and deterministic GFS retention of 7 latest, 4 UTC ISO-week and 3 UTC monthly snapshots. The 2 GiB quota is secondary and returns `SuccessWithRetentionWarning` rather than deleting required GFS snapshots.
+- ABM1/ABM2 PASS with human + machine evidence. ABM3-A/B, ABM4-A/B, ABM5-A/B and ABM6 PASS with user-approved machine-assisted production-runtime evidence on isolated `%TEMP%` resources. Evidence: `C:\Users\Dell\AppData\Local\Temp\POS-Enterprise-R3.2C-R2M-Evidence-20260823T150820552Z-5c42379a87ee40f1ab7e694a67a8dc1e`.
+- Targeted R3.2 regression is `76/76` PASS; official outside-sandbox Quality Gate is `1240/1240` PASS with vulnerability, EF pending-model and Git checks PASS. Store Setup configurability remains R4.1, end-of-day remains R9, and shutdown-triggered backup is not claimed as R3.2 scope.
+- R3.3 Restore Wizard is NOT STARTED and is the exact next checkpoint.
+
 ## R3.1 Manual Backup — CLOSED / COMMITTED / PUSHED — 2026-08-09
 
 - R3.1 formal closeout audit is PASS at product checkpoint commit `1cbabbbb8928a29c520897c849c405f6ad6e16de`, subject `feat(r3.1): complete verified manual backup workflow`. The commit is pushed to `origin/main`; HEAD equals origin/main and the post-push working tree is clean. The authenticated Shell exposes an owner-modal manual-backup workflow with explicit destination selection and consent, single-flight execution, typed fail-closed results, deferred close while work is running, and success presentation containing the final path, UTC completion time, exact byte length and SHA-256.

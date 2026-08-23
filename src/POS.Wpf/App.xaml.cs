@@ -141,6 +141,9 @@ public partial class App :
             await InitializeDatabaseAsync(
                 _host.Services);
 
+            _host.Services.GetRequiredService<AutomaticBackupHostedService>()
+                .MarkDatabaseInitialized();
+
             await RunSessionLoopAsync(
                 _host.Services);
         }
@@ -519,6 +522,10 @@ public partial class App :
         services.AddInfrastructure(
             configuration);
 
+        services.AddSingleton<AutomaticBackupHostedService>();
+        services.AddHostedService(serviceProvider =>
+            serviceProvider.GetRequiredService<AutomaticBackupHostedService>());
+
         ConfigureAuthenticationServices(
             services);
 
@@ -869,6 +876,8 @@ public partial class App :
 
         services.AddScoped<
             StorageStatusViewModel>();
+
+        services.AddScoped<AutomaticBackupStatusViewModel>();
 
         services.AddTransient<
             StorageStatusWindow>();

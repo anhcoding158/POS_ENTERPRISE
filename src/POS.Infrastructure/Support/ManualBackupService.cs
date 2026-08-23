@@ -15,17 +15,20 @@ public sealed class ManualBackupService : IManualBackupService
     private readonly InfrastructureOptions _infrastructureOptions;
     private readonly PosDbContext _dbContext;
     private readonly IClock _clock;
+    private readonly IBackupCoordinator _coordinator;
 
     public ManualBackupService(
         IOptions<InfrastructureOptions> infrastructureOptions,
         PosDbContext dbContext,
-        IClock clock)
+        IClock clock,
+        IBackupCoordinator coordinator)
     {
         _infrastructureOptions = infrastructureOptions?.Value ??
             throw new ArgumentNullException(nameof(infrastructureOptions));
         _infrastructureOptions.Validate();
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _clock = clock ?? throw new ArgumentNullException(nameof(clock));
+        _coordinator = coordinator ?? throw new ArgumentNullException(nameof(coordinator));
     }
 
     public async Task<ManualBackupResult> BackupAsync(
@@ -41,6 +44,22 @@ public sealed class ManualBackupService : IManualBackupService
         {
             return ManualBackupResult.Failure(ManualBackupStatus.Cancelled);
         }
+
+        if (!_coordinator.TryAcquire(out var lease) || lease is null)
+        {
+            return ManualBackupResult.Failure(ManualBackupStatus.Busy);
+        }
+
+        await using (lease)
+        {
+            return await BackupCoreAsync(request, cancellationToken);
+        }
+    }
+
+    private async Task<ManualBackupResult> BackupCoreAsync(
+        ManualBackupRequest request,
+        CancellationToken cancellationToken)
+    {
 
         string destinationDirectory;
         try
@@ -104,38 +123,37 @@ public sealed class ManualBackupService : IManualBackupService
         }
 
         var backupPath = backupResult.BackupFilePath;
-
-        if (!SqliteDatabaseSafetyService.CheckIntegrity(backupPath).IsSuccess)
+        try
         {
-            return ManualBackupResult.Failure(ManualBackupStatus.VerificationFailed);
+            if (!SqliteDatabaseSafetyService.CheckIntegrity(backupPath).IsSuccess)
+                return VerificationFailureWithCleanup(backupPath, destinationDirectory);
+
+            var backupSchemaVerified = await VerifySchemaCompatibilityAsync(
+                backupPath,
+                cancellationToken);
+
+            if (!backupSchemaVerified)
+                return VerificationFailureWithCleanup(backupPath, destinationDirectory);
+
+            var fileInfo = new FileInfo(backupPath);
+            if (!fileInfo.Exists || fileInfo.Length <= 0)
+                return VerificationFailureWithCleanup(backupPath, destinationDirectory);
+
+            var sha256Hex = await ComputeSha256Async(backupPath, cancellationToken);
+            if (string.IsNullOrWhiteSpace(sha256Hex))
+                return VerificationFailureWithCleanup(backupPath, destinationDirectory);
+
+            return ManualBackupResult.Success(
+                backupPath,
+                fileInfo.Length,
+                sha256Hex,
+                _clock.UtcNow);
         }
-
-        var backupSchemaVerified = await VerifySchemaCompatibilityAsync(
-            backupPath,
-            cancellationToken);
-
-        if (!backupSchemaVerified)
+        catch
         {
-            return ManualBackupResult.Failure(ManualBackupStatus.VerificationFailed);
+            DeleteOperationOutput(backupPath, destinationDirectory);
+            throw;
         }
-
-        var fileInfo = new FileInfo(backupPath);
-        if (!fileInfo.Exists || fileInfo.Length <= 0)
-        {
-            return ManualBackupResult.Failure(ManualBackupStatus.VerificationFailed);
-        }
-
-        var sha256Hex = await ComputeSha256Async(backupPath, cancellationToken);
-        if (string.IsNullOrWhiteSpace(sha256Hex))
-        {
-            return ManualBackupResult.Failure(ManualBackupStatus.VerificationFailed);
-        }
-
-        return ManualBackupResult.Success(
-            backupPath,
-            fileInfo.Length,
-            sha256Hex,
-            _clock.UtcNow);
     }
 
     private static async Task<bool> VerifySchemaCompatibilityAsync(
@@ -202,6 +220,26 @@ public sealed class ManualBackupService : IManualBackupService
         }
 
         return ManualBackupResult.Failure(ManualBackupStatus.UnexpectedFailure);
+    }
+
+    private static ManualBackupResult VerificationFailureWithCleanup(string backupPath, string destinationDirectory)
+    {
+        DeleteOperationOutput(backupPath, destinationDirectory);
+        return ManualBackupResult.Failure(ManualBackupStatus.VerificationFailed);
+    }
+
+    private static void DeleteOperationOutput(string backupPath, string destinationDirectory)
+    {
+        try
+        {
+            var fullPath = Path.GetFullPath(backupPath);
+            if (!string.Equals(Path.GetDirectoryName(fullPath), destinationDirectory, StringComparison.OrdinalIgnoreCase) ||
+                !Path.GetFileName(fullPath).StartsWith("pos-enterprise-pre-migration-", StringComparison.Ordinal) ||
+                !Path.GetExtension(fullPath).Equals(".db", StringComparison.OrdinalIgnoreCase)) return;
+            if (File.Exists(fullPath) && (File.GetAttributes(fullPath) & FileAttributes.ReparsePoint) == 0)
+                File.Delete(fullPath);
+        }
+        catch { }
     }
 
     private static bool IsDestinationException(Exception exception) => exception is

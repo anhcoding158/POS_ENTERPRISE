@@ -1,5 +1,10 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## R3.2 closeout note — 2026-08-23
+
+- No confirmed R3.2 product defect remains after targeted `76/76`, official Quality Gate `1240/1240`, and ABM1–ABM6 acceptance. Runtime machine evidence used isolated `%TEMP%` resources; canonical database/root were unchanged.
+- Store Setup configurability remains R4.1 and end-of-day backup remains R9; neither is an R3.2 defect. R3.3 Restore Wizard is NOT STARTED.
+
 ## R3.1 closeout note — 2026-08-09
 
 - The full R3.1 implementation audit, official Quality Gate (`1183/1183`, `0` failed, `0` skipped), and isolated MB1 manual acceptance are PASS. The exact final artifact independently matched the UI path, `372736`-byte length and SHA-256, the fixture was unchanged, and no partial/temp or second destination entry remained.

@@ -682,6 +682,30 @@
                             </StackPanel>
                         </Button>
 
+                        <Border
+                            x:Name="AutomaticBackupStatusSurface"
+                            Margin="7,10,7,0"
+                            Padding="12,9"
+                            Background="{StaticResource SidebarSurfaceBrush}"
+                            CornerRadius="8"
+                            ToolTip="{Binding DetailText}">
+                            <StackPanel>
+                                <TextBlock
+                                    Text="{Binding StatusText}"
+                                    FontSize="11"
+                                    FontWeight="SemiBold"
+                                    Foreground="{StaticResource TextPrimaryBrush}"
+                                    TextWrapping="Wrap" />
+                                <TextBlock
+                                    Margin="0,3,0,0"
+                                    Text="{Binding DetailText}"
+                                    FontSize="10"
+                                    Foreground="{StaticResource TextSecondaryBrush}"
+                                    TextTrimming="CharacterEllipsis"
+                                    MaxWidth="180" />
+                            </StackPanel>
+                        </Border>
+
                         <!-- Quote -->
 
                         <Border

@@ -100,6 +100,19 @@ public sealed class ManualBackupUiTests
     }
 
     [Fact]
+    public async Task Busy_is_presented_distinctly_and_operation_returns_to_retryable_terminal_state()
+    {
+        var service = new FakeService((_, _) =>
+            Task.FromResult(ManualBackupResult.Failure(ManualBackupStatus.Busy)));
+        using var viewModel = await ReadyAsync(service);
+        await viewModel.BackupAsync();
+        Assert.Equal(ManualBackupUiState.Failed, viewModel.State);
+        Assert.Contains("tác vụ sao lưu khác", viewModel.StatusMessage, StringComparison.OrdinalIgnoreCase);
+        Assert.False(viewModel.IsProgressVisible);
+        Assert.True(viewModel.CanReset);
+    }
+
+    [Fact]
     public async Task ViewModel_depends_only_on_application_contract_and_picker_adapter()
     {
         var constructor = Assert.Single(typeof(ManualBackupViewModel).GetConstructors());
