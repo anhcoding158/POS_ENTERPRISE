@@ -1,16 +1,17 @@
 # MASTER ROADMAP — POS ENTERPRISE RETAIL V1
 
-## Latest checkpoint position — 2026-08-25
+## Latest checkpoint position — 2026-08-26
 
-- R3.3 Restore Wizard and Rollback is CLOSED after R3.3B/C/D/E implementation, RST1–RST13 PASS, RST14 combined-evidence ACCEPTED with its independent external UIA/PID-timeline limitation recorded, and RST15 canonical-safety PASS.
-- Final verification is PASS: restore-targeted `89/89`, backup/restore UI `89/89`, Release build `0` warnings/errors, full and official Quality Gate `1317/1317`, vulnerability PASS and EF pending-model PASS.
-- R3.4 Disaster Recovery Drill is the exact next checkpoint and is NOT STARTED. Pilot remains BLOCKED until R3.4 PASS; the drill must cover real backup, database switch, restore, login, orders, stock, receipts, integrity, worker shutdown, exactly-one restart and no orphan process.
+- R3.3 Restore Wizard and Rollback is CLOSED / COMMITTED / PUSHED at `e1f6d0dc3401b91c8674f32e18c6a2fb29ccdd49`; RST14 retains its explicit combined-evidence limitation.
+- R3.4 Disaster Recovery Drill is PASS and CLOSED on `2026-08-26`: real production backup → genuinely new database → external-worker restore/restart → WPF sign-in → exact Orders/stock/receipt comparison → SQLite integrity. DR1–DR9 and canonical safety PASS.
+- R3 is CLOSED. The R3.4 prerequisite blocker for pilot is removed. R4 remains NOT STARTED and R4.1 Store Setup is the exact next checkpoint.
+- Final verification is PASS: focused recovery `142/142`, build `0` warnings/errors, full official Quality Gate `1317/1317`, vulnerability PASS and EF pending-model PASS.
 
 ## Latest checkpoint position — 2026-08-23
 
 - R2.4 is Closed / Committed / Pushed at `ff91ab515507666a3fb3b01fc28e7ad0f6241d59`.
 - R3.1 Manual Backup is Closed / Committed / Pushed at product checkpoint `1cbabbbb8928a29c520897c849c405f6ad6e16de` with formal acceptance PASS: official Quality Gate `1183/1183` and MB1 independently verified. A later docs-only synchronization commit records this post-push state.
-- R3.2 Automatic Backup and Retention is Closed locally with daily 24-hour policy, verified single-flight execution, GFS 7/4/3 retention and secondary 2 GiB quota semantics. R3.3 Restore Wizard is NOT STARTED and is the exact next checkpoint; R3.4 and R4 remain NOT STARTED.
+- **Historical checkpoint position on 2026-08-23:** R3.2 Automatic Backup and Retention was Closed locally; R3.3 Restore Wizard was NOT STARTED and was the exact next checkpoint. This dated statement is superseded by the current position above.
 
 ## Governance
 
@@ -168,12 +169,13 @@ R1.3 owner-approved artifact contract:
 
 ## R3 — BACKUP VÀ RESTORE
 
-- **Status:** In Progress — R3.1 Closed / Committed / Pushed; R3.2 Closed locally.
+- **Status:** Closed — R3.1–R3.4 complete; R3.3 is Closed / Committed / Pushed at `e1f6d0dc3401b91c8674f32e18c6a2fb29ccdd49`; R3.4 DR1–DR9 PASS on `2026-08-26`.
 - **Objective:** bảo vệ dữ liệu bằng backup/restore có verify và recovery.
 - **Scope/checkpoints:** R3.1 Manual Backup; R3.2 Automatic Backup and Retention; R3.3 Restore Wizard; R3.4 Disaster Recovery Drill.
 - **Completed checkpoint:** R3.1 Manual Backup — Closed / Committed / Pushed at product checkpoint `1cbabbbb8928a29c520897c849c405f6ad6e16de`; formal acceptance PASS with official Quality Gate `1183/1183` and MB1 independently verified. The product verifies integrity/schema, positive byte length and SHA-256 before success; the independent arbitrary-artifact SQLite probe remains NOT RUN and is not represented as PASS. The later synchronization commit is docs-only.
 - **Completed checkpoint:** R3.2 Automatic Backup and Retention — daily 24-hour policy, verified single-flight automatic backup, GFS 7 latest / 4 weekly / 3 monthly, secondary 2 GiB quota warning semantics, and mixed human + user-approved machine-assisted acceptance PASS.
-- **Next checkpoint:** R3.3 Restore Wizard — NOT STARTED.
+- **Completed checkpoint:** R3.3 Restore Wizard and Rollback — Closed / Committed / Pushed at `e1f6d0dc3401b91c8674f32e18c6a2fb29ccdd49`; RST14 remains accurately classified as combined-evidence acceptance.
+- **Completed checkpoint:** R3.4 Disaster Recovery Drill — production backup, genuine database switch, external-worker restore/restart, authenticated WPF Shell, exact Orders/stock/receipt recovery, SQLite integrity and canonical safety PASS. The R3.4 prerequisite blocker for pilot is removed.
 - **Out of scope:** store/employee management R4.
 - **Dependencies:** R2.
 - **Entry criteria:** R2 PASS.
@@ -183,6 +185,7 @@ R1.3 owner-approved artifact contract:
 ## R4 — STORE SETUP VÀ EMPLOYEE MANAGEMENT
 
 - **Status:** Not Started.
+- **Exact next checkpoint:** R4.1 Store Setup — READY TO START.
 - **Objective:** vận hành cấu hình cửa hàng, nhân viên, account, role và audit an toàn.
 - **Scope/checkpoints:** R4.1 Store Setup; R4.2 Employee and Account UI; R4.3 Role and Permission Management; R4.4 Audit Log UI. Gồm typed/validated store configuration; printer/scanner/cash drawer/VietQR/backup; quản lý nhân viên; reset password, lock/unlock; role/permission matrix; audit thay đổi quyền.
 - **Out of scope:** product data operations R5.

@@ -1,5 +1,14 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R3.4 Disaster Recovery Drill closeout baseline — 2026-08-26
+
+- DR1–DR9 PASS on one validated `%TEMP%` scenario. Production manual backup created one verified/restorable artifact; a genuinely new normally initialized database lacked the source business markers; production restore preparation plus the real external Release worker reached durable `Verified`, shut down the exact parent, exited cleanly and started exactly one normal POS with no orphan.
+- The actual restarted WPF application presented the restore-success acknowledgement once, accepted the isolated test login, and reached an authenticated Shell. A second controlled normal restart did not repeat the acknowledgement. Orders, stock and receipt evidence was then compared through production repository reads and independent read-only SQLite projections; normalized projections matched exactly.
+- Final restored database checks: `PRAGMA integrity_check` = one `ok`; `PRAGMA foreign_key_check` = zero violations; migration history matched; clean shutdown left no WAL/SHM/journal; backup and pre-restore safety artifacts remained hash-stable until verification completed.
+- Focused recovery suite after the test-fixture portability repair: `142/142` PASS, `0` failed, `0` skipped. The final official `scripts/Test-QualityGate.ps1` run outside the restricted IPC sandbox PASSed without `-SkipEfCheck`: Debug build `0` warnings/`0` errors, full suite `1317/1317`, vulnerability scan PASS for `5/5` projects, tool restore PASS, EF pending-model PASS and Git whitespace checks PASS.
+- Canonical safety after cleanup: database length `937984`, timestamp `2026-08-09T14:26:03.9619805Z`, SHA-256 `C1F4BCCF022F896DD0948F2E25AFABE831DF3EF9CE1B289E9D933F9A33BDDBED`; canonical managed roots and sidecars absent; scenario root absent; owned POS/worker/test processes zero.
+- Evidence root: `C:\Users\Dell\AppData\Local\Temp\POS-Enterprise-R3.4-Evidence-20260825T155209292Z-bc53793763084524a966cf92206862bd`. Evidence is compact, sanitized and outside the repository. RST14 remains the R3.3 combined-evidence acceptance described below; R3.4 does not relabel it.
+
 ## R3.3 Restore Wizard and Rollback closeout baseline — 2026-08-25
 
 - Acceptance ledger: RST1–RST13 PASS from retained immutable isolated evidence; RST14 **ACCEPTED by combined evidence** with the independent external UIA/PID-timeline limitation explicitly retained; RST15 cumulative canonical-safety audit PASS. No RST scenario used the canonical database.

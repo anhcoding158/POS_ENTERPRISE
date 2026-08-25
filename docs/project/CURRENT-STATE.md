@@ -1,19 +1,27 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## R3.4 Disaster Recovery Drill — CLOSED — 2026-08-26
+
+- R3.4 PASS on a controlled `%TEMP%` boundary using the real production flow: verified manual backup of database A → normal initialization of a genuinely new database B → production restore preparation and external worker replacement → exactly one normal restart → real WPF sign-in → exact Orders, stock and receipt comparisons → SQLite integrity verification.
+- DR1–DR9 machine evidence is complete. The backup artifact was production-inspected as restorable; the durable restore operation reached `Verified`; the parent, worker and restarted process lifecycle had no duplicate or orphan; the restored application reached the authenticated Shell; production repository reads and independent read-only SQLite projections matched the source baseline exactly; `PRAGMA integrity_check` returned only `ok` and `PRAGMA foreign_key_check` returned zero rows.
+- The canonical database remained `937984` bytes with timestamp `2026-08-09T14:26:03.9619805Z` and SHA-256 `C1F4BCCF022F896DD0948F2E25AFABE831DF3EF9CE1B289E9D933F9A33BDDBED`. Canonical automatic/restore/pre-restore roots and WAL/SHM/journal sidecars remained absent; the exact scenario root was safely removed and owned process count returned to zero.
+- No production defect was found. One Windows-portability defect in a restore test fixture was corrected by matching production's `File.Replace(..., ignoreMetadataErrors: true)` behavior without weakening assertions. Focused recovery tests are `142/142` PASS. The final official Quality Gate is PASS: build `0` warnings/`0` errors, full suite `1317/1317`, `0` failed, `0` skipped, vulnerability scan PASS, and EF pending-model check PASS.
+- R3.1–R3.4 and R3 are CLOSED. The R3.4 prerequisite blocker for pilot is removed. R4 remains NOT STARTED; R4.1 Store Setup is the exact next checkpoint.
+
 ## R3.3 Restore Wizard and Rollback — CLOSED — 2026-08-25
 
 - R3.3B/C/D/E implementation and verification are complete. Production now provides fail-closed artifact inspection, durable restore planning/state, a startup restore worker with replacement/rollback, and the authenticated WPF Restore Wizard/recovery flow.
 - RST1–RST13 are PASS using retained isolated runtime evidence. RST14 is **ACCEPTED — combined runtime, durable-state and automated contract evidence; independent external UIA/PID timeline incomplete**. The retired external harness limitation is recorded honestly and is not represented as a machine-assisted timeline PASS.
 - RST15 cumulative canonical-safety audit is PASS. Every destructive acceptance path was isolated beneath `%TEMP%`; the canonical database remained `937984` bytes, timestamp `2026-08-09T14:26:03.9619805Z`, SHA-256 `C1F4BCCF022F896DD0948F2E25AFABE831DF3EF9CE1B289E9D933F9A33BDDBED`, with canonical automatic/restore/pre-restore roots and SQLite sidecars absent.
 - Final verification is PASS: restore targeted `89/89`, backup/restore UI `89/89`, Release rebuild `0` warnings/`0` errors, full Release `1317/1317` with `0` failed/`0` skipped, vulnerability scan PASS, EF pending-model check PASS, and official Quality Gate PASS without `-SkipEfCheck`.
-- The WAL checkpoint/hash defect is repaired and regression-covered. RST7 uses a real regular-file reparse fixture. R3.4 Disaster Recovery Drill is the exact next checkpoint and remains mandatory before pilot; it must revalidate backup, database switch, restore, login, orders, stock, receipts, integrity, and worker restart/no-orphan lifecycle.
+- The WAL checkpoint/hash defect is repaired and regression-covered. RST7 uses a real regular-file reparse fixture. R3.3 is Closed / Committed / Pushed at `e1f6d0dc3401b91c8674f32e18c6a2fb29ccdd49`. The newer R3.4 closeout section above supersedes the checkpoint position recorded here.
 
 ## R3.2 Automatic Backup and Retention — CLOSED — 2026-08-23
 
 - R3.2 is complete locally: 24-hour daily policy, verified automatic artifacts, shared singleton coordination, and deterministic GFS retention of 7 latest, 4 UTC ISO-week and 3 UTC monthly snapshots. The 2 GiB quota is secondary and returns `SuccessWithRetentionWarning` rather than deleting required GFS snapshots.
 - ABM1/ABM2 PASS with human + machine evidence. ABM3-A/B, ABM4-A/B, ABM5-A/B and ABM6 PASS with user-approved machine-assisted production-runtime evidence on isolated `%TEMP%` resources. Evidence: `C:\Users\Dell\AppData\Local\Temp\POS-Enterprise-R3.2C-R2M-Evidence-20260823T150820552Z-5c42379a87ee40f1ab7e694a67a8dc1e`.
 - Targeted R3.2 regression is `76/76` PASS; official outside-sandbox Quality Gate is `1240/1240` PASS with vulnerability, EF pending-model and Git checks PASS. Store Setup configurability remains R4.1, end-of-day remains R9, and shutdown-triggered backup is not claimed as R3.2 scope.
-- R3.3 Restore Wizard is NOT STARTED and is the exact next checkpoint.
+- **Historical R3.2 closeout status on 2026-08-23:** R3.3 Restore Wizard was NOT STARTED and was the exact next checkpoint. Current R3.3/R3.4 status is recorded in the newer section above.
 
 ## R3.1 Manual Backup — CLOSED / COMMITTED / PUSHED — 2026-08-09
 

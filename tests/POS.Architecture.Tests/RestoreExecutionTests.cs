@@ -363,7 +363,8 @@ public sealed class RestoreExecutionTests
             RestoreOperationState.WaitingForParentExit, null, CancellationToken.None);
         plan = await fixture.Store.TransitionAsync(plan,
             RestoreOperationState.ReplacementStarted, null, CancellationToken.None);
-        File.Replace(plan.StagedCandidatePath, plan.ActiveDatabasePath, plan.RollbackPath);
+        File.Replace(plan.StagedCandidatePath, plan.ActiveDatabasePath, plan.RollbackPath,
+            ignoreMetadataErrors: true);
         var result = await fixture.Worker(new FakeRuntime()).ExecuteAsync(
             prepared.OpaquePlanPath!, prepared.OperationId, prepared.OneTimeOperationToken!);
         Assert.Equal(RestoreExecutionStatus.Success, result.Status);

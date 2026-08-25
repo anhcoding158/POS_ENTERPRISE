@@ -1,16 +1,23 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## R3.4 closeout note — 2026-08-26
+
+- No confirmed R3.4 production defect remains. The real isolated backup → new database → external-worker restore → restart → sign-in → Orders/stock/receipt verification → integrity drill passed, and the canonical database/root state remained exact.
+- A restore-test fixture used the three-argument `File.Replace` overload, which raised a Windows metadata portability error on the drill host. The fixture now uses `ignoreMetadataErrors: true`, matching production behavior; assertions and restore safety contracts are unchanged. The focused suite is `142/142` PASS and the official Quality Gate is `1317/1317` PASS with zero failures/skips.
+- Two single-instance Named Pipe tests were denied only inside the restricted Codex sandbox and passed `2/2` under the normal Windows token; the final official Quality Gate was therefore run outside that IPC restriction and passed. Production's current-user-only ACL was not weakened.
+- The R3.4 prerequisite blocker for pilot is removed. R3 is CLOSED; R4 remains NOT STARTED and R4.1 Store Setup is the exact next checkpoint. The RST14 combined-evidence limitation remains recorded below and was not rewritten by R3.4.
+
 ## R3.3 closeout note — 2026-08-25
 
 - No confirmed R3.3 production or automated-regression defect remains after restore-targeted `89/89`, backup/restore UI `89/89`, Release build `0/0`, full Release `1317/1317`, vulnerability, EF and official Quality Gate PASS.
 - RST14 is accepted by combined runtime, durable-state and automated contract evidence. Independent external UIA/PID-timeline evidence is incomplete because the Codex execution desktop did not expose a same-PID WPF root even though the parent process remained healthy for the full bounded readiness period. This limitation is explicit; it is not classified as a production Restore failure or as an external timeline PASS.
-- All temporary observer/UIA harness development is retired. R3.4 Disaster Recovery Drill is a mandatory pre-pilot blocker and must independently exercise the real backup/database-switch/restore/business-integrity flow plus worker shutdown, exactly-one restart and no-orphan behavior.
+- All temporary observer/UIA harness development is retired. R3.3 is Closed / Committed / Pushed at `e1f6d0dc3401b91c8674f32e18c6a2fb29ccdd49`. This dated R3.3 closeout position is superseded by the R3.4 closeout note above.
 - The WAL checkpoint/hash production defect and the OpenFileDialog automation defect were corrected with regression coverage. RST7 real regular-file reparse handling is verified. RST15 confirms the canonical database and managed roots remained unchanged throughout isolated acceptance.
 
 ## R3.2 closeout note — 2026-08-23
 
 - No confirmed R3.2 product defect remains after targeted `76/76`, official Quality Gate `1240/1240`, and ABM1–ABM6 acceptance. Runtime machine evidence used isolated `%TEMP%` resources; canonical database/root were unchanged.
-- Store Setup configurability remains R4.1 and end-of-day backup remains R9; neither is an R3.2 defect. R3.3 Restore Wizard is NOT STARTED.
+- Store Setup configurability remains R4.1 and end-of-day backup remains R9; neither is an R3.2 defect. **Historical R3.2 closeout status on 2026-08-23:** R3.3 Restore Wizard was NOT STARTED; the current status is recorded in the newer R3.3 section above.
 
 ## R3.1 closeout note — 2026-08-09
 

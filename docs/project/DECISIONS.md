@@ -1,5 +1,13 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-032 — Disaster recovery requires a real database switch and layered business verification
+
+- **Status:** Accepted for R3.4 closeout on `2026-08-26`.
+- **Decision:** The recovery drill must use the production manual-backup service, a genuinely new database initialized through the normal path, production restore preparation, and the real external restore worker. Direct harness copying cannot establish restore success. Durable state must reach `Verified`, the parent/worker/restart lifecycle must be exact, and the restored WPF application must sign in successfully.
+- **Evidence decision:** Business recovery is established by exact Orders, stock and receipt comparisons through production repository reads plus independent read-only SQLite projections. UI evidence proves acknowledgement and authenticated Shell readiness; it is not substituted for database comparison. Final SQLite integrity, foreign-key, migration, sidecar and artifact-hash checks remain mandatory.
+- **Safety decision:** All destructive activity is confined to a validated `%TEMP%` boundary. Canonical metadata/hash and managed-root state are read-only invariants, cleanup targets are exact and reparse-validated, and only checkpoint-owned PIDs may be closed.
+- **Consequence:** R3.4 and R3 are closed. The R3.4 prerequisite blocker for pilot is removed, while the remaining roadmap still applies. R4.1 Store Setup is the exact next checkpoint. RST14 retains its explicit R3.3 combined-evidence classification.
+
 ## DEC-031 — Restore is a durable fail-closed worker workflow; RST14 closeout uses explicit combined-evidence governance
 
 - **Status:** Accepted for R3.3 closeout on `2026-08-25`.
