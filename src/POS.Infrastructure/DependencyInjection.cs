@@ -121,6 +121,12 @@ public static class DependencyInjection
         services.TryAddSingleton<AutomaticBackupRetentionService>();
         services.TryAddSingleton<IAutomaticBackupStatusSource, AutomaticBackupStatusSource>();
         services.TryAddSingleton<IAutomaticBackupService, AutomaticBackupService>();
+        services.TryAddSingleton<RestoreArtifactInspector>();
+        services.TryAddSingleton<IRestoreArtifactInspector>(serviceProvider =>
+            serviceProvider.GetRequiredService<RestoreArtifactInspector>());
+        services.TryAddSingleton<RestoreOperationStore>();
+        services.TryAddSingleton<IRestorePreparationService, RestorePreparationService>();
+        services.TryAddSingleton<RestoreWorkerService>();
 
         var receiptStoreSection =
             configuration.GetSection(

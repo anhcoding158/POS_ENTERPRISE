@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.IO;
 using POS.Application.Common;
 using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.Authorization;
@@ -13,6 +14,7 @@ using POS.Infrastructure.Payments;
 using POS.Infrastructure.Platform;
 using POS.Infrastructure.Persistence;
 using POS.Infrastructure.Logging;
+using POS.Infrastructure.Support;
 using POS.Wpf.Services;
 using POS.Wpf.ViewModels;
 using POS.Wpf.Views;
@@ -42,11 +44,22 @@ public partial class App :
             new(new WindowActivationService());
     private global::System.Windows.Window?
         _activationWindow;
+    private RestoreOperationPlan? _pendingRestoreOutcome;
 
     protected override async void OnStartup(
         global::System.Windows.StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        var workerParse = ParseRestoreWorkerArguments(e.Args);
+        if (workerParse.IsWorkerMode)
+        {
+            var exitCode = workerParse.Request is null
+                ? RestoreWorkerExitCodes.InvalidArguments
+                : await RunRestoreWorkerModeAsync(workerParse.Request);
+            Shutdown(exitCode);
+            return;
+        }
 
         /*
          * Ứng dụng chỉ tắt khi chính App gọi Shutdown.
@@ -123,6 +136,9 @@ public partial class App :
                 .StartActivationListener(
                     HandleActivationRequestAsync);
 
+            _pendingRestoreOutcome = await RecoverRestoreBeforeDatabaseStartupAsync(
+                builder.Configuration);
+
             ConfigureApplicationServices(
                 builder.Services,
                 builder.Configuration);
@@ -141,6 +157,10 @@ public partial class App :
             await InitializeDatabaseAsync(
                 _host.Services);
 
+            await PresentAndAcknowledgeRestoreOutcomeAsync(
+                builder.Configuration,
+                _pendingRestoreOutcome);
+
             _host.Services.GetRequiredService<AutomaticBackupHostedService>()
                 .MarkDatabaseInitialized();
 
@@ -155,6 +175,15 @@ public partial class App :
                 global::System.Windows.MessageBoxButton.OK,
                 global::System.Windows.MessageBoxImage.Warning);
 
+            Shutdown(-1);
+        }
+        catch (RestoreStartupBlockException exception)
+        {
+            global::System.Windows.MessageBox.Show(
+                exception.SafeMessage,
+                "POS Enterprise",
+                global::System.Windows.MessageBoxButton.OK,
+                global::System.Windows.MessageBoxImage.Error);
             Shutdown(-1);
         }
         catch (Exception exception)
@@ -252,6 +281,171 @@ public partial class App :
         }
 
         base.OnExit(e);
+    }
+
+    internal static RestoreWorkerArgumentParseResult ParseRestoreWorkerArguments(
+        IReadOnlyList<string> arguments)
+    {
+        ArgumentNullException.ThrowIfNull(arguments);
+        if (!arguments.Any(value => string.Equals(value, "--restore-worker", StringComparison.Ordinal)))
+            return new(false, null);
+
+        if (arguments.Count != 7 ||
+            !string.Equals(arguments[0], "--restore-worker", StringComparison.Ordinal))
+            return new(true, null);
+
+        var values = new Dictionary<string, string>(StringComparer.Ordinal);
+        for (var index = 1; index < arguments.Count; index += 2)
+        {
+            var name = arguments[index];
+            if (name is not ("--plan" or "--operation" or "--token") ||
+                index + 1 >= arguments.Count || values.ContainsKey(name) ||
+                string.IsNullOrWhiteSpace(arguments[index + 1]))
+                return new(true, null);
+            values.Add(name, arguments[index + 1]);
+        }
+
+        if (values.Count != 3) return new(true, null);
+        if (!values.TryGetValue("--plan", out var plan) ||
+            !values.TryGetValue("--operation", out var operationText) ||
+            !values.TryGetValue("--token", out var token))
+            return new(true, null);
+        if (!Path.IsPathFullyQualified(plan) || !Guid.TryParseExact(operationText, "D", out var operationId) ||
+            operationId == Guid.Empty || !IsValidRestoreToken(token))
+            return new(true, null);
+
+        return new(true, new(plan, operationId, token));
+    }
+
+    private static bool IsValidRestoreToken(string token)
+    {
+        if (token.Length != 44) return false;
+        try { return Convert.FromBase64String(token).Length == 32; }
+        catch (FormatException) { return false; }
+    }
+
+    private static async Task<int> RunRestoreWorkerModeAsync(RestoreWorkerRequest request)
+    {
+        try
+        {
+            var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
+            {
+                ContentRootPath = AppContext.BaseDirectory
+            });
+            ConfigureApplicationConfiguration(builder);
+            _ = ValidateDatabaseRuntime(builder);
+
+            var services = new ServiceCollection();
+            services.AddInfrastructure(builder.Configuration);
+            await using var provider = services.BuildServiceProvider();
+            var worker = provider.GetRequiredService<RestoreWorkerService>();
+            var result = await worker.ExecuteAsync(request.PlanPath, request.OperationId,
+                request.OneTimeToken, CancellationToken.None);
+
+            if (result.Status is RestoreExecutionStatus.Success or
+                RestoreExecutionStatus.RollbackSucceeded or RestoreExecutionStatus.RollbackFailed)
+            {
+                return TryRestartTrustedExecutable()
+                    ? RestoreWorkerExitCodes.RestartStarted
+                    : RestoreWorkerExitCodes.RestartFailed;
+            }
+
+            return result.Status == RestoreExecutionStatus.ParentExitTimeout
+                ? RestoreWorkerExitCodes.ParentExitTimeout
+                : RestoreWorkerExitCodes.ExecutionFailed;
+        }
+        catch
+        {
+            return RestoreWorkerExitCodes.ExecutionFailed;
+        }
+    }
+
+    internal static bool TryRestartTrustedExecutable()
+    {
+        try
+        {
+            var executable = Environment.ProcessPath;
+            if (string.IsNullOrWhiteSpace(executable) || !Path.IsPathFullyQualified(executable) ||
+                !File.Exists(executable)) return false;
+            var attributes = File.GetAttributes(executable);
+            if ((attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint)) != 0)
+                return false;
+            using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(executable)
+            {
+                UseShellExecute = false
+            });
+            return process is not null && process.Id > 0;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or
+            System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            return false;
+        }
+    }
+
+    private static async Task<RestoreOperationPlan?> RecoverRestoreBeforeDatabaseStartupAsync(
+        IConfiguration configuration)
+    {
+        var services = new ServiceCollection();
+        services.AddInfrastructure(configuration);
+        await using var provider = services.BuildServiceProvider();
+        var store = provider.GetRequiredService<RestoreOperationStore>();
+        var discovery = await store.DiscoverStartupOperationAsync(CancellationToken.None);
+        if (discovery.IsBlocked)
+            throw new RestoreStartupBlockException(
+                "Phát hiện nhiều thao tác khôi phục hoặc dữ liệu phục hồi không an toàn. Database chưa được mở. Hãy giữ nguyên các tệp phục hồi và liên hệ hỗ trợ.");
+        if (discovery.Operation is null) return null;
+
+        var plan = discovery.Operation.Plan;
+        if (plan.State == RestoreOperationState.RollbackFailed)
+            throw new RestoreStartupBlockException(
+                "Không thể khôi phục dữ liệu ban đầu. Không tiếp tục sử dụng phần mềm. Hãy giữ nguyên các tệp phục hồi và liên hệ hỗ trợ.");
+        if (plan.State is RestoreOperationState.Verified or RestoreOperationState.RolledBack)
+            return plan;
+
+        var token = await store.AuthorizeTrustedStartupRecoveryAsync(plan, CancellationToken.None);
+        var worker = provider.GetRequiredService<RestoreWorkerService>();
+        var result = await worker.ExecuteAsync(plan.OperationMarkerPath, plan.OperationId,
+            token, CancellationToken.None);
+        var finalDiscovery = await store.DiscoverStartupOperationAsync(CancellationToken.None);
+        var finalPlan = finalDiscovery.Operation?.Plan;
+        if (finalPlan?.State == RestoreOperationState.RollbackFailed ||
+            result.Status == RestoreExecutionStatus.RollbackFailed)
+            throw new RestoreStartupBlockException(
+                "Không thể khôi phục dữ liệu ban đầu. Không tiếp tục sử dụng phần mềm. Hãy giữ nguyên các tệp phục hồi và liên hệ hỗ trợ.");
+        if (finalPlan?.State is RestoreOperationState.Verified or RestoreOperationState.RolledBack)
+            return finalPlan;
+
+        throw new RestoreStartupBlockException(
+            "Không thể hoàn tất phục hồi thao tác khôi phục an toàn. Database chưa được mở. Hãy giữ nguyên các tệp phục hồi và liên hệ hỗ trợ.");
+    }
+
+    private static async Task PresentAndAcknowledgeRestoreOutcomeAsync(
+        IConfiguration configuration,
+        RestoreOperationPlan? outcome)
+    {
+        if (outcome is null) return;
+        var message = outcome.State switch
+        {
+            RestoreOperationState.Verified => "Khôi phục dữ liệu thành công.",
+            RestoreOperationState.RolledBack =>
+                "Khôi phục không thành công. Dữ liệu ban đầu đã được phục hồi an toàn.",
+            _ => null
+        };
+        if (message is null) return;
+
+        global::System.Windows.MessageBox.Show(
+            message,
+            "POS Enterprise",
+            global::System.Windows.MessageBoxButton.OK,
+            outcome.State == RestoreOperationState.Verified
+                ? global::System.Windows.MessageBoxImage.Information
+                : global::System.Windows.MessageBoxImage.Warning);
+
+        var services = new ServiceCollection();
+        services.AddInfrastructure(configuration);
+        await using var provider = services.BuildServiceProvider();
+        await RestoreOperationStore.AcknowledgeTerminalResultAsync(outcome, CancellationToken.None);
     }
 
     private static DatabaseIdentity
@@ -792,6 +986,10 @@ public partial class App :
             IManualBackupFolderPicker,
             ManualBackupFolderPicker>();
 
+        services.AddSingleton<
+            IRestoreArtifactFilePicker,
+            RestoreArtifactFilePicker>();
+
         services.AddScoped<
             ISupportBundleDialogService,
             SupportBundleDialogService>();
@@ -873,6 +1071,12 @@ public partial class App :
 
         services.AddTransient<
             ManualBackupWindow>();
+
+        services.AddTransient<
+            RestoreWizardViewModel>();
+
+        services.AddTransient<
+            RestoreWizardWindow>();
 
         services.AddScoped<
             StorageStatusViewModel>();
@@ -1244,4 +1448,27 @@ public partial class App :
         MainWindow =
             null;
     }
+}
+
+internal sealed record RestoreWorkerRequest(
+    string PlanPath,
+    Guid OperationId,
+    string OneTimeToken);
+
+internal sealed record RestoreWorkerArgumentParseResult(
+    bool IsWorkerMode,
+    RestoreWorkerRequest? Request);
+
+internal static class RestoreWorkerExitCodes
+{
+    internal const int RestartStarted = 0;
+    internal const int InvalidArguments = 21;
+    internal const int ExecutionFailed = 22;
+    internal const int ParentExitTimeout = 23;
+    internal const int RestartFailed = 24;
+}
+
+internal sealed class RestoreStartupBlockException(string safeMessage) : Exception
+{
+    internal string SafeMessage { get; } = safeMessage;
 }

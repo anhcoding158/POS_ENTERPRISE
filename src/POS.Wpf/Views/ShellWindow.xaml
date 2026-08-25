@@ -659,7 +659,21 @@
                         </Button>
 
                         <Button
+                            x:Name="RestoreDataNavigationButton"
+                            AutomationProperties.AutomationId="RestoreDataNavigationButton"
+                            Click="OnOpenRestoreWizardClick"
+                            Style="{StaticResource NavigationButtonStyle}"
+                            ToolTip="Khôi phục dữ liệu từ backup đã kiểm tra">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE777;" FontFamily="Segoe MDL2 Assets"
+                                           FontSize="17" Width="32" VerticalAlignment="Center" />
+                                <TextBlock Text="Khôi phục dữ liệu" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button
                             x:Name="StorageStatusNavigationButton"
+                            AutomationProperties.AutomationId="StorageStatusNavigationButton"
                             Click="OnOpenStorageStatusClick"
                             Style="{StaticResource NavigationButtonStyle}"
                             ToolTip="Xem trạng thái dung lượng database và ổ đĩa">

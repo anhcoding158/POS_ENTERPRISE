@@ -1,5 +1,12 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## R3.3 closeout note — 2026-08-25
+
+- No confirmed R3.3 production or automated-regression defect remains after restore-targeted `89/89`, backup/restore UI `89/89`, Release build `0/0`, full Release `1317/1317`, vulnerability, EF and official Quality Gate PASS.
+- RST14 is accepted by combined runtime, durable-state and automated contract evidence. Independent external UIA/PID-timeline evidence is incomplete because the Codex execution desktop did not expose a same-PID WPF root even though the parent process remained healthy for the full bounded readiness period. This limitation is explicit; it is not classified as a production Restore failure or as an external timeline PASS.
+- All temporary observer/UIA harness development is retired. R3.4 Disaster Recovery Drill is a mandatory pre-pilot blocker and must independently exercise the real backup/database-switch/restore/business-integrity flow plus worker shutdown, exactly-one restart and no-orphan behavior.
+- The WAL checkpoint/hash production defect and the OpenFileDialog automation defect were corrected with regression coverage. RST7 real regular-file reparse handling is verified. RST15 confirms the canonical database and managed roots remained unchanged throughout isolated acceptance.
+
 ## R3.2 closeout note — 2026-08-23
 
 - No confirmed R3.2 product defect remains after targeted `76/76`, official Quality Gate `1240/1240`, and ABM1–ABM6 acceptance. Runtime machine evidence used isolated `%TEMP%` resources; canonical database/root were unchanged.

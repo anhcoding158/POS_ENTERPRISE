@@ -53,6 +53,7 @@ public partial class ShellWindow :
     private bool _logoutInProgress;
     private bool _userCardConfigured;
     private bool _permissionsConfigured;
+    private bool _restoreWizardOpen;
 
     public ShellWindow(
         ShellViewModel viewModel,
@@ -138,6 +139,32 @@ public partial class ShellWindow :
         object sender,
         global::System.Windows.RoutedEventArgs e) =>
         _manualBackupDialogService.Show(this);
+
+    private void OnOpenRestoreWizardClick(
+        object sender,
+        global::System.Windows.RoutedEventArgs e)
+    {
+        if (_restoreWizardOpen ||
+            _currentUserService.Role != Role.Administrator)
+        {
+            return;
+        }
+
+        _restoreWizardOpen = true;
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var window = scope.ServiceProvider
+                .GetRequiredService<RestoreWizardWindow>();
+            window.Owner = this;
+            window.ShowDialog();
+        }
+        finally
+        {
+            _restoreWizardOpen = false;
+            if (IsVisible) Activate();
+        }
+    }
 
     private void OnOpenStorageStatusClick(
         object sender,
@@ -284,6 +311,18 @@ public partial class ShellWindow :
             canUseCheckout
                 ? "Mở quầy bán hàng"
                 : "Tài khoản hiện tại không có quyền thực hiện bán hàng.";
+
+        var canRestore =
+            _currentUserService.Role == Role.Administrator;
+
+        RestoreDataNavigationButton.IsEnabled =
+            canRestore;
+
+        RestoreDataNavigationButton.Visibility =
+            canRestore
+                ? global::System.Windows.Visibility.Visible
+                : global::System.Windows.Visibility.Collapsed;
+
         _permissionsConfigured =
             true;
     }

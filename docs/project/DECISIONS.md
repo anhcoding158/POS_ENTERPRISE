@@ -1,5 +1,13 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-031 — Restore is a durable fail-closed worker workflow; RST14 closeout uses explicit combined-evidence governance
+
+- **Status:** Accepted for R3.3 closeout on `2026-08-25`.
+- **Production decision:** Artifact inspection and preparation remain outside WPF, validate regular-file/reparse safety and SQLite compatibility, checkpoint committed WAL content, and persist a sanitized operation plan/state before shutdown. The early startup worker validates the exact parent PID and start time, waits for parent exit, performs replacement with rollback protection, restarts normal POS exactly once, and leaves terminal recovery/acknowledgement state durable.
+- **Acceptance decision:** RST1–RST13 remain PASS from retained isolated evidence. RST14 is accepted from combined real runtime, durable-state and automated contract evidence; the incomplete independent external UIA/PID timeline is recorded and is not relabelled as a machine-assisted PASS. Temporary observer/UIA harness development is retired.
+- **Safety decision:** RST15 is a cumulative read-only audit, not another restore. Acceptance may target only validated `%TEMP%` databases; canonical metadata/hash and managed-root absence must remain exact.
+- **Consequence:** R3.3 may close after all automated gates pass. R3.4 Disaster Recovery Drill is the exact next checkpoint and a mandatory blocker before pilot, including worker shutdown/restart/no-orphan lifecycle verification.
+
 ## DEC-030 — Automatic backup uses daily verified execution and protected GFS retention
 
 - **Status:** Accepted for R3.2 closeout on `2026-08-23`.

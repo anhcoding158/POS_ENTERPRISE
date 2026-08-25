@@ -1,5 +1,14 @@
 # ARCHITECTURE — POS ENTERPRISE RETAIL V1
 
+## R3.3 verified restore and rollback boundary
+
+- `POS.Application` owns typed restore inspection, preparation, plan and execution contracts. WPF owns only authenticated workflow/presentation and file-picker adaptation; it does not open SQLite or implement replacement logic.
+- `POS.Infrastructure` validates candidate identity, regular-file/reparse safety, SQLite integrity/schema compatibility and committed WAL content before accepting a candidate. It persists sanitized operation state and uses operation-owned paths beneath the active isolated/runtime database boundary.
+- Restore replacement runs in an early command mode before normal host/UI startup. The worker binds to the exact parent PID and start time, waits for parent exit, checkpoints and verifies the candidate, protects the installed database with pre-restore rollback state, replaces atomically, verifies the result, and starts normal POS exactly once. Failure transitions remain durable and rollback is fail-closed.
+- Startup recovery and the Restore Wizard consume typed durable state. Terminal results are acknowledged once; raw restore tokens, connection strings, command lines and database contents are not persisted in evidence or UI diagnostics.
+- The OpenFileDialog automation and WAL checkpoint/hash defects discovered during R3.3 have production regressions. RST7 proves regular-file reparse rejection with a real fixture. RST15 proves every destructive acceptance path stayed in `%TEMP%` and the canonical database/root remained unchanged.
+- RST14 closeout is combined-evidence acceptance, not a claim of a complete independent external UIA/PID timeline. R3.4 must independently drill real backup, switch, restore, login, business data/integrity and the full worker shutdown/restart/no-orphan lifecycle before pilot.
+
 ## R2.4D database runtime hardening boundary
 
 - The WPF composition root validates the effective database-path provider before safe logging registration, single-instance identity resolution, host start, `DbContext` construction, SQLite access or `DatabaseInitializer`. A non-JSON external provider is never silently accepted in normal or published runtime.

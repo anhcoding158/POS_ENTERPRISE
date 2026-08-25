@@ -1,5 +1,13 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## R3.3 Restore Wizard and Rollback — CLOSED — 2026-08-25
+
+- R3.3B/C/D/E implementation and verification are complete. Production now provides fail-closed artifact inspection, durable restore planning/state, a startup restore worker with replacement/rollback, and the authenticated WPF Restore Wizard/recovery flow.
+- RST1–RST13 are PASS using retained isolated runtime evidence. RST14 is **ACCEPTED — combined runtime, durable-state and automated contract evidence; independent external UIA/PID timeline incomplete**. The retired external harness limitation is recorded honestly and is not represented as a machine-assisted timeline PASS.
+- RST15 cumulative canonical-safety audit is PASS. Every destructive acceptance path was isolated beneath `%TEMP%`; the canonical database remained `937984` bytes, timestamp `2026-08-09T14:26:03.9619805Z`, SHA-256 `C1F4BCCF022F896DD0948F2E25AFABE831DF3EF9CE1B289E9D933F9A33BDDBED`, with canonical automatic/restore/pre-restore roots and SQLite sidecars absent.
+- Final verification is PASS: restore targeted `89/89`, backup/restore UI `89/89`, Release rebuild `0` warnings/`0` errors, full Release `1317/1317` with `0` failed/`0` skipped, vulnerability scan PASS, EF pending-model check PASS, and official Quality Gate PASS without `-SkipEfCheck`.
+- The WAL checkpoint/hash defect is repaired and regression-covered. RST7 uses a real regular-file reparse fixture. R3.4 Disaster Recovery Drill is the exact next checkpoint and remains mandatory before pilot; it must revalidate backup, database switch, restore, login, orders, stock, receipts, integrity, and worker restart/no-orphan lifecycle.
+
 ## R3.2 Automatic Backup and Retention — CLOSED — 2026-08-23
 
 - R3.2 is complete locally: 24-hour daily policy, verified automatic artifacts, shared singleton coordination, and deterministic GFS retention of 7 latest, 4 UTC ISO-week and 3 UTC monthly snapshots. The 2 GiB quota is secondary and returns `SuccessWithRetentionWarning` rather than deleting required GFS snapshots.

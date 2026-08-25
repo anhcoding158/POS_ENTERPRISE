@@ -1,5 +1,11 @@
 # MASTER ROADMAP — POS ENTERPRISE RETAIL V1
 
+## Latest checkpoint position — 2026-08-25
+
+- R3.3 Restore Wizard and Rollback is CLOSED after R3.3B/C/D/E implementation, RST1–RST13 PASS, RST14 combined-evidence ACCEPTED with its independent external UIA/PID-timeline limitation recorded, and RST15 canonical-safety PASS.
+- Final verification is PASS: restore-targeted `89/89`, backup/restore UI `89/89`, Release build `0` warnings/errors, full and official Quality Gate `1317/1317`, vulnerability PASS and EF pending-model PASS.
+- R3.4 Disaster Recovery Drill is the exact next checkpoint and is NOT STARTED. Pilot remains BLOCKED until R3.4 PASS; the drill must cover real backup, database switch, restore, login, orders, stock, receipts, integrity, worker shutdown, exactly-one restart and no orphan process.
+
 ## Latest checkpoint position — 2026-08-23
 
 - R2.4 is Closed / Committed / Pushed at `ff91ab515507666a3fb3b01fc28e7ad0f6241d59`.

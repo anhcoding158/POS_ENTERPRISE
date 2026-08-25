@@ -1,5 +1,14 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R3.3 Restore Wizard and Rollback closeout baseline — 2026-08-25
+
+- Acceptance ledger: RST1–RST13 PASS from retained immutable isolated evidence; RST14 **ACCEPTED by combined evidence** with the independent external UIA/PID-timeline limitation explicitly retained; RST15 cumulative canonical-safety audit PASS. No RST scenario used the canonical database.
+- RST14 combined basis includes the RST1 real isolated end-to-end restore (Verified state, installed candidate hash, normal restart, terminal result, acknowledge once and no orphan), automated production contracts for parent PID/start-time, timeout, replacement/rollback/recovery and exactly-one restart, and a real isolated parent launch observed by the native Toolhelp timeline. It does not claim a complete external worker UIA/PID timeline.
+- Fresh restore-targeted regressions: `89/89` PASS, `0` failed, `0` skipped. Fresh backup/restore UI regressions: `89/89` PASS, `0` failed, `0` skipped.
+- Release rebuild: PASS, `0` warnings, `0` errors. Full Release suite: `1317/1317` PASS, `0` failed, `0` skipped. The independently discovered WAL checkpoint/hash regression is included in this baseline.
+- Independent vulnerability scan PASS for all `5/5` projects; local tool restore PASS (`dotnet-ef` `10.0.10`); EF pending-model check PASS; Git checks PASS. Official `scripts/Test-QualityGate.ps1` PASS without `-SkipEfCheck`, including Debug build `0/0` and repeated `1317/1317` tests.
+- Canonical safety after acceptance: database length `937984`, timestamp `2026-08-09T14:26:03.9619805Z`, SHA-256 `C1F4BCCF022F896DD0948F2E25AFABE831DF3EF9CE1B289E9D933F9A33BDDBED`; automatic/restore/pre-restore roots and canonical WAL/SHM/journal artifacts absent; POS/worker/test processes zero.
+
 ## R3.2 Automatic Backup and Retention closeout baseline — 2026-08-23
 
 - Targeted R3.2 suite: `76/76` PASS, `0` failed, `0` skipped. Official outside-sandbox Quality Gate: `1240/1240` PASS, `0` failed, `0` skipped; restore/build, vulnerability scan, local tool restore, EF pending-model and Git checks PASS without `-SkipEfCheck`.

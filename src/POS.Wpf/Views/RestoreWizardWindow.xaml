@@ -1,0 +1,120 @@
+<Window x:Class="POS.Wpf.Views.RestoreWizardWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Khôi phục dữ liệu"
+        Width="780" Height="720" MinWidth="680" MinHeight="620"
+        WindowStartupLocation="CenterOwner" ResizeMode="CanResize"
+        ShowInTaskbar="False" Background="{StaticResource AppBackgroundBrush}">
+    <Grid Margin="28" KeyboardNavigation.TabNavigation="Cycle">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel>
+            <TextBlock Text="Khôi phục dữ liệu" Style="{StaticResource PageTitleTextStyle}" />
+            <TextBlock Margin="0,8,0,0" TextWrapping="Wrap" FontSize="13"
+                       Foreground="{StaticResource TextSecondaryBrush}"
+                       Text="Kiểm tra backup, tạo bản sao an toàn và chuyển thao tác thay thế database cho tiến trình độc lập." />
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" Margin="0,20,0,18" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <Border Padding="18" Background="{StaticResource SurfaceBrush}"
+                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="12">
+                    <StackPanel>
+                        <TextBlock Text="1. Chọn tệp backup" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextPrimaryBrush}" />
+                        <Grid Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBlock AutomationProperties.AutomationId="RestoreArtifactFileName"
+                                       Text="{Binding SafeFileName, TargetNullValue=Chưa chọn tệp .db}"
+                                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                       Foreground="{StaticResource TextSecondaryBrush}" />
+                            <Button Grid.Column="1" Margin="12,0,0,0" MinWidth="135"
+                                    AutomationProperties.AutomationId="RestoreArtifactPickerButton"
+                                    Content="Chọn tệp .db" Command="{Binding PickArtifactCommand}"
+                                    Style="{StaticResource SecondaryButtonStyle}" KeyboardNavigation.TabIndex="1" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border Margin="0,14,0,0" Padding="18" Background="{StaticResource SurfaceBrush}"
+                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="12">
+                    <StackPanel>
+                        <TextBlock Text="2. Kết quả kiểm tra" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextPrimaryBrush}" />
+                        <TextBlock Margin="0,10,0,0" AutomationProperties.AutomationId="RestoreInspectionStatus"
+                                   Text="{Binding StatusMessage}" TextWrapping="Wrap"
+                                   Foreground="{StaticResource TextPrimaryBrush}" />
+                        <WrapPanel Margin="0,10,0,0">
+                            <Border Margin="0,0,8,6" Padding="10,5" Background="{StaticResource SurfaceMutedBrush}" CornerRadius="8">
+                                <TextBlock AutomationProperties.AutomationId="RestoreCompatibilityStatus"
+                                           Text="{Binding CompatibilityText, TargetNullValue=Chưa xác định tương thích}" />
+                            </Border>
+                            <Border Margin="0,0,8,6" Padding="10,5" Background="{StaticResource SurfaceMutedBrush}" CornerRadius="8">
+                                <TextBlock AutomationProperties.AutomationId="RestoreProvenanceStatus"
+                                           Text="{Binding ProvenanceText, TargetNullValue=Chưa xác định nguồn gốc}" />
+                            </Border>
+                        </WrapPanel>
+                        <TextBlock Margin="0,5,0,0" Text="{Binding SizeText, StringFormat=Dung lượng: {0}}"
+                                   Foreground="{StaticResource TextSecondaryBrush}" />
+                        <TextBlock Margin="0,4,0,0" Text="{Binding Sha256, StringFormat=SHA-256: {0}}"
+                                   TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}" />
+                        <TextBlock Margin="0,9,0,0" Text="{Binding WarningText}" TextWrapping="Wrap"
+                                   FontWeight="SemiBold" Foreground="{StaticResource GoldBrush}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Margin="0,14,0,0" Padding="18" Background="#22B91C1C"
+                        BorderBrush="{StaticResource GoldBrush}" BorderThickness="1" CornerRadius="12">
+                    <StackPanel>
+                        <TextBlock Text="Cảnh báo tác động" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextPrimaryBrush}" />
+                        <TextBlock Margin="0,9,0,0" TextWrapping="Wrap" LineHeight="21"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   Text="Dữ liệu hiện tại sẽ được thay thế. Safety backup được tạo trước khi thay thế. Phần mềm sẽ đóng và tự mở lại. Không được tắt máy trong lúc restore." />
+                        <CheckBox Margin="0,14,0,0" AutomationProperties.AutomationId="RestoreConfirmationCheckBox"
+                                  IsChecked="{Binding ConfirmationAccepted, Mode=TwoWay}"
+                                  IsEnabled="{Binding CanClose}"
+                                  Content="Tôi hiểu dữ liệu hiện tại sẽ bị thay thế và xác nhận khôi phục."
+                                  Foreground="{StaticResource TextPrimaryBrush}" FontWeight="SemiBold"
+                                  KeyboardNavigation.TabIndex="2" />
+                    </StackPanel>
+                </Border>
+
+                <ProgressBar Margin="0,16,0,0" Height="8" IsIndeterminate="True"
+                             AutomationProperties.AutomationId="RestoreProgressIndicator"
+                             Visibility="{Binding IsProgressVisible, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                <TextBlock Margin="0,12,0,0" AutomationProperties.AutomationId="RestoreTerminalStatus"
+                           Text="{Binding StatusMessage}" TextWrapping="Wrap" FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimaryBrush}" />
+            </StackPanel>
+        </ScrollViewer>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="1" Margin="0,0,10,0" MinWidth="100"
+                    AutomationProperties.AutomationId="RestoreBackButton" Content="Quay lại"
+                    Command="{Binding BackCommand}" Style="{StaticResource SecondaryButtonStyle}"
+                    KeyboardNavigation.TabIndex="3" />
+            <Button Grid.Column="2" Margin="0,0,10,0" MinWidth="100"
+                    AutomationProperties.AutomationId="RestoreCancelButton" Content="Hủy"
+                    Click="OnCancelClick" IsEnabled="{Binding CanCancel}"
+                    Style="{StaticResource SecondaryButtonStyle}" KeyboardNavigation.TabIndex="4" />
+            <Button Grid.Column="3" Margin="0,0,10,0" MinWidth="135"
+                    AutomationProperties.AutomationId="RestoreRetryWorkerButton" Content="Thử chạy lại"
+                    Command="{Binding RetryWorkerCommand}" Style="{StaticResource SecondaryButtonStyle}"
+                    KeyboardNavigation.TabIndex="5" />
+            <Button Grid.Column="4" MinWidth="150"
+                    AutomationProperties.AutomationId="RestoreContinueButton"
+                    Content="{Binding PrimaryButtonText}" Command="{Binding ContinueCommand}"
+                    IsDefault="True" Style="{StaticResource PrimaryButtonStyle}"
+                    KeyboardNavigation.TabIndex="6" />
+        </Grid>
+    </Grid>
+</Window>

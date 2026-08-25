@@ -13,6 +13,12 @@ public sealed record SqliteBackupResult(
     string? BackupFilePath,
     string Message);
 
+internal enum SqliteBackupArtifactKind
+{
+    PreMigration,
+    PreRestore
+}
+
 /// <summary>
 /// Kiểm tra toàn vẹn SQLite và tạo bản backup đã được xác minh.
 /// </summary>
@@ -132,6 +138,19 @@ public sealed class SqliteDatabaseSafetyService
         string backupDirectoryPath,
         DateTimeOffset utcNow)
     {
+        return CreateVerifiedBackup(
+            sourceDatabaseFilePath,
+            backupDirectoryPath,
+            utcNow,
+            SqliteBackupArtifactKind.PreMigration);
+    }
+
+    internal static SqliteBackupResult CreateVerifiedBackup(
+        string sourceDatabaseFilePath,
+        string backupDirectoryPath,
+        DateTimeOffset utcNow,
+        SqliteBackupArtifactKind artifactKind)
+    {
         ValidatePathArgument(
             sourceDatabaseFilePath,
             nameof(sourceDatabaseFilePath));
@@ -175,8 +194,15 @@ public sealed class SqliteDatabaseSafetyService
             var normalizedUtcNow =
                 utcNow.ToUniversalTime();
 
+            var prefix = artifactKind switch
+            {
+                SqliteBackupArtifactKind.PreMigration => "pos-enterprise-pre-migration-",
+                SqliteBackupArtifactKind.PreRestore => "pos-enterprise-pre-restore-",
+                _ => throw new ArgumentOutOfRangeException(nameof(artifactKind))
+            };
+
             var baseFileName =
-                "pos-enterprise-pre-migration-" +
+                prefix +
                 normalizedUtcNow.ToString(
                     "yyyyMMdd-HHmmssfff",
                     CultureInfo.InvariantCulture) +

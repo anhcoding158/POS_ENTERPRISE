@@ -1,5 +1,13 @@
 # BUSINESS INVARIANTS — POS ENTERPRISE RETAIL V1
 
+## INV-RESTORE-001 — Restore replacement is verified, parent-bound, rollback-protected and isolated during acceptance
+
+- **Statement:** A restore candidate may replace an active database only after regular-file/reparse, SQLite integrity/schema and committed-content verification; the worker must bind to the exact parent PID/start time, wait for parent exit, preserve rollback state, verify the installed result and restart normal POS exactly once.
+- **Failure/recovery:** Invalid or unsafe candidates fail before replacement. Replacement or verification failure leaves durable typed state and attempts only operation-owned rollback; it must not create duplicate restart or orphan processes. Terminal results are acknowledged once.
+- **Acceptance safety:** Destructive acceptance uses only validated `%TEMP%` database boundaries. The canonical production database and automatic/restore/pre-restore roots are read-only audit subjects and must remain unchanged, including WAL/SHM/journal/staging/plan markers.
+- **Evidence:** RST1–RST13 retained PASS; RST14 accepted by combined real runtime, durable-state and automated contract evidence with the incomplete independent external UIA/PID timeline explicitly disclosed; RST15 cumulative canonical audit PASS; restore-targeted `89/89`, UI `89/89`, full Release and official Quality Gate `1317/1317` PASS.
+- **Status/revisit:** Enforced and accepted for R3.3 closeout. R3.4 Disaster Recovery Drill must revalidate real backup/switch/restore, login, orders, stock, receipts, integrity, exact restart and no-orphan behavior before pilot.
+
 ## INV-RUNTIME-001 — Database runtime selection is explicit and fail-closed
 
 - **Statement:** Normal development uses the repository canonical database; an external database override is accepted only for an explicitly declared isolated test child with a non-canonical absolute path; published runtime uses `%LocalAppData%\\POS Enterprise` and blocks external overrides before any database access.
