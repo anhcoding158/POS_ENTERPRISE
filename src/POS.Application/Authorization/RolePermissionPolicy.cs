@@ -94,11 +94,53 @@ public static class RolePermissionPolicy
             SystemCapability.ManageStoreSetup =>
                 "cấu hình cửa hàng",
 
+            SystemCapability.ViewEmployees =>
+                "xem nhân viên",
+
+            SystemCapability.ManageEmployees =>
+                "quản lý nhân viên",
+
+            SystemCapability.ManageAccounts =>
+                "quản lý tài khoản",
+
+            SystemCapability.ResetPasswords =>
+                "đặt lại mật khẩu",
+
+            SystemCapability.LockUnlockAccounts =>
+                "khóa hoặc mở khóa tài khoản",
+
+            SystemCapability.AssignRolesPermissions =>
+                "gán vai trò và quyền",
+
+            SystemCapability.ViewSecurityStatus =>
+                "xem trạng thái bảo mật",
+
             _ =>
                 throw new ArgumentOutOfRangeException(
                     nameof(permission),
                     permission,
                     "Quyền hệ thống không hợp lệ.")
+        };
+    }
+
+    public static IReadOnlyList<SystemCapability> GetEffectivePermissions(Role role)
+    {
+        ValidateRole(role);
+        return Enum.GetValues<SystemCapability>()
+            .Where(permission => HasPermission(role, permission))
+            .ToArray();
+    }
+
+    public static string GetRoleDisplayName(Role role)
+    {
+        ValidateRole(role);
+        return role switch
+        {
+            Role.Administrator => "Quản trị viên",
+            Role.Manager => "Quản lý",
+            Role.Cashier => "Thu ngân",
+            Role.InventoryStaff => "Nhân viên kho",
+            _ => "Không xác định"
         };
     }
 

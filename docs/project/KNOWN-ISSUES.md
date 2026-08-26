@@ -1,5 +1,12 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## R4.2 Employee and Account Management closeout — 2026-08-26
+
+- R4.2 uses predefined roles and a centralized typed permission catalog. Effective permissions are displayed read-only in the Employee UI; dedicated role/permission administration remains the planned R4.3 checkpoint and is not claimed here.
+- No employee hard-delete command is exposed. Existing User IDs and order/receipt/audit references are retained; deactivation is the supported lifecycle operation. Physical authentication hardware is outside this module.
+- The real isolated Release process reached `ShellWindowReady`, but this execution desktop exposed no Win32 top-level window handle to external UIA. The closeout therefore uses production-service, persistence, exact-PID and compiled XAML/AutomationId evidence and does not claim visual interaction that was not observed.
+- R4.1 visual polish remains deferred by scope. No Store Setup redesign was made during R4.2.
+
 ## R4.1 isolated-startup hotfix closeout — 2026-08-26
 
 - The post-closeout manual smoke blocker is repaired. The failure was not a corrupt Store Setup file, unsafe path, printer enumeration or readiness error; it was an incomplete pre-startup DI composition without logging services.

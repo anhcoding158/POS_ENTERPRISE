@@ -398,20 +398,63 @@ public sealed class ReceiptSnapshotPersistenceTests
     {
         var category = new Category(
             $"Danh mục {Guid.NewGuid():N}", 1, UtcNow);
-        var user = new User(
-            $"receipt.{Guid.NewGuid():N}",
-            "test-password-hash",
-            "Thu ngân Việt",
-            Role.Cashier,
-            UtcNow);
-        context.AddRange(category, user);
-        await context.SaveChangesAsync();
+        int userId;
+        if (await HasColumnAsync(context, "Users", "ForcePasswordChange"))
+        {
+            var user = new User(
+                $"receipt.{Guid.NewGuid():N}",
+                "fixture",
+                "Thu ngân Việt",
+                Role.Cashier,
+                UtcNow);
+            context.AddRange(category, user);
+            await context.SaveChangesAsync();
+            userId = user.Id;
+        }
+        else
+        {
+            userId = 1;
+            await InsertLegacyUserAsync((SqliteConnection)context.Database.GetDbConnection(), userId, UtcNow);
+            context.Add(category);
+            await context.SaveChangesAsync();
+        }
         var product = new Product(
             category.Id, "SP-RECEIPT", "Cà phê sữa đá", "Ly",
             10_000, 30_000, 10, 2, true, false, UtcNow);
         context.Products.Add(product);
         await context.SaveChangesAsync();
-        return new SeedData(user.Id, product.Id);
+        return new SeedData(userId, product.Id);
+    }
+
+    private static async Task<bool> HasColumnAsync(PosDbContext context, string table, string column)
+    {
+        await using var command = context.Database.GetDbConnection().CreateCommand();
+        command.CommandText = $"PRAGMA table_info('{table}');";
+        await using var reader = await command.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            if (string.Equals(reader.GetString(1), column, StringComparison.Ordinal))
+                return true;
+        }
+        return false;
+    }
+
+    private static async Task InsertLegacyUserAsync(SqliteConnection connection, int userId, DateTimeOffset now)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText =
+            """
+            INSERT INTO "Users" (
+                "Id", "Username", "NormalizedUsername", "PasswordHash", "FullName",
+                "Role", "IsActive", "FailedLoginAttempts", "LockedUntilUtc", "LastLoginAtUtc",
+                "ConcurrencyToken", "CreatedAtUtc", "UpdatedAtUtc")
+            VALUES ($id, 'receipt.legacy', 'RECEIPT.LEGACY', 'fixture', 'Thu ngân Việt',
+                3, 1, 0, NULL, NULL, $token, $created, $created);
+            """;
+        command.Parameters.AddWithValue("$id", userId);
+        command.Parameters.AddWithValue("$token", Guid.NewGuid().ToString());
+        command.Parameters.AddWithValue("$created", now.ToUnixTimeMilliseconds());
+        await command.ExecuteNonQueryAsync();
     }
 
     private static IConfiguration CreateConfiguration() =>

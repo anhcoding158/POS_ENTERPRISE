@@ -457,6 +457,7 @@ public sealed class
             {
                 typeof(Category),
                 typeof(CheckoutRequestJournal),
+                typeof(Employee),
                 typeof(HeldSale),
                 typeof(HeldSaleLine),
                 typeof(InventoryMovement),
@@ -471,6 +472,7 @@ public sealed class
                 typeof(PaymentIntent),
                 typeof(PaymentIntentManualResolution),
                 typeof(Product),
+                typeof(SecurityAuditEvent),
                 typeof(User)
             }
             .OrderBy(

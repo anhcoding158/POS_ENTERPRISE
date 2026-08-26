@@ -41,14 +41,15 @@ public sealed class CheckoutMigrationTests
                 migrations[heldSaleMigrationIndex - 1]);
 
             var category = new Category("Migration preservation", 1, Now);
-            var user = new User($"migration.{Guid.NewGuid():N}", "hash", "Thu ngân", Role.Cashier, Now);
-            oldSchema.AddRange(category, user);
+            const int userId = 1;
+            await InsertLegacyUserAsync(connection, userId, $"migration.{Guid.NewGuid():N}", "Thu ngân", Role.Cashier, Now);
+            oldSchema.Add(category);
             await oldSchema.SaveChangesAsync();
             var product = new Product(category.Id, "MIG-01", "Sản phẩm cũ", "Ly",
                 10_000, 30_000, 8, 1, true, false, Now);
             oldSchema.Products.Add(product);
             await oldSchema.SaveChangesAsync();
-            var order = new Order("HD-MIGRATION", user.Id, Now);
+            var order = new Order("HD-MIGRATION", userId, Now);
             var item = order.AddItem(product.Id, product.Code, product.Name, product.UnitName,
                 1, product.CostPrice, product.SalePrice, Now);
             order.PrepareForPayment(Now);
@@ -57,7 +58,7 @@ public sealed class CheckoutMigrationTests
             oldSchema.Orders.Add(order);
             oldSchema.InventoryMovements.Add(new InventoryMovement(
                 product.Id, InventoryMovementType.Sale, -1, 8, 7,
-                "Bán hàng migration", Now, "ORDER", order.OrderCode, user.Id));
+                "Bán hàng migration", Now, "ORDER", order.OrderCode, userId));
             product.DecreaseStock(1, Now);
             await oldSchema.SaveChangesAsync();
             oldSchema.OrderReceiptSnapshots.Add(new OrderReceiptSnapshot(
@@ -68,7 +69,7 @@ public sealed class CheckoutMigrationTests
             oldSchema.OrderReturns.Add(new OrderReturn(
                 Guid.NewGuid(),
                 "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF",
-                order.Id, user.Id, Now.AddMinutes(1), "Khách trả",
+                order.Id, userId, Now.AddMinutes(1), "Khách trả",
                 PaymentMethod.Cash, null, [returnItem]));
             var balance = new OrderReturnBalance(item.Id);
             balance.Register(1, item.NetAmount, item.Quantity, item.NetAmount);
@@ -76,11 +77,11 @@ public sealed class CheckoutMigrationTests
             var preparedJournal = new CheckoutRequestJournal(
                 Guid.NewGuid(), new string('A', 64), "{\"version\":1}",
                 new string('B', 64), "{\"total\":30000,\"lines\":[],\"paymentMethod\":1}",
-                user.Id, Now.AddMinutes(2));
+                userId, Now.AddMinutes(2));
             var completedJournal = new CheckoutRequestJournal(
                 Guid.NewGuid(), new string('C', 64), "{\"version\":1}",
                 new string('D', 64), "{\"total\":30000,\"lines\":[],\"paymentMethod\":1}",
-                user.Id, Now.AddMinutes(3));
+                userId, Now.AddMinutes(3));
             completedJournal.Complete(order.Id, Now.AddMinutes(4));
             oldSchema.CheckoutRequestJournals.AddRange(preparedJournal, completedJournal);
             await oldSchema.SaveChangesAsync();
@@ -168,5 +169,33 @@ public sealed class CheckoutMigrationTests
             balances = await context.OrderReturnBalances.CountAsync(),
             journals
         });
+    }
+
+    private static async Task InsertLegacyUserAsync(
+        SqliteConnection connection,
+        int userId,
+        string username,
+        string fullName,
+        Role role,
+        DateTimeOffset now)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText =
+            """
+            INSERT INTO "Users" (
+                "Id", "Username", "NormalizedUsername", "PasswordHash", "FullName",
+                "Role", "IsActive", "FailedLoginAttempts", "LockedUntilUtc", "LastLoginAtUtc",
+                "ConcurrencyToken", "CreatedAtUtc", "UpdatedAtUtc")
+            VALUES ($id, $username, $normalized, 'hash', $fullName,
+                $role, 1, 0, NULL, NULL, $token, $created, $created);
+            """;
+        command.Parameters.AddWithValue("$id", userId);
+        command.Parameters.AddWithValue("$username", username);
+        command.Parameters.AddWithValue("$normalized", username.ToUpperInvariant());
+        command.Parameters.AddWithValue("$fullName", fullName);
+        command.Parameters.AddWithValue("$role", (int)role);
+        command.Parameters.AddWithValue("$token", Guid.NewGuid().ToString());
+        command.Parameters.AddWithValue("$created", now.ToUnixTimeMilliseconds());
+        await command.ExecuteNonQueryAsync();
     }
 }

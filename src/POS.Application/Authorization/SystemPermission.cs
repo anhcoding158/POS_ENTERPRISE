@@ -28,5 +28,19 @@ public enum SystemCapability
 
     ApplySalesDiscount = 10,
 
-    ManageStoreSetup = 11
+    ManageStoreSetup = 11,
+
+    ViewEmployees = 12,
+
+    ManageEmployees = 13,
+
+    ManageAccounts = 14,
+
+    ResetPasswords = 15,
+
+    LockUnlockAccounts = 16,
+
+    AssignRolesPermissions = 17,
+
+    ViewSecurityStatus = 18
 }

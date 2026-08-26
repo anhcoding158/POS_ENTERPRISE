@@ -49,6 +49,8 @@ public partial class ShellWindow :
 
     private readonly IStoreSettingsDialogService? _storeSettingsDialogService;
 
+    private readonly IEmployeeManagementDialogService? _employeeManagementDialogService;
+
     private global::System.Windows.Controls.Button?
         _logoutButton;
 
@@ -67,7 +69,8 @@ public partial class ShellWindow :
         StorageStatusViewModel storageStatusViewModel,
         IStorageStatusDialogService storageStatusDialogService,
         AutomaticBackupStatusViewModel automaticBackupStatusViewModel,
-        IStoreSettingsDialogService? storeSettingsDialogService = null)
+        IStoreSettingsDialogService? storeSettingsDialogService = null,
+        IEmployeeManagementDialogService? employeeManagementDialogService = null)
     {
         _viewModel =
             viewModel ??
@@ -106,6 +109,7 @@ public partial class ShellWindow :
         _automaticBackupStatusViewModel = automaticBackupStatusViewModel ??
             throw new ArgumentNullException(nameof(automaticBackupStatusViewModel));
         _storeSettingsDialogService = storeSettingsDialogService;
+        _employeeManagementDialogService = employeeManagementDialogService;
 
         if (!_currentUserService.IsAuthenticated)
         {
@@ -153,6 +157,13 @@ public partial class ShellWindow :
             return;
         }
         _storeSettingsDialogService.Show(this);
+    }
+
+    private void OnOpenEmployeeManagementClick(
+        object sender,
+        global::System.Windows.RoutedEventArgs e)
+    {
+        _employeeManagementDialogService?.Show(this);
     }
 
     private void OnOpenRestoreWizardClick(
@@ -340,6 +351,12 @@ public partial class ShellWindow :
 
         StoreSettingsNavigationButton.IsEnabled = canRestore;
         StoreSettingsNavigationButton.Visibility = canRestore
+            ? global::System.Windows.Visibility.Visible
+            : global::System.Windows.Visibility.Collapsed;
+
+        var canViewEmployees = _permissionService.HasPermission(SystemCapability.ViewEmployees);
+        EmployeeManagementNavigationButton.IsEnabled = canViewEmployees;
+        EmployeeManagementNavigationButton.Visibility = canViewEmployees
             ? global::System.Windows.Visibility.Visible
             : global::System.Windows.Visibility.Collapsed;
 

@@ -1,5 +1,15 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## R4.2 Employee and Account Management — CLOSED / COMMITTED / PUSHED — 2026-08-26
+
+- R4.2 adds a separate `Employee` identity record with an optional linked `User` login account, typed lifecycle/account status, centralized role capabilities, password policy, failed-login/lock state, force-password-change flow, last-login reporting, optimistic concurrency and sanitized security audit events.
+- Existing User IDs and business history remain intact. The additive EF migration backfills existing Users into deterministic Employee records, uses restrict/no-cascade employee-account behavior, and was verified by an isolated upgrade test.
+- Application services enforce View/Manage Employees, Manage Accounts, Reset Passwords, Lock/Unlock and Assign Roles capabilities before mutation. The final usable Administrator is protected transactionally; deactivation disables the linked account and reactivation does not silently unlock it.
+- WPF adds one Administrator/permission-controlled Employee and Account window with search/filter/paging, create/edit/link-account, reset/lock/deactivate/reactivate/role actions, Vietnamese status text, stable AutomationIds, dirty-state and unsaved-close guard. Forced password change is presented before Shell access.
+- R4.2 focused staff/migration/UI-contract coverage is `9/9` PASS; Debug full suite is `1336/1336` PASS; Release build and official Quality Gate are PASS with 0 warnings/errors, 0 failed/skipped, vulnerability scan PASS and EF pending-model PASS.
+- Isolated Release startup reached `ShellWindowReady` under the exact launcher and all effective database/settings/logo/backup paths were scenario-owned. The execution desktop exposed no inspectable Win32 top-level window, so no unsupported visual UIA claim is made; production-service, persisted-state and source contract evidence remain recorded.
+- R4.1 visual polish remains explicitly deferred. Exact next checkpoint: **R4.3 Role and Permission Management — READY TO START**. R4.3 has not started.
+
 ## R4.1 isolated-startup hotfix — CLOSED / COMMITTED / PUSHED — 2026-08-26
 
 - Manual isolated smoke exposed a real startup blocker after R4.1. The exact chain was `AggregateException` from `ValidateOnBuild`, caused by missing `ILoggerFactory`/`ILogger<T>` while constructing R4.1 logger-dependent Store Setup, receipt, VietQR and database-initializer services.

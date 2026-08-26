@@ -122,6 +122,9 @@ public sealed class UserConfiguration :
                     user.IsActive)
             .IsRequired();
 
+        builder.Property(user => user.IsManuallyLocked).IsRequired();
+        builder.Property(user => user.ForcePasswordChange).IsRequired();
+
         builder.Property(
                 user =>
                     user.FailedLoginAttempts)

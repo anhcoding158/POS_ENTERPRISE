@@ -132,14 +132,15 @@ public sealed class PaymentIntentMigrationTests
             previousMigration = migrations[index - 1];
             await old.GetService<IMigrator>().MigrateAsync(previousMigration);
             var category = new Category("Payment migration", 1, now);
-            var user = new User($"paymig.{Guid.NewGuid():N}", "hash", "Cashier", Role.Cashier, now);
-            old.AddRange(category, user);
+            const int userId = 1;
+            await InsertLegacyUserAsync(old.Database.GetDbConnection(), userId, $"paymig.{Guid.NewGuid():N}", "Cashier", Role.Cashier, now);
+            old.Add(category);
             await old.SaveChangesAsync();
             var product = new Product(category.Id, "PAY-MIG", "Product", "Unit",
                 10_000, 30_000, 9, 1, true, false, now);
             old.Products.Add(product);
             await old.SaveChangesAsync();
-            var order = new Order("HD-PAY-MIG", user.Id, now);
+            var order = new Order("HD-PAY-MIG", userId, now);
             order.AddItem(product.Id, product.Code, product.Name, product.UnitName,
                 1, product.CostPrice, product.SalePrice, now);
             order.PrepareForPayment(now);
@@ -219,14 +220,8 @@ public sealed class PaymentIntentMigrationTests
         MigrationFixture fixture)
     {
         var now = new DateTimeOffset(2026, 7, 29, 3, 0, 0, TimeSpan.Zero);
-        var user = new User(
-            $"legacy.pay.{Guid.NewGuid():N}",
-            "hash",
-            "Legacy payment",
-            Role.Cashier,
-            now);
-        fixture.Context.Users.Add(user);
-        await fixture.Context.SaveChangesAsync();
+        const int userId = 1;
+        await InsertLegacyUserAsync(fixture.Connection, userId, $"legacy.pay.{Guid.NewGuid():N}", "Legacy payment", Role.Cashier, now);
 
         await using var command = fixture.Connection.CreateCommand();
         command.CommandText =
@@ -252,11 +247,47 @@ public sealed class PaymentIntentMigrationTests
             """;
         command.Parameters.AddWithValue("$requestId", Guid.NewGuid());
         command.Parameters.AddWithValue("$hash", new string('A', 64));
-        command.Parameters.AddWithValue("$userId", user.Id);
+        command.Parameters.AddWithValue("$userId", userId);
         command.Parameters.AddWithValue("$expires", now.AddMinutes(15).ToUnixTimeMilliseconds());
         command.Parameters.AddWithValue("$token", Guid.NewGuid());
         command.Parameters.AddWithValue("$created", now.ToUnixTimeMilliseconds());
         await command.ExecuteNonQueryAsync();
+    }
+
+    private static async Task InsertLegacyUserAsync(
+        System.Data.Common.DbConnection connection,
+        int userId,
+        string username,
+        string fullName,
+        Role role,
+        DateTimeOffset now)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText =
+            """
+            INSERT INTO "Users" (
+                "Id", "Username", "NormalizedUsername", "PasswordHash", "FullName",
+                "Role", "IsActive", "FailedLoginAttempts", "LockedUntilUtc", "LastLoginAtUtc",
+                "ConcurrencyToken", "CreatedAtUtc", "UpdatedAtUtc")
+            VALUES ($id, $username, $normalized, 'hash', $fullName,
+                $role, 1, 0, NULL, NULL, $token, $created, $created);
+            """;
+        AddParameter(command, "$id", userId);
+        AddParameter(command, "$username", username);
+        AddParameter(command, "$normalized", username.ToUpperInvariant());
+        AddParameter(command, "$fullName", fullName);
+        AddParameter(command, "$role", (int)role);
+        AddParameter(command, "$token", Guid.NewGuid().ToString());
+        AddParameter(command, "$created", now.ToUnixTimeMilliseconds());
+        await command.ExecuteNonQueryAsync();
+    }
+
+    private static void AddParameter(System.Data.Common.DbCommand command, string name, object value)
+    {
+        var parameter = command.CreateParameter();
+        parameter.ParameterName = name;
+        parameter.Value = value;
+        command.Parameters.Add(parameter);
     }
 
     private static async Task<string[]> GetColumnsAsync(

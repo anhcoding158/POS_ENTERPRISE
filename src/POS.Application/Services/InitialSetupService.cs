@@ -1,4 +1,5 @@
 using System.Text;
+using System.Security.Cryptography;
 using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.DateTime;
 using POS.Application.Abstractions.Persistence;
@@ -40,12 +41,16 @@ public sealed class InitialSetupService :
     private readonly IClock
         _clock;
 
+    private readonly IEmployeeRepository?
+        _employeeRepository;
+
     public InitialSetupService(
         IUserRepository userRepository,
         IPasswordHasher passwordHasher,
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
-        IClock clock)
+        IClock clock,
+        IEmployeeRepository? employeeRepository = null)
     {
         _userRepository =
             userRepository ??
@@ -71,6 +76,8 @@ public sealed class InitialSetupService :
             clock ??
             throw new ArgumentNullException(
                 nameof(clock));
+
+        _employeeRepository = employeeRepository;
     }
 
     public async Task<Result<bool>>
@@ -191,6 +198,18 @@ public sealed class InitialSetupService :
             await _userRepository.AddAsync(
                 administrator,
                 cancellationToken);
+
+            if (_employeeRepository is not null)
+            {
+                var employee = new Employee(
+                    CreateBootstrapEmployeeCode(administrator.Username),
+                    administrator.FullName,
+                    phoneNumber: null,
+                    emailAddress: null,
+                    utcNow);
+                employee.AttachAccount(administrator, utcNow);
+                await _employeeRepository.AddAsync(employee, cancellationToken);
+            }
 
             await _unitOfWork.SaveChangesAsync(
                 cancellationToken);
@@ -346,7 +365,20 @@ public sealed class InitialSetupService :
         return Result.Failure(
             new AppError(
                 ErrorCodes.General.Validation,
-                message));
+            message));
+    }
+
+    private static string CreateBootstrapEmployeeCode(string username)
+    {
+        var bytes = Encoding.UTF8.GetBytes(username.Trim().ToUpperInvariant());
+        try
+        {
+            return "EMP-" + Convert.ToHexString(SHA256.HashData(bytes))[..24];
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(bytes);
+        }
     }
 
     private static Result<

@@ -19,6 +19,15 @@ public static class BusinessRules
         public const int FailedLoginLimit = 5;
     }
 
+    public static class Employees
+    {
+        public const int EmployeeCodeMinLength = 2;
+        public const int EmployeeCodeMaxLength = 30;
+        public const int FullNameMaxLength = 150;
+        public const int PhoneNumberMaxLength = 30;
+        public const int EmailAddressMaxLength = 254;
+    }
+
     public static class Customers
     {
         public const int CodeMaxLength = 30;

@@ -857,6 +857,10 @@ public partial class App :
         ConfigureAuthenticationServices(
             services);
 
+        services.AddScoped<EmployeeAccountService>();
+        services.AddScoped<IEmployeeAccountService>(serviceProvider =>
+            serviceProvider.GetRequiredService<EmployeeAccountService>());
+
         ConfigureApplicationServiceDecorators(
             services);
 
@@ -1126,6 +1130,7 @@ public partial class App :
 
         services.AddSingleton<IStoreSettingsFilePicker, StoreSettingsFilePicker>();
         services.AddScoped<IStoreSettingsDialogService, StoreSettingsDialogService>();
+        services.AddSingleton<IEmployeeManagementDialogService, EmployeeManagementDialogService>();
 
         services.AddScoped<
             ISupportBundleDialogService,
@@ -1163,6 +1168,12 @@ public partial class App :
 
         services.AddTransient<
             LoginWindow>();
+
+        services.AddTransient<
+            ForcedPasswordChangeViewModel>();
+
+        services.AddTransient<
+            ForcedPasswordChangeWindow>();
 
         /*
          * Product, Category và Inventory UI.
@@ -1217,6 +1228,7 @@ public partial class App :
 
         services.AddTransient<StoreSettingsViewModel>();
         services.AddTransient<StoreSettingsWindow>();
+        services.AddTransient<EmployeeManagementViewModel>();
 
         services.AddScoped<
             StorageStatusViewModel>();
@@ -1266,6 +1278,12 @@ public partial class App :
 
             EnsureAuthenticatedSession(
                 serviceProvider);
+
+            if (!await EnsurePasswordChangeCompletedAsync(serviceProvider))
+            {
+                Shutdown(0);
+                return;
+            }
         }
         else
         {
@@ -1303,6 +1321,12 @@ public partial class App :
 
                     return;
                 }
+            }
+
+            if (!await EnsurePasswordChangeCompletedAsync(serviceProvider))
+            {
+                Shutdown(0);
+                return;
             }
 
             EnsureAuthenticatedSession(
@@ -1559,6 +1583,23 @@ public partial class App :
             .SetTarget(
                 new WpfWindowActivationTarget(
                     window));
+    }
+
+    private async Task<bool> EnsurePasswordChangeCompletedAsync(IServiceProvider serviceProvider)
+    {
+        var currentUser = serviceProvider.GetRequiredService<ICurrentUserService>().CurrentUser;
+        if (currentUser is null || !currentUser.ForcePasswordChange)
+        {
+            return true;
+        }
+
+        await Dispatcher.InvokeAsync(() => { }, global::System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        using var scope = serviceProvider.CreateScope();
+        var window = scope.ServiceProvider.GetRequiredService<ForcedPasswordChangeWindow>();
+        SetMainWindowReference(window);
+        var completed = window.ShowDialog() == true;
+        ClearMainWindowReference();
+        return completed && serviceProvider.GetRequiredService<ICurrentUserService>().CurrentUser?.ForcePasswordChange == false;
     }
 
     private void OnActivationWindowLoaded(

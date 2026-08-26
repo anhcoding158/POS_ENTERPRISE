@@ -684,6 +684,18 @@
                         </Button>
 
                         <Button
+                            x:Name="EmployeeManagementNavigationButton"
+                            AutomationProperties.AutomationId="EmployeeManagementNavigationButton"
+                            Click="OnOpenEmployeeManagementClick"
+                            Style="{StaticResource NavigationButtonStyle}"
+                            ToolTip="Quản lý nhân viên và tài khoản">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE77B;" FontFamily="Segoe MDL2 Assets" FontSize="17" Width="32" VerticalAlignment="Center" />
+                                <TextBlock Text="Nhân viên và tài khoản" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button
                             x:Name="StorageStatusNavigationButton"
                             AutomationProperties.AutomationId="StorageStatusNavigationButton"
                             Click="OnOpenStorageStatusClick"

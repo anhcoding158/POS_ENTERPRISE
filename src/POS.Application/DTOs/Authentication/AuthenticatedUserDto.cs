@@ -14,7 +14,8 @@ public sealed record AuthenticatedUserDto
         string username,
         string fullName,
         Role role,
-        DateTimeOffset authenticatedAtUtc)
+        DateTimeOffset authenticatedAtUtc,
+        bool forcePasswordChange = false)
     {
         if (id <= 0)
         {
@@ -57,6 +58,7 @@ public sealed record AuthenticatedUserDto
         Role = role;
         AuthenticatedAtUtc =
             authenticatedAtUtc.ToUniversalTime();
+        ForcePasswordChange = forcePasswordChange;
     }
 
     public int Id { get; }
@@ -68,4 +70,6 @@ public sealed record AuthenticatedUserDto
     public Role Role { get; }
 
     public DateTimeOffset AuthenticatedAtUtc { get; }
+
+    public bool ForcePasswordChange { get; }
 }

@@ -1,5 +1,15 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R4.2 Employee and Account Management closeout baseline — 2026-08-26
+
+- Entry baseline: `main` at `4d833dd48f467424b3156de067328288024cf492`, SDK `10.0.302`, clean and aligned with `origin/main`, canonical database unchanged.
+- R4.2 focused staff/account, migration-upgrade and WPF contract coverage: `9/9` PASS, `0` failed, `0` skipped. The full Debug/Quality-Gate suite is `1336/1336` PASS, `0` failed, `0` skipped.
+- Release solution build: PASS, `0` warnings, `0` errors. Official `scripts/Test-QualityGate.ps1` without `-SkipEfCheck`: PASS; vulnerability scan PASS for all `5/5` projects, local dotnet-ef restore PASS, EF pending-model check PASS and Git checks PASS.
+- Migration acceptance upgraded an isolated pre-R4.2 schema copy, preserved the existing User ID/history and backfilled the Employee record. No destructive `Up` operation was introduced.
+- Real launcher smoke used exact `POS_RUNTIME_MODE=IsolatedTest`, copied only to `%TEMP%`, reported scenario database/settings/logo/backup paths, stayed alive through `HostStarted`, `DatabaseInitialized`, `SessionLoopEntered`, `ShellWindowOpening`, `ShellWindowConstructed` and `ShellWindowReady`, and created no canonical artifacts. External UIA could not see a top-level window in the execution desktop; no visual claim is made. The exact owned PID was stopped after `CloseMainWindow` had no HWND, then the temporary scenario root was safely removed.
+- Final full baseline: `1336/1336`; R4.1 visual polish is deferred. Exact next checkpoint is **R4.3 Role and Permission Management — READY TO START**.
+- Evidence: `C:\Users\Dell\AppData\Local\Temp\POS-Enterprise-R4.2-Evidence-20260826T160425505Z-2b7898f6839c4390ace8b93e34f0eba2`.
+
 ## R4.1 isolated-startup hotfix baseline — 2026-08-26
 
 - Reproduction evidence: exact launcher returned exit code `1` and sanitized isolated diagnostics recorded the `AggregateException`/missing logging-service chain. The failing pre-fix path was the pre-startup `AddInfrastructure` provider with `ValidateOnBuild=true` and no logging registration.

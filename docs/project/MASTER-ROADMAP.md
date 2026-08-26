@@ -1,5 +1,11 @@
 # MASTER ROADMAP — POS ENTERPRISE RETAIL V1
 
+## Latest checkpoint position — 2026-08-26 (R4.2 closeout)
+
+- R4.2 Employee and Account Management is CLOSED / COMMITTED / PUSHED after additive migration, application authorization/security services, forced-password-change flow, WPF Employee UI, isolated evidence and final Quality Gate PASS.
+- Final R4.2 baseline is `1336/1336` PASS, Release build `0` warnings/errors, vulnerability scan PASS and EF pending-model PASS. R4.1 visual polish remains deferred.
+- **Exact next checkpoint:** R4.3 Role and Permission Management — READY TO START. R4.3 has not started.
+
 ## Latest checkpoint position — 2026-08-26
 
 - R3.3 Restore Wizard and Rollback is CLOSED / COMMITTED / PUSHED at `e1f6d0dc3401b91c8674f32e18c6a2fb29ccdd49`; RST14 retains its explicit combined-evidence limitation.
@@ -184,8 +190,8 @@ R1.3 owner-approved artifact contract:
 
 ## R4 — STORE SETUP VÀ EMPLOYEE MANAGEMENT
 
-- **Status:** R4.1 Closed / Committed / Pushed; R4.2–R4.4 Not Started.
-- **Exact next checkpoint:** R4.2 Employee and Account UI — READY TO START.
+- **Status:** R4.1 Closed / Committed / Pushed; R4.2 Closed / Committed / Pushed; R4.3–R4.4 Not Started.
+- **Exact next checkpoint:** R4.3 Role and Permission Management — READY TO START.
 - **Objective:** vận hành cấu hình cửa hàng, nhân viên, account, role và audit an toàn.
 - **Scope/checkpoints:** R4.1 Store Setup; R4.2 Employee and Account UI; R4.3 Role and Permission Management; R4.4 Audit Log UI. Gồm typed/validated store configuration; printer/scanner/cash drawer/VietQR/backup; quản lý nhân viên; reset password, lock/unlock; role/permission matrix; audit thay đổi quyền.
 - **Out of scope:** product data operations R5.
@@ -200,6 +206,13 @@ R4.1 closeout record:
 - R4.1 isolated-startup hotfix: the exact pre-startup `ILoggerFactory`/`ILogger<T>` DI failure was repaired by centralizing logging-safe pre-startup Infrastructure composition and launching the compiled executable from the isolated launcher. The focused regression and real isolated smoke reached `LoginWindowReady` with no startup-failure log; this execution desktop exposed no inspectable Win32 top-level window, so no visual UIA claim is made.
 - Final hotfix Release baseline is `1327/1327` PASS with 0 failed, 0 skipped; official Quality Gate passed without `-SkipEfCheck`. R4.1 remains CLOSED and R4.2 remains READY TO START.
 - Database-location activation remains explicitly restart-required; physical scanner/cash-drawer actuation and physical printer success remain deferred until hardware acceptance is available.
+
+R4.2 closeout record:
+
+- Employee and optional account separation, centralized typed capabilities, BCrypt-compatible password policy, reset/force-change, lockout state, last-login display, optimistic concurrency, sanitized security audit and final-Administrator safeguards are implemented.
+- Existing Users and history are preserved by additive migration/backfill. Deactivation disables linked accounts; reactivation does not silently unlock or reactivate accounts. Role effective permissions are displayed read-only; dedicated role/permission administration is R4.3.
+- The real IsolatedTest Release process reached `ShellWindowReady` with scenario-owned paths. External UIA could not observe a top-level window in the execution desktop, so acceptance is recorded as combined production-service/persistence/PID/source-contract evidence rather than an unsupported visual claim.
+- Final R4.2 baseline is `1336/1336` PASS with 0 failed/skipped, Release/Quality Gate build 0/0, vulnerability and EF checks PASS. R4.2 is CLOSED; R4.3 is READY TO START.
 
 ## R5 — PRODUCT DATA OPERATIONS
 

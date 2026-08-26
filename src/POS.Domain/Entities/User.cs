@@ -46,15 +46,22 @@ public sealed class User : AuditableEntity
 
     public bool IsActive { get; private set; }
 
+    public bool IsManuallyLocked { get; private set; }
+
+    public bool ForcePasswordChange { get; private set; }
+
     public int FailedLoginAttempts { get; private set; }
 
     public DateTimeOffset? LockedUntilUtc { get; private set; }
 
     public DateTimeOffset? LastLoginAtUtc { get; private set; }
 
+    public Employee? Employee { get; private set; }
+
     public bool IsLocked(DateTimeOffset utcNow)
     {
-        return LockedUntilUtc.HasValue &&
+        return IsManuallyLocked ||
+               LockedUntilUtc.HasValue &&
                LockedUntilUtc.Value >
                utcNow.ToUniversalTime();
     }
@@ -75,7 +82,39 @@ public sealed class User : AuditableEntity
 
         FailedLoginAttempts = 0;
         LockedUntilUtc = null;
+        ForcePasswordChange = false;
 
+        MarkUpdated(utcNow);
+    }
+
+    public void ResetPasswordHash(
+        string passwordHash,
+        DateTimeOffset utcNow)
+    {
+        SetPasswordHash(passwordHash);
+        FailedLoginAttempts = 0;
+        LockedUntilUtc = null;
+        ForcePasswordChange = true;
+        MarkUpdated(utcNow);
+    }
+
+    public void MarkPasswordChangeRequired(DateTimeOffset utcNow)
+    {
+        ForcePasswordChange = true;
+        MarkUpdated(utcNow);
+    }
+
+    public void ManualLock(DateTimeOffset utcNow)
+    {
+        IsManuallyLocked = true;
+        MarkUpdated(utcNow);
+    }
+
+    public void ManualUnlock(DateTimeOffset utcNow)
+    {
+        IsManuallyLocked = false;
+        FailedLoginAttempts = 0;
+        LockedUntilUtc = null;
         MarkUpdated(utcNow);
     }
 

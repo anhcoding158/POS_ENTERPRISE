@@ -1,5 +1,25 @@
 # BUSINESS INVARIANTS — POS ENTERPRISE RETAIL V1
 
+## INV-EMPLOYEE-001 — Employee identity is retained and account linkage is optional
+
+- **Statement:** Employee is the business person/history record; a login User is optional and at most one account may be linked. No normal Employee delete action exists, and historical orders/receipts/audits remain readable after deactivation.
+- **Enforcement:** Employee aggregate, restrict relationship, application lifecycle service and additive migration backfill.
+
+## INV-EMPLOYEE-002 — Account security state wins over credentials
+
+- **Statement:** Inactive employees/accounts, manual locks and active temporary lockout prevent authentication even when the password is correct. Failed attempts update atomically; successful login records UTC last-login and resets the configured consecutive count.
+- **Enforcement:** Existing AuthService plus typed User state and EmployeeAccountService lock/deactivation commands.
+
+## INV-EMPLOYEE-003 — Final usable Administrator cannot be removed
+
+- **Statement:** The system rejects final-Administrator deactivation, account lock, or Administrator-role removal when the action would leave zero active/unlocked Administrator accounts. The check is performed transactionally at the application boundary.
+- **Enforcement:** EmployeeAccountService count-and-guard commands, optimistic concurrency and security audit events.
+
+## INV-EMPLOYEE-004 — Credentials never cross persistence or audit boundaries
+
+- **Statement:** Passwords are hashed by the existing BCrypt adapter, temporary/old credentials are not returned in DTOs or audits, force-change clears only after durable success, and cancelled/failed changes cannot grant Shell access.
+- **Enforcement:** Central PasswordPolicy, User credential methods, forced-password-change gate, sanitized audit entity and tests.
+
 ## INV-STARTUP-001 — Every pre-startup Infrastructure composition includes required cross-cutting services
 
 - **Statement:** Restore-worker and startup-recovery providers that resolve Infrastructure services must register the same required logging cross-cutting service before `ValidateOnBuild`/`ValidateScopes`; missing optional Store Setup data or hardware must not make composition fail.

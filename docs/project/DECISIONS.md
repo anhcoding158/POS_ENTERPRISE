@@ -1,5 +1,14 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-035 — R4.2 separates retained employees from optional login accounts
+
+- **Status:** Accepted for R4.2 closeout on `2026-08-26`.
+- **Decision:** Keep the existing User/AuthService/BCrypt stack and add one optional Employee business record linked one-to-one to User. Add typed account state, centralized role capabilities, force-password-change state and append-only sanitized security audit events; do not add ASP.NET Identity or a parallel authentication stack.
+- **Persistence:** Use one additive EF migration. Existing Users keep their IDs/password hashes/history and receive deterministic Employee backfill records. Restrict employee-account deletion behavior and never cascade away transaction history.
+- **Security:** Application services enforce permissions and final-Administrator protection transactionally. Password reset creates a temporary credential through the existing hasher and forces a mandatory change before Shell access. Deactivation disables the account without implicit reactivation/unlock.
+- **UI:** Provide one permission-controlled Employee Management window with role-based effective permissions displayed read-only. Dedicated role/permission administration is intentionally the exact next R4.3 checkpoint; R4.1 visual polish remains deferred.
+- **Evidence:** Isolated migration/service/security tests, WPF AutomationId/source contracts, full `1336/1336` suite and official Quality Gate PASS. The execution desktop's missing external WPF window handle is recorded as a combined-evidence limitation, not relabelled as visual UIA evidence.
+
 ## DEC-034 — R4.1 pre-startup providers must share logging-safe Infrastructure composition
 
 - **Status:** Accepted for R4.1 hotfix closeout on `2026-08-26`.

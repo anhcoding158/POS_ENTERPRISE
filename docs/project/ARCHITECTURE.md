@@ -1,5 +1,13 @@
 # ARCHITECTURE — POS ENTERPRISE RETAIL V1
 
+## R4.2 Employee and Account Management boundary — 2026-08-26
+
+- Domain owns `Employee`, the optional Employee-to-User relationship, typed employee/account/lock/audit enums and immutable-free-of-credential audit entities. Domain remains independent of EF, WPF and hashing providers.
+- Application owns the typed employee/account requests and DTOs, centralized password policy, role capability catalog, permission checks and `IEmployeeAccountService`. Public results never contain password hashes or reset credentials.
+- Infrastructure owns EF mappings/repositories, the additive `AddEmployeeAccountManagement` migration, deterministic existing-User backfill and append-only security audit persistence. Existing User/order/receipt IDs are preserved and employee/account deletion is restricted.
+- WPF owns one permission-gated Employee Management window and a mandatory forced-password-change window. ViewModels resolve application services through scopes; they do not access `PosDbContext`. The employee window has stable AutomationIds, paging/filter UI, dirty-state/close guard and owner-correct actions.
+- Authentication remains the existing BCrypt/AuthService/CurrentUser stack. Force-password-change is carried in the existing authenticated-session DTO and is intercepted before Shell construction.
+
 ## R4.1 isolated startup safety hotfix boundary — 2026-08-26
 
 - Pre-startup restore/worker resolution uses one shared `App.CreatePreStartupInfrastructureServices` composition. It registers logging before Infrastructure and still builds with `ValidateOnBuild=true` and `ValidateScopes=true`; logger-dependent Store Setup/receipt/VietQR services therefore resolve before normal host startup.

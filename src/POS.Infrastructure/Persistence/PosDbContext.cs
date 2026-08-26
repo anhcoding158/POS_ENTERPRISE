@@ -28,6 +28,12 @@ public sealed class PosDbContext :
     public DbSet<User> Users =>
         Set<User>();
 
+    public DbSet<Employee> Employees =>
+        Set<Employee>();
+
+    public DbSet<SecurityAuditEvent> SecurityAuditEvents =>
+        Set<SecurityAuditEvent>();
+
     public DbSet<Category> Categories =>
         Set<Category>();
 

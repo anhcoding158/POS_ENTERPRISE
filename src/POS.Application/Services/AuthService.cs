@@ -469,7 +469,10 @@ public sealed class AuthService :
                 user.Role,
 
             authenticatedAtUtc:
-                utcNow);
+                utcNow,
+
+            forcePasswordChange:
+                user.ForcePasswordChange);
     }
 
     private static string

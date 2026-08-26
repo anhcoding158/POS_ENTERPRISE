@@ -374,6 +374,9 @@ public static class DependencyInjection
             IUserRepository,
             UserRepository>();
 
+        services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+        services.AddScoped<ISecurityAuditRepository, SecurityAuditRepository>();
+
         services.AddScoped<
             IOrderRepository,
             OrderRepository>();
