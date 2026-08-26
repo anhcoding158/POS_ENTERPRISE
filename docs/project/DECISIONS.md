@@ -1,5 +1,12 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-033 — R4.1 uses a typed external Store Setup aggregate with restart-safe database location
+
+- **Status:** Accepted for R4.1 closeout on `2026-08-26`.
+- **Decision:** Keep the Application/Domain-facing store contract free of EF/WPF/JSON/Win32 types. Persist one schema-versioned immutable snapshot atomically in managed application data, with optimistic version checks and typed recovery. Adapt receipt, VietQR, printing and backup/retention consumers to this snapshot.
+- **Database location:** A changed database directory is a verified pending/restart-required setting. Runtime never swaps an active DbContext or silently opens a new empty database; IsolatedTest always overrides effective paths inside its temporary boundary.
+- **Consequences:** Store Setup is Administrator-only and register readiness is shared. Physical printer/scanner/cash-drawer behavior remains capability-honest when hardware is unavailable or not implemented. No EF migration or package drift is introduced.
+
 ## DEC-032 — Disaster recovery requires a real database switch and layered business verification
 
 - **Status:** Accepted for R3.4 closeout on `2026-08-26`.

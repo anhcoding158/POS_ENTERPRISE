@@ -1,5 +1,13 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R4.1 Store Setup closeout baseline — 2026-08-26
+
+- Entry baseline: `main` at `d74bced32a74555bf36d57dea18f0e8d70708f71`, SDK `10.0.302`, clean and aligned with `origin/main`, canonical database unchanged.
+- Focused Store Setup/UI contract: `9/9` PASS. Receipt/checkout regressions: `11/11` PASS. Backup/VietQR regressions: `37/37` PASS. Named-pipe regressions: `11/11` PASS.
+- Final Release build: 0 warnings, 0 errors. Full suite: `1326/1326` PASS, `0` failed, `0` skipped. Official Quality Gate without `-SkipEfCheck`: PASS, including vulnerability scan and EF pending-model check.
+- Isolated acceptance evidence: `C:\Users\Dell\AppData\Local\Temp\POS-Enterprise-R4.1-Evidence-20260826T144301184Z-6708a06964e64ee096ddc03282543dea`. The copied scenario database was temporary and removed; no canonical database or user data was staged.
+- R4.1 is the current closed baseline; exact next checkpoint is R4.2 Employee and Account UI.
+
 ## R3.4 Disaster Recovery Drill closeout baseline — 2026-08-26
 
 - DR1–DR9 PASS on one validated `%TEMP%` scenario. Production manual backup created one verified/restorable artifact; a genuinely new normally initialized database lacked the source business markers; production restore preparation plus the real external Release worker reached durable `Verified`, shut down the exact parent, exited cleanly and started exactly one normal POS with no orphan.

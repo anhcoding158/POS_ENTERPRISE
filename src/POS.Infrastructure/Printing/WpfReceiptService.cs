@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using POS.Application.Abstractions.Printing;
+using POS.Application.Abstractions.StoreSetup;
 using POS.Application.Common;
 using POS.Application.DTOs.Printing;
 using System.ComponentModel;
@@ -34,8 +35,11 @@ public sealed class WpfReceiptService :
     private readonly ReceiptDocumentBuilder
         _documentBuilder;
 
-    private readonly ReceiptPrinterOptions
+    private ReceiptPrinterOptions
         _printerOptions;
+
+    private readonly IStoreSettingsStore? _settingsStore;
+    private int _printCopyCount = 1;
 
     private readonly ILogger<WpfReceiptService>
         _logger;
@@ -55,7 +59,8 @@ public sealed class WpfReceiptService :
     public WpfReceiptService(
         ReceiptDocumentBuilder documentBuilder,
         IOptions<ReceiptPrinterOptions> printerOptions,
-        ILogger<WpfReceiptService> logger)
+        ILogger<WpfReceiptService> logger,
+        IStoreSettingsStore? settingsStore = null)
     {
         _documentBuilder =
             documentBuilder ??
@@ -77,6 +82,7 @@ public sealed class WpfReceiptService :
             logger ??
             throw new ArgumentNullException(
                 nameof(logger));
+        _settingsStore = settingsStore;
     }
 
     public async Task<Result> PrintAsync(
@@ -100,6 +106,8 @@ public sealed class WpfReceiptService :
         {
             cancellationToken
                 .ThrowIfCancellationRequested();
+
+            RefreshFromStoreSettings();
 
             var applicationDispatcher =
                 System.Windows.Application
@@ -317,6 +325,19 @@ public sealed class WpfReceiptService :
         return Result.Success();
     }
 
+    private void RefreshFromStoreSettings()
+    {
+        if (_settingsStore is null) return;
+        var settings = _settingsStore.Current;
+        _printerOptions = new ReceiptPrinterOptions
+        {
+            PrinterName = settings.DefaultPrinter ?? string.Empty,
+            PaperSize = settings.PaperSize == ReceiptPaperSize.K80 ? ReceiptPrinterOptions.SupportedPaperSize : string.Empty
+        };
+        _printCopyCount = settings.PrintCopyCount;
+        _printerOptions.Validate();
+    }
+
     private PrintTicket CreatePrintTicket(
         PrintQueue printQueue)
     {
@@ -327,6 +348,8 @@ public sealed class WpfReceiptService :
 
         printTicket.PageOrientation =
             PageOrientation.Portrait;
+
+        printTicket.CopyCount = Math.Clamp(_printCopyCount, 1, 5);
 
         /*
          * Ưu tiên media size gần 80 mm nếu driver

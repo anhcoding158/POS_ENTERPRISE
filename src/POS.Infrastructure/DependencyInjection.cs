@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.Authorization;
@@ -11,6 +12,7 @@ using POS.Application.Abstractions.Payments;
 using POS.Application.Abstractions.Persistence;
 using POS.Application.Abstractions.Printing;
 using POS.Application.Abstractions.Services;
+using POS.Application.Abstractions.StoreSetup;
 using POS.Application.Services;
 using POS.Infrastructure.Authentication;
 using POS.Infrastructure.Common;
@@ -22,6 +24,7 @@ using POS.Infrastructure.Persistence.Repositories;
 using POS.Infrastructure.Printing;
 using POS.Infrastructure.Support;
 using POS.Infrastructure.Storage;
+using POS.Infrastructure.StoreSetup;
 
 namespace POS.Infrastructure;
 
@@ -111,12 +114,31 @@ public static class DependencyInjection
 
         services.TryAddScoped<ISupportBundleService, SupportBundleService>();
         services.TryAddScoped<IManualBackupService, ManualBackupService>();
-        services.TryAddSingleton<IBackupCoordinator, BackupCoordinator>();
-        services.TryAddSingleton(AutomaticBackupPolicy.Production);
-        services.TryAddSingleton(_ => AutomaticBackupPathProvider.CreateForRuntime(
+        services.AddSingleton(_ => new StoreSettingsPathProvider(
             Environment.GetEnvironmentVariable(DatabaseRuntimeGuard.RuntimeModeEnvironmentVariable),
             configuration[$"{InfrastructureOptions.SectionName}:DatabasePath"],
             AppContext.BaseDirectory));
+        services.AddSingleton<IStoreSettingsValidator, POS.Application.Validation.StoreSettingsValidator>();
+        services.AddSingleton<IStoreSettingsStore, JsonStoreSettingsStore>();
+        services.AddSingleton<IStoreSettingsReadinessEvaluator, StoreSettingsReadinessEvaluator>();
+        services.AddSingleton<IStoreSettingsLogoService, ManagedLogoService>();
+        services.AddSingleton<IPrinterTestService, PrinterTestService>();
+        services.AddSingleton<IStoreSettingsQrPreviewService, StoreSettingsQrPreviewService>();
+        services.TryAddSingleton<IBackupCoordinator, BackupCoordinator>();
+        services.TryAddSingleton(AutomaticBackupPolicy.Production);
+        services.TryAddSingleton(serviceProvider =>
+        {
+            var paths = serviceProvider.GetRequiredService<StoreSettingsPathProvider>();
+            var settingsStore = serviceProvider.GetRequiredService<IStoreSettingsStore>();
+            var settings = settingsStore.Current;
+            var runtimeMode = Environment.GetEnvironmentVariable(DatabaseRuntimeGuard.RuntimeModeEnvironmentVariable);
+            var root = paths.RuntimeIsolated
+                ? paths.DefaultBackupDirectory
+                : string.IsNullOrWhiteSpace(settings.BackupDirectory)
+                    ? AutomaticBackupPathProvider.GetCanonicalProductionRoot()
+                    : settings.BackupDirectory.Trim();
+            return new AutomaticBackupPathProvider(root, settingsStore, paths.RuntimeIsolated);
+        });
         services.TryAddSingleton<IAutomaticBackupStateStore, AutomaticBackupStateStore>();
         services.TryAddSingleton<AutomaticBackupRetentionService>();
         services.TryAddSingleton<IAutomaticBackupStatusSource, AutomaticBackupStatusSource>();
@@ -255,15 +277,15 @@ public static class DependencyInjection
             ReceiptSnapshotJsonSerializer>();
 
         services.AddSingleton<
-            IReceiptStoreSnapshotProvider,
-            ReceiptStoreSnapshotProvider>();
+            IReceiptStoreSnapshotProvider>(serviceProvider =>
+                new ReceiptStoreSnapshotProvider(
+                    serviceProvider.GetRequiredService<IStoreSettingsStore>(),
+                    serviceProvider.GetRequiredService<IOptions<ReceiptStoreOptions>>()));
 
         services.AddSingleton<
             ReceiptDocumentBuilder>();
 
-        services.AddSingleton<
-            IReceiptService,
-            WpfReceiptService>();
+        services.AddSingleton<IReceiptService, WpfReceiptService>();
 
         /*
          * Service VietQR cũ được giữ để không phá

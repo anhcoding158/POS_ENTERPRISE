@@ -47,6 +47,8 @@ public partial class ShellWindow :
     private readonly AutomaticBackupStatusViewModel
         _automaticBackupStatusViewModel;
 
+    private readonly IStoreSettingsDialogService? _storeSettingsDialogService;
+
     private global::System.Windows.Controls.Button?
         _logoutButton;
 
@@ -64,7 +66,8 @@ public partial class ShellWindow :
         IManualBackupDialogService manualBackupDialogService,
         StorageStatusViewModel storageStatusViewModel,
         IStorageStatusDialogService storageStatusDialogService,
-        AutomaticBackupStatusViewModel automaticBackupStatusViewModel)
+        AutomaticBackupStatusViewModel automaticBackupStatusViewModel,
+        IStoreSettingsDialogService? storeSettingsDialogService = null)
     {
         _viewModel =
             viewModel ??
@@ -102,6 +105,7 @@ public partial class ShellWindow :
 
         _automaticBackupStatusViewModel = automaticBackupStatusViewModel ??
             throw new ArgumentNullException(nameof(automaticBackupStatusViewModel));
+        _storeSettingsDialogService = storeSettingsDialogService;
 
         if (!_currentUserService.IsAuthenticated)
         {
@@ -139,6 +143,17 @@ public partial class ShellWindow :
         object sender,
         global::System.Windows.RoutedEventArgs e) =>
         _manualBackupDialogService.Show(this);
+
+    private void OnOpenStoreSettingsClick(
+        object sender,
+        global::System.Windows.RoutedEventArgs e)
+    {
+        if (_currentUserService.Role != Role.Administrator || _storeSettingsDialogService is null)
+        {
+            return;
+        }
+        _storeSettingsDialogService.Show(this);
+    }
 
     private void OnOpenRestoreWizardClick(
         object sender,
@@ -322,6 +337,11 @@ public partial class ShellWindow :
             canRestore
                 ? global::System.Windows.Visibility.Visible
                 : global::System.Windows.Visibility.Collapsed;
+
+        StoreSettingsNavigationButton.IsEnabled = canRestore;
+        StoreSettingsNavigationButton.Visibility = canRestore
+            ? global::System.Windows.Visibility.Visible
+            : global::System.Windows.Visibility.Collapsed;
 
         _permissionsConfigured =
             true;

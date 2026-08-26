@@ -1,5 +1,14 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## R4.1 Store Setup — CLOSED / COMMITTED / PUSHED — 2026-08-26
+
+- R4.1 implements one Administrator-only Store Setup surface backed by an immutable, versioned typed `StoreSettingsSnapshot`, centralized validation/readiness, atomic external JSON persistence and managed logo storage.
+- Production consumers now read the typed snapshot for receipt store data, VietQR, printer/paper/copies/auto-print, backup root/state and GFS retention. Register entry evaluates the same typed readiness contract and gives Administrator guidance for blocking issues.
+- Database-directory changes are pending/restart-required and never replace the active database in place. IsolatedTest always derives database/settings/logo/backup paths inside its verified `%TEMP%` boundary and ignores persisted production paths.
+- Release build, focused regressions, full suite `1326/1326` (0 failed, 0 skipped), vulnerability scan, EF pending-model check and official Quality Gate all PASS. R3 remains CLOSED at `d74bced32a74555bf36d57dea18f0e8d70708f71`.
+- Isolated acceptance used only a temporary copied database; the exact scenario root was removed after evidence capture. No physical printer was available, so printer acceptance records typed unavailable/not-configured outcomes and does not claim hardware success.
+- Exact next checkpoint: **R4.2 Employee and Account UI — NOT STARTED**.
+
 ## R3.4 Disaster Recovery Drill — CLOSED — 2026-08-26
 
 - R3.4 PASS on a controlled `%TEMP%` boundary using the real production flow: verified manual backup of database A → normal initialization of a genuinely new database B → production restore preparation and external worker replacement → exactly one normal restart → real WPF sign-in → exact Orders, stock and receipt comparisons → SQLite integrity verification.

@@ -26,5 +26,7 @@ public enum SystemCapability
 
     ProcessReturns = 9,
 
-    ApplySalesDiscount = 10
+    ApplySalesDiscount = 10,
+
+    ManageStoreSetup = 11
 }

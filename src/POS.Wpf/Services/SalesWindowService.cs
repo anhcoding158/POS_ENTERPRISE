@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using POS.Application.Abstractions.Authorization;
+using POS.Application.Abstractions.StoreSetup;
 using POS.Application.Authorization;
 using POS.Wpf.Views;
 
@@ -23,10 +24,14 @@ public sealed class SalesWindowService :
 
     private readonly IPermissionService
         _permissionService;
+    private readonly IStoreSettingsReadinessEvaluator? _readinessEvaluator;
+    private readonly IStoreSettingsStore? _settingsStore;
 
     public SalesWindowService(
         IServiceProvider serviceProvider,
-        IPermissionService permissionService)
+        IPermissionService permissionService,
+        IStoreSettingsReadinessEvaluator? readinessEvaluator = null,
+        IStoreSettingsStore? settingsStore = null)
     {
         _serviceProvider =
             serviceProvider ??
@@ -37,9 +42,11 @@ public sealed class SalesWindowService :
             permissionService ??
             throw new ArgumentNullException(
                 nameof(permissionService));
+        _readinessEvaluator = readinessEvaluator;
+        _settingsStore = settingsStore;
     }
 
-    public Task ShowAsync()
+    public async Task ShowAsync()
     {
         var authorization =
             _permissionService.Authorize(
@@ -55,7 +62,24 @@ public sealed class SalesWindowService :
                 global::System.Windows
                     .MessageBoxImage.Warning);
 
-            return Task.CompletedTask;
+            return;
+        }
+
+        if (_readinessEvaluator is not null && _settingsStore is not null)
+        {
+            var readiness = await _readinessEvaluator.EvaluateAsync(_settingsStore.Current);
+            if (!readiness.IsReady)
+            {
+                var hint = _currentUserIsAdministrator()
+                    ? "Vui lòng mở Cài đặt cửa hàng để xử lý."
+                    : "Vui lòng liên hệ Quản trị viên để xử lý.";
+                global::System.Windows.MessageBox.Show(
+                    "Chưa thể mở quầy bán hàng vì cấu hình cửa hàng chưa sẵn sàng.\n\n" + hint,
+                    "Cấu hình cửa hàng chưa sẵn sàng",
+                    global::System.Windows.MessageBoxButton.OK,
+                    global::System.Windows.MessageBoxImage.Warning);
+                return;
+            }
         }
 
         var window =
@@ -71,6 +95,9 @@ public sealed class SalesWindowService :
 
         window.ShowDialog();
 
-        return Task.CompletedTask;
+        return;
     }
+
+    private bool _currentUserIsAdministrator() =>
+        _permissionService.HasPermission(SystemCapability.ManageStoreSetup);
 }

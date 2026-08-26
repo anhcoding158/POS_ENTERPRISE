@@ -1,5 +1,20 @@
 # BUSINESS INVARIANTS — POS ENTERPRISE RETAIL V1
 
+## INV-STORE-SETUP-001 — Store Setup is one typed, validated and versioned source of truth
+
+- **Statement:** Store configuration is represented by an immutable schema-versioned `StoreSettingsSnapshot`; defaults, validation and readiness are centralized, and consumers do not maintain independent configuration keys or mutable shared settings objects.
+- **Enforcement:** Application Store Setup contracts/validator; Infrastructure atomic JSON store; WPF ViewModel draft; typed receipt, VietQR, printer and backup adapters.
+- **Failure/recovery:** Missing configuration yields typed defaults plus readiness issues. Corrupt/unknown configuration fails closed to a safe recovery state. Concurrent saves return a typed conflict and never overwrite a newer version.
+
+## INV-STORE-SETUP-002 — Store paths and assets remain local, managed and isolated
+
+- **Statement:** Database, backup and logo paths reject unsafe/network/reparse boundaries; logo imports verify signature and dimensions and copy atomically into managed storage. IsolatedTest derives all effective paths inside its temporary scenario boundary and never uses production persisted paths.
+- **Failure/recovery:** Database-directory changes are restart-required; the active DbContext/database is never replaced in place. Failed writes preserve the prior valid configuration and unrelated user files are never removed.
+
+## INV-STORE-SETUP-003 — Register readiness and Administrator authorization are shared boundaries
+
+- **Statement:** Register entry evaluates the same typed readiness result exposed by Store Setup. Blocking settings prevent Sales entry with safe guidance; only Administrator can open/save Store Setup. Printer/QR tests are explicit operations and hardware success is never fabricated.
+
 ## INV-RESTORE-001 — Restore replacement is verified, parent-bound, rollback-protected and isolated during acceptance
 
 - **Statement:** A restore candidate may replace an active database only after regular-file/reparse, SQLite integrity/schema and committed-content verification; the worker must bind to the exact parent PID/start time, wait for parent exit, preserve rollback state, verify the installed result and restart normal POS exactly once.

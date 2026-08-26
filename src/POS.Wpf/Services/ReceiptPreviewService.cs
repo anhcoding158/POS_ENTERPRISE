@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using POS.Application.Abstractions.Printing;
+using POS.Application.Abstractions.StoreSetup;
 using POS.Application.DTOs.Printing;
 using POS.Infrastructure.Printing;
 using POS.Wpf.Views;
@@ -45,10 +46,13 @@ public sealed class ReceiptPreviewService :
     private readonly string
         _paperSize;
 
+    private readonly IStoreSettingsStore? _settingsStore;
+
     public ReceiptPreviewService(
         ReceiptDocumentBuilder documentBuilder,
         IReceiptService receiptService,
-        IOptions<ReceiptPrinterOptions> printerOptions)
+        IOptions<ReceiptPrinterOptions> printerOptions,
+        IStoreSettingsStore? settingsStore = null)
     {
         _documentBuilder =
             documentBuilder ??
@@ -59,6 +63,16 @@ public sealed class ReceiptPreviewService :
             receiptService ??
             throw new ArgumentNullException(
                 nameof(receiptService));
+
+        _settingsStore = settingsStore;
+
+        if (_settingsStore is not null)
+        {
+            var settings = _settingsStore.Current;
+            _printerName = settings.DefaultPrinter ?? "Chưa chọn máy in";
+            _paperSize = settings.PaperSize.ToString();
+            return;
+        }
 
         ArgumentNullException.ThrowIfNull(
             printerOptions);

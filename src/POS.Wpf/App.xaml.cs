@@ -337,7 +337,7 @@ public partial class App :
 
             var services = new ServiceCollection();
             services.AddInfrastructure(builder.Configuration);
-            await using var provider = services.BuildServiceProvider();
+            await using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
             var worker = provider.GetRequiredService<RestoreWorkerService>();
             var result = await worker.ExecuteAsync(request.PlanPath, request.OperationId,
                 request.OneTimeToken, CancellationToken.None);
@@ -388,7 +388,7 @@ public partial class App :
     {
         var services = new ServiceCollection();
         services.AddInfrastructure(configuration);
-        await using var provider = services.BuildServiceProvider();
+        await using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
         var store = provider.GetRequiredService<RestoreOperationStore>();
         var discovery = await store.DiscoverStartupOperationAsync(CancellationToken.None);
         if (discovery.IsBlocked)
@@ -444,7 +444,7 @@ public partial class App :
 
         var services = new ServiceCollection();
         services.AddInfrastructure(configuration);
-        await using var provider = services.BuildServiceProvider();
+        await using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
         await RestoreOperationStore.AcknowledgeTerminalResultAsync(outcome, CancellationToken.None);
     }
 
@@ -990,6 +990,9 @@ public partial class App :
             IRestoreArtifactFilePicker,
             RestoreArtifactFilePicker>();
 
+        services.AddSingleton<IStoreSettingsFilePicker, StoreSettingsFilePicker>();
+        services.AddScoped<IStoreSettingsDialogService, StoreSettingsDialogService>();
+
         services.AddScoped<
             ISupportBundleDialogService,
             SupportBundleDialogService>();
@@ -1077,6 +1080,9 @@ public partial class App :
 
         services.AddTransient<
             RestoreWizardWindow>();
+
+        services.AddTransient<StoreSettingsViewModel>();
+        services.AddTransient<StoreSettingsWindow>();
 
         services.AddScoped<
             StorageStatusViewModel>();

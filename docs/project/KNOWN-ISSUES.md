@@ -1,5 +1,12 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## R4.1 closeout limitations — 2026-08-26
+
+- Store Setup is closed with typed validation, persistence and production consumers. A valid printer is discovered/tested through the production abstraction, but this machine had no approved physical printer target; no print-success claim is made.
+- Scanner and cash-drawer settings are typed and readiness-validated. Hardware actuation is not implemented in this checkpoint, so unsupported/unconfigured capability is reported honestly.
+- Database-directory changes are persisted as a safe pending/restart-required configuration. Active DbContext relocation in place is deliberately not claimed.
+- The native logo picker and desktop UI Automation were not used as the acceptance authority; the owner-correct picker seam, ViewModel contract, managed-logo service and isolated runtime start were verified deterministically.
+
 ## R3.4 closeout note — 2026-08-26
 
 - No confirmed R3.4 production defect remains. The real isolated backup → new database → external-worker restore → restart → sign-in → Orders/stock/receipt verification → integrity drill passed, and the canonical database/root state remained exact.

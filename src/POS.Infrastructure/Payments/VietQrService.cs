@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using POS.Application.Abstractions.Payments;
+using POS.Application.Abstractions.StoreSetup;
 using POS.Application.Common;
 using POS.Application.DTOs.Payments;
 using POS.Domain.Constants;
@@ -106,9 +107,12 @@ public sealed class VietQrService :
     private readonly ILogger<VietQrService>
         _logger;
 
+    private readonly IStoreSettingsStore? _settingsStore;
+
     public VietQrService(
         IOptions<VietQrOptions> options,
-        ILogger<VietQrService> logger)
+        ILogger<VietQrService> logger,
+        IStoreSettingsStore? settingsStore = null)
     {
         ArgumentNullException.ThrowIfNull(
             options);
@@ -123,6 +127,8 @@ public sealed class VietQrService :
             logger ??
             throw new ArgumentNullException(
                 nameof(logger));
+
+        _settingsStore = settingsStore;
 
         /*
          * Fail fast khi cấu hình được bật nhưng sai.
@@ -158,7 +164,10 @@ public sealed class VietQrService :
                 "Yêu cầu tạo VietQR không được để trống.");
         }
 
-        if (!_options.EnableVietQr)
+        var effectiveOptions = GetEffectiveOptions();
+        try { effectiveOptions.Validate(); }
+        catch (InvalidOperationException) { return Failure<string>(ErrorCodes.Payments.VietQrInvalidPayload, "Cấu hình VietQR chưa hợp lệ."); }
+        if (!effectiveOptions.EnableVietQr)
         {
             return Failure<string>(
                 ErrorCodes.Payments
@@ -205,7 +214,7 @@ public sealed class VietQrService :
                         "00",
 
                     value:
-                        _options
+                        effectiveOptions
                             .GetNormalizedBankBin())
 
                 +
@@ -215,7 +224,7 @@ public sealed class VietQrService :
                         "01",
 
                     value:
-                        _options
+                        effectiveOptions
                             .GetNormalizedAccountNumber());
 
             /*
@@ -425,7 +434,7 @@ public sealed class VietQrService :
             var pngBytes =
                 qrCode.GetGraphic(
                     pixelsPerModule:
-                        _options
+                    GetEffectiveOptions()
                             .QrPixelsPerModule,
 
                     drawQuietZones:
@@ -468,6 +477,22 @@ public sealed class VietQrService :
         }
     }
 
+    private VietQrOptions GetEffectiveOptions()
+    {
+        var settings = _settingsStore?.Current;
+        if (settings is null || string.IsNullOrWhiteSpace(settings.StoreName)) return _options;
+        return new VietQrOptions
+        {
+            EnableVietQr = settings.VietQrEnabled,
+            BankBin = settings.BankBin ?? string.Empty,
+            AccountNumber = settings.BankAccountNumber ?? string.Empty,
+            AccountName = settings.BankAccountName ?? string.Empty,
+            TransferContentPrefix = settings.VietQrContent ?? "POS",
+            DisplayQrOnReceipt = true,
+            QrPixelsPerModule = _options.QrPixelsPerModule
+        };
+    }
+
     /// <summary>
     /// Tạo nội dung chuyển khoản dạng ASCII viết hoa.
     ///
@@ -484,7 +509,7 @@ public sealed class VietQrService :
     {
         var normalizedPrefix =
             NormalizeBankText(
-                _options
+                GetEffectiveOptions()
                     .GetNormalizedTransferContentPrefix());
 
         if (string.IsNullOrWhiteSpace(

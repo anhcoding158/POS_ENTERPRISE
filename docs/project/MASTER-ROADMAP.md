@@ -184,8 +184,8 @@ R1.3 owner-approved artifact contract:
 
 ## R4 — STORE SETUP VÀ EMPLOYEE MANAGEMENT
 
-- **Status:** Not Started.
-- **Exact next checkpoint:** R4.1 Store Setup — READY TO START.
+- **Status:** R4.1 Closed / Committed / Pushed; R4.2–R4.4 Not Started.
+- **Exact next checkpoint:** R4.2 Employee and Account UI — NOT STARTED.
 - **Objective:** vận hành cấu hình cửa hàng, nhân viên, account, role và audit an toàn.
 - **Scope/checkpoints:** R4.1 Store Setup; R4.2 Employee and Account UI; R4.3 Role and Permission Management; R4.4 Audit Log UI. Gồm typed/validated store configuration; printer/scanner/cash drawer/VietQR/backup; quản lý nhân viên; reset password, lock/unlock; role/permission matrix; audit thay đổi quyền.
 - **Out of scope:** product data operations R5.
@@ -193,6 +193,12 @@ R1.3 owner-approved artifact contract:
 - **Entry criteria:** R3 PASS.
 - **Exit criteria:** R4.1–R4.4 hoàn thành; không xóa lịch sử nhân viên đã có giao dịch; không log password/secret.
 - **Manual acceptance:** cấu hình store/device, quản lý account/role và kiểm tra audit/permission bằng các vai trò thực tế.
+
+R4.1 closeout record:
+
+- Typed Store Setup, validation, atomic persistence, managed logo, readiness, receipt/VietQR/printing/backup integration and Administrator-only WPF navigation are implemented.
+- Full Release test baseline is `1326/1326` PASS with 0 failed, 0 skipped; official Quality Gate passed without `-SkipEfCheck`.
+- Database-location activation remains explicitly restart-required; physical scanner/cash-drawer actuation and physical printer success remain deferred until hardware acceptance is available.
 
 ## R5 — PRODUCT DATA OPERATIONS
 

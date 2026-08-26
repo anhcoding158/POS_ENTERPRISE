@@ -1,5 +1,13 @@
 # ARCHITECTURE — POS ENTERPRISE RETAIL V1
 
+## R4.1 typed Store Setup boundary — 2026-08-26
+
+- Application owns the infrastructure-free immutable `StoreSettingsSnapshot`, typed enums/retention policy, validator, readiness issues and persistence/test-operation contracts. Defaults and schema version are centralized.
+- Infrastructure owns atomic versioned JSON persistence under the managed application-data root, managed logo assets, local QR preview, printer discovery/test, safe path evaluation and adapters consumed by receipt, VietQR and backup/retention services. No second service provider or EF migration was required.
+- WPF owns the Administrator-only owner-modal Store Setup window and MVVM draft state. It exposes stable AutomationIds, dirty-state/unsaved-change protection, typed validation summary, single-flight Save/QR/printer tests and restart-required indication.
+- Database-directory changes are pending until restart; the active DbContext is never moved or replaced in place. In IsolatedTest, effective database/settings/logo/backup paths are forced inside the scenario boundary regardless of persisted production settings.
+- Sales/register entry uses the same readiness evaluator as Store Setup. Receipt and VietQR consumers use the saved typed snapshot while historical receipt snapshots remain immutable.
+
 ## R3.3 verified restore and rollback boundary
 
 - `POS.Application` owns typed restore inspection, preparation, plan and execution contracts. WPF owns only authenticated workflow/presentation and file-picker adaptation; it does not open SQLite or implement replacement logic.

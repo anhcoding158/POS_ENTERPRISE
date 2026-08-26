@@ -5,12 +5,14 @@ using Microsoft.Extensions.Logging;
 using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.Payments;
 using POS.Application.Abstractions.Persistence;
+using POS.Application.Abstractions.Printing;
 using POS.Application.Abstractions.Services;
+using POS.Application.Abstractions.StoreSetup;
 using POS.Application.Common;
 using POS.Application.DTOs.Checkout;
 using POS.Application.DTOs.HeldSales;
 using POS.Application.DTOs.Payments;
-using POS.Application.DTOs.Printing;
+        using POS.Application.DTOs.Printing;
 using POS.Application.DTOs.Products;
 using POS.Domain.Constants;
 using POS.Domain.Common;
@@ -70,6 +72,9 @@ public sealed class SalesViewModel :
 
     private readonly ICheckoutRecoveryConfirmationService
         _recoveryConfirmation;
+
+    private readonly IReceiptService? _receiptService;
+    private readonly IStoreSettingsStore? _storeSettingsStore;
 
     private readonly ILogger<SalesViewModel>
         _logger;
@@ -152,7 +157,9 @@ public sealed class SalesViewModel :
         ISalesPaymentFlowService paymentFlowService,
         ILogger<SalesViewModel> logger,
         ICheckoutRecoveryConfirmationService recoveryConfirmation,
-        IHeldSaleDialogService? heldSaleDialogs = null)
+        IHeldSaleDialogService? heldSaleDialogs = null,
+        IReceiptService? receiptService = null,
+        IStoreSettingsStore? storeSettingsStore = null)
     {
         _scopeFactory =
             scopeFactory ??
@@ -178,6 +185,9 @@ public sealed class SalesViewModel :
             recoveryConfirmation ??
             throw new ArgumentNullException(
                 nameof(recoveryConfirmation));
+
+        _receiptService = receiptService;
+        _storeSettingsStore = storeSettingsStore;
 
         _logger =
             logger ??
@@ -3642,6 +3652,14 @@ public sealed class SalesViewModel :
 
         try
         {
+            if (receipt.CopyKind == ReceiptCopyKind.Original &&
+                _storeSettingsStore?.Current.AutoPrint == true &&
+                _receiptService is not null)
+            {
+                var printResult = await _receiptService.PrintAsync(receipt);
+                if (printResult.IsFailure)
+                    ShowError("Đơn đã lưu nhưng không thể tự động in hóa đơn. Bạn có thể thử in lại từ màn xem trước.");
+            }
             await _receiptPreviewService
                 .ShowAsync(
                     receipt);

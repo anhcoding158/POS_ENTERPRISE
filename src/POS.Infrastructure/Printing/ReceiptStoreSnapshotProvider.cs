@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using POS.Application.Abstractions.Printing;
+using POS.Application.Abstractions.StoreSetup;
 using POS.Application.DTOs.Printing;
 
 namespace POS.Infrastructure.Printing;
@@ -74,8 +75,24 @@ public sealed class ReceiptStoreOptions
 public sealed class ReceiptStoreSnapshotProvider :
     IReceiptStoreSnapshotProvider
 {
-    private readonly ReceiptStoreSnapshotDto
-        _storeSnapshot;
+    private readonly ReceiptStoreSnapshotDto? _legacySnapshot;
+    private readonly IStoreSettingsStore? _settingsStore;
+
+    public ReceiptStoreSnapshotProvider(IStoreSettingsStore settingsStore)
+    {
+        _settingsStore = settingsStore ?? throw new ArgumentNullException(nameof(settingsStore));
+    }
+
+    public ReceiptStoreSnapshotProvider(
+        IStoreSettingsStore settingsStore,
+        IOptions<ReceiptStoreOptions> legacyOptions)
+        : this(settingsStore)
+    {
+        ArgumentNullException.ThrowIfNull(legacyOptions);
+        var value = legacyOptions.Value ?? throw new InvalidOperationException("Không tìm thấy cấu hình Store.");
+        value.Validate();
+        _legacySnapshot = value.CreateSnapshot();
+    }
 
     public ReceiptStoreSnapshotProvider(
         IOptions<ReceiptStoreOptions> options)
@@ -92,8 +109,7 @@ public sealed class ReceiptStoreSnapshotProvider :
         {
             value.Validate();
 
-            _storeSnapshot =
-                value.CreateSnapshot();
+            _legacySnapshot = value.CreateSnapshot();
         }
         catch (ArgumentException exception)
         {
@@ -110,6 +126,17 @@ public sealed class ReceiptStoreSnapshotProvider :
          * ReceiptStoreSnapshotDto là immutable,
          * nên có thể chia sẻ an toàn trong toàn bộ ứng dụng.
          */
-        return _storeSnapshot;
+        if (_settingsStore is not null)
+        {
+            var settings = _settingsStore.Current;
+            if (string.IsNullOrWhiteSpace(settings.StoreName))
+                return _legacySnapshot ?? ReceiptStoreSnapshotDto.Unconfigured;
+            return new ReceiptStoreSnapshotDto(
+                settings.StoreName,
+                settings.Address,
+                settings.Hotline,
+                settings.TaxCode);
+        }
+        return _legacySnapshot ?? ReceiptStoreSnapshotDto.Unconfigured;
     }
 }

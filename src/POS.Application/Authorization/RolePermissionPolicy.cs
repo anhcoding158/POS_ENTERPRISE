@@ -91,6 +91,9 @@ public static class RolePermissionPolicy
             SystemCapability.ApplySalesDiscount =>
                 "áp dụng giảm giá bán hàng",
 
+            SystemCapability.ManageStoreSetup =>
+                "cấu hình cửa hàng",
+
             _ =>
                 throw new ArgumentOutOfRangeException(
                     nameof(permission),

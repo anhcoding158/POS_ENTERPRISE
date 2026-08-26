@@ -672,6 +672,18 @@
                         </Button>
 
                         <Button
+                            x:Name="StoreSettingsNavigationButton"
+                            AutomationProperties.AutomationId="StoreSettingsNavigationButton"
+                            Click="OnOpenStoreSettingsClick"
+                            Style="{StaticResource NavigationButtonStyle}"
+                            ToolTip="Cài đặt cửa hàng và thiết bị">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="17" Width="32" VerticalAlignment="Center" />
+                                <TextBlock Text="Cài đặt cửa hàng" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button
                             x:Name="StorageStatusNavigationButton"
                             AutomationProperties.AutomationId="StorageStatusNavigationButton"
                             Click="OnOpenStorageStatusClick"
