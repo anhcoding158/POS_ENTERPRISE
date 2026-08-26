@@ -1,5 +1,13 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R4.1 isolated-startup hotfix baseline — 2026-08-26
+
+- Reproduction evidence: exact launcher returned exit code `1` and sanitized isolated diagnostics recorded the `AggregateException`/missing logging-service chain. The failing pre-fix path was the pre-startup `AddInfrastructure` provider with `ValidateOnBuild=true` and no logging registration.
+- Hotfix focused suite: `11/11` PASS, including isolated production composition, Store Setup tests and launcher direct-executable/path contract. Release build: `0` warnings, `0` errors.
+- Final full suite after the hotfix: `1327/1327` PASS, `0` failed, `0` skipped. Official Quality Gate without `-SkipEfCheck`: PASS, including vulnerability scan and EF pending-model check.
+- Real isolated Release smoke: exact `POS.Enterprise.exe` child remained running, host/database initialization completed, effective settings/logo paths were inside the scenario, and diagnostics reached `LoginWindowReady` without startup-failure dialog. Win32 window enumeration was unavailable in the execution desktop and is recorded as a limitation, not a fabricated UI PASS.
+- Evidence: `C:\Users\Dell\AppData\Local\Temp\POS-Enterprise-R4.1-Hotfix-Evidence-20260826T151524982Z-ffafa24fe2524d57b54d0905d6d5b480`.
+
 ## R4.1 Store Setup closeout baseline — 2026-08-26
 
 - Entry baseline: `main` at `d74bced32a74555bf36d57dea18f0e8d70708f71`, SDK `10.0.302`, clean and aligned with `origin/main`, canonical database unchanged.

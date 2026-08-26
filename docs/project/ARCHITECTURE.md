@@ -1,5 +1,11 @@
 # ARCHITECTURE — POS ENTERPRISE RETAIL V1
 
+## R4.1 isolated startup safety hotfix boundary — 2026-08-26
+
+- Pre-startup restore/worker resolution uses one shared `App.CreatePreStartupInfrastructureServices` composition. It registers logging before Infrastructure and still builds with `ValidateOnBuild=true` and `ValidateScopes=true`; logger-dependent Store Setup/receipt/VietQR services therefore resolve before normal host startup.
+- Isolated acceptance launches the already-built `POS.Enterprise.exe` directly. The launcher creates only the copied database boundary, validates all reported settings/logo/backup paths before use, and never writes production `LOCALAPPDATA` settings or logo artifacts.
+- Isolated startup diagnostics are allow-listed milestones and sanitized exception-chain metadata written only to the existing scenario directory. Failure logging cannot change the fail-closed result.
+
 ## R4.1 typed Store Setup boundary — 2026-08-26
 
 - Application owns the infrastructure-free immutable `StoreSettingsSnapshot`, typed enums/retention policy, validator, readiness issues and persistence/test-operation contracts. Defaults and schema version are centralized.

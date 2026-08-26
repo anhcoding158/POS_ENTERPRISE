@@ -1,13 +1,21 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## R4.1 isolated-startup hotfix — CLOSED / COMMITTED / PUSHED — 2026-08-26
+
+- Manual isolated smoke exposed a real startup blocker after R4.1. The exact chain was `AggregateException` from `ValidateOnBuild`, caused by missing `ILoggerFactory`/`ILogger<T>` while constructing R4.1 logger-dependent Store Setup, receipt, VietQR and database-initializer services.
+- Root cause: the three existing pre-startup restore/worker `ServiceCollection` compositions called `AddInfrastructure` without `AddLogging`; the main Host provider had logging, so ordinary DI tests missed this exact path.
+- Repair: centralized those compositions in `App.CreatePreStartupInfrastructureServices`, which adds logging before Infrastructure while retaining `ValidateOnBuild=true` and `ValidateScopes=true`. The IsolatedTest launcher now starts the built Release `POS.Enterprise.exe` directly and reports effective settings/logo paths inside the scenario boundary.
+- Regression: `IsolatedStartupTests` exercises production configuration, isolated absolute database path, no Store Setup JSON, no printer, eager-service resolution and no production-path leakage. Sanitized isolated milestones prove Host, database initialization and LoginWindow construction/readiness.
+- Final hotfix verification: Release build `0/0`; focused hotfix/Store Setup suite `11/11`; final full suite `1327/1327`; official Quality Gate, vulnerability scan and EF pending-model check PASS. R4.2 remains READY TO START.
+
 ## R4.1 Store Setup — CLOSED / COMMITTED / PUSHED — 2026-08-26
 
 - R4.1 implements one Administrator-only Store Setup surface backed by an immutable, versioned typed `StoreSettingsSnapshot`, centralized validation/readiness, atomic external JSON persistence and managed logo storage.
 - Production consumers now read the typed snapshot for receipt store data, VietQR, printer/paper/copies/auto-print, backup root/state and GFS retention. Register entry evaluates the same typed readiness contract and gives Administrator guidance for blocking issues.
 - Database-directory changes are pending/restart-required and never replace the active database in place. IsolatedTest always derives database/settings/logo/backup paths inside its verified `%TEMP%` boundary and ignores persisted production paths.
-- Release build, focused regressions, full suite `1326/1326` (0 failed, 0 skipped), vulnerability scan, EF pending-model check and official Quality Gate all PASS. R3 remains CLOSED at `d74bced32a74555bf36d57dea18f0e8d70708f71`.
+- Release build, focused regressions, full suite `1327/1327` (0 failed, 0 skipped), vulnerability scan, EF pending-model check and official Quality Gate all PASS. R3 remains CLOSED at `d74bced32a74555bf36d57dea18f0e8d70708f71`; R4.1 hotfix remains part of the closed checkpoint.
 - Isolated acceptance used only a temporary copied database; the exact scenario root was removed after evidence capture. No physical printer was available, so printer acceptance records typed unavailable/not-configured outcomes and does not claim hardware success.
-- Exact next checkpoint: **R4.2 Employee and Account UI — NOT STARTED**.
+- Exact next checkpoint: **R4.2 Employee and Account UI — READY TO START**.
 
 ## R3.4 Disaster Recovery Drill — CLOSED — 2026-08-26
 

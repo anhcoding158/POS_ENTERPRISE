@@ -1,5 +1,12 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## R4.1 isolated-startup hotfix closeout — 2026-08-26
+
+- The post-closeout manual smoke blocker is repaired. The failure was not a corrupt Store Setup file, unsafe path, printer enumeration or readiness error; it was an incomplete pre-startup DI composition without logging services.
+- The hotfix keeps the generic user-facing startup error and adds only sanitized IsolatedTest diagnostics under the owned scenario database directory. No raw stack trace, connection string, credential, bank value or user data is written.
+- The launcher now requires an already-built Release/Debug `POS.Enterprise.exe`, starts that exact executable, and reports effective Store Setup and managed-logo locations. It no longer routes acceptance through `dotnet run`/MSBuild.
+- The current execution desktop did not expose a Win32 top-level window handle to the observer, so visual UIA is not claimed. Production milestones reached `LoginWindowConstructed` and `LoginWindowReady`; deterministic composition, persistence and UI contract tests remain the authority for the UI surface.
+
 ## R4.1 closeout limitations — 2026-08-26
 
 - Store Setup is closed with typed validation, persistence and production consumers. A valid printer is discovered/tested through the production abstraction, but this machine had no approved physical printer target; no print-success claim is made.
@@ -12,7 +19,7 @@
 - No confirmed R3.4 production defect remains. The real isolated backup → new database → external-worker restore → restart → sign-in → Orders/stock/receipt verification → integrity drill passed, and the canonical database/root state remained exact.
 - A restore-test fixture used the three-argument `File.Replace` overload, which raised a Windows metadata portability error on the drill host. The fixture now uses `ignoreMetadataErrors: true`, matching production behavior; assertions and restore safety contracts are unchanged. The focused suite is `142/142` PASS and the official Quality Gate is `1317/1317` PASS with zero failures/skips.
 - Two single-instance Named Pipe tests were denied only inside the restricted Codex sandbox and passed `2/2` under the normal Windows token; the final official Quality Gate was therefore run outside that IPC restriction and passed. Production's current-user-only ACL was not weakened.
-- The R3.4 prerequisite blocker for pilot is removed. R3 is CLOSED; R4 remains NOT STARTED and R4.1 Store Setup is the exact next checkpoint. The RST14 combined-evidence limitation remains recorded below and was not rewritten by R3.4.
+- The R3.4 prerequisite blocker for pilot is removed. R3 and R4.1 are CLOSED; R4.2 Employee and Account UI is READY TO START. The RST14 combined-evidence limitation remains recorded below and was not rewritten by R3.4.
 
 ## R3.3 closeout note — 2026-08-25
 

@@ -1,5 +1,16 @@
 # BUSINESS INVARIANTS — POS ENTERPRISE RETAIL V1
 
+## INV-STARTUP-001 — Every pre-startup Infrastructure composition includes required cross-cutting services
+
+- **Statement:** Restore-worker and startup-recovery providers that resolve Infrastructure services must register the same required logging cross-cutting service before `ValidateOnBuild`/`ValidateScopes`; missing optional Store Setup data or hardware must not make composition fail.
+- **Enforcement:** `App.CreatePreStartupInfrastructureServices`, `AddInfrastructure`, isolated startup regression and final Quality Gate.
+- **Failure/recovery:** A missing dependency fails closed before database use and is recorded only through sanitized diagnostics. The user-facing message remains generic; no validation or DI safety check is bypassed.
+
+## INV-STARTUP-002 — Isolated startup diagnostics and launcher paths remain scenario-owned
+
+- **Statement:** Isolated startup launches the exact compiled POS executable and reports/uses settings, logo, backup and database paths only under the verified temporary scenario boundary.
+- **Failure/recovery:** Unsafe or missing boundaries stop before application startup; no production settings/logo/backup path is created and no canonical database is mutated.
+
 ## INV-STORE-SETUP-001 — Store Setup is one typed, validated and versioned source of truth
 
 - **Statement:** Store configuration is represented by an immutable schema-versioned `StoreSettingsSnapshot`; defaults, validation and readiness are centralized, and consumers do not maintain independent configuration keys or mutable shared settings objects.

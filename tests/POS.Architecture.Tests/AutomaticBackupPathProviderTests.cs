@@ -220,6 +220,10 @@ public sealed class AutomaticBackupPathProviderTests
         Assert.Contains("$expectedAutomaticBackupStatePath", script, StringComparison.Ordinal);
         Assert.Contains("Expected automatic backup root:", script, StringComparison.Ordinal);
         Assert.Contains("Expected automatic backup state path:", script, StringComparison.Ordinal);
+        Assert.Contains("Effective Store Setup path:", script, StringComparison.Ordinal);
+        Assert.Contains("Effective managed logo path:", script, StringComparison.Ordinal);
+        Assert.Contains("bin\\' + $Configuration + '\\net10.0-windows\\POS.Enterprise.exe", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("'run'", script, StringComparison.Ordinal);
         Assert.Contains("Child process ID:", script, StringComparison.Ordinal);
         Assert.DoesNotContain("$childEnvironment['LOCALAPPDATA']", script, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("Test-PathWithinBoundary $canonicalTestRoot $expectedAutomaticBackupRoot", script,

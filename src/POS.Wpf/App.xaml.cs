@@ -147,6 +147,7 @@ public partial class App :
                 builder.Build();
 
             await _host.StartAsync();
+            LogIsolatedStartupMilestone("HostStarted");
 
             LogStartupDiagnostics(
                 _host.Services.GetRequiredService<
@@ -156,6 +157,7 @@ public partial class App :
 
             await InitializeDatabaseAsync(
                 _host.Services);
+            LogIsolatedStartupMilestone("DatabaseInitialized");
 
             await PresentAndAcknowledgeRestoreOutcomeAsync(
                 builder.Configuration,
@@ -188,6 +190,7 @@ public partial class App :
         }
         catch (Exception exception)
         {
+            LogStartupFailureSafely(exception);
             var classifier = new POS.Infrastructure.Persistence.SqliteFailureClassifier();
             var kind = classifier.Classify(exception);
             var presentation = kind is null
@@ -204,6 +207,129 @@ public partial class App :
                     .MessageBoxImage.Error);
 
             Shutdown(-1);
+        }
+    }
+
+    private static void LogStartupFailureSafely(Exception exception)
+    {
+        try
+        {
+            if (!string.Equals(
+                    Environment.GetEnvironmentVariable(
+                        DatabaseRuntimeGuard.RuntimeModeEnvironmentVariable),
+                    DatabaseRuntimeGuard.IsolatedTestMode,
+                    StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            var configuredDatabasePath = Environment.GetEnvironmentVariable(
+                DatabaseRuntimeGuard.DatabasePathEnvironmentVariable);
+            if (string.IsNullOrWhiteSpace(configuredDatabasePath) ||
+                !Path.IsPathFullyQualified(configuredDatabasePath))
+            {
+                return;
+            }
+
+            var databasePath = Path.GetFullPath(configuredDatabasePath);
+            var directory = Path.GetDirectoryName(databasePath);
+            if (string.IsNullOrWhiteSpace(directory) ||
+                !Directory.Exists(directory))
+            {
+                return;
+            }
+
+            var directoryInfo = new DirectoryInfo(directory);
+            if ((directoryInfo.Attributes & FileAttributes.ReparsePoint) != 0)
+            {
+                return;
+            }
+
+            var diagnosticPath = Path.Combine(directory, "startup-failure.log");
+            if (File.Exists(diagnosticPath) &&
+                (File.GetAttributes(diagnosticPath) & FileAttributes.ReparsePoint) != 0)
+            {
+                return;
+            }
+
+            var lines = new List<string>
+            {
+                $"Utc={DateTime.UtcNow:O}",
+                "RuntimeMode=IsolatedTest",
+                "ExceptionChain=" + FormatStartupExceptionChain(exception, databasePath)
+            };
+            File.AppendAllLines(diagnosticPath, lines, new System.Text.UTF8Encoding(false));
+        }
+        catch
+        {
+            // Startup diagnostics must never change the fail-closed outcome.
+        }
+    }
+
+    private static string FormatStartupExceptionChain(Exception exception, string databasePath)
+    {
+        var parts = new List<string>();
+        var current = exception;
+        var depth = 0;
+        while (current is not null && depth++ < 8)
+        {
+            var message = current.Message
+                .Replace(databasePath, "<ISOLATED_DB>", StringComparison.OrdinalIgnoreCase)
+                .Replace(Environment.NewLine, " ", StringComparison.Ordinal)
+                .Replace('\r', ' ')
+                .Replace('\n', ' ');
+            parts.Add($"{current.GetType().FullName}: {message}");
+            current = current.InnerException!;
+        }
+
+        return string.Join(" <- ", parts);
+    }
+
+    private static void LogIsolatedStartupMilestone(string milestone)
+    {
+        try
+        {
+            if (!string.Equals(
+                    Environment.GetEnvironmentVariable(
+                        DatabaseRuntimeGuard.RuntimeModeEnvironmentVariable),
+                    DatabaseRuntimeGuard.IsolatedTestMode,
+                    StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            var configuredDatabasePath = Environment.GetEnvironmentVariable(
+                DatabaseRuntimeGuard.DatabasePathEnvironmentVariable);
+            if (string.IsNullOrWhiteSpace(configuredDatabasePath) ||
+                !Path.IsPathFullyQualified(configuredDatabasePath))
+            {
+                return;
+            }
+
+            var directory = Path.GetDirectoryName(Path.GetFullPath(configuredDatabasePath));
+            if (string.IsNullOrWhiteSpace(directory) || !Directory.Exists(directory)) return;
+            var info = new DirectoryInfo(directory);
+            if ((info.Attributes & FileAttributes.ReparsePoint) != 0) return;
+
+            var path = Path.Combine(directory, "startup-diagnostics.log");
+            if (File.Exists(path) &&
+                (File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0)
+            {
+                return;
+            }
+
+            var safeMilestone = new string((milestone ?? string.Empty)
+                .Where(character => char.IsLetterOrDigit(character) || character is '_' or '-')
+                .ToArray());
+            if (string.IsNullOrWhiteSpace(safeMilestone)) return;
+            File.AppendAllText(
+                path,
+                $"Utc={DateTime.UtcNow:O}; Milestone={safeMilestone}{Environment.NewLine}",
+                new System.Text.UTF8Encoding(false));
+        }
+        catch
+        {
+            // Diagnostics must never affect startup or shutdown.
         }
     }
 
@@ -335,8 +461,7 @@ public partial class App :
             ConfigureApplicationConfiguration(builder);
             _ = ValidateDatabaseRuntime(builder);
 
-            var services = new ServiceCollection();
-            services.AddInfrastructure(builder.Configuration);
+            var services = CreatePreStartupInfrastructureServices(builder.Configuration);
             await using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
             var worker = provider.GetRequiredService<RestoreWorkerService>();
             var result = await worker.ExecuteAsync(request.PlanPath, request.OperationId,
@@ -386,8 +511,7 @@ public partial class App :
     private static async Task<RestoreOperationPlan?> RecoverRestoreBeforeDatabaseStartupAsync(
         IConfiguration configuration)
     {
-        var services = new ServiceCollection();
-        services.AddInfrastructure(configuration);
+        var services = CreatePreStartupInfrastructureServices(configuration);
         await using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
         var store = provider.GetRequiredService<RestoreOperationStore>();
         var discovery = await store.DiscoverStartupOperationAsync(CancellationToken.None);
@@ -442,10 +566,20 @@ public partial class App :
                 ? global::System.Windows.MessageBoxImage.Information
                 : global::System.Windows.MessageBoxImage.Warning);
 
-        var services = new ServiceCollection();
-        services.AddInfrastructure(configuration);
+        var services = CreatePreStartupInfrastructureServices(configuration);
         await using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
         await RestoreOperationStore.AcknowledgeTerminalResultAsync(outcome, CancellationToken.None);
+    }
+
+    internal static IServiceCollection CreatePreStartupInfrastructureServices(
+        IConfiguration configuration)
+    {
+        ArgumentNullException.ThrowIfNull(configuration);
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddInfrastructure(configuration);
+        return services;
     }
 
     private static DatabaseIdentity
@@ -1108,12 +1242,15 @@ public partial class App :
         ArgumentNullException.ThrowIfNull(
             serviceProvider);
 
+        LogIsolatedStartupMilestone("SessionLoopEntered");
+
         var setupRequired =
             await IsInitialSetupRequiredAsync(
                 serviceProvider);
 
         if (setupRequired)
         {
+            LogIsolatedStartupMilestone("InitialSetupWindowOpening");
             var setupCompleted =
                 ShowInitialSetupWindow(
                     serviceProvider);
@@ -1153,6 +1290,7 @@ public partial class App :
             if (!currentUserService
                 .IsAuthenticated)
             {
+                LogIsolatedStartupMilestone("LoginWindowOpening");
                 var loginSucceeded =
                     ShowLoginWindow(
                         serviceProvider);
@@ -1170,6 +1308,7 @@ public partial class App :
             EnsureAuthenticatedSession(
                 serviceProvider);
 
+            LogIsolatedStartupMilestone("ShellWindowOpening");
             var logoutRequested =
                 ShowShellWindow(
                     serviceProvider);
@@ -1292,16 +1431,21 @@ public partial class App :
             serviceProvider
                 .CreateScope();
 
+        LogIsolatedStartupMilestone("InitialSetupWindowResolving");
         var setupWindow =
             scope.ServiceProvider
                 .GetRequiredService<
                     FirstRunSetupWindow>();
+        LogIsolatedStartupMilestone("InitialSetupWindowConstructed");
 
         SetMainWindowReference(
             setupWindow);
+        LogIsolatedStartupMilestone("InitialSetupWindowReady");
 
-        return setupWindow.ShowDialog() ==
+        var result = setupWindow.ShowDialog() ==
                true;
+        LogIsolatedStartupMilestone("InitialSetupDialogReturned");
+        return result;
     }
 
     private bool ShowLoginWindow(
@@ -1317,16 +1461,21 @@ public partial class App :
             serviceProvider
                 .CreateScope();
 
+        LogIsolatedStartupMilestone("LoginWindowResolving");
         var loginWindow =
             scope.ServiceProvider
                 .GetRequiredService<
                     LoginWindow>();
+        LogIsolatedStartupMilestone("LoginWindowConstructed");
 
         SetMainWindowReference(
             loginWindow);
+        LogIsolatedStartupMilestone("LoginWindowReady");
 
-        return loginWindow.ShowDialog() ==
+        var result = loginWindow.ShowDialog() ==
                true;
+        LogIsolatedStartupMilestone("LoginDialogReturned");
+        return result;
     }
 
     private bool ShowShellWindow(
@@ -1343,15 +1492,19 @@ public partial class App :
             serviceProvider
                 .CreateScope();
 
+        LogIsolatedStartupMilestone("ShellWindowResolving");
         var shellWindow =
             scope.ServiceProvider
                 .GetRequiredService<
                     ShellWindow>();
+        LogIsolatedStartupMilestone("ShellWindowConstructed");
 
         SetMainWindowReference(
             shellWindow);
+        LogIsolatedStartupMilestone("ShellWindowReady");
 
         shellWindow.ShowDialog();
+        LogIsolatedStartupMilestone("ShellDialogReturned");
 
         return shellWindow
             .LogoutRequested;

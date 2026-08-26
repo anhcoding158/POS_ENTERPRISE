@@ -12,7 +12,8 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
-$projectPath = Join-Path $repositoryRoot 'src\POS.Wpf\POS.Wpf.csproj'
+$executablePath = Join-Path $repositoryRoot (
+    'src\POS.Wpf\bin\' + $Configuration + '\net10.0-windows\POS.Enterprise.exe')
 
 $source = Get-Item -LiteralPath ([IO.Path]::GetFullPath($SourceDatabasePath)) -ErrorAction Stop
 if (-not $source.PSIsContainer -and
@@ -23,8 +24,8 @@ else {
     throw 'The isolated-test source database must be a regular file.'
 }
 
-if (-not (Test-Path -LiteralPath $projectPath -PathType Leaf)) {
-    throw 'POS.Wpf project was not found.'
+if (-not (Test-Path -LiteralPath $executablePath -PathType Leaf)) {
+    throw "POS Enterprise $Configuration output was not found. Build the requested configuration before launching IsolatedTest."
 }
 
 function ConvertTo-ProcessArgument {
@@ -135,6 +136,10 @@ $expectedAutomaticBackupRoot = Resolve-WindowsAbsolutePath (
     Join-Path $canonicalTestRoot 'automatic-backups')
 $expectedAutomaticBackupStatePath = Resolve-WindowsAbsolutePath (
     Join-Path $expectedAutomaticBackupRoot 'automatic-backup-state.json')
+$expectedStoreSettingsPath = Resolve-WindowsAbsolutePath (
+    Join-Path $canonicalTestRoot 'store-settings.json')
+$expectedManagedLogoRoot = Resolve-WindowsAbsolutePath (
+    Join-Path $canonicalTestRoot 'store-logos')
 $localApplicationData = [Environment]::GetFolderPath(
     [Environment+SpecialFolder]::LocalApplicationData)
 $canonicalProductionAutomaticRoot = Resolve-WindowsAbsolutePath (
@@ -145,6 +150,8 @@ if (Test-PathWithinBoundary $canonicalRepositoryRoot $canonicalTestRoot) {
 }
 if (-not (Test-PathWithinBoundary $canonicalTestRoot $canonicalTestDatabasePath) -or
     -not (Test-PathWithinBoundary $canonicalTestRoot $expectedAutomaticBackupRoot) -or
+    -not (Test-PathWithinBoundary $canonicalTestRoot $expectedStoreSettingsPath) -or
+    -not (Test-PathWithinBoundary $canonicalTestRoot $expectedManagedLogoRoot) -or
     ([IO.Path]::GetDirectoryName($expectedAutomaticBackupRoot) -cne $canonicalTestRoot)) {
     throw 'The isolated automatic backup root failed its owned-boundary verification.'
 }
@@ -161,15 +168,7 @@ if (Test-ExistingPathChainHasReparsePoint $canonicalTestRoot) {
 }
 [IO.File]::Copy($source.FullName, $canonicalTestDatabasePath, $false)
 
-$arguments = @(
-    'run'
-    '--project'
-    (ConvertTo-ProcessArgument $projectPath)
-    '--configuration'
-    $Configuration
-    '--no-restore'
-    '--no-launch-profile'
-)
+$arguments = @()
 
 if ($null -ne $AdditionalArgument) {
     foreach ($argument in $AdditionalArgument) {
@@ -178,7 +177,7 @@ if ($null -ne $AdditionalArgument) {
 }
 
 $processStartInfo = New-Object System.Diagnostics.ProcessStartInfo
-$processStartInfo.FileName = 'dotnet'
+$processStartInfo.FileName = $executablePath
 $processStartInfo.Arguments = $arguments -join ' '
 $processStartInfo.WorkingDirectory = $repositoryRoot
 $processStartInfo.UseShellExecute = $false
@@ -257,7 +256,10 @@ Write-Host "Isolated test root: $canonicalTestRoot"
 Write-Host "Isolated database path: $canonicalTestDatabasePath"
 Write-Host "Expected automatic backup root: $expectedAutomaticBackupRoot"
 Write-Host "Expected automatic backup state path: $expectedAutomaticBackupStatePath"
+Write-Host "Effective Store Setup path: $expectedStoreSettingsPath"
+Write-Host "Effective managed logo path: $expectedManagedLogoRoot"
 Write-Host "Child process ID: $($process.Id)"
+Write-Host "Child process start time UTC: $([DateTime]::UtcNow.ToString('o'))"
 try {
     $process.WaitForExit()
     $exitCode = $process.ExitCode

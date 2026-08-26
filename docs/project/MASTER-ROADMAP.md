@@ -4,8 +4,8 @@
 
 - R3.3 Restore Wizard and Rollback is CLOSED / COMMITTED / PUSHED at `e1f6d0dc3401b91c8674f32e18c6a2fb29ccdd49`; RST14 retains its explicit combined-evidence limitation.
 - R3.4 Disaster Recovery Drill is PASS and CLOSED on `2026-08-26`: real production backup → genuinely new database → external-worker restore/restart → WPF sign-in → exact Orders/stock/receipt comparison → SQLite integrity. DR1–DR9 and canonical safety PASS.
-- R3 is CLOSED. The R3.4 prerequisite blocker for pilot is removed. R4 remains NOT STARTED and R4.1 Store Setup is the exact next checkpoint.
-- Final verification is PASS: focused recovery `142/142`, build `0` warnings/errors, full official Quality Gate `1317/1317`, vulnerability PASS and EF pending-model PASS.
+- R3 is CLOSED. The R3.4 prerequisite blocker for pilot is removed. R4.1 Store Setup and its isolated-startup hotfix are CLOSED / COMMITTED / PUSHED; R4.2 Employee and Account UI is the exact next checkpoint and READY TO START.
+- R4.1 hotfix verification is PASS: focused regression `11/11`, full Release suite `1327/1327`, build `0` warnings/errors, official Quality Gate, vulnerability scan and EF pending-model check PASS.
 
 ## Latest checkpoint position — 2026-08-23
 
@@ -185,7 +185,7 @@ R1.3 owner-approved artifact contract:
 ## R4 — STORE SETUP VÀ EMPLOYEE MANAGEMENT
 
 - **Status:** R4.1 Closed / Committed / Pushed; R4.2–R4.4 Not Started.
-- **Exact next checkpoint:** R4.2 Employee and Account UI — NOT STARTED.
+- **Exact next checkpoint:** R4.2 Employee and Account UI — READY TO START.
 - **Objective:** vận hành cấu hình cửa hàng, nhân viên, account, role và audit an toàn.
 - **Scope/checkpoints:** R4.1 Store Setup; R4.2 Employee and Account UI; R4.3 Role and Permission Management; R4.4 Audit Log UI. Gồm typed/validated store configuration; printer/scanner/cash drawer/VietQR/backup; quản lý nhân viên; reset password, lock/unlock; role/permission matrix; audit thay đổi quyền.
 - **Out of scope:** product data operations R5.
@@ -197,7 +197,8 @@ R1.3 owner-approved artifact contract:
 R4.1 closeout record:
 
 - Typed Store Setup, validation, atomic persistence, managed logo, readiness, receipt/VietQR/printing/backup integration and Administrator-only WPF navigation are implemented.
-- Full Release test baseline is `1326/1326` PASS with 0 failed, 0 skipped; official Quality Gate passed without `-SkipEfCheck`.
+- R4.1 isolated-startup hotfix: the exact pre-startup `ILoggerFactory`/`ILogger<T>` DI failure was repaired by centralizing logging-safe pre-startup Infrastructure composition and launching the compiled executable from the isolated launcher. The focused regression and real isolated smoke reached `LoginWindowReady` with no startup-failure log; this execution desktop exposed no inspectable Win32 top-level window, so no visual UIA claim is made.
+- Final hotfix Release baseline is `1327/1327` PASS with 0 failed, 0 skipped; official Quality Gate passed without `-SkipEfCheck`. R4.1 remains CLOSED and R4.2 remains READY TO START.
 - Database-location activation remains explicitly restart-required; physical scanner/cash-drawer actuation and physical printer success remain deferred until hardware acceptance is available.
 
 ## R5 — PRODUCT DATA OPERATIONS

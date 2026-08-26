@@ -1,5 +1,12 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-034 — R4.1 pre-startup providers must share logging-safe Infrastructure composition
+
+- **Status:** Accepted for R4.1 hotfix closeout on `2026-08-26`.
+- **Decision:** Centralize the existing restore-worker/startup-recovery `ServiceCollection` setup in `App.CreatePreStartupInfrastructureServices`; add logging before `AddInfrastructure`, then retain `ValidateOnBuild=true` and `ValidateScopes=true`. Start isolated acceptance through the compiled `POS.Enterprise.exe`, not `dotnet run`.
+- **Evidence:** Exact isolated smoke reproduced an `AggregateException` for unresolved `ILoggerFactory`/`ILogger<T>` services. The focused isolated composition regression and final full/Quality Gate suites pass after the repair.
+- **Consequence:** R4.1 Store Setup remains typed and fail-closed. Missing settings/printer remain readiness concerns, while pre-startup DI construction is deterministic. R4.2 remains the next checkpoint.
+
 ## DEC-033 — R4.1 uses a typed external Store Setup aggregate with restart-safe database location
 
 - **Status:** Accepted for R4.1 closeout on `2026-08-26`.
