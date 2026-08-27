@@ -1,5 +1,13 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R4.2 Employee and Account UI hotfix baseline — 2026-08-27
+
+- Entry baseline was `main` at `bb93417034ea049aa9ab5e3ce8d4f2ca6fcd7536`, SDK `10.0.302`, fetched and aligned with `origin/main`, clean before the hotfix, and canonical database identity unchanged.
+- Deterministic pre-fix production reproduction captured `System.Windows.Markup.XamlParseException` at `EmployeeManagementWindow.InitializeComponent` and inner `System.Exception: Cannot find resource named 'AuthLabelStyle'. Resource names are case sensitive.` This was the exact source of the observed module-open failure; the employee query itself was independently successful after the XAML fix.
+- New hotfix tests: `2/2` PASS. Broader focused staff/auth/navigation/Sales set: `162/162` PASS. Official Quality Gate without `-SkipEfCheck`: `1338/1338` PASS, failed `0`, skipped `0`; Debug solution build `0` warnings/`0` errors; vulnerability scan PASS; dotnet-ef restore PASS; EF pending-model check PASS; Git checks PASS. Release solution build: `0` warnings/`0` errors.
+- Real isolated verification used a fresh temporary copy and the production migration path. Launcher milestones reached `HostStarted`, `DatabaseInitialized`, `SessionLoopEntered`, `ShellWindowOpening`, `ShellWindowResolving`, `ShellWindowConstructed` and `ShellWindowReady`; production auth restored Administrator, direct employee search returned `count=1`, and the real window/ViewModel initialized with `count=1`, `total=1`. UIA top-level HWND was unavailable, so visual interaction is not claimed.
+- Canonical safety remained exact: length `937984`, LastWriteTimeUtc `2026-08-09T14:26:03.9619805Z`, SHA-256 `C1F4BCCF022F896DD0948F2E25AFABE831DF3EF9CE1B289E9D933F9A33BDDBED`, and no canonical WAL/SHM/journal. R4.1 visual polish is deferred; R4.3 is NOT STARTED.
+
 ## R4.2 Employee and Account Management closeout baseline — 2026-08-26
 
 - Entry baseline: `main` at `4d833dd48f467424b3156de067328288024cf492`, SDK `10.0.302`, clean and aligned with `origin/main`, canonical database unchanged.

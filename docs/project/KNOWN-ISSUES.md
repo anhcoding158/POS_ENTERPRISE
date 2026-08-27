@@ -1,5 +1,11 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## R4.2 Employee and Account UI hotfix — 2026-08-27
+
+- Resolved the real post-closeout navigation defect: `EmployeeManagementWindow.xaml` referenced `AuthLabelStyle` without a merged/shared resource, causing `XamlParseException` during the production window constructor. The shared authentication styles are now available through the Typography theme; no schema or migration change was required.
+- The navigation boundary now logs a sanitized complete exception chain and presents a module-loading message instead of the generic startup-failure message. Raw exception details remain hidden from users.
+- Isolated production construction and first-page loading pass after real migration/authentication. The execution desktop still exposes no inspectable Win32 top-level HWND to external UIA; no visual UIA PASS is claimed. R4.1 visual polish remains deferred and R4.3 is NOT STARTED.
+
 ## R4.2 Employee and Account Management closeout — 2026-08-26
 
 - R4.2 uses predefined roles and a centralized typed permission catalog. Effective permissions are displayed read-only in the Employee UI; dedicated role/permission administration remains the planned R4.3 checkpoint and is not claimed here.

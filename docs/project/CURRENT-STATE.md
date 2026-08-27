@@ -1,5 +1,14 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## R4.2 Employee and Account UI hotfix — CLOSED / COMMITTED / PUSHED — 2026-08-27
+
+- The automated R4.2 closeout at `bb93417034ea049aa9ab5e3ce8d4f2ca6fcd7536` was followed by a real manual failure when opening `Nhan vien va tai khoan`; startup, Administrator authentication and Shell opening still succeeded.
+- The recovered production exception was `System.Windows.Markup.XamlParseException` from `EmployeeManagementWindow.InitializeComponent`, with inner `System.Exception: Cannot find resource named 'AuthLabelStyle'. Resource names are case sensitive.` The missing shared resource was referenced by the Employee window XAML but existed only in a different window's local resources.
+- The fix adds the three shared authentication styles (`AuthLabelStyle`, `AuthPasswordBoxStyle`, `PasswordRequirementStyle`) to the merged Typography theme, and adds a logged, sanitized module-loading boundary with a module-specific Vietnamese message. Authorization and the existing scoped initialization/query path are unchanged.
+- New behavioral coverage constructs the real production Employee window on an isolated migrated database, validates defaults/roles/permissions, loads populated and empty pages, checks unauthorized rejection, and verifies Store Setup/Sales composition. The navigation-boundary regression verifies exception-chain logging and no startup-error classification.
+- Release isolated proof reached `ShellWindowReady`; production authentication restored the existing Administrator, the real employee query returned data, the real window was constructed and initialized with `count=1`, `total=1`. External UIA still exposed no top-level HWND, so visual click confirmation remains a manual limitation.
+- Official Quality Gate without `-SkipEfCheck` passed: full suite `1338/1338`, failed `0`, skipped `0`, build `0/0`, vulnerability scan PASS and EF pending-model PASS. R4.1 visual polish remains deferred; R4.3 remains NOT STARTED.
+
 ## R4.2 Employee and Account Management — CLOSED / COMMITTED / PUSHED — 2026-08-26
 
 - R4.2 adds a separate `Employee` identity record with an optional linked `User` login account, typed lifecycle/account status, centralized role capabilities, password policy, failed-login/lock state, force-password-change flow, last-login reporting, optimistic concurrency and sanitized security audit events.
