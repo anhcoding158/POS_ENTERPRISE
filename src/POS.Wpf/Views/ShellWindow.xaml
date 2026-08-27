@@ -482,6 +482,173 @@
 
                     <StackPanel>
 
+                        <StackPanel
+                            x:Name="TaskNavigationPanel"
+                            AutomationProperties.AutomationId="ShellTaskNavigation">
+                            <Button
+                                Style="{StaticResource NavigationButtonStyle}"
+                                AutomationProperties.AutomationId="ShellOverviewNavigationButton">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE80F;" FontFamily="Segoe MDL2 Assets" FontSize="17" Width="32" />
+                                    <TextBlock Text="Tổng quan" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button
+                                x:Name="CompactSalesNavigationButton"
+                                Click="OnOpenSalesClick"
+                                IsEnabled="{Binding CanUseCheckout}"
+                                Style="{StaticResource NavigationButtonStyle}"
+                                AutomationProperties.AutomationId="ShellSalesNavigationButton"
+                                ToolTip="Mở quầy bán hàng">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE8A1;" FontFamily="Segoe MDL2 Assets" FontSize="17" Width="32" />
+                                    <TextBlock Text="Bán hàng" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+
+                            <Expander
+                                IsExpanded="{Binding IsInventoryExpanded, Mode=TwoWay}"
+                                Style="{StaticResource ShellNavigationGroupStyle}"
+                                AutomationProperties.AutomationId="ShellInventoryGroup">
+                                <Expander.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE719;" FontFamily="Segoe MDL2 Assets" FontSize="17" Width="32" />
+                                        <TextBlock Text="Hàng hóa" VerticalAlignment="Center" />
+                                        <TextBlock Text="⌄" Margin="12,0,0,0" />
+                                    </StackPanel>
+                                </Expander.Header>
+                                <StackPanel>
+                                    <Button
+                                        Style="{StaticResource SelectedNavigationButtonStyle}"
+                                        AutomationProperties.AutomationId="ShellProductsNavigationButton">
+                                        <TextBlock Text="Sản phẩm và kho" />
+                                    </Button>
+                                    <Button
+                                        Command="{Binding OpenCategoryManagementCommand}"
+                                        IsEnabled="{Binding CanManageCategories}"
+                                        Visibility="{Binding CanManageCategories, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                        Style="{StaticResource NavigationButtonStyle}"
+                                        AutomationProperties.AutomationId="ShellCategoriesNavigationButton">
+                                        <TextBlock Text="Danh mục" />
+                                    </Button>
+                                </StackPanel>
+                            </Expander>
+
+                            <Expander
+                                IsExpanded="{Binding IsOrdersExpanded, Mode=TwoWay}"
+                                Style="{StaticResource ShellNavigationGroupStyle}"
+                                AutomationProperties.AutomationId="ShellOrdersGroup">
+                                <Expander.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE9D2;" FontFamily="Segoe MDL2 Assets" FontSize="17" Width="32" />
+                                        <TextBlock Text="Đơn hàng và khách hàng" VerticalAlignment="Center" />
+                                        <TextBlock Text="⌄" Margin="12,0,0,0" />
+                                    </StackPanel>
+                                </Expander.Header>
+                                <StackPanel>
+                                    <Button
+                                        x:Name="CompactOrderHistoryNavigationButton"
+                                        Command="{Binding OpenOrderHistoryCommand}"
+                                        IsEnabled="{Binding CanViewOrderHistory}"
+                                        Visibility="{Binding CanViewOrderHistory, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                        Style="{StaticResource NavigationButtonStyle}"
+                                        AutomationProperties.AutomationId="ShellOrderHistoryNavigationButton">
+                                        <TextBlock Text="Lịch sử đơn hàng" />
+                                    </Button>
+                                </StackPanel>
+                            </Expander>
+
+                            <Expander
+                                IsExpanded="{Binding IsQrExpanded, Mode=TwoWay}"
+                                Visibility="{Binding CanViewVietQr, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Style="{StaticResource ShellNavigationGroupStyle}"
+                                AutomationProperties.AutomationId="ShellQrGroup">
+                                <Expander.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="QR" FontWeight="Bold" Width="32" />
+                                        <TextBlock Text="Thanh toán QR" VerticalAlignment="Center" />
+                                        <TextBlock Text="⌄" Margin="12,0,0,0" />
+                                    </StackPanel>
+                                </Expander.Header>
+                                <StackPanel x:Name="VietQrNavigationPanel" />
+                            </Expander>
+
+                            <Expander
+                                IsExpanded="{Binding IsManagementExpanded, Mode=TwoWay}"
+                                Visibility="{Binding CanManageStoreSetup, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Style="{StaticResource ShellNavigationGroupStyle}"
+                                AutomationProperties.AutomationId="ShellManagementGroup">
+                                <Expander.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE77B;" FontFamily="Segoe MDL2 Assets" FontSize="17" Width="32" />
+                                        <TextBlock Text="Quản lý cửa hàng" VerticalAlignment="Center" />
+                                        <TextBlock Text="⌄" Margin="12,0,0,0" />
+                                    </StackPanel>
+                                </Expander.Header>
+                                <StackPanel>
+                                    <Button
+                                        x:Name="CompactEmployeeManagementNavigationButton"
+                                        Click="OnOpenEmployeeManagementClick"
+                                        IsEnabled="{Binding CanViewEmployees}"
+                                        Visibility="{Binding CanViewEmployees, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                        Style="{StaticResource NavigationButtonStyle}"
+                                        AutomationProperties.AutomationId="EmployeeManagementNavigationButton">
+                                        <TextBlock Text="Nhân viên và tài khoản" />
+                                    </Button>
+                                    <Button
+                                        x:Name="CompactStoreSettingsNavigationButton"
+                                        Click="OnOpenStoreSettingsClick"
+                                        IsEnabled="{Binding CanManageStoreSetup}"
+                                        Style="{StaticResource NavigationButtonStyle}"
+                                        AutomationProperties.AutomationId="StoreSettingsNavigationButton"
+                                        ToolTip="Cài đặt thông tin cửa hàng và máy in">
+                                        <TextBlock Text="Cài đặt cửa hàng" />
+                                    </Button>
+                                </StackPanel>
+                            </Expander>
+
+                            <Expander
+                                IsExpanded="{Binding IsDataExpanded, Mode=TwoWay}"
+                                Style="{StaticResource ShellNavigationGroupStyle}"
+                                AutomationProperties.AutomationId="ShellDataSupportGroup">
+                                <Expander.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE8D2;" FontFamily="Segoe MDL2 Assets" FontSize="17" Width="32" />
+                                        <TextBlock Text="Dữ liệu và hỗ trợ" VerticalAlignment="Center" />
+                                        <TextBlock Text="⌄" Margin="12,0,0,0" />
+                                    </StackPanel>
+                                </Expander.Header>
+                                <StackPanel>
+                                    <Button Click="OnOpenManualBackupClick" Style="{StaticResource NavigationButtonStyle}" AutomationProperties.AutomationId="ShellBackupNavigationButton">
+                                        <TextBlock Text="Sao lưu dữ liệu" />
+                                    </Button>
+                                    <Button
+                                        x:Name="CompactRestoreDataNavigationButton"
+                                        Click="OnOpenRestoreWizardClick"
+                                        IsEnabled="{Binding CanRestoreData}"
+                                        Visibility="{Binding CanRestoreData, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                        Style="{StaticResource NavigationButtonStyle}"
+                                        AutomationProperties.AutomationId="RestoreDataNavigationButton">
+                                        <TextBlock Text="Khôi phục dữ liệu" />
+                                    </Button>
+                                    <Button
+                                        x:Name="StorageStatusNavigationButton"
+                                        Click="OnOpenStorageStatusClick"
+                                        Style="{StaticResource NavigationButtonStyle}"
+                                        AutomationProperties.AutomationId="StorageStatusNavigationButton">
+                                        <TextBlock Text="Dung lượng" />
+                                    </Button>
+                                    <Button Click="OnOpenSupportBundleClick" Style="{StaticResource NavigationButtonStyle}" AutomationProperties.AutomationId="ShellSupportNavigationButton">
+                                        <TextBlock Text="Gói hỗ trợ" />
+                                    </Button>
+                                </StackPanel>
+                            </Expander>
+                        </StackPanel>
+
+                        <StackPanel
+                            x:Name="LegacyNavigationPanel"
+                            Visibility="Collapsed">
+
                         <Grid Margin="7,0,0,10">
 
                             <Grid.ColumnDefinitions>
@@ -560,25 +727,6 @@
                         </Button>
 
                         <Button
-                            Style="{StaticResource NavigationButtonStyle}"
-                            IsEnabled="False">
-
-                            <StackPanel Orientation="Horizontal">
-
-                                <TextBlock
-                                    Text="&#xE8D4;"
-                                    FontFamily="Segoe MDL2 Assets"
-                                    FontSize="17"
-                                    Width="32"
-                                    VerticalAlignment="Center" />
-
-                                <TextBlock
-                                    Text="Khách hàng"
-                                    VerticalAlignment="Center" />
-                            </StackPanel>
-                        </Button>
-
-                        <Button
                             x:Name="SalesNavigationButton"
                             Click="OnOpenSalesClick"
                             Style="{StaticResource NavigationButtonStyle}"
@@ -615,7 +763,7 @@
                                     VerticalAlignment="Center" />
 
                                 <TextBlock
-                                    Text="Lịch sử đơn hàng"
+                                    Text=""
                                     VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
@@ -673,7 +821,7 @@
 
                         <Button
                             x:Name="StoreSettingsNavigationButton"
-                            AutomationProperties.AutomationId="StoreSettingsNavigationButton"
+                            AutomationProperties.AutomationId="LegacyStoreSettingsNavigationButton"
                             Click="OnOpenStoreSettingsClick"
                             Style="{StaticResource NavigationButtonStyle}"
                             ToolTip="Cài đặt cửa hàng và thiết bị">
@@ -685,7 +833,7 @@
 
                         <Button
                             x:Name="EmployeeManagementNavigationButton"
-                            AutomationProperties.AutomationId="EmployeeManagementNavigationButton"
+                            AutomationProperties.AutomationId="LegacyEmployeeManagementNavigationButton"
                             Click="OnOpenEmployeeManagementClick"
                             Style="{StaticResource NavigationButtonStyle}"
                             ToolTip="Quản lý nhân viên và tài khoản">
@@ -696,8 +844,8 @@
                         </Button>
 
                         <Button
-                            x:Name="StorageStatusNavigationButton"
-                            AutomationProperties.AutomationId="StorageStatusNavigationButton"
+                            x:Name="LegacyStorageStatusNavigationButton"
+                            AutomationProperties.AutomationId="LegacyStorageStatusNavigationButton"
                             Click="OnOpenStorageStatusClick"
                             Style="{StaticResource NavigationButtonStyle}"
                             ToolTip="Xem trạng thái dung lượng database và ổ đĩa">
@@ -719,6 +867,8 @@
                                 </StackPanel>
                             </StackPanel>
                         </Button>
+
+                        </StackPanel>
 
                         <Border
                             x:Name="AutomaticBackupStatusSurface"

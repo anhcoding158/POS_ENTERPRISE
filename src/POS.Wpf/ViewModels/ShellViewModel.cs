@@ -2,10 +2,12 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.Authorization;
 using POS.Application.Abstractions.Services;
 using POS.Application.Authorization;
 using POS.Application.DTOs.Products;
+using POS.Domain.Enums;
 using POS.Wpf.Commands;
 using POS.Wpf.Services;
 
@@ -57,6 +59,9 @@ public sealed class ShellViewModel :
     private readonly IPermissionService
         _permissionService;
 
+    private readonly ICurrentUserService?
+        _currentUserService;
+
     private readonly ILogger<ShellViewModel>
         _logger;
 
@@ -92,6 +97,12 @@ public sealed class ShellViewModel :
     private string _lastUpdatedText =
         "Chưa tải dữ liệu";
 
+    private bool _isInventoryExpanded = true;
+    private bool _isOrdersExpanded;
+    private bool _isQrExpanded;
+    private bool _isManagementExpanded;
+    private bool _isDataExpanded;
+
     public ShellViewModel(
         IServiceScopeFactory scopeFactory,
         IProductDialogService productDialogService,
@@ -100,7 +111,8 @@ public sealed class ShellViewModel :
         IInventoryDialogService inventoryDialogService,
         IOrderHistoryWindowService orderHistoryWindowService,
         IPermissionService permissionService,
-        ILogger<ShellViewModel> logger)
+        ILogger<ShellViewModel> logger,
+        ICurrentUserService? currentUserService = null)
     {
         _scopeFactory =
             scopeFactory ??
@@ -131,6 +143,9 @@ public sealed class ShellViewModel :
             permissionService ??
             throw new ArgumentNullException(
                 nameof(permissionService));
+
+        _currentUserService =
+            currentUserService;
 
         _logger =
             logger ??
@@ -699,6 +714,66 @@ public sealed class ShellViewModel :
         private set => SetProperty(
             ref _lastUpdatedText,
             value);
+    }
+
+    public bool CanViewProducts =>
+        _permissionService.HasPermission(
+            SystemCapability.ViewProductCatalog);
+
+    public bool CanManageCategories =>
+        _permissionService.HasPermission(
+            SystemCapability.ManageCategories);
+
+    public bool CanUseCheckout =>
+        _permissionService.HasPermission(
+            SystemCapability.UseCheckout);
+
+    public bool CanViewOrderHistory =>
+        _permissionService.HasPermission(
+            SystemCapability.ViewReports);
+
+    public bool CanManageStoreSetup =>
+        _permissionService.HasPermission(
+            SystemCapability.ManageStoreSetup);
+
+    public bool CanRestoreData => CanManageStoreSetup;
+
+    public bool CanViewEmployees =>
+        _permissionService.HasPermission(
+            SystemCapability.ViewEmployees);
+
+    public bool CanViewVietQr =>
+        _currentUserService?.Role is
+            Role.Administrator or Role.Manager;
+
+    public bool IsInventoryExpanded
+    {
+        get => _isInventoryExpanded;
+        set => SetProperty(ref _isInventoryExpanded, value);
+    }
+
+    public bool IsOrdersExpanded
+    {
+        get => _isOrdersExpanded;
+        set => SetProperty(ref _isOrdersExpanded, value);
+    }
+
+    public bool IsQrExpanded
+    {
+        get => _isQrExpanded;
+        set => SetProperty(ref _isQrExpanded, value);
+    }
+
+    public bool IsManagementExpanded
+    {
+        get => _isManagementExpanded;
+        set => SetProperty(ref _isManagementExpanded, value);
+    }
+
+    public bool IsDataExpanded
+    {
+        get => _isDataExpanded;
+        set => SetProperty(ref _isDataExpanded, value);
     }
 
     public string PageText =>

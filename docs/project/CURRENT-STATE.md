@@ -1,5 +1,14 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## Store Setup UX polish and Shell navigation UX — CLOSED / COMMITTED / PUSHED — 2026-08-27
+
+- Deferred R4.1 visual polish was completed without changing persisted schema: Store Setup is now organized as Thông tin cửa hàng, Hóa đơn và in ấn, Thiết bị bán hàng, with administration-only paths in a collapsed advanced section.
+- Currency and region are presented as Việt Nam đồng (VND) and Việt Nam (UTC+7) automatic settings; invalid legacy time-zone values fall back safely. Raw enum, Windows ID, scanner mode, cash-drawer mode, VietQR fields and booleans are not exposed in the normal UI. VietQR remains owned by its dedicated module and existing data is preserved; cash-drawer UI is deferred while compatibility remains.
+- Printer discovery now reports busy/result/missing-selection states, printer testing remains through the production abstraction, and In thử uses the real receipt service. Scanner testing uses the same bounded normalization boundary as Sales, with success/timeout/cancel behavior and no product persistence.
+- Shell navigation now uses one-level task groups with permission-filtered children, stable AutomationIds and preserved Employee, Sales, Orders, VietQR, backup/restore and storage destinations. Dead Customer navigation is not presented.
+- New focused UX coverage is `8/8` PASS; related focused regressions are `384/384` PASS; final full suite is `1344/1344` PASS with `0` failed and `0` skipped. Release build and official Quality Gate without `-SkipEfCheck` passed with zero warnings/errors, vulnerability scan PASS and EF pending-model PASS.
+- Isolated Release launcher reached `ShellWindowReady` on a fresh copied database and created scenario-owned startup artifacts only. UIA exposed no top-level HWND in this execution desktop, so visual interaction is not claimed; real WPF Store Setup construction/resource loading and production initialization behavior are covered deterministically. R4.3 remains NOT STARTED.
+
 ## R4.2 Employee and Account UI hotfix — CLOSED / COMMITTED / PUSHED — 2026-08-27
 
 - The automated R4.2 closeout at `bb93417034ea049aa9ab5e3ce8d4f2ca6fcd7536` was followed by a real manual failure when opening `Nhan vien va tai khoan`; startup, Administrator authentication and Shell opening still succeeded.

@@ -1744,7 +1744,7 @@ public sealed class SalesViewModel :
         string? input,
         CancellationToken cancellationToken = default)
     {
-        var normalized = input?.Trim();
+        var normalized = BarcodeInputNormalizer.Normalize(input);
         if (string.IsNullOrWhiteSpace(normalized))
         {
             return false;

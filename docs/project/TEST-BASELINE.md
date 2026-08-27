@@ -1,5 +1,13 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## Store Setup UX polish and Shell navigation UX baseline — 2026-08-27
+
+- Entry baseline was `main` at `29f7354ab683129edffcc163fd51358a6b9f5969`, SDK `10.0.302`, clean and aligned with `origin/main`; canonical database identity matched exactly before and after isolated verification.
+- New Store Setup/Shell UX tests: `8/8` PASS. Related focused Store Setup/Shell/Employee/Sales/VietQR/backup/restore/isolated-startup regressions: `384/384` PASS. Final full suite: `1344/1344` PASS, `0` failed, `0` skipped.
+- Release solution build: PASS, `0` warnings, `0` errors. Official `scripts/Test-QualityGate.ps1` without `-SkipEfCheck`: PASS; Debug build `0/0`, vulnerability scan PASS for all `5/5` projects, local dotnet-ef restore PASS, EF pending-model PASS and Git whitespace PASS.
+- Isolated Release launcher used a fresh `%TEMP%` copy and reached `HostStarted`, `DatabaseInitialized`, `SessionLoopEntered`, `ShellWindowOpening`, `ShellWindowResolving`, `ShellWindowConstructed` and `ShellWindowReady`. Production Store Setup view/resource construction and initialization/query contracts passed; UIA had no top-level HWND, so no visual interaction is claimed.
+- Canonical safety remained exact: length `937984`, LastWriteTimeUtc `2026-08-09T14:26:03.9619805Z`, SHA-256 `C1F4BCCF022F896DD0948F2E25AFABE831DF3EF9CE1B289E9D933F9A33BDDBED`, no canonical WAL/SHM/journal. R4.1 visual polish is completed by this checkpoint; R4.3 is NOT STARTED.
+
 ## R4.2 Employee and Account UI hotfix baseline — 2026-08-27
 
 - Entry baseline was `main` at `bb93417034ea049aa9ab5e3ce8d4f2ca6fcd7536`, SDK `10.0.302`, fetched and aligned with `origin/main`, clean before the hotfix, and canonical database identity unchanged.

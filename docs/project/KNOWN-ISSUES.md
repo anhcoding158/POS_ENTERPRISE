@@ -1,5 +1,12 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## Store Setup UX polish and Shell navigation UX — 2026-08-27
+
+- The Store Setup UX now hides implementation values and keeps persisted compatibility fields intact. VietQR remains configured only in the dedicated VietQR module; cash-drawer hardware integration is intentionally deferred.
+- Printer discovery/test and scanner test workflows are deterministic and report actionable Vietnamese states. Automated acceptance uses a fake receipt adapter; no physical printer is claimed. The real production receipt abstraction is used by the In thử command.
+- The execution desktop does not expose a top-level Win32 HWND to external UIA for the isolated launcher, so no visual click/navigation PASS is claimed. Real WPF view construction, resources, ViewModel initialization and isolated startup milestones passed; manual visual smoke remains the honest final visual check.
+- Official Quality Gate passed outside the restricted IPC sandbox with `1344/1344` tests, `0` failed, `0` skipped, zero build warnings/errors, vulnerability scan PASS and EF pending-model PASS. R4.3 remains NOT STARTED.
+
 ## R4.2 Employee and Account UI hotfix — 2026-08-27
 
 - Resolved the real post-closeout navigation defect: `EmployeeManagementWindow.xaml` referenced `AuthLabelStyle` without a merged/shared resource, causing `XamlParseException` during the production window constructor. The shared authentication styles are now available through the Typography theme; no schema or migration change was required.

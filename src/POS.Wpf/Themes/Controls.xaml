@@ -345,6 +345,39 @@
          ===================================================== -->
 
     <Style
+        x:Key="ShellNavigationGroupStyle"
+        TargetType="{x:Type Expander}">
+
+        <Setter
+            Property="Foreground"
+            Value="{StaticResource SidebarTextBrush}" />
+
+        <Setter
+            Property="Background"
+            Value="Transparent" />
+
+        <Setter
+            Property="Margin"
+            Value="0,3" />
+
+        <Setter
+            Property="Padding"
+            Value="15,8" />
+
+        <Setter
+            Property="FontFamily"
+            Value="Segoe UI" />
+
+        <Setter
+            Property="FontSize"
+            Value="13" />
+
+        <Setter
+            Property="FontWeight"
+            Value="SemiBold" />
+    </Style>
+
+    <Style
         x:Key="NavigationButtonStyle"
         TargetType="{x:Type Button}">
 

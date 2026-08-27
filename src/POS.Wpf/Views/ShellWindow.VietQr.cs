@@ -76,8 +76,8 @@ public partial class ShellWindow
             return;
         }
 
-        if (SalesNavigationButton.Parent is not
-                StackPanel navigationPanel)
+        var navigationPanel = VietQrNavigationPanel;
+        if (navigationPanel is null)
         {
             return;
         }
@@ -93,6 +93,10 @@ public partial class ShellWindow
                 title:
                     "Cấu hình VietQR");
 
+        global::System.Windows.Automation.AutomationProperties.SetAutomationId(
+            imageButton,
+            "ShellVietQrSettingsNavigationButton");
+
         imageButton.Click +=
             OnOpenVietQrImageImportClick;
 
@@ -107,28 +111,15 @@ public partial class ShellWindow
                 title:
                     "Hiển thị VietQR");
 
+        global::System.Windows.Automation.AutomationProperties.SetAutomationId(
+            displayModeButton,
+            "ShellVietQrDisplayNavigationButton");
+
         displayModeButton.Click +=
             OnOpenVietQrDisplayModeClick;
 
-        var salesIndex =
-            navigationPanel.Children
-                .IndexOf(
-                    SalesNavigationButton);
-
-        var imageIndex =
-            salesIndex >= 0
-                ? salesIndex + 1
-                : navigationPanel
-                    .Children
-                    .Count;
-
-        navigationPanel.Children.Insert(
-            imageIndex,
-            imageButton);
-
-        navigationPanel.Children.Insert(
-            imageIndex + 1,
-            displayModeButton);
+        navigationPanel.Children.Add(imageButton);
+        navigationPanel.Children.Add(displayModeButton);
 
         _vietQrImageButton =
             imageButton;

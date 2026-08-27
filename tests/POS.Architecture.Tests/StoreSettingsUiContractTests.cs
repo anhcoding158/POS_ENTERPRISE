@@ -13,9 +13,34 @@ public sealed class StoreSettingsUiContractTests
         var shell = File.ReadAllText(Path.Combine(root, "src", "POS.Wpf", "Views", "ShellWindow.xaml"));
         var view = File.ReadAllText(Path.Combine(root, "src", "POS.Wpf", "Views", "StoreSettingsWindow.xaml"));
         Assert.Equal(1, Count(shell, "x:Name=\"StoreSettingsNavigationButton\""));
-        foreach (var id in new[] { "StoreSetupValidationSummary", "StoreSetupStoreName", "StoreSetupSave", "StoreSetupCancel", "StoreSetupTestQr", "StoreSetupTestPrinter" }) Assert.Contains(id, view, StringComparison.Ordinal);
-        Assert.Contains("1. Thông tin cửa hàng", view, StringComparison.Ordinal);
-        Assert.Contains("6. Readiness", view, StringComparison.Ordinal);
+        foreach (var id in new[]
+        {
+            "StoreSetupValidationSummary", "StoreSetupStoreName",
+            "StoreSetupPhone", "StoreSetupTaxCode", "StoreSetupLogoPreview",
+            "StoreSetupChooseLogo", "StoreSetupRemoveLogo",
+            "StoreSetupPrinter", "StoreSetupRefreshPrinters",
+            "StoreSetupTestPrinter", "StoreSetupPrintTest",
+            "StoreSetupScannerTest", "StoreSetupScannerCapture",
+            "StoreSetupScannerCancel", "StoreSetupSave", "StoreSetupCancel"
+        })
+            Assert.Contains(id, view, StringComparison.Ordinal);
+        Assert.Contains("Thông tin cửa hàng", view, StringComparison.Ordinal);
+        Assert.Contains("Hóa đơn và in ấn", view, StringComparison.Ordinal);
+        Assert.Contains("Thiết bị bán hàng", view, StringComparison.Ordinal);
+        Assert.Contains("Thiết lập nâng cao", view, StringComparison.Ordinal);
+        foreach (var rawValue in new[]
+        {
+            "VietnameseDong", "SE Asia Standard Time", "KeyboardWedge",
+            "Disabled", "Cần khởi động lại:", "Chưa lưu thay đổi:",
+            "VietQrEnabled", "BankBin", "CashDrawer"
+        })
+            Assert.DoesNotContain(rawValue, view, StringComparison.Ordinal);
+        Assert.Contains("ShellNavigationGroupStyle", shell, StringComparison.Ordinal);
+        Assert.Contains("ShellInventoryGroup", shell, StringComparison.Ordinal);
+        Assert.Contains("ShellOrdersGroup", shell, StringComparison.Ordinal);
+        Assert.Contains("ShellManagementGroup", shell, StringComparison.Ordinal);
+        Assert.Contains("ShellDataSupportGroup", shell, StringComparison.Ordinal);
+        Assert.DoesNotContain("Text=\"Khách hàng\"", shell, StringComparison.Ordinal);
         Assert.False(RolePermissionPolicy.HasPermission(Role.Cashier, SystemCapability.ManageStoreSetup));
         Assert.True(RolePermissionPolicy.HasPermission(Role.Administrator, SystemCapability.ManageStoreSetup));
     }
