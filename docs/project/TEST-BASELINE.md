@@ -1,5 +1,14 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## Shell sidebar and inventory navigation hotfix baseline — 2026-08-27
+
+- Entry baseline was `main` at `0088b6f1a9185c125756bea352c2353108107573`, aligned `0/0` with `origin/main`, clean/staged `0`, SDK `10.0.302`, no active Git operation or POS/test process, and exact canonical database identity.
+- New hotfix tests: `4/4` PASS. Product/Category/Shell/Store Setup/Employee/Orders focused set: `219/219` PASS. Broader Shell/Store/Employee/Sales/Orders/VietQR/auth/backup/restore/isolated set: `532/532` PASS. Final Release suite: `1348/1348` PASS, failed `0`, skipped `0`.
+- Release solution build: PASS, `0` warnings, `0` errors. Official `scripts/Test-QualityGate.ps1` without `-SkipEfCheck`: PASS; Debug build `0/0`, tests `1348/1348`, vulnerability scan PASS for all `5/5` projects, local dotnet-ef restore PASS, EF pending-model PASS and Git whitespace PASS.
+- Real production-view coverage copies canonical data to an owned isolated database, runs the production migration/DI composition with `ValidateOnBuild=true` and `ValidateScopes=true`, constructs the real `ShellWindow`, validates the Products/Category bindings and responsive style contract, and executes the first product query. Route coverage proves three repeated Category ↔ Products transitions and no query when Products is already active.
+- Release launcher evidence reached `HostStarted`, `DatabaseInitialized`, `SessionLoopEntered`, `ShellWindowOpening`, `ShellWindowResolving`, `ShellWindowConstructed` and `ShellWindowReady`, with a completed production product query. UIA reported no top-level HWND/element, so no visual click claim is made.
+- Canonical safety remained exact: length `937984`, LastWriteTimeUtc `2026-08-09T14:26:03.9619805Z`, SHA-256 `C1F4BCCF022F896DD0948F2E25AFABE831DF3EF9CE1B289E9D933F9A33BDDBED`, no canonical WAL/SHM/journal. Evidence: `C:\Users\Dell\AppData\Local\Temp\POS-Enterprise-Sidebar-Inventory-Hotfix-20260827T153747399Z-977b9f0eca6540af95cf405f1bdbfbf3`. Store Setup UX is preserved and R4.3 is NOT STARTED.
+
 ## Store Setup UX polish and Shell navigation UX baseline — 2026-08-27
 
 - Entry baseline was `main` at `29f7354ab683129edffcc163fd51358a6b9f5969`, SDK `10.0.302`, clean and aligned with `origin/main`; canonical database identity matched exactly before and after isolated verification.

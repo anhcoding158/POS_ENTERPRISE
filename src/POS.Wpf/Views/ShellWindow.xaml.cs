@@ -136,6 +136,12 @@ public partial class ShellWindow :
 
         PreviewKeyDown +=
             OnPreviewKeyDown;
+
+        SizeChanged +=
+            OnWindowSizeChanged;
+
+        _viewModel.UpdateViewportWidth(
+            Width);
     }
 
     private void OnOpenSupportBundleClick(
@@ -235,6 +241,14 @@ public partial class ShellWindow :
 
         await _viewModel.InitializeAsync();
         await _storageStatusViewModel.RefreshAsync();
+    }
+
+    private void OnWindowSizeChanged(
+        object sender,
+        global::System.Windows.SizeChangedEventArgs e)
+    {
+        _viewModel.UpdateViewportWidth(
+            e.NewSize.Width);
     }
 
     /// <summary>
@@ -1036,6 +1050,9 @@ public partial class ShellWindow :
 
         PreviewKeyDown -=
             OnPreviewKeyDown;
+
+        SizeChanged -=
+            OnWindowSizeChanged;
 
         _storageStatusViewModel.Dispose();
         _automaticBackupStatusViewModel.Dispose();

@@ -1,5 +1,14 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## Shell sidebar and inventory navigation hotfix — CLOSED / COMMITTED / PUSHED — 2026-08-27
+
+- The grouped sidebar introduced at `0088b6f1a9185c125756bea352c2353108107573` rendered the Products child as permanently selected but attached no command, while Shell had no authoritative route state. Category therefore opened correctly, but returning to `Sản phẩm & tồn kho` executed nothing and could not update selected/expanded state.
+- Shell now uses one `ShellRoute` state for Overview, Products and Categories. The Products command reactivates the existing inventory surface, expands Hàng hóa and does not recreate the view or duplicate the initial query; repeated Category ↔ Products transitions are covered behaviorally.
+- The sidebar is `276` logical pixels at normal desktop widths and `76` in compact mode below `1180`, with full-label tooltips, one icon/label/chevron group row, balanced child rows, a fixed status footer and session-only one-group expansion. Final labels use `Sản phẩm & tồn kho`, `Danh mục sản phẩm`, `Đơn hàng`, `Nhân viên & tài khoản`, `Dữ liệu & hỗ trợ` and `Màn hình VietQR`.
+- Shell minimum width is `1024`; compact mode leaves at least `948` logical pixels before workspace margins. Inventory summary cards switch from four to two columns, and the product DataGrid keeps its established star rhythm with minimum column widths plus an automatic horizontal scrollbar instead of silent right-edge clipping.
+- New hotfix coverage is `4/4` PASS; focused Product/Category/Shell/Store Setup/Employee/Orders coverage is `219/219`, broader navigation/auth/Sales/VietQR/backup/restore/isolated coverage is `532/532`, and the final suite is `1348/1348` PASS. Release build and official Quality Gate without `-SkipEfCheck` passed with zero warnings/errors, vulnerability scan PASS and EF pending-model PASS.
+- The Release IsolatedTest launcher migrated only a fresh `%TEMP%` copy, reached `ShellWindowReady` and completed the production product query. External UIA again exposed no top-level HWND, so final click/spacing/scaling observation remains manual. Store Setup UX is preserved, R4.2 remains CLOSED and R4.3 remains NOT STARTED.
+
 ## Store Setup UX polish and Shell navigation UX — CLOSED / COMMITTED / PUSHED — 2026-08-27
 
 - Deferred R4.1 visual polish was completed without changing persisted schema: Store Setup is now organized as Thông tin cửa hàng, Hóa đơn và in ấn, Thiết bị bán hàng, with administration-only paths in a collapsed advanced section.

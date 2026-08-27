@@ -1,5 +1,13 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## Shell sidebar and inventory navigation hotfix — 2026-08-27
+
+- Resolved: the grouped `ShellProductsNavigationButton` had no command and a hard-coded selected style. `ShellRoute`, `NavigateToProductsCommand` and route-derived selected/parent expansion state now make Dashboard/Category/other-module → Products transitions deterministic without duplicate product loads.
+- Resolved: the fixed `232`-pixel sidebar, default Expander indicator plus manual chevron, four-column KPI layout and unconstrained star-only product grid caused cramped labels and right-edge clipping. The production UI now uses deliberate `276`/`76` responsive modes, one chevron, compact tooltips, a fixed footer, two-column narrow KPI layout, column minimums and horizontal grid scrolling.
+- The Store Setup production layout and behavior were not changed. No schema, migration, authorization boundary, DI lifetime or persisted data was changed.
+- Remaining limitation: the execution desktop exposed neither a Win32 top-level HWND nor a UIA top-level element for the isolated process. `ShellWindowReady`, real WPF construction/bindings, production isolated product loading and automated width/route contracts passed, but final visual checks at 100%/125%/150% scaling and physical click transitions remain manual.
+- Official Quality Gate passed with `1348/1348`, failed `0`, skipped `0`, zero build warnings/errors, vulnerability scan PASS and EF pending-model PASS. R4.3 remains NOT STARTED.
+
 ## Store Setup UX polish and Shell navigation UX — 2026-08-27
 
 - The Store Setup UX now hides implementation values and keeps persisted compatibility fields intact. VietQR remains configured only in the dedicated VietQR module; cash-drawer hardware integration is intentionally deferred.

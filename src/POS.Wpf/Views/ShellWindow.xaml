@@ -2,10 +2,11 @@
     x:Class="POS.Wpf.Views.ShellWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:viewModels="clr-namespace:POS.Wpf.ViewModels"
     Title="POS Enterprise"
     Width="1366"
     Height="768"
-    MinWidth="1100"
+    MinWidth="1024"
     MinHeight="650"
     WindowStartupLocation="CenterScreen"
     WindowState="Maximized"
@@ -374,7 +375,7 @@
     <Grid Background="{StaticResource AppBackgroundBrush}">
 
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="232" />
+            <ColumnDefinition Width="{Binding SidebarWidth}" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
@@ -386,7 +387,18 @@
             Grid.Column="0"
             Background="{StaticResource SidebarBrush}">
 
-            <Grid Margin="20,20,20,18">
+            <Grid>
+
+                <Grid.Style>
+                    <Style TargetType="{x:Type Grid}">
+                        <Setter Property="Margin" Value="12,18,12,16" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsSidebarCompact}" Value="True">
+                                <Setter Property="Margin" Value="4,14,4,14" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
 
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -396,7 +408,10 @@
 
                 <!-- Brand -->
 
-                <StackPanel HorizontalAlignment="Center">
+                <StackPanel
+                    HorizontalAlignment="Center"
+                    Visibility="{Binding IsSidebarExpanded,
+                        Converter={StaticResource BooleanToVisibilityConverter}}">
 
                     <Grid
                         Width="72"
@@ -478,7 +493,15 @@
                     Grid.Row="1"
                     VerticalScrollBarVisibility="Auto"
                     HorizontalScrollBarVisibility="Disabled"
-                    Margin="0,27,0,18">
+                    Margin="0,16,0,12"
+                    AutomationProperties.AutomationId="ShellNavigationScrollRegion">
+
+                    <ScrollViewer.Resources>
+                        <Style TargetType="{x:Type ScrollBar}">
+                            <Setter Property="Width" Value="5" />
+                            <Setter Property="Opacity" Value="0.45" />
+                        </Style>
+                    </ScrollViewer.Resources>
 
                     <StackPanel>
 
@@ -486,11 +509,24 @@
                             x:Name="TaskNavigationPanel"
                             AutomationProperties.AutomationId="ShellTaskNavigation">
                             <Button
-                                Style="{StaticResource NavigationButtonStyle}"
+                                Command="{Binding NavigateToOverviewCommand}"
                                 AutomationProperties.AutomationId="ShellOverviewNavigationButton">
+                                <Button.Style>
+                                    <Style TargetType="{x:Type Button}" BasedOn="{StaticResource NavigationButtonStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsOverviewRouteActive}" Value="True">
+                                                <Setter Property="Background" Value="{StaticResource SidebarSelectedBrush}" />
+                                                <Setter Property="Foreground" Value="White" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="&#xE80F;" FontFamily="Segoe MDL2 Assets" FontSize="17" Width="32" />
-                                    <TextBlock Text="Tổng quan" VerticalAlignment="Center" />
+                                    <TextBlock
+                                        Text="Tổng quan"
+                                        VerticalAlignment="Center"
+                                        Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                 </StackPanel>
                             </Button>
                             <Button
@@ -502,34 +538,80 @@
                                 ToolTip="Mở quầy bán hàng">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="&#xE8A1;" FontFamily="Segoe MDL2 Assets" FontSize="17" Width="32" />
-                                    <TextBlock Text="Bán hàng" VerticalAlignment="Center" />
+                                    <TextBlock
+                                        Text="Bán hàng"
+                                        VerticalAlignment="Center"
+                                        Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                 </StackPanel>
                             </Button>
 
                             <Expander
+                                x:Name="ShellInventoryGroup"
                                 IsExpanded="{Binding IsInventoryExpanded, Mode=TwoWay}"
                                 Style="{StaticResource ShellNavigationGroupStyle}"
                                 AutomationProperties.AutomationId="ShellInventoryGroup">
                                 <Expander.Header>
-                                    <StackPanel Orientation="Horizontal">
+                                    <Grid ToolTip="Hàng hóa">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="32" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
                                         <TextBlock Text="&#xE719;" FontFamily="Segoe MDL2 Assets" FontSize="17" Width="32" />
-                                        <TextBlock Text="Hàng hóa" VerticalAlignment="Center" />
-                                        <TextBlock Text="⌄" Margin="12,0,0,0" />
-                                    </StackPanel>
+                                        <TextBlock
+                                            Grid.Column="1"
+                                            Text="Hàng hóa"
+                                            VerticalAlignment="Center"
+                                            Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                    </Grid>
                                 </Expander.Header>
                                 <StackPanel>
                                     <Button
-                                        Style="{StaticResource SelectedNavigationButtonStyle}"
+                                        x:Name="ShellProductsNavigationButton"
+                                        Command="{Binding NavigateToProductsCommand}"
+                                        ToolTip="Sản phẩm &amp; tồn kho"
                                         AutomationProperties.AutomationId="ShellProductsNavigationButton">
-                                        <TextBlock Text="Sản phẩm và kho" />
+                                        <Button.Style>
+                                            <Style TargetType="{x:Type Button}" BasedOn="{StaticResource ShellNavigationChildButtonStyle}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsProductsRouteActive}" Value="True">
+                                                        <Setter Property="Background" Value="{StaticResource SidebarSelectedBrush}" />
+                                                        <Setter Property="Foreground" Value="White" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE719;" FontFamily="Segoe MDL2 Assets" FontSize="13" Width="24" VerticalAlignment="Center" />
+                                            <TextBlock
+                                                Text="Sản phẩm &amp; tồn kho"
+                                                VerticalAlignment="Center"
+                                                Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        </StackPanel>
                                     </Button>
                                     <Button
+                                        x:Name="ShellCategoriesNavigationButton"
                                         Command="{Binding OpenCategoryManagementCommand}"
                                         IsEnabled="{Binding CanManageCategories}"
                                         Visibility="{Binding CanManageCategories, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                        Style="{StaticResource NavigationButtonStyle}"
+                                        ToolTip="Danh mục sản phẩm"
                                         AutomationProperties.AutomationId="ShellCategoriesNavigationButton">
-                                        <TextBlock Text="Danh mục" />
+                                        <Button.Style>
+                                            <Style TargetType="{x:Type Button}" BasedOn="{StaticResource ShellNavigationChildButtonStyle}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsCategoriesRouteActive}" Value="True">
+                                                        <Setter Property="Background" Value="{StaticResource SidebarSelectedBrush}" />
+                                                        <Setter Property="Foreground" Value="White" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE8EC;" FontFamily="Segoe MDL2 Assets" FontSize="13" Width="24" VerticalAlignment="Center" />
+                                            <TextBlock
+                                                Text="Danh mục sản phẩm"
+                                                VerticalAlignment="Center"
+                                                Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        </StackPanel>
                                     </Button>
                                 </StackPanel>
                             </Expander>
@@ -539,11 +621,18 @@
                                 Style="{StaticResource ShellNavigationGroupStyle}"
                                 AutomationProperties.AutomationId="ShellOrdersGroup">
                                 <Expander.Header>
-                                    <StackPanel Orientation="Horizontal">
+                                    <Grid ToolTip="Đơn hàng">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="32" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
                                         <TextBlock Text="&#xE9D2;" FontFamily="Segoe MDL2 Assets" FontSize="17" Width="32" />
-                                        <TextBlock Text="Đơn hàng và khách hàng" VerticalAlignment="Center" />
-                                        <TextBlock Text="⌄" Margin="12,0,0,0" />
-                                    </StackPanel>
+                                        <TextBlock
+                                            Grid.Column="1"
+                                            Text="Đơn hàng"
+                                            VerticalAlignment="Center"
+                                            Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                    </Grid>
                                 </Expander.Header>
                                 <StackPanel>
                                     <Button
@@ -551,9 +640,13 @@
                                         Command="{Binding OpenOrderHistoryCommand}"
                                         IsEnabled="{Binding CanViewOrderHistory}"
                                         Visibility="{Binding CanViewOrderHistory, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                        Style="{StaticResource NavigationButtonStyle}"
+                                        Style="{StaticResource ShellNavigationChildButtonStyle}"
+                                        ToolTip="Lịch sử đơn hàng"
                                         AutomationProperties.AutomationId="ShellOrderHistoryNavigationButton">
-                                        <TextBlock Text="Lịch sử đơn hàng" />
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE9D2;" FontFamily="Segoe MDL2 Assets" FontSize="13" Width="24" VerticalAlignment="Center" />
+                                            <TextBlock Text="Lịch sử đơn hàng" VerticalAlignment="Center" Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        </StackPanel>
                                     </Button>
                                 </StackPanel>
                             </Expander>
@@ -564,11 +657,14 @@
                                 Style="{StaticResource ShellNavigationGroupStyle}"
                                 AutomationProperties.AutomationId="ShellQrGroup">
                                 <Expander.Header>
-                                    <StackPanel Orientation="Horizontal">
+                                    <Grid ToolTip="Thanh toán QR">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="32" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
                                         <TextBlock Text="QR" FontWeight="Bold" Width="32" />
-                                        <TextBlock Text="Thanh toán QR" VerticalAlignment="Center" />
-                                        <TextBlock Text="⌄" Margin="12,0,0,0" />
-                                    </StackPanel>
+                                        <TextBlock Grid.Column="1" Text="Thanh toán QR" VerticalAlignment="Center" Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                    </Grid>
                                 </Expander.Header>
                                 <StackPanel x:Name="VietQrNavigationPanel" />
                             </Expander>
@@ -579,11 +675,14 @@
                                 Style="{StaticResource ShellNavigationGroupStyle}"
                                 AutomationProperties.AutomationId="ShellManagementGroup">
                                 <Expander.Header>
-                                    <StackPanel Orientation="Horizontal">
+                                    <Grid ToolTip="Quản lý cửa hàng">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="32" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
                                         <TextBlock Text="&#xE77B;" FontFamily="Segoe MDL2 Assets" FontSize="17" Width="32" />
-                                        <TextBlock Text="Quản lý cửa hàng" VerticalAlignment="Center" />
-                                        <TextBlock Text="⌄" Margin="12,0,0,0" />
-                                    </StackPanel>
+                                        <TextBlock Grid.Column="1" Text="Quản lý cửa hàng" VerticalAlignment="Center" Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                    </Grid>
                                 </Expander.Header>
                                 <StackPanel>
                                     <Button
@@ -591,18 +690,25 @@
                                         Click="OnOpenEmployeeManagementClick"
                                         IsEnabled="{Binding CanViewEmployees}"
                                         Visibility="{Binding CanViewEmployees, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                        Style="{StaticResource NavigationButtonStyle}"
+                                        Style="{StaticResource ShellNavigationChildButtonStyle}"
+                                        ToolTip="Nhân viên &amp; tài khoản"
                                         AutomationProperties.AutomationId="EmployeeManagementNavigationButton">
-                                        <TextBlock Text="Nhân viên và tài khoản" />
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE77B;" FontFamily="Segoe MDL2 Assets" FontSize="13" Width="24" VerticalAlignment="Center" />
+                                            <TextBlock Text="Nhân viên &amp; tài khoản" VerticalAlignment="Center" Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        </StackPanel>
                                     </Button>
                                     <Button
                                         x:Name="CompactStoreSettingsNavigationButton"
                                         Click="OnOpenStoreSettingsClick"
                                         IsEnabled="{Binding CanManageStoreSetup}"
-                                        Style="{StaticResource NavigationButtonStyle}"
+                                        Style="{StaticResource ShellNavigationChildButtonStyle}"
                                         AutomationProperties.AutomationId="StoreSettingsNavigationButton"
                                         ToolTip="Cài đặt thông tin cửa hàng và máy in">
-                                        <TextBlock Text="Cài đặt cửa hàng" />
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="13" Width="24" VerticalAlignment="Center" />
+                                            <TextBlock Text="Cài đặt cửa hàng" VerticalAlignment="Center" Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        </StackPanel>
                                     </Button>
                                 </StackPanel>
                             </Expander>
@@ -612,34 +718,51 @@
                                 Style="{StaticResource ShellNavigationGroupStyle}"
                                 AutomationProperties.AutomationId="ShellDataSupportGroup">
                                 <Expander.Header>
-                                    <StackPanel Orientation="Horizontal">
+                                    <Grid ToolTip="Dữ liệu &amp; hỗ trợ">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="32" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
                                         <TextBlock Text="&#xE8D2;" FontFamily="Segoe MDL2 Assets" FontSize="17" Width="32" />
-                                        <TextBlock Text="Dữ liệu và hỗ trợ" VerticalAlignment="Center" />
-                                        <TextBlock Text="⌄" Margin="12,0,0,0" />
-                                    </StackPanel>
+                                        <TextBlock Grid.Column="1" Text="Dữ liệu &amp; hỗ trợ" VerticalAlignment="Center" Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                    </Grid>
                                 </Expander.Header>
                                 <StackPanel>
-                                    <Button Click="OnOpenManualBackupClick" Style="{StaticResource NavigationButtonStyle}" AutomationProperties.AutomationId="ShellBackupNavigationButton">
-                                        <TextBlock Text="Sao lưu dữ liệu" />
+                                    <Button Click="OnOpenManualBackupClick" Style="{StaticResource ShellNavigationChildButtonStyle}" ToolTip="Sao lưu dữ liệu" AutomationProperties.AutomationId="ShellBackupNavigationButton">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE74E;" FontFamily="Segoe MDL2 Assets" FontSize="13" Width="24" VerticalAlignment="Center" />
+                                            <TextBlock Text="Sao lưu dữ liệu" VerticalAlignment="Center" Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        </StackPanel>
                                     </Button>
                                     <Button
                                         x:Name="CompactRestoreDataNavigationButton"
                                         Click="OnOpenRestoreWizardClick"
                                         IsEnabled="{Binding CanRestoreData}"
                                         Visibility="{Binding CanRestoreData, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                        Style="{StaticResource NavigationButtonStyle}"
+                                        Style="{StaticResource ShellNavigationChildButtonStyle}"
+                                        ToolTip="Khôi phục dữ liệu"
                                         AutomationProperties.AutomationId="RestoreDataNavigationButton">
-                                        <TextBlock Text="Khôi phục dữ liệu" />
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE777;" FontFamily="Segoe MDL2 Assets" FontSize="13" Width="24" VerticalAlignment="Center" />
+                                            <TextBlock Text="Khôi phục dữ liệu" VerticalAlignment="Center" Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        </StackPanel>
                                     </Button>
                                     <Button
                                         x:Name="StorageStatusNavigationButton"
                                         Click="OnOpenStorageStatusClick"
-                                        Style="{StaticResource NavigationButtonStyle}"
+                                        Style="{StaticResource ShellNavigationChildButtonStyle}"
+                                        ToolTip="Dung lượng"
                                         AutomationProperties.AutomationId="StorageStatusNavigationButton">
-                                        <TextBlock Text="Dung lượng" />
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xEDA2;" FontFamily="Segoe MDL2 Assets" FontSize="13" Width="24" VerticalAlignment="Center" />
+                                            <TextBlock Text="Dung lượng" VerticalAlignment="Center" Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        </StackPanel>
                                     </Button>
-                                    <Button Click="OnOpenSupportBundleClick" Style="{StaticResource NavigationButtonStyle}" AutomationProperties.AutomationId="ShellSupportNavigationButton">
-                                        <TextBlock Text="Gói hỗ trợ" />
+                                    <Button Click="OnOpenSupportBundleClick" Style="{StaticResource ShellNavigationChildButtonStyle}" ToolTip="Gói hỗ trợ" AutomationProperties.AutomationId="ShellSupportNavigationButton">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE897;" FontFamily="Segoe MDL2 Assets" FontSize="13" Width="24" VerticalAlignment="Center" />
+                                            <TextBlock Text="Gói hỗ trợ" VerticalAlignment="Center" Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        </StackPanel>
                                     </Button>
                                 </StackPanel>
                             </Expander>
@@ -876,6 +999,9 @@
                             Padding="12,9"
                             Background="{StaticResource SidebarSurfaceBrush}"
                             CornerRadius="8"
+                            Visibility="{Binding DataContext.IsSidebarExpanded,
+                                RelativeSource={RelativeSource AncestorType={x:Type Window}},
+                                Converter={StaticResource BooleanToVisibilityConverter}}"
                             ToolTip="{Binding DetailText}">
                             <StackPanel>
                                 <TextBlock
@@ -902,7 +1028,9 @@
                             Background="{StaticResource SidebarSurfaceBrush}"
                             BorderBrush="#6A4C27"
                             BorderThickness="1"
-                            CornerRadius="12">
+                            CornerRadius="12"
+                            Visibility="{Binding IsSidebarExpanded,
+                                Converter={StaticResource BooleanToVisibilityConverter}}">
 
                             <StackPanel>
 
@@ -953,6 +1081,7 @@
                 <!-- Sidebar footer -->
 
                 <StackPanel
+                    x:Name="ShellStatusFooter"
                     Grid.Row="2"
                     HorizontalAlignment="Center">
 
@@ -970,7 +1099,9 @@
                         <TextBlock
                             Text="SQLite đã kết nối"
                             Foreground="{StaticResource SidebarMutedBrush}"
-                            FontSize="10.5" />
+                            FontSize="10.5"
+                            Visibility="{Binding IsSidebarExpanded,
+                                Converter={StaticResource BooleanToVisibilityConverter}}" />
                     </StackPanel>
 
                     <TextBlock
@@ -978,14 +1109,18 @@
                         Foreground="#A0958C"
                         FontSize="10"
                         HorizontalAlignment="Center"
-                        Margin="0,9,0,0" />
+                        Margin="0,9,0,0"
+                        Visibility="{Binding IsSidebarExpanded,
+                            Converter={StaticResource BooleanToVisibilityConverter}}" />
 
                     <TextBlock
                         Text="Phiên bản 2.0.0"
                         Foreground="#8A8078"
                         FontSize="10"
                         HorizontalAlignment="Center"
-                        Margin="0,3,0,0" />
+                        Margin="0,3,0,0"
+                        Visibility="{Binding IsSidebarExpanded,
+                            Converter={StaticResource BooleanToVisibilityConverter}}" />
                 </StackPanel>
             </Grid>
         </Border>
@@ -1057,7 +1192,9 @@
                     Background="{StaticResource SurfaceBrush}"
                     BorderBrush="{StaticResource BorderBrush}"
                     BorderThickness="1"
-                    CornerRadius="13">
+                    CornerRadius="13"
+                    Visibility="{Binding IsSidebarExpanded,
+                        Converter={StaticResource BooleanToVisibilityConverter}}">
 
                     <Border.Effect>
 
@@ -1118,9 +1255,20 @@
                  ================================================= -->
 
             <UniformGrid
+                x:Name="InventorySummaryCards"
                 Grid.Row="1"
-                Columns="4"
                 Margin="0,18,0,16">
+
+                <UniformGrid.Style>
+                    <Style TargetType="{x:Type UniformGrid}">
+                        <Setter Property="Columns" Value="4" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsSidebarCompact}" Value="True">
+                                <Setter Property="Columns" Value="2" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </UniformGrid.Style>
 
                 <!-- Total products -->
 
@@ -1984,6 +2132,7 @@
                     <Grid Grid.Row="3">
 
                         <DataGrid
+                            x:Name="ProductInventoryGrid"
                             ItemsSource="{Binding Products}"
                             SelectedItem="{Binding SelectedProduct,
                                 Mode=TwoWay}"
@@ -1995,13 +2144,15 @@
                             VirtualizingPanel.IsVirtualizing="True"
                             VirtualizingPanel.VirtualizationMode="Recycling"
                             ScrollViewer.CanContentScroll="True"
+                            ScrollViewer.HorizontalScrollBarVisibility="Auto"
                             ScrollViewer.IsDeferredScrollingEnabled="True">
 
                             <DataGrid.Columns>
 
                                 <!-- SẢN PHẨM: Đã cập nhật HeaderTemplate và CellTemplate Margin để căn trái mượt mà -->
                                 <DataGridTemplateColumn
-                                    Width="2.6*">
+                                    Width="2.6*"
+                                    MinWidth="260">
 
                                     <DataGridTemplateColumn.HeaderTemplate>
                                         <DataTemplate>
@@ -2087,7 +2238,8 @@
 
                                 <DataGridTextColumn
                                     Binding="{Binding CategoryName}"
-                                    Width="1.4*">
+                                    Width="1.4*"
+                                    MinWidth="135">
 
                                     <DataGridTextColumn.HeaderTemplate>
 
@@ -2121,7 +2273,8 @@
 
                                 <DataGridTextColumn
                                     Binding="{Binding SalePriceText}"
-                                    Width="1*">
+                                    Width="1*"
+                                    MinWidth="125">
 
                                     <DataGridTextColumn.HeaderTemplate>
 
@@ -2162,7 +2315,8 @@
                                 <!-- STOCK -->
 
                                 <DataGridTemplateColumn
-                                    Width="1.15*">
+                                    Width="1.15*"
+                                    MinWidth="150">
 
                                     <DataGridTemplateColumn.HeaderTemplate>
 
@@ -2303,7 +2457,8 @@
                                 <!-- STATUS -->
 
                                 <DataGridTemplateColumn
-                                    Width="1*">
+                                    Width="1*"
+                                    MinWidth="140">
 
                                     <DataGridTemplateColumn.HeaderTemplate>
 

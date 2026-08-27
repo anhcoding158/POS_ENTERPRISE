@@ -23,6 +23,13 @@ public sealed record ProductStatusFilterOption(
     bool? IsActive,
     bool? IsArchived);
 
+public enum ShellRoute
+{
+    Overview,
+    Products,
+    Categories
+}
+
 /// <summary>
 /// Điều khiển màn hình sản phẩm và tồn kho.
 ///
@@ -102,6 +109,9 @@ public sealed class ShellViewModel :
     private bool _isQrExpanded;
     private bool _isManagementExpanded;
     private bool _isDataExpanded;
+    private bool _isSidebarCompact;
+    private ShellRoute _activeRoute =
+        ShellRoute.Products;
 
     public ShellViewModel(
         IServiceScopeFactory scopeFactory,
@@ -236,6 +246,16 @@ public sealed class ShellViewModel :
                 CanLoadProducts,
                 HandleCommandException);
 
+        NavigateToOverviewCommand =
+            new AsyncRelayCommand(
+                NavigateToOverviewAsync);
+
+        NavigateToProductsCommand =
+            new AsyncRelayCommand(
+                NavigateToProductsAsync,
+                () => CanViewProducts,
+                HandleCommandException);
+
         EditProductCommand =
             new AsyncRelayCommand(
                 EditProductAsync,
@@ -318,6 +338,12 @@ public sealed class ShellViewModel :
 
     public AsyncRelayCommand
         OpenCategoryManagementCommand
+    { get; }
+
+    public AsyncRelayCommand NavigateToOverviewCommand
+    { get; }
+
+    public AsyncRelayCommand NavigateToProductsCommand
     { get; }
 
     public AsyncRelayCommand EditProductCommand { get; }
@@ -746,34 +772,110 @@ public sealed class ShellViewModel :
         _currentUserService?.Role is
             Role.Administrator or Role.Manager;
 
+    public ShellRoute ActiveRoute
+    {
+        get => _activeRoute;
+        private set
+        {
+            if (!SetProperty(
+                    ref _activeRoute,
+                    value))
+            {
+                return;
+            }
+
+            OnPropertyChanged(
+                nameof(IsOverviewRouteActive));
+            OnPropertyChanged(
+                nameof(IsProductsRouteActive));
+            OnPropertyChanged(
+                nameof(IsCategoriesRouteActive));
+        }
+    }
+
+    public bool IsOverviewRouteActive =>
+        ActiveRoute == ShellRoute.Overview;
+
+    public bool IsProductsRouteActive =>
+        ActiveRoute == ShellRoute.Products;
+
+    public bool IsCategoriesRouteActive =>
+        ActiveRoute == ShellRoute.Categories;
+
+    public bool IsSidebarCompact =>
+        _isSidebarCompact;
+
+    public bool IsSidebarExpanded =>
+        !_isSidebarCompact;
+
+    public double SidebarWidth =>
+        _isSidebarCompact
+            ? 76d
+            : 276d;
+
+    public void UpdateViewportWidth(
+        double viewportWidth)
+    {
+        var compact =
+            viewportWidth < 1180d;
+
+        if (!SetProperty(
+                ref _isSidebarCompact,
+                compact,
+                nameof(IsSidebarCompact)))
+        {
+            return;
+        }
+
+        OnPropertyChanged(
+            nameof(IsSidebarExpanded));
+        OnPropertyChanged(
+            nameof(SidebarWidth));
+    }
+
     public bool IsInventoryExpanded
     {
         get => _isInventoryExpanded;
-        set => SetProperty(ref _isInventoryExpanded, value);
+        set => SetExpandedGroup(
+            ref _isInventoryExpanded,
+            value,
+            nameof(IsInventoryExpanded));
     }
 
     public bool IsOrdersExpanded
     {
         get => _isOrdersExpanded;
-        set => SetProperty(ref _isOrdersExpanded, value);
+        set => SetExpandedGroup(
+            ref _isOrdersExpanded,
+            value,
+            nameof(IsOrdersExpanded));
     }
 
     public bool IsQrExpanded
     {
         get => _isQrExpanded;
-        set => SetProperty(ref _isQrExpanded, value);
+        set => SetExpandedGroup(
+            ref _isQrExpanded,
+            value,
+            nameof(IsQrExpanded));
     }
 
     public bool IsManagementExpanded
     {
         get => _isManagementExpanded;
-        set => SetProperty(ref _isManagementExpanded, value);
+        set => SetExpandedGroup(
+            ref _isManagementExpanded,
+            value,
+            nameof(IsManagementExpanded));
     }
 
     public bool IsDataExpanded
     {
         get => _isDataExpanded;
-        set => SetProperty(ref _isDataExpanded, value);
+        set => SetExpandedGroup(
+            ref _isDataExpanded,
+            value,
+            nameof(IsDataExpanded));
     }
 
     public string PageText =>
@@ -914,10 +1016,40 @@ public sealed class ShellViewModel :
         }
     }
 
+    private Task NavigateToOverviewAsync()
+    {
+        ActiveRoute =
+            ShellRoute.Overview;
+
+        return Task.CompletedTask;
+    }
+
+    private Task NavigateToProductsAsync()
+    {
+        IsInventoryExpanded =
+            true;
+
+        ActiveRoute =
+            ShellRoute.Products;
+
+        /*
+         * Danh sách sản phẩm đã được Shell sở hữu và tải một lần.
+         * Chuyển về route đang hoạt động chỉ đổi trạng thái điều hướng;
+         * không tạo ViewModel mới và không chạy thêm truy vấn.
+         */
+        return Task.CompletedTask;
+    }
+
     private async Task OpenCategoryManagementAsync()
     {
         var selectedProductId =
             SelectedProduct?.Id;
+
+        IsInventoryExpanded =
+            true;
+
+        ActiveRoute =
+            ShellRoute.Categories;
 
         StatusMessage =
             "Đang mở màn hình quản lý danh mục...";
@@ -941,6 +1073,61 @@ public sealed class ShellViewModel :
             StatusMessage =
                 "Danh mục đã được đồng bộ với danh sách sản phẩm.";
         }
+    }
+
+    private void SetExpandedGroup(
+        ref bool field,
+        bool value,
+        string propertyName)
+    {
+        if (!SetProperty(
+                ref field,
+                value,
+                propertyName) ||
+            !value)
+        {
+            return;
+        }
+
+        CollapseGroup(
+            ref _isInventoryExpanded,
+            nameof(IsInventoryExpanded),
+            propertyName);
+        CollapseGroup(
+            ref _isOrdersExpanded,
+            nameof(IsOrdersExpanded),
+            propertyName);
+        CollapseGroup(
+            ref _isQrExpanded,
+            nameof(IsQrExpanded),
+            propertyName);
+        CollapseGroup(
+            ref _isManagementExpanded,
+            nameof(IsManagementExpanded),
+            propertyName);
+        CollapseGroup(
+            ref _isDataExpanded,
+            nameof(IsDataExpanded),
+            propertyName);
+    }
+
+    private void CollapseGroup(
+        ref bool field,
+        string propertyName,
+        string expandedPropertyName)
+    {
+        if (string.Equals(
+                propertyName,
+                expandedPropertyName,
+                StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        SetProperty(
+            ref field,
+            false,
+            propertyName);
     }
 
     private async Task EditProductAsync()
@@ -1562,6 +1749,9 @@ public sealed class ShellViewModel :
             .NotifyCanExecuteChanged();
 
         OpenCategoryManagementCommand
+            .NotifyCanExecuteChanged();
+
+        NavigateToProductsCommand
             .NotifyCanExecuteChanged();
 
         EditProductCommand

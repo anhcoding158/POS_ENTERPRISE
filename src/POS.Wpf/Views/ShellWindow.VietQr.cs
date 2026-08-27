@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using POS.Application.Abstractions.Payments;
 using POS.Domain.Enums;
 using POS.Wpf.Services;
+using POS.Wpf.ViewModels;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -109,7 +110,7 @@ public partial class ShellWindow
                     "▣",
 
                 title:
-                    "Hiển thị VietQR");
+                    "Màn hình VietQR");
 
         global::System.Windows.Automation.AutomationProperties.SetAutomationId(
             displayModeButton,
@@ -149,7 +150,7 @@ public partial class ShellWindow
             };
 
         if (TryFindResource(
-                "NavigationButtonStyle")
+                "ShellNavigationChildButtonStyle")
             is Style style)
         {
             button.Style =
@@ -159,7 +160,7 @@ public partial class ShellWindow
         return button;
     }
 
-    private static StackPanel
+    private StackPanel
         CreateNavigationContent(
             string icon,
             string title)
@@ -178,7 +179,7 @@ public partial class ShellWindow
                     icon,
 
                 Width =
-                    32,
+                    24,
 
                 FontSize =
                     12,
@@ -190,7 +191,7 @@ public partial class ShellWindow
                     VerticalAlignment.Center
             });
 
-        panel.Children.Add(
+        var label =
             new TextBlock
             {
                 Text =
@@ -198,7 +199,24 @@ public partial class ShellWindow
 
                 VerticalAlignment =
                     VerticalAlignment.Center
+            };
+
+        label.SetBinding(
+            VisibilityProperty,
+            new global::System.Windows.Data.Binding(
+                nameof(ShellViewModel.IsSidebarExpanded))
+            {
+                Source =
+                    _viewModel,
+
+                Converter =
+                    (global::System.Windows.Data.IValueConverter)
+                    FindResource(
+                        "BooleanToVisibilityConverter")
             });
+
+        panel.Children.Add(
+            label);
 
         return panel;
     }
