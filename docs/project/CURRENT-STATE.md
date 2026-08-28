@@ -1,5 +1,12 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## R4.2 final Employee detail visual polish — CLOSED / COMMITTED / PUSHED — 2026-08-28
+
+- This tightly scoped presentation checkpoint preserves the completed Employee master-detail behavior, filters, commands, persistence, authorization, security safeguards, dark grouped sidebar, Store Setup UX and Inventory navigation hotfix.
+- The selected-employee detail now has one identity header containing avatar, real name/code/username and an intentional contextual status area (`Nhân viên` and `Tài khoản`); the Hồ sơ tab uses a grouped information card with friendly optional-value fallbacks, safe long-code trimming/tooltips and a connected action strip.
+- Real WPF construction/layout coverage passes at normal and supported reduced sizes; profile/action surfaces remain reachable without overlap. No Employee business behavior or shared global theme was changed.
+- R4.3 and R4.4 remain NOT STARTED. Physical DPI visual smoke remains a manual check on this execution desktop because external UIA exposes no top-level HWND.
+
 ## R4.2 final manual UI correction — CLOSED / COMMITTED / PUSHED — 2026-08-28
 
 - The live entry baseline is `93da2045ced774e8bd02e34777bfc145aac682db`, descendant of `cea5c4230487d95c379c9e18d3a7437e91dc7133`, with `main` aligned `0/0` to `origin/main`, clean/staged `0`, SDK `10.0.302`, and exact canonical database identity.

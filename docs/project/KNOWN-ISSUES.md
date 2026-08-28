@@ -1,5 +1,12 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## R4.2 final Employee detail visual polish — CLOSED — 2026-08-28
+
+- Resolved the selected-detail presentation gap: identity metadata and employment/account states are now composed in one bordered header, profile values are grouped in a warm-neutral information card, and lifecycle/profile commands sit in a deliberate action strip.
+- Empty optional phone/email values render as `Chưa cập nhật`; long employee codes remain bounded with ellipsis and retain the complete value in a tooltip. Existing commands, authorization and confirmations remain unchanged.
+- Real WPF layout verification passed at `1180×720`, `1366×768`, `1280×720` and `1000×620`. This desktop still has no inspectable top-level HWND for external UIA, so physical 100%/125%/150% DPI smoke remains an honest manual limitation.
+- R4.3 and R4.4 remain NOT STARTED.
+
 ## R4.2 final manual UI correction — CLOSED — 2026-08-28
 
 - The prior manual observations were reproduced from the current source: the filtered-empty card combined a dynamic Clear Filters button with a second Add button, the filtered state was derived from the visible page only, and the Role ComboBox had a valid selected object but no selected-content text after real WPF layout.

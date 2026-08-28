@@ -214,8 +214,10 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
     public string EditorTitle => IsCreateMode ? "Thêm nhân viên" : "Thông tin nhân viên";
     public string EmployeeCode { get => _employeeCode; set { if (SetProperty(ref _employeeCode, value ?? string.Empty)) MarkDirty(); } }
     public string FullName { get => _fullName; set { if (SetProperty(ref _fullName, value ?? string.Empty)) MarkDirty(); } }
-    public string PhoneNumber { get => _phoneNumber; set { if (SetProperty(ref _phoneNumber, value ?? string.Empty)) MarkDirty(); } }
-    public string EmailAddress { get => _emailAddress; set { if (SetProperty(ref _emailAddress, value ?? string.Empty)) MarkDirty(); } }
+    public string PhoneNumber { get => _phoneNumber; set { if (SetProperty(ref _phoneNumber, value ?? string.Empty)) { OnPropertyChanged(nameof(PhoneDisplayText)); MarkDirty(); } } }
+    public string EmailAddress { get => _emailAddress; set { if (SetProperty(ref _emailAddress, value ?? string.Empty)) { OnPropertyChanged(nameof(EmailDisplayText)); MarkDirty(); } } }
+    public string PhoneDisplayText => string.IsNullOrWhiteSpace(PhoneNumber) ? "Chưa cập nhật" : PhoneNumber;
+    public string EmailDisplayText => string.IsNullOrWhiteSpace(EmailAddress) ? "Chưa cập nhật" : EmailAddress;
     public string Username { get => _username; set { if (SetProperty(ref _username, value ?? string.Empty)) MarkDirty(); } }
     public bool CreateAccount { get => _createAccount; set { if (SetProperty(ref _createAccount, value)) { MarkDirty(); OnPropertyChanged(nameof(ShowAccountEditor)); } } }
     public bool ShowAccountEditor => IsCreatingAccount || (IsCreateMode && CreateAccount);
@@ -563,7 +565,7 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
     {
         OnPropertyChanged(nameof(HasSelection)); OnPropertyChanged(nameof(HasAccount)); OnPropertyChanged(nameof(HasDetail)); OnPropertyChanged(nameof(HasDetailContent)); OnPropertyChanged(nameof(AccountStatusText));
         OnPropertyChanged(nameof(EmployeeStatusText)); OnPropertyChanged(nameof(LastLoginText)); OnPropertyChanged(nameof(FailedLoginText)); OnPropertyChanged(nameof(ForcePasswordChangeText));
-        OnPropertyChanged(nameof(RoleText)); OnPropertyChanged(nameof(UsernameText)); OnPropertyChanged(nameof(SelectedInitials)); OnPropertyChanged(nameof(EffectivePermissionsText)); OnPropertyChanged(nameof(ToggleActiveText)); OnPropertyChanged(nameof(ToggleLockText));
+        OnPropertyChanged(nameof(RoleText)); OnPropertyChanged(nameof(UsernameText)); OnPropertyChanged(nameof(PhoneDisplayText)); OnPropertyChanged(nameof(EmailDisplayText)); OnPropertyChanged(nameof(SelectedInitials)); OnPropertyChanged(nameof(EffectivePermissionsText)); OnPropertyChanged(nameof(ToggleActiveText)); OnPropertyChanged(nameof(ToggleLockText));
         OnPropertyChanged(nameof(ShowAccountEditor)); NotifyCommands();
     }
     private void NotifyCommands()

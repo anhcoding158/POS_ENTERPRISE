@@ -1,5 +1,13 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R4.2 final Employee detail visual polish baseline — CLOSED — 2026-08-28
+
+- Entry baseline was live `main` at `b8c17e0383cee79c1ed73b8c5d9dcc5f3e7b86a4`, fetched/aligned `0/0` with `origin/main`, SDK `10.0.302`, clean/staged `0`, and exact canonical database identity.
+- Final focused Employee UI coverage is `6/6 PASS` in Release, including real selected identity data, contextual statuses, grouped profile/action surfaces, optional-value fallback, long-code tooltip/trimming and WPF layout at four supported sizes. Related Employee/RBAC/Shell/Store Setup/Sales regressions are `179/179 PASS`.
+- Release build is `0` warnings/`0` errors. The final official Quality Gate is required after this documentation update; the accepted prior baseline is `1352/1352 PASS` with failed `0`, skipped `0`, vulnerability PASS, EF pending-model PASS and Git checks PASS.
+- Canonical safety target remains length `937984`, LastWriteTimeUtc `2026-08-09T14:26:03.9619805Z`, SHA-256 `C1F4BCCF022F896DD0948F2E25AFABE831DF3EF9CE1B289E9D933F9A33BDDBED`, with no WAL/SHM/journal.
+- R4.3 and R4.4 remain NOT STARTED.
+
 ## R4.2 final manual UI correction baseline — CLOSED — 2026-08-28
 
 - Entry baseline is live `main` at `93da2045ced774e8bd02e34777bfc145aac682db`, fetched/aligned `0/0` with `origin/main`, SDK `10.0.302`, clean/staged `0`, no active POS/worker/testhost/vstest process, and exact canonical database identity.

@@ -20,7 +20,8 @@ public sealed class EmployeeManagementUiContractTests
             "EmployeeRoleFilter", "EmployeeList", "EmployeeDirtyState", "EmployeeValidationSummary", "EmployeeSaveButton",
             "EmployeeCreateAccountButton", "EmployeeResetPasswordButton", "EmployeeLockToggleButton",
             "EmployeeActiveToggleButton", "EmployeeChangeRoleButton", "EmployeeEmptyAddButton",
-            "EmployeeFilteredEmptyAddButton", "EmployeeFilteredEmptyClearButton", "EmployeeCreateCloseButton"
+            "EmployeeFilteredEmptyAddButton", "EmployeeFilteredEmptyClearButton", "EmployeeCreateCloseButton",
+            "EmployeeIdentityHeader", "EmployeeProfileInformationCard", "EmployeeProfileActionStrip"
         })
         {
             Assert.Contains(automationId, view, StringComparison.Ordinal);
@@ -75,6 +76,12 @@ public sealed class EmployeeManagementUiContractTests
         Assert.Contains("EmployeeProfileTab", view, StringComparison.Ordinal);
         Assert.Contains("EmployeeAccountTab", view, StringComparison.Ordinal);
         Assert.Contains("EmployeePermissionsTab", view, StringComparison.Ordinal);
+        Assert.Contains("Text=\"Nhân viên\"", view, StringComparison.Ordinal);
+        Assert.Contains("Text=\"Tài khoản\"", view, StringComparison.Ordinal);
+        Assert.Contains("ReadOnlyInfoCardStyle", view, StringComparison.Ordinal);
+        Assert.Contains("ReadOnlyActionStripStyle", view, StringComparison.Ordinal);
+        Assert.Contains("PhoneDisplayText", view, StringComparison.Ordinal);
+        Assert.Contains("EmailDisplayText", view, StringComparison.Ordinal);
         Assert.Contains("ToolTip=\"{Binding EmployeeCode}\"", view, StringComparison.Ordinal);
         Assert.Contains("<Path Data=\"M 2,2 L 10,10 M 10,2 L 2,10\"", view, StringComparison.Ordinal);
         Assert.Contains("Command=\"{Binding ClearFiltersCommand}\"", view, StringComparison.Ordinal);

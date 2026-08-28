@@ -117,6 +117,57 @@ public sealed class EmployeeManagementUiHotfixTests
                 viewModel.SelectEmployeeAsync(viewModel.Employees[0].Id).GetAwaiter().GetResult();
                 Assert.NotEqual("Ch\u01b0a c\u00f3", viewModel.EffectivePermissionsText);
 
+                var identityHeader = Assert.IsType<System.Windows.Controls.Border>(window.FindName("EmployeeIdentityHeader"));
+                var identityTexts = FindVisualDescendants<System.Windows.Controls.TextBlock>(identityHeader).Select(textBlock => textBlock.Text).ToArray();
+                Assert.Contains(viewModel.FullName, identityTexts);
+                Assert.Contains(viewModel.EmployeeCode, identityTexts);
+                Assert.Contains(viewModel.UsernameText, identityTexts);
+                Assert.Contains("Nhân viên", identityTexts);
+                Assert.Contains(viewModel.EmployeeStatusText, identityTexts);
+                Assert.Contains("Tài khoản", identityTexts);
+                Assert.Contains(viewModel.AccountStatusText, identityTexts);
+
+                var profileCard = Assert.IsType<System.Windows.Controls.Border>(window.FindName("EmployeeProfileInformationCard"));
+                var actionStrip = Assert.IsType<System.Windows.Controls.Border>(window.FindName("EmployeeProfileActionStrip"));
+                var editButton = FindVisualDescendants<System.Windows.Controls.Button>(actionStrip)
+                    .Single(button => System.Windows.Automation.AutomationProperties.GetAutomationId(button) == "EmployeeEditButton");
+                Assert.Same(viewModel.EditProfileCommand, editButton.Command);
+                Assert.True(profileCard.IsVisible && profileCard.ActualWidth > 0 && profileCard.ActualHeight > 0);
+                Assert.True(actionStrip.IsVisible && actionStrip.ActualWidth > 0 && actionStrip.ActualHeight > 0);
+                Assert.Contains("Thông tin hồ sơ", FindVisualDescendants<System.Windows.Controls.TextBlock>(profileCard).Select(textBlock => textBlock.Text));
+
+                var codeText = FindVisualDescendants<System.Windows.Controls.TextBlock>(identityHeader)
+                    .Single(textBlock => textBlock.Text == viewModel.EmployeeCode);
+                Assert.Equal(viewModel.EmployeeCode, codeText.ToolTip?.ToString());
+                Assert.Equal(System.Windows.TextTrimming.CharacterEllipsis, codeText.TextTrimming);
+                Assert.True(codeText.ActualWidth <= identityHeader.ActualWidth);
+                var originalPhone = viewModel.PhoneNumber;
+                var originalEmail = viewModel.EmailAddress;
+                viewModel.PhoneNumber = string.Empty;
+                viewModel.EmailAddress = string.Empty;
+                window.UpdateLayout();
+                var profileTexts = FindVisualDescendants<System.Windows.Controls.TextBlock>(profileCard).Select(textBlock => textBlock.Text).ToArray();
+                Assert.Equal("Chưa cập nhật", viewModel.PhoneDisplayText);
+                Assert.Equal("Chưa cập nhật", viewModel.EmailDisplayText);
+                Assert.Contains("Chưa cập nhật", profileTexts);
+                viewModel.PhoneNumber = originalPhone;
+                viewModel.EmailAddress = originalEmail;
+                viewModel.DiscardUnsavedChanges();
+
+                foreach (var size in new[] { new Size(1180, 720), new Size(1366, 768), new Size(1280, 720), new Size(1000, 620) })
+                {
+                    window.Measure(size);
+                    window.Arrange(new Rect(0, 0, size.Width, size.Height));
+                    window.UpdateLayout();
+                    Assert.True(identityHeader.IsVisible && identityHeader.ActualWidth > 0 && identityHeader.ActualHeight > 0);
+                    Assert.True(profileCard.IsVisible && profileCard.ActualWidth > 0 && profileCard.ActualHeight > 0);
+                    Assert.True(actionStrip.IsVisible && actionStrip.ActualWidth > 0 && actionStrip.ActualHeight > 0);
+                    Assert.True(codeText.ActualWidth > 0 && codeText.ActualHeight > 0);
+                    var profileBounds = new Rect(profileCard.TransformToAncestor(window).Transform(new Point(0, 0)), new Size(profileCard.ActualWidth, profileCard.ActualHeight));
+                    var actionBounds = new Rect(actionStrip.TransformToAncestor(window).Transform(new Point(0, 0)), new Size(actionStrip.ActualWidth, actionStrip.ActualHeight));
+                    Assert.True(actionBounds.Top >= profileBounds.Bottom - 1);
+                }
+
                 viewModel.SearchTerm = Guid.NewGuid().ToString("N");
                 viewModel.InitializeAsync().GetAwaiter().GetResult();
                 Assert.Empty(viewModel.Employees);
