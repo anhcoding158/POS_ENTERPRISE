@@ -115,6 +115,26 @@ public sealed class EmployeeRepository : IEmployeeRepository
         return new PagedResult<Employee>(items, pageNumber, pageSize, totalCount);
     }
 
+    public async Task<(int TotalEmployees, int ActiveEmployees, int AccountsNeedingAttention)> GetSummaryAsync(
+        DateTimeOffset utcNow,
+        CancellationToken cancellationToken = default)
+    {
+        var totalEmployees = await _dbContext.Employees.CountAsync(cancellationToken);
+        var activeEmployees = await _dbContext.Employees.CountAsync(
+            employee => employee.IsActive,
+            cancellationToken);
+        var accountsNeedingAttention = await _dbContext.Employees.CountAsync(
+            employee => employee.LoginAccount != null &&
+                (!employee.LoginAccount.IsActive ||
+                 employee.LoginAccount.IsManuallyLocked ||
+                 (employee.LoginAccount.LockedUntilUtc.HasValue && employee.LoginAccount.LockedUntilUtc.Value > utcNow) ||
+                 employee.LoginAccount.ForcePasswordChange ||
+                 employee.LoginAccount.FailedLoginAttempts > 0),
+            cancellationToken);
+
+        return (totalEmployees, activeEmployees, accountsNeedingAttention);
+    }
+
     public Task<bool> NormalizedEmployeeCodeExistsAsync(
         string normalizedEmployeeCode,
         int? excludeEmployeeId = null,

@@ -74,6 +74,19 @@ public sealed class EmployeeAccountService : IEmployeeAccountService
         }
     }
 
+    public async Task<Result<EmployeeSummaryDto>> GetSummaryAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var authorization = _permissionService.Authorize(SystemCapability.ViewEmployees);
+        if (authorization.IsFailure) return Result.Failure<EmployeeSummaryDto>(authorization.AppError);
+
+        var summary = await _employeeRepository.GetSummaryAsync(_clock.UtcNow, cancellationToken);
+        return Result.Success(new EmployeeSummaryDto(
+            summary.TotalEmployees,
+            summary.ActiveEmployees,
+            summary.AccountsNeedingAttention));
+    }
+
     public async Task<Result<EmployeeDetailsDto>> GetAsync(
         int employeeId,
         CancellationToken cancellationToken = default)

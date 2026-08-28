@@ -20,6 +20,10 @@ public interface IEmployeeRepository
         DateTimeOffset utcNow,
         CancellationToken cancellationToken = default);
 
+    Task<(int TotalEmployees, int ActiveEmployees, int AccountsNeedingAttention)> GetSummaryAsync(
+        DateTimeOffset utcNow,
+        CancellationToken cancellationToken = default);
+
     Task<bool> NormalizedEmployeeCodeExistsAsync(
         string normalizedEmployeeCode,
         int? excludeEmployeeId = null,

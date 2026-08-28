@@ -92,6 +92,10 @@ public sealed class EmployeeManagementUiHotfixTests
                 viewModel.InitializeAsync().GetAwaiter().GetResult();
                 Assert.NotEmpty(viewModel.Employees);
                 Assert.Equal(viewModel.Employees.Count, viewModel.TotalCount);
+                Assert.Same(viewModel.Employees[0], viewModel.SelectedEmployee);
+                Assert.True(viewModel.HasSelection);
+                Assert.Equal(viewModel.TotalCount, viewModel.TotalEmployees);
+                Assert.True(viewModel.HasDetailContent);
                 viewModel.SelectEmployeeAsync(viewModel.Employees[0].Id).GetAwaiter().GetResult();
                 Assert.NotEqual("Ch\u01b0a c\u00f3", viewModel.EffectivePermissionsText);
 
@@ -99,6 +103,8 @@ public sealed class EmployeeManagementUiHotfixTests
                 viewModel.InitializeAsync().GetAwaiter().GetResult();
                 Assert.Empty(viewModel.Employees);
                 Assert.Equal(0, viewModel.TotalCount);
+                Assert.Null(viewModel.SelectedEmployee);
+                Assert.False(viewModel.HasSelection);
 
                 viewModel.SearchTerm = string.Empty;
                 viewModel.InitializeAsync().GetAwaiter().GetResult();

@@ -46,5 +46,45 @@ public sealed class EmployeeManagementUiContractTests
         Assert.Contains("ForcedPasswordChangeCancelButton", forcedView, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Employee_modern_content_contract_preserves_safe_master_detail_interaction()
+    {
+        var root = RepositoryLocator.GetPath();
+        var view = File.ReadAllText(Path.Combine(root, "src", "POS.Wpf", "Views", "EmployeeManagementWindow.xaml"));
+        var viewModel = File.ReadAllText(Path.Combine(root, "src", "POS.Wpf", "ViewModels", "EmployeeManagementViewModel.cs"));
+        var controls = File.ReadAllText(Path.Combine(root, "src", "POS.Wpf", "Themes", "Controls.xaml"));
+
+        Assert.Contains("ModernDataGridStyle", view, StringComparison.Ordinal);
+        Assert.Contains("EnableRowVirtualization", controls, StringComparison.Ordinal);
+        Assert.Contains("Header=\"Đăng nhập sai\"", view, StringComparison.Ordinal);
+        Assert.DoesNotContain("Header=\"Sai\"", view, StringComparison.Ordinal);
+        Assert.Contains("HasDetailContent", view, StringComparison.Ordinal);
+        Assert.Contains("Chọn một nhân viên", view, StringComparison.Ordinal);
+        Assert.Contains("Không tìm thấy nhân viên phù hợp", view, StringComparison.Ordinal);
+        Assert.Contains("RoleFilterOptions", viewModel, StringComparison.Ordinal);
+        Assert.Contains("GetSummaryAsync", viewModel, StringComparison.Ordinal);
+        Assert.Contains("SelectedEmployee = nextSelection", viewModel, StringComparison.Ordinal);
+        Assert.Contains("CancelEditCommand", view, StringComparison.Ordinal);
+        Assert.Contains("EmployeeProfileTab", view, StringComparison.Ordinal);
+        Assert.Contains("EmployeeAccountTab", view, StringComparison.Ordinal);
+        Assert.Contains("EmployeePermissionsTab", view, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Employee_row_presents_typed_security_state_without_sensitive_values()
+    {
+        var row = new POS.Wpf.ViewModels.EmployeeRowViewModel(new POS.Application.DTOs.Employees.EmployeeListItemDto(
+            7, "EMP-000007", "Test Employee", "0000000000", EmployeeStatus.Active, 9, "employee.test",
+            POS.Domain.Enums.AccountStatus.Locked, Role.Manager, null, 3, DateTimeOffset.UtcNow));
+
+        Assert.Equal("TE", row.Initials);
+        Assert.Equal("Đang làm việc", row.EmployeeStatusText);
+        Assert.Equal("Đã khóa", row.AccountStatusText);
+        Assert.Equal("Quản lý", row.RoleText);
+        Assert.Equal("3", row.FailedLoginText);
+        Assert.DoesNotContain("password", row.AccountStatusText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("hash", row.AccountStatusText, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static int Count(string value, string needle) => value.Split(needle, StringSplitOptions.None).Length - 1;
 }

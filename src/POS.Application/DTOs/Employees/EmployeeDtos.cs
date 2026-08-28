@@ -17,6 +17,11 @@ public sealed record EmployeeListItemDto(
     int FailedLoginAttempts,
     DateTimeOffset UpdatedAtUtc);
 
+public sealed record EmployeeSummaryDto(
+    int TotalEmployees,
+    int ActiveEmployees,
+    int AccountsNeedingAttention);
+
 public sealed record EmployeeDetailsDto(
     int Id,
     string EmployeeCode,

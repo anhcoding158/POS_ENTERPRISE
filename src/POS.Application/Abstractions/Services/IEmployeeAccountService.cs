@@ -9,6 +9,9 @@ public interface IEmployeeAccountService
         EmployeeSearchRequest request,
         CancellationToken cancellationToken = default);
 
+    Task<Result<EmployeeSummaryDto>> GetSummaryAsync(
+        CancellationToken cancellationToken = default);
+
     Task<Result<EmployeeDetailsDto>> GetAsync(
         int employeeId,
         CancellationToken cancellationToken = default);

@@ -1,5 +1,12 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## R4.2 Employee and Account UI modernization — 2026-08-28
+
+- No confirmed production defect was introduced by the modernization. The implementation preserves the Application authorization/security boundary and uses production data/state only.
+- Verification limitation: the current execution desktop exposes no inspectable Win32 top-level HWND/UIA element for the isolated WPF process, and the bounded exact `Start-POS-IsolatedTest.ps1` run did not reach `ShellWindowReady` within 90 seconds while initializing the copied scenario database. Real WPF resource construction, ViewModel behavior and the official Quality Gate passed; visual clicks, DPI scaling and pixel-level comparison remain manual and are not claimed here.
+- The two Release full-suite named-pipe failures remain the known restricted-environment condition (`UnauthorizedAccessException`/activation assertion in `SingleInstanceInfrastructureTests`); the official outside-sandbox Quality Gate passed `1350/1350` without weakening the current-user-only IPC ACL.
+- Store Readiness remains a separate manual observation and is not claimed fixed. R4.3 remains NOT STARTED.
+
 ## Shell sidebar and inventory navigation hotfix — 2026-08-27
 
 - Resolved: the grouped `ShellProductsNavigationButton` had no command and a hard-coded selected style. `ShellRoute`, `NavigateToProductsCommand` and route-derived selected/parent expansion state now make Dashboard/Category/other-module → Products transitions deterministic without duplicate product loads.

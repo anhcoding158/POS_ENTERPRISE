@@ -1,5 +1,12 @@
 # MASTER ROADMAP — POS ENTERPRISE RETAIL V1
 
+## Latest checkpoint position — 2026-08-28 (R4.2 Employee UI modernization)
+
+- R4.2 Employee and Account Management UI modernization is CLOSED / COMMITTED / PUSHED. The approved visual boundary is applied to Employee content only: master-detail administration layout, aggregate summaries, modern search/filter/list, deterministic selection/no-selection behavior, read-only-first tabbed detail and responsive WPF presentation.
+- Functional/security behavior remains under the existing R4.2 Application boundary. Official Quality Gate passed `1350/1350`; Release build passed with `0` warnings/errors; EF pending-model and vulnerability checks passed. The explicit isolated/UIA visual limitation is recorded in Project Memory and does not become a false acceptance claim.
+- Store Setup UX, dark grouped Shell/sidebar and Inventory navigation hotfix are preserved. Store Readiness remains a separate manual observation and is not claimed fixed.
+- **Exact next checkpoint:** R4.3 Role and Permission Management — NOT STARTED.
+
 ## Latest checkpoint position — 2026-08-26 (R4.2 closeout)
 
 - R4.2 Employee and Account Management is CLOSED / COMMITTED / PUSHED after additive migration, application authorization/security services, forced-password-change flow, WPF Employee UI, isolated evidence and final Quality Gate PASS.

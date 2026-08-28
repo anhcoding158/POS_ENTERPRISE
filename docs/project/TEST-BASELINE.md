@@ -1,5 +1,15 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R4.2 Employee and Account Management UI modernization baseline — 2026-08-28
+
+- Entry baseline was `main` at `cea5c4230487d95c379c9e18d3a7437e91dc7133`, branch `main`, fetched and aligned `0/0` with `origin/main`, SDK `10.0.302`, clean/staged `0`, no active Git operation or POS/worker/testhost/vstest process, and exact canonical database identity.
+- New Employee UI contract/behavior tests: `6/6` PASS in Release. They exercise real `EmployeeManagementWindow.InitializeComponent`, shared resources/AuthLabelStyle, DataContext/wiring, first-row selection, empty/no-result/no-selection state, typed friendly security row mapping and existing production isolated service behavior.
+- Release solution build after final source change: PASS, `0` warnings, `0` errors. Official `scripts/Test-QualityGate.ps1` without `-SkipEfCheck`: PASS; Debug build `0/0`, full tests `1350/1350`, vulnerability scan PASS for all `5/5` projects, local dotnet-ef restore PASS, EF pending-model PASS and Git whitespace/status PASS.
+- Release full suite after final source change: `1348` PASS, `2` FAIL, `0` skipped, `1350` total; both failures are the known restricted named-pipe tests only. The focused Employee Release suite is `6/6` PASS.
+- Approved reference `artifacts/design-reference/employee-management-modern-target.png` was inspected and remains Git-ignored. Real WPF construction and bindings were verified; external UIA/render observation was unavailable in this desktop, so manual visual clicks, 1366/1280 layout and 100/125/150% scaling are not claimed.
+- Exact isolated launcher used fresh `%TEMP%` copies with `POS_RUNTIME_MODE=IsolatedTest` and scenario-owned settings/logo/backup paths. The bounded launcher evidence was sanitized outside the repository; temporary scenario roots were validated before removal. Store Setup/sidebar/Inventory behavior was not changed, R4.3 remains NOT STARTED.
+- Canonical safety after all tests: length `937984`, LastWriteTimeUtc `2026-08-09T14:26:03.9619805Z`, SHA-256 `C1F4BCCF022F896DD0948F2E25AFABE831DF3EF9CE1B289E9D933F9A33BDDBED`, no canonical WAL/SHM/journal.
+
 ## Shell sidebar and inventory navigation hotfix baseline — 2026-08-27
 
 - Entry baseline was `main` at `0088b6f1a9185c125756bea352c2353108107573`, aligned `0/0` with `origin/main`, clean/staged `0`, SDK `10.0.302`, no active Git operation or POS/test process, and exact canonical database identity.

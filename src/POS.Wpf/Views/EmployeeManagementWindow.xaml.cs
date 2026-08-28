@@ -13,6 +13,7 @@ public partial class EmployeeManagementWindow : global::System.Windows.Window
         DataContext = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
         Loaded += OnLoaded;
         Closing += OnClosing;
+        Closed += OnClosed;
     }
 
     private async void OnLoaded(object sender, global::System.Windows.RoutedEventArgs e)
@@ -23,8 +24,33 @@ public partial class EmployeeManagementWindow : global::System.Windows.Window
 
     private async void OnSelectionChanged(object sender, global::System.Windows.Controls.SelectionChangedEventArgs e)
     {
-        if (DataContext is EmployeeManagementViewModel viewModel && e.AddedItems.Count > 0 && e.AddedItems[0] is EmployeeRowViewModel row)
-            await viewModel.SelectEmployeeAsync(row.Id);
+        if (DataContext is not EmployeeManagementViewModel viewModel || e.AddedItems.Count == 0 || e.AddedItems[0] is not EmployeeRowViewModel row)
+            return;
+
+        if (viewModel.IsDirty)
+        {
+            var result = global::System.Windows.MessageBox.Show(
+                this,
+                "Bạn còn thay đổi chưa lưu. Chuyển sang nhân viên khác và bỏ các thay đổi này?",
+                "Thay đổi chưa lưu",
+                global::System.Windows.MessageBoxButton.YesNo,
+                global::System.Windows.MessageBoxImage.Warning);
+            if (result != global::System.Windows.MessageBoxResult.Yes)
+            {
+                viewModel.RestoreSelection(e.RemovedItems.Count > 0 ? e.RemovedItems[0] as EmployeeRowViewModel : null);
+                return;
+            }
+
+            viewModel.DiscardUnsavedChanges();
+        }
+
+        await viewModel.SelectEmployeeAsync(row.Id);
+    }
+
+    private async void OnFilterChanged(object sender, global::System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (IsLoaded && DataContext is EmployeeManagementViewModel viewModel && !viewModel.IsBusy)
+            await viewModel.ApplyFiltersAsync();
     }
 
     private void OnAccountPasswordChanged(object sender, global::System.Windows.RoutedEventArgs e) => ViewModel.SetAccountPassword(AccountPasswordInput.Password);
@@ -40,6 +66,14 @@ public partial class EmployeeManagementWindow : global::System.Windows.Window
     {
         if (global::System.Windows.MessageBox.Show(this, "Xác nhận thay đổi trạng thái nhân viên? Lịch sử giao dịch sẽ được giữ nguyên.", "Xác nhận", global::System.Windows.MessageBoxButton.YesNo, global::System.Windows.MessageBoxImage.Warning) == global::System.Windows.MessageBoxResult.Yes)
             ViewModel.ToggleActiveCommand.Execute(null);
+    }
+
+    private void OnChangeRoleClick(object sender, global::System.Windows.RoutedEventArgs e)
+    {
+        if (global::System.Windows.MessageBox.Show(this, "Xác nhận cập nhật vai trò và quyền hiệu lực của tài khoản?", "Xác nhận", global::System.Windows.MessageBoxButton.YesNo, global::System.Windows.MessageBoxImage.Warning) != global::System.Windows.MessageBoxResult.Yes)
+            return;
+
+        ViewModel.ChangeRoleCommand.Execute(null);
     }
 
     private void OnClosing(object? sender, CancelEventArgs e)
@@ -61,4 +95,6 @@ public partial class EmployeeManagementWindow : global::System.Windows.Window
 
         ViewModel.DiscardUnsavedChanges();
     }
+
+    private void OnClosed(object? sender, global::System.EventArgs e) => ViewModel.Dispose();
 }

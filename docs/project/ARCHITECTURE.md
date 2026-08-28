@@ -1,5 +1,13 @@
 # ARCHITECTURE — POS ENTERPRISE RETAIL V1
 
+## R4.2 Employee UI modernization boundary — 2026-08-28
+
+- The production dependency direction is unchanged: WPF resolves `IEmployeeAccountService` through the existing scoped composition; ViewModels do not access `PosDbContext`, and no second DI container or alternate authorization path was introduced.
+- Employee presentation is a native WPF master-detail surface. The list remains virtualized and database-backed for search/filter/paging; the summary cards use repository aggregate counts rather than loading the employee table into memory. The detail surface is read-only first with explicit profile edit, account/security and role/permission tabs.
+- Typed domain/application state supplies Vietnamese labels for employment/account status, role, last-login time-zone formatting, failed-login attention and effective permission groups. Passwords, hashes, temporary secrets and internal permission keys are not exposed by the UI DTO/presentation boundary.
+- Responsive behavior uses live available space, a normal-width approximately 63/37 split, deliberate toolbar wrapping and controlled list horizontal scrolling. The existing native window behavior, owner, keyboard access and dirty-close guard are retained; no fragile borderless WindowChrome was introduced.
+- This is content-only R4.2 visual modernization. Shell/sidebar, Inventory navigation hotfix, Store Setup and all existing production routes remain outside the changed UI boundary. R4.3 role/permission administration has not started.
+
 ## R4.2 Employee and Account Management boundary — 2026-08-26
 
 - Domain owns `Employee`, the optional Employee-to-User relationship, typed employee/account/lock/audit enums and immutable-free-of-credential audit entities. Domain remains independent of EF, WPF and hashing providers.

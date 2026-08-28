@@ -1,5 +1,13 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-036 — R4.2 modernizes Employee content without changing the production Shell
+
+- **Status:** Accepted for R4.2 Employee UI modernization closeout on `2026-08-28`.
+- **Decision:** Keep the existing dark grouped Shell/sidebar, routes, permission filtering and Store Setup surface. Modernize only Employee and Account content with native WPF master-detail layout, shared design resources, virtualized list, database-side aggregate counts, stable Vietnamese state mappings and explicit no-selection/read-only-first detail states.
+- **Interaction:** Select the first visible result after successful loads, preserve selection by employee ID where visible, clear stale detail on filtering, and require explicit entry for profile editing, account creation and sensitive security actions. Existing Application service authorization remains authoritative.
+- **Scope:** Use three stable detail tabs for profile, account/security and effective permissions. Predefined roles and typed permission catalog remain read-only at this checkpoint; role administration is still the separate R4.3 scope. No schema, migration, password, lockout, audit or final-Administrator policy change is permitted by this decision.
+- **Evidence:** Real WPF resource/window construction, focused Employee UI behavior `6/6`, Release build `0/0`, official Quality Gate `1350/1350`, EF pending-model PASS and isolated boundary checks. External UIA/render observation remains an explicit manual limitation.
+
 ## DEC-035 — R4.2 separates retained employees from optional login accounts
 
 - **Status:** Accepted for R4.2 closeout on `2026-08-26`.
