@@ -79,7 +79,7 @@ public sealed class EmployeeManagementUiHotfixTests
                 var window = new EmployeeManagementWindow(viewModel);
                 Assert.Same(viewModel, window.DataContext);
                 Assert.Equal(1, viewModel.PageNumber);
-                Assert.Null(viewModel.SelectedRoleFilter);
+                Assert.Equal("Tất cả vai trò", viewModel.SelectedRoleFilter.DisplayName);
                 Assert.Null(viewModel.SelectedEmployeeFilter.Value);
                 Assert.Null(viewModel.SelectedAccountFilter.Value);
                 Assert.Equal(4, viewModel.RoleOptions.Count);
@@ -107,6 +107,22 @@ public sealed class EmployeeManagementUiHotfixTests
                 Assert.False(viewModel.HasSelection);
 
                 viewModel.SearchTerm = string.Empty;
+                viewModel.SelectedEmployeeFilter = viewModel.EmployeeFilters.Single(option => option.Value == EmployeeStatus.Inactive);
+                viewModel.InitializeAsync().GetAwaiter().GetResult();
+                Assert.Empty(viewModel.Employees);
+                Assert.False(viewModel.IsEmptyState);
+                Assert.True(viewModel.IsNoResultState);
+
+                viewModel.NewEmployeeCommand.Execute(null);
+                while (viewModel.NewEmployeeCommand.IsExecuting)
+                    Thread.Sleep(5);
+                Assert.True(viewModel.IsCreateMode);
+                Assert.True(viewModel.IsEditing);
+                Assert.Empty(viewModel.EmployeeCode);
+                Assert.Empty(viewModel.FullName);
+
+                viewModel.SearchTerm = string.Empty;
+                viewModel.SelectedEmployeeFilter = viewModel.EmployeeFilters[0];
                 viewModel.InitializeAsync().GetAwaiter().GetResult();
                 Assert.NotEmpty(viewModel.Employees);
 

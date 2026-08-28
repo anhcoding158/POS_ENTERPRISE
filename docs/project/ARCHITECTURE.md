@@ -1,5 +1,11 @@
 # ARCHITECTURE — POS ENTERPRISE RETAIL V1
 
+## Post-modernization manual UX hotfix boundary — 2026-08-28
+
+- Sales readiness remains an Application/Infrastructure-owned typed evaluation. WPF reloads the singleton external settings store before evaluating it, presents only typed friendly blockers, and opens Store Setup through the existing authorized dialog service. Backup/tax optional conditions are warnings; core store/database errors remain blocking.
+- IsolatedTest settings are deliberately external to the copied SQLite database and rooted under the fresh scenario boundary. The launcher does not copy production settings, credentials, bank data or logos; persistence across separate isolated scenarios is not an expected contract.
+- Employee UI fixes remain within the existing WPF ViewModel state machine: stable typed filter sentinel, notified derived empty-state properties, one create command, content-safe empty panel, supported vector icon and tooltip-bounded employee code. No dependency direction, DI lifetime, persistence schema or security boundary changed.
+
 ## R4.2 Employee UI modernization boundary — 2026-08-28
 
 - The production dependency direction is unchanged: WPF resolves `IEmployeeAccountService` through the existing scoped composition; ViewModels do not access `PosDbContext`, and no second DI container or alternate authorization path was introduced.

@@ -19,7 +19,8 @@ public sealed class EmployeeManagementUiContractTests
             "EmployeeManagementWindow", "EmployeeSearchBox", "EmployeeStatusFilter", "EmployeeAccountFilter",
             "EmployeeRoleFilter", "EmployeeList", "EmployeeDirtyState", "EmployeeValidationSummary", "EmployeeSaveButton",
             "EmployeeCreateAccountButton", "EmployeeResetPasswordButton", "EmployeeLockToggleButton",
-            "EmployeeActiveToggleButton", "EmployeeChangeRoleButton"
+            "EmployeeActiveToggleButton", "EmployeeChangeRoleButton", "EmployeeEmptyAddButton",
+            "EmployeeFilteredEmptyAddButton"
         })
         {
             Assert.Contains(automationId, view, StringComparison.Ordinal);
@@ -53,6 +54,8 @@ public sealed class EmployeeManagementUiContractTests
         var view = File.ReadAllText(Path.Combine(root, "src", "POS.Wpf", "Views", "EmployeeManagementWindow.xaml"));
         var viewModel = File.ReadAllText(Path.Combine(root, "src", "POS.Wpf", "ViewModels", "EmployeeManagementViewModel.cs"));
         var controls = File.ReadAllText(Path.Combine(root, "src", "POS.Wpf", "Themes", "Controls.xaml"));
+        var salesService = File.ReadAllText(Path.Combine(root, "src", "POS.Wpf", "Services", "SalesWindowService.cs"));
+        var readinessDialog = File.ReadAllText(Path.Combine(root, "src", "POS.Wpf", "Views", "StoreReadinessDialogWindow.xaml"));
 
         Assert.Contains("ModernDataGridStyle", view, StringComparison.Ordinal);
         Assert.Contains("EnableRowVirtualization", controls, StringComparison.Ordinal);
@@ -68,6 +71,14 @@ public sealed class EmployeeManagementUiContractTests
         Assert.Contains("EmployeeProfileTab", view, StringComparison.Ordinal);
         Assert.Contains("EmployeeAccountTab", view, StringComparison.Ordinal);
         Assert.Contains("EmployeePermissionsTab", view, StringComparison.Ordinal);
+        Assert.Contains("ToolTip=\"{Binding EmployeeCode}\"", view, StringComparison.Ordinal);
+        Assert.Contains("<Path Data=\"M 2,2 L 10,10 M 10,2 L 2,10\"", view, StringComparison.Ordinal);
+        Assert.DoesNotContain("⌑", view, StringComparison.Ordinal);
+        Assert.DoesNotContain("SelectedIndex=\"0\"", view, StringComparison.Ordinal);
+        Assert.Contains("await _settingsStore.LoadAsync()", salesService, StringComparison.Ordinal);
+        Assert.Contains("StoreReadinessDialogWindow", salesService, StringComparison.Ordinal);
+        Assert.Contains("Mở cài đặt cửa hàng", readinessDialog, StringComparison.Ordinal);
+        Assert.Contains("StoreReadinessCloseButton", readinessDialog, StringComparison.Ordinal);
     }
 
     [Fact]

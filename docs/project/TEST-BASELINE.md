@@ -1,5 +1,13 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## Post-modernization manual UX hotfix baseline — 2026-08-28
+
+- Entry baseline was live `main` at `bf56138a46c0f56b1f84f7189c4f45311f739a87`, descendant of `cea5c4230487d95c379c9e18d3a7437e91dc7133`, fetched and aligned `0/0` with `origin/main`, SDK `10.0.302`, clean/staged `0`, and exact canonical database identity.
+- New readiness/filter/empty/create/dialog tests: `8/8` PASS in Debug. They cover optional backup warning classification, real readiness-dialog resource/control construction and action, stable role sentinel, filtered no-result semantics, same authoritative Add/create transition, long-code and supported clear icon contracts, plus real production employee-window construction.
+- Release solution build after final source change: PASS, `0` warnings, `0` errors. Release full suite: `1350` PASS, `2` restricted named-pipe failures, `0` skipped, `1352` total. Official `scripts/Test-QualityGate.ps1` without `-SkipEfCheck`: PASS with `1352/1352`, failed `0`, skipped `0`; vulnerability scan PASS for all `5/5` projects, dotnet-ef restore PASS, EF pending-model PASS and Git checks PASS.
+- Exact isolated launcher used fresh scenario-owned database/settings/logo/backup paths and `POS_RUNTIME_MODE=IsolatedTest`; the scenario was validated and cleaned after capture. No UIA visual interaction was claimed.
+- Canonical safety target remains length `937984`, LastWriteTimeUtc `2026-08-09T14:26:03.9619805Z`, SHA-256 `C1F4BCCF022F896DD0948F2E25AFABE831DF3EF9CE1B289E9D933F9A33BDDBED`, with no WAL/SHM/journal.
+
 ## R4.2 Employee and Account Management UI modernization baseline — 2026-08-28
 
 - Entry baseline was `main` at `cea5c4230487d95c379c9e18d3a7437e91dc7133`, branch `main`, fetched and aligned `0/0` with `origin/main`, SDK `10.0.302`, clean/staged `0`, no active Git operation or POS/worker/testhost/vstest process, and exact canonical database identity.

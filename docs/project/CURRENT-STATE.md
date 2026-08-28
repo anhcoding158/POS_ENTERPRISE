@@ -1,5 +1,14 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## Post-modernization manual UX hotfix — CLOSED / COMMITTED / PUSHED — 2026-08-28
+
+- Sales first-click readiness was repaired without weakening authorization: Sales now reloads the authoritative external Store Setup snapshot before evaluation, and missing/unavailable backup storage is a warning rather than a sales blocker. Core store/database validity remains blocking. A typed owner-correct “Cửa hàng chưa sẵn sàng” dialog lists friendly blockers and can open the existing authorized Store Setup dialog.
+- The exact IsolatedTest finding is intentional fresh-scenario behavior: the launcher copies only the database; Store Setup is external `store-settings.json` under each scenario-owned temporary root. Separate isolated invocations do not share prior temporary settings, so production settings/secrets are not copied into evidence or scenarios.
+- Employee filters now bind a stable typed “Tất cả vai trò” sentinel immediately, notify filtered-state properties when filters change, distinguish true empty database from filtered/search no-result, and expose a separate filtered-empty Add command that enters the existing create mode. The empty card is content-safe at reduced height, the clear-filter glyph uses a vector Path, and long employee codes use bounded text with full-code tooltips.
+- New manual UX hotfix coverage is `8/8` PASS in Debug after real WPF dialog/window construction. Existing modernization behavior is preserved; no schema, migration, Shell/sidebar, Store Setup redesign, authentication, RBAC or security policy change was introduced.
+- Exact isolated launcher evidence used a fresh Release copy with `POS_RUNTIME_MODE=IsolatedTest` and scenario-owned paths. The execution desktop exposed no inspectable HWND/UIA and the bounded launcher did not reach `ShellWindowReady`; no unsupported visual click or DPI-scaling claim is made. Manual visual/interaction checks remain required.
+- Store Readiness is now treated as blocking only for core operational errors; optional backup/tax issues are warnings. R4.3 remains NOT STARTED.
+
 ## R4.2 Employee and Account Management UI modernization — CLOSED / COMMITTED / PUSHED — 2026-08-28
 
 - The approved dark grouped production Shell sidebar, grouped navigation, Inventory route hotfix, Store Setup UX and existing routes remain unchanged. Only the Employee and Account content surface was modernized with native WPF XAML, shared POS resources, existing MVVM/service boundaries and stable AutomationIds; no schema or migration was added.

@@ -26,12 +26,14 @@ public sealed class SalesWindowService :
         _permissionService;
     private readonly IStoreSettingsReadinessEvaluator? _readinessEvaluator;
     private readonly IStoreSettingsStore? _settingsStore;
+    private readonly IStoreSettingsDialogService? _settingsDialogService;
 
     public SalesWindowService(
         IServiceProvider serviceProvider,
         IPermissionService permissionService,
         IStoreSettingsReadinessEvaluator? readinessEvaluator = null,
-        IStoreSettingsStore? settingsStore = null)
+        IStoreSettingsStore? settingsStore = null,
+        IStoreSettingsDialogService? settingsDialogService = null)
     {
         _serviceProvider =
             serviceProvider ??
@@ -44,6 +46,7 @@ public sealed class SalesWindowService :
                 nameof(permissionService));
         _readinessEvaluator = readinessEvaluator;
         _settingsStore = settingsStore;
+        _settingsDialogService = settingsDialogService;
     }
 
     public async Task ShowAsync()
@@ -67,17 +70,17 @@ public sealed class SalesWindowService :
 
         if (_readinessEvaluator is not null && _settingsStore is not null)
         {
+            await _settingsStore.LoadAsync();
             var readiness = await _readinessEvaluator.EvaluateAsync(_settingsStore.Current);
             if (!readiness.IsReady)
             {
-                var hint = _currentUserIsAdministrator()
-                    ? "Vui lòng mở Cài đặt cửa hàng để xử lý."
-                    : "Vui lòng liên hệ Quản trị viên để xử lý.";
-                global::System.Windows.MessageBox.Show(
-                    "Chưa thể mở quầy bán hàng vì cấu hình cửa hàng chưa sẵn sàng.\n\n" + hint,
-                    "Cấu hình cửa hàng chưa sẵn sàng",
-                    global::System.Windows.MessageBoxButton.OK,
-                    global::System.Windows.MessageBoxImage.Warning);
+                var dialog = new StoreReadinessDialogWindow(readiness.Errors);
+                var owner = global::System.Windows.Application.Current?.MainWindow;
+                if (owner is not null)
+                    dialog.Owner = owner;
+                dialog.ShowDialog();
+                if (dialog.OpenSettingsRequested && _currentUserIsAdministrator() && _settingsDialogService is not null && owner is not null)
+                    _settingsDialogService.Show(owner);
                 return;
             }
         }

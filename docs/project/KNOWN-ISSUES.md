@@ -1,5 +1,13 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## Post-modernization manual UX hotfix — 2026-08-28
+
+- Resolved: Sales no longer blocks on a missing/unavailable optional backup directory or stale Store Setup snapshot. Core store/database errors remain blocking; optional backup and tax issues are surfaced as warnings.
+- Resolved: the readiness path now reloads the external settings snapshot before evaluation and uses an actionable owner-correct dialog with friendly blockers and an authorized Store Setup action.
+- Resolved: Employee Role filter blank-first-render, filtered-empty misclassification, empty-state Add behavior, reduced-height empty-card layout, malformed clear-filter glyph and long-code overflow presentation.
+- IsolatedTest finding: each launcher invocation intentionally owns a fresh external settings root and copies only the database. Prior isolated Store Setup state is not expected to persist across invocations; no production settings or secrets were copied.
+- Remaining limitation: this execution desktop exposes no top-level HWND/UIA for the isolated WPF process; the bounded launcher did not reach `ShellWindowReady`, so visual click, DPI and pixel-comparison acceptance remain manual. R4.3 remains NOT STARTED.
+
 ## R4.2 Employee and Account UI modernization — 2026-08-28
 
 - No confirmed production defect was introduced by the modernization. The implementation preserves the Application authorization/security boundary and uses production data/state only.

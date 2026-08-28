@@ -84,7 +84,7 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
     private string _searchTerm = string.Empty;
     private EmployeeFilterOption _selectedEmployeeFilter;
     private AccountFilterOption _selectedAccountFilter;
-    private RoleFilterOption? _selectedRoleFilter;
+    private RoleFilterOption _selectedRoleFilter;
     private EmployeeRowViewModel? _selectedEmployee;
     private EmployeeDetailsDto? _details;
     private bool _isBusy;
@@ -134,6 +134,7 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
         _selectedEmployeeFilter = EmployeeFilters[0];
         _selectedAccountFilter = AccountFilters[0];
         _selectedRole = RoleOptions[2];
+        _selectedRoleFilter = RoleFilterOptions[0];
 
         SearchCommand = new AsyncRelayCommand(() => LoadAsync(resetPage: true), CanLoad, HandleException);
         RefreshCommand = new AsyncRelayCommand(() => LoadAsync(), CanLoad, HandleException);
@@ -179,10 +180,10 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
     public AsyncRelayCommand ToggleActiveCommand { get; }
     public AsyncRelayCommand ChangeRoleCommand { get; }
 
-    public string SearchTerm { get => _searchTerm; set => SetProperty(ref _searchTerm, value ?? string.Empty); }
-    public EmployeeFilterOption SelectedEmployeeFilter { get => _selectedEmployeeFilter; set => SetProperty(ref _selectedEmployeeFilter, value ?? EmployeeFilters[0]); }
-    public AccountFilterOption SelectedAccountFilter { get => _selectedAccountFilter; set => SetProperty(ref _selectedAccountFilter, value ?? AccountFilters[0]); }
-    public RoleFilterOption? SelectedRoleFilter { get => _selectedRoleFilter; set => SetProperty(ref _selectedRoleFilter, value); }
+    public string SearchTerm { get => _searchTerm; set { if (SetProperty(ref _searchTerm, value ?? string.Empty)) NotifyFilterState(); } }
+    public EmployeeFilterOption SelectedEmployeeFilter { get => _selectedEmployeeFilter; set { if (SetProperty(ref _selectedEmployeeFilter, value ?? EmployeeFilters[0])) NotifyFilterState(); } }
+    public AccountFilterOption SelectedAccountFilter { get => _selectedAccountFilter; set { if (SetProperty(ref _selectedAccountFilter, value ?? AccountFilters[0])) NotifyFilterState(); } }
+    public RoleFilterOption SelectedRoleFilter { get => _selectedRoleFilter; set { if (SetProperty(ref _selectedRoleFilter, value ?? RoleFilterOptions[0])) NotifyFilterState(); } }
     public EmployeeRowViewModel? SelectedEmployee { get => _selectedEmployee; set => SetProperty(ref _selectedEmployee, value); }
     public bool IsBusy { get => _isBusy; private set { if (SetProperty(ref _isBusy, value)) { OnPropertyChanged(nameof(IsLoadingState)); NotifyCommands(); } } }
     public bool IsDetailBusy { get => _isDetailBusy; private set { if (SetProperty(ref _isDetailBusy, value)) OnPropertyChanged(nameof(IsLoadingState)); } }
@@ -357,7 +358,7 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
 
     private async Task ClearFiltersAsync()
     {
-        SearchTerm = string.Empty; SelectedEmployeeFilter = EmployeeFilters[0]; SelectedAccountFilter = AccountFilters[0]; SelectedRoleFilter = null;
+        SearchTerm = string.Empty; SelectedEmployeeFilter = EmployeeFilters[0]; SelectedAccountFilter = AccountFilters[0]; SelectedRoleFilter = RoleFilterOptions[0];
         await LoadAsync(resetPage: true);
     }
 
@@ -520,6 +521,12 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
     {
         OnPropertyChanged(nameof(PageText)); OnPropertyChanged(nameof(PageNumberText)); OnPropertyChanged(nameof(HasSearchOrFilter));
         OnPropertyChanged(nameof(IsEmptyState)); OnPropertyChanged(nameof(IsNoResultState));
+    }
+    private void NotifyFilterState()
+    {
+        OnPropertyChanged(nameof(HasSearchOrFilter));
+        OnPropertyChanged(nameof(IsEmptyState));
+        OnPropertyChanged(nameof(IsNoResultState));
     }
     private void NotifyDetailState()
     {

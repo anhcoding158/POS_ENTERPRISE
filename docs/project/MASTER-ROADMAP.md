@@ -1,5 +1,11 @@
 # MASTER ROADMAP — POS ENTERPRISE RETAIL V1
 
+## Latest checkpoint position — 2026-08-28 (post-modernization manual UX hotfix)
+
+- The focused manual UX hotfix is CLOSED / COMMITTED / PUSHED within R4.2. It repairs Store Readiness first-click behavior, optional warning classification, actionable readiness dialog, Employee filter initialization, filtered/true empty semantics, create transition, reduced-height empty layout, clear icon and long-code presentation.
+- Employee modernization, Store Setup UX, dark grouped Shell/sidebar and Inventory hotfix are preserved. Isolated settings remain scenario-owned and non-persistent across separate temporary invocations; visual UIA limitations remain explicit.
+- **Exact next checkpoint:** R4.3 Role and Permission Management — NOT STARTED.
+
 ## Latest checkpoint position — 2026-08-28 (R4.2 Employee UI modernization)
 
 - R4.2 Employee and Account Management UI modernization is CLOSED / COMMITTED / PUSHED. The approved visual boundary is applied to Employee content only: master-detail administration layout, aggregate summaries, modern search/filter/list, deterministic selection/no-selection behavior, read-only-first tabbed detail and responsive WPF presentation.

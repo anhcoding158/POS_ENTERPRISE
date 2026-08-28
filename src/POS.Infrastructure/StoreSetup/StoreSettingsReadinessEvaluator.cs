@@ -15,9 +15,13 @@ public sealed class StoreSettingsReadinessEvaluator : IStoreSettingsReadinessEva
     public Task<StoreSettingsReadiness> EvaluateAsync(StoreSettingsSnapshot settings, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var issues = _validator.Validate(settings).Issues.ToList();
+        var issues = _validator.Validate(settings).Issues
+            .Select(issue => IsNonBlockingForSales(issue)
+                ? issue with { Severity = StoreSettingsIssueSeverity.Warning }
+                : issue)
+            .ToList();
         ValidateDirectory(settings.DatabaseDirectory, "DatabaseDirectory", "Database", issues, allowCurrent: true);
-        ValidateDirectory(settings.BackupDirectory, "BackupDirectory", "Backup", issues, allowCurrent: false);
+        ValidateDirectory(settings.BackupDirectory, "BackupDirectory", "Backup", issues, allowCurrent: false, severity: StoreSettingsIssueSeverity.Warning);
         if (!string.IsNullOrWhiteSpace(settings.DefaultPrinter) &&
             !OperatingSystem.IsWindows()) issues.Add(new("Printer.Platform", "DefaultPrinter", "Không thể kiểm tra máy in trên nền tảng này.", StoreSettingsIssueSeverity.Warning));
         if (!string.IsNullOrWhiteSpace(settings.DatabaseDirectory) && !PathsEqual(settings.DatabaseDirectory, _paths.EffectiveDatabaseDirectory))
@@ -26,21 +30,26 @@ public sealed class StoreSettingsReadinessEvaluator : IStoreSettingsReadinessEva
         return Task.FromResult(new StoreSettingsReadiness(issues, ready));
     }
 
-    private static void ValidateDirectory(string? value, string field, string label, List<StoreSettingsIssue> issues, bool allowCurrent)
+    private static void ValidateDirectory(string? value, string field, string label, List<StoreSettingsIssue> issues, bool allowCurrent, StoreSettingsIssueSeverity severity = StoreSettingsIssueSeverity.Error)
     {
-        if (string.IsNullOrWhiteSpace(value)) { issues.Add(new($"{field}.Required", field, $"{label} chưa được cấu hình.")); return; }
+        if (string.IsNullOrWhiteSpace(value)) { issues.Add(new($"{field}.Required", field, $"{label} chưa được cấu hình.", severity)); return; }
         try
         {
             var full = Path.GetFullPath(value.Trim());
-            if (!Path.IsPathFullyQualified(full) || full.StartsWith("\\\\", StringComparison.Ordinal) || IsDriveRoot(full)) { issues.Add(new($"{field}.Unsafe", field, $"{label} phải là thư mục cục bộ không phải thư mục gốc.")); return; }
-            if (!allowCurrent && IsRepositoryPath(full)) { issues.Add(new($"{field}.Repository", field, $"{label} không được nằm trong repository.")); return; }
-            if (HasReparse(full)) { issues.Add(new($"{field}.Reparse", field, $"{label} chứa điểm nối/reparse không an toàn.")); return; }
-            if (!Directory.Exists(full)) { issues.Add(new($"{field}.Missing", field, $"{label} chưa tồn tại; hãy tạo hoặc chọn thư mục có thể ghi.")); return; }
-            if (!CanWrite(full)) issues.Add(new($"{field}.NotWritable", field, $"Không thể ghi vào {label}."));
+            if (!Path.IsPathFullyQualified(full) || full.StartsWith("\\\\", StringComparison.Ordinal) || IsDriveRoot(full)) { issues.Add(new($"{field}.Unsafe", field, $"{label} phải là thư mục cục bộ không phải thư mục gốc.", severity)); return; }
+            if (!allowCurrent && IsRepositoryPath(full)) { issues.Add(new($"{field}.Repository", field, $"{label} không được nằm trong repository.", severity)); return; }
+            if (HasReparse(full)) { issues.Add(new($"{field}.Reparse", field, $"{label} chứa điểm nối/reparse không an toàn.", severity)); return; }
+            if (!Directory.Exists(full)) { issues.Add(new($"{field}.Missing", field, $"{label} chưa tồn tại; hãy tạo hoặc chọn thư mục có thể ghi.", severity)); return; }
+            if (!CanWrite(full)) issues.Add(new($"{field}.NotWritable", field, $"Không thể ghi vào {label}.", severity));
         }
         catch (Exception ex) when (ex is ArgumentException or IOException or UnauthorizedAccessException or NotSupportedException)
-        { issues.Add(new($"{field}.Unsafe", field, $"{label} không an toàn hoặc không hợp lệ.")); }
+        { issues.Add(new($"{field}.Unsafe", field, $"{label} không an toàn hoặc không hợp lệ.", severity)); }
     }
+
+    private static bool IsNonBlockingForSales(StoreSettingsIssue issue) =>
+        issue.Field.StartsWith("BackupDirectory", StringComparison.Ordinal) ||
+        issue.Field.StartsWith("Retention", StringComparison.Ordinal) ||
+        string.Equals(issue.Field, "TaxCode", StringComparison.Ordinal);
 
     private static bool IsRepositoryPath(string path)
     {

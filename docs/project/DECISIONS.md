@@ -1,5 +1,18 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-037 — Manual UX hotfix keeps Store Readiness authoritative and separates optional warnings
+
+- **Status:** Accepted for post-modernization UX hotfix on `2026-08-28`.
+- **Decision:** Sales reloads the shared external `IStoreSettingsStore` snapshot before every readiness evaluation. Only core operational errors block Sales; missing/unavailable optional backup storage and optional tax metadata are warnings. No separate Shell boolean or cache is introduced.
+- **Dialog:** A typed WPF owner dialog lists friendly blocking issues and invokes the existing authorized Store Setup dialog through `IStoreSettingsDialogService`; raw exceptions and internal keys remain hidden.
+- **Isolated behavior:** `Start-POS-IsolatedTest.ps1` intentionally copies only the database and gives each invocation an owned external settings root. Separate temporary scenarios do not inherit prior Store Setup state; production settings/secrets must not be copied to make acceptance appear ready.
+
+## DEC-038 — Employee filtered states and create entry points remain one ViewModel state machine
+
+- **Status:** Accepted for post-modernization UX hotfix on `2026-08-28`.
+- **Decision:** Bind Role filtering to one stable typed “Tất cả vai trò” item, notify filter-derived state, show true-empty versus filtered/search no-result distinctly, and route every visible filtered-empty Add action to the existing `NewEmployeeCommand` create state. The list/detail design, security boundary, historical retention and R4.3 scope are unchanged.
+- **Responsive/presentation:** Keep the empty state content-driven and reachable at reduced height, use supported vector icon geometry for clearing filters, and bound long employee-code presentation with an accessibility tooltip rather than mutating persisted codes.
+
 ## DEC-036 — R4.2 modernizes Employee content without changing the production Shell
 
 - **Status:** Accepted for R4.2 Employee UI modernization closeout on `2026-08-28`.
