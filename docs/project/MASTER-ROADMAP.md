@@ -1,5 +1,10 @@
 # MASTER ROADMAP — POS ENTERPRISE RETAIL V1
 
+## Latest checkpoint position — 2026-08-29 (post-R4.4 handover-freeze hotfix — CLOSED / COMMITTED / PUSHED)
+
+- The narrowly scoped hotfix repairs the proven missing-Audit-service composition registration, adds a module-specific sanitized load boundary, and bounds Employee master/detail summary and identity/status layout. R4.3/R4.4 behavior and security contracts remain preserved.
+- Development freeze is active for machine handover. **Exact next checkpoint:** R5.1 Product CSV/Excel Import — NOT STARTED.
+
 ## Latest checkpoint position — 2026-08-28 (R4.2 final manual UI correction — CLOSED / COMMITTED / PUSHED)
 
 - The final R4.2 manual correction is CLOSED against live `93da2045ced774e8bd02e34777bfc145aac682db`. It is limited to Employee empty/create states, Role filter selected presentation and verification of the existing Sales readiness route.

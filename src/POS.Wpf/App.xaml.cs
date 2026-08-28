@@ -862,6 +862,7 @@ public partial class App :
             serviceProvider.GetRequiredService<EmployeeAccountService>());
 
         services.AddScoped<IRolePermissionManagementService, RolePermissionManagementService>();
+        services.AddScoped<IAuditLogService, AuditLogService>();
 
         ConfigureApplicationServiceDecorators(
             services);

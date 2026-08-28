@@ -118,6 +118,12 @@ public sealed class EmployeeManagementUiHotfixTests
                 Assert.NotEqual("Ch\u01b0a c\u00f3", viewModel.EffectivePermissionsText);
 
                 var identityHeader = Assert.IsType<System.Windows.Controls.Border>(window.FindName("EmployeeIdentityHeader"));
+                var identityTextBlock = Assert.IsType<System.Windows.Controls.StackPanel>(window.FindName("EmployeeIdentityTextBlock"));
+                var identityStatusCard = Assert.IsType<System.Windows.Controls.Border>(window.FindName("EmployeeIdentityStatusCard"));
+                var employeeList = FindVisualDescendants<System.Windows.Controls.DataGrid>(window)
+                    .Single(grid => System.Windows.Automation.AutomationProperties.GetAutomationId(grid) == "EmployeeList");
+                var employeeMasterCard = FindVisualAncestor<System.Windows.Controls.Border>(employeeList);
+                Assert.NotNull(employeeMasterCard);
                 var identityTexts = FindVisualDescendants<System.Windows.Controls.TextBlock>(identityHeader).Select(textBlock => textBlock.Text).ToArray();
                 Assert.Contains(viewModel.FullName, identityTexts);
                 Assert.Contains(viewModel.EmployeeCode, identityTexts);
@@ -165,6 +171,15 @@ public sealed class EmployeeManagementUiHotfixTests
                     Assert.True(codeText.ActualWidth > 0 && codeText.ActualHeight > 0);
                     var profileBounds = new Rect(profileCard.TransformToAncestor(window).Transform(new Point(0, 0)), new Size(profileCard.ActualWidth, profileCard.ActualHeight));
                     var actionBounds = new Rect(actionStrip.TransformToAncestor(window).Transform(new Point(0, 0)), new Size(actionStrip.ActualWidth, actionStrip.ActualHeight));
+                    var masterBounds = Bounds(employeeMasterCard!, window);
+                    var summaryText = FindVisualDescendants<System.Windows.Controls.TextBlock>(employeeMasterCard!)
+                        .Single(textBlock => textBlock.Text == viewModel.PageText);
+                    var summaryBounds = Bounds(summaryText, window);
+                    var identityTextBounds = Bounds(identityTextBlock, window);
+                    var identityStatusBounds = Bounds(identityStatusCard, window);
+                    Assert.True(masterBounds.Contains(summaryBounds), $"Employee summary escaped the master card at {size}.");
+                    Assert.False(identityTextBounds.IntersectsWith(identityStatusBounds), $"Employee identity text overlaps status at {size}.");
+                    Assert.True(identityStatusCard.ActualWidth > 0 && identityStatusCard.ActualHeight > 0);
                     Assert.True(actionBounds.Top >= profileBounds.Bottom - 1);
                 }
 
@@ -341,5 +356,25 @@ public sealed class EmployeeManagementUiHotfixTests
             foreach (var descendant in FindVisualDescendants<T>(child))
                 yield return descendant;
         }
+    }
+
+    private static T? FindVisualAncestor<T>(DependencyObject node)
+        where T : DependencyObject
+    {
+        var current = System.Windows.Media.VisualTreeHelper.GetParent(node);
+        while (current is not null)
+        {
+            if (current is T match)
+                return match;
+            current = System.Windows.Media.VisualTreeHelper.GetParent(current);
+        }
+
+        return null;
+    }
+
+    private static Rect Bounds(FrameworkElement element, Window window)
+    {
+        var origin = element.TransformToAncestor(window).Transform(new Point(0, 0));
+        return new Rect(origin, new Size(element.ActualWidth, element.ActualHeight));
     }
 }

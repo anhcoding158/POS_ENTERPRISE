@@ -1,5 +1,12 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-043 — Post-R4.4 hotfix isolates Audit loading failures and bounds Employee detail layout
+
+- **Status:** Accepted for the post-R4.4 handover-freeze hotfix on `2026-08-29`.
+- **Decision:** Register the existing `IAuditLogService` in the production WPF composition root; retain the Application authorization/query boundary and add only a sanitized module-level error/retry boundary for asynchronous list/detail loading. The observed failure was a missing DI registration, proven with a real isolated composition probe.
+- **Layout:** Keep the completed Employee master-detail design and use explicit bounded Grid columns for list summary and identity/status presentation. Preserve long-value tooltips/ellipsis and all existing commands, security, and navigation behavior.
+- **Freeze:** R4.3 and R4.4 remain closed, R5.1 remains not started, and development freeze is reactivated after the hotfix commit.
+
 ## DEC-042 — R4.4 uses one append-only secure audit viewer
 
 - **Status:** Accepted for R4.4 closeout on `2026-08-29`.

@@ -1,5 +1,12 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## Post-R4.4 handover-freeze hotfix — CLOSED — 2026-08-29
+
+- The observed Audit load dialog was caused by the missing `IAuditLogService` registration in the WPF composition root, not by an invalid audit query or migration. The service is now registered and the Audit ViewModel contains a sanitized module-level load/detail boundary with retry.
+- Employee summary and identity/status layout now use bounded WPF regions, so the list summary and long identity metadata cannot cross the master/detail boundary or overlap the status card. Real WPF bounds regression coverage is included.
+- Release isolated startup reached `DatabaseInitialized` and `ShellWindowReady` with the current executable. This environment still exposes no top-level HWND for external UIA; physical Audit navigation and DPI smoke remain manual checks and are not claimed as observed.
+- R4.3 and R4.4 are closed, R5.1 is not started, and development freeze is active again after this narrowly scoped hotfix.
+
 ## R4.4 Secure Audit Log UI — CLOSED — 2026-08-29
 
 - The secure audit viewer is append-only and permission-gated by `ViewAuditLog`. It uses the existing audit store, typed action metadata, historical actor/target snapshots, a safe terminal abstraction (`TERM-ISOLATED` for isolated runs), and an allowlisted change-set contract. Passwords, hashes, tokens, connection strings and raw exceptions are not stored or displayed.

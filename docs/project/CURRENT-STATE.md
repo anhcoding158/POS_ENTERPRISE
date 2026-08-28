@@ -1,5 +1,12 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## Post-R4.4 handover-freeze hotfix — CLOSED / COMMITTED / PUSHED — 2026-08-29
+
+- The Audit runtime failure was reproduced in the real Release composition: `AuditLogWindow` loaded, then `AuditLogViewModel` failed while resolving `IAuditLogService` because the WPF composition root had omitted that registration. The async module load consequently escaped to the global startup-safety message. No query, migration, mapping or schema defect was involved.
+- The production fix registers the existing `IAuditLogService`/`AuditLogService` boundary and gives list/detail loading a module-specific sanitized error state with retry and cancellation-aware single-flight loading. Application authorization, database-side filtering/paging, append-only audit behavior and secret exclusions are unchanged.
+- Employee master/detail clipping is corrected with bounded summary presentation and explicit avatar/identity/status Grid columns; identity metadata cannot overlap the status card, and long values retain ellipsis/tooltips. Existing Employee commands and behavior are unchanged.
+- Final focused coverage is `10/10 PASS`; Release build is `0` warnings / `0` errors. The official Quality Gate passed with `1360/1360 PASS`, failed/skipped `0`, vulnerability PASS, EF pending-model PASS and Git checks PASS. R4.3 and R4.4 remain closed; R5.1 remains not started and development freeze is reactivated.
+
 ## R4.4 Secure Audit Log UI — CLOSED / COMMITTED / PUSHED — 2026-08-29
 
 - R4.4 adds a permission-gated, append-only audit viewer under the existing dark grouped Shell. It reuses the current `SecurityAuditEvent` writer/repository boundary, adds safe actor/target snapshots, typed business metadata, privacy-safe terminal identity and allowlisted before/after changes; credentials, hashes, tokens and raw exceptions are excluded.

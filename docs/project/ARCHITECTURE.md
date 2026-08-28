@@ -1,5 +1,10 @@
 # ARCHITECTURE — POS ENTERPRISE RETAIL V1
 
+## Post-R4.4 handover-freeze hotfix boundary — 2026-08-29
+
+- `App.ConfigureApplicationServices` now composes the existing `IAuditLogService` implementation used by `AuditLogViewModel`; no second service, container or authorization path was introduced. The ViewModel catches recoverable list/detail failures, logs only a sanitized exception chain and exposes a retryable module status while the Shell remains alive.
+- Employee clipping is a WPF-only layout correction: the master summary is bounded within its card and the selected identity header uses `Auto/*/Auto` avatar/identity/status columns. Audit persistence/query contracts, Employee commands and all cross-module boundaries are unchanged.
+
 ## R4.4 Secure Audit Log UI boundary — CLOSED — 2026-08-29
 
 - Audit writes continue through the existing `ISecurityAuditRepository` append boundary. `SecurityAuditEvent` now carries safe historical actor/target snapshots, typed business/target metadata, terminal identity and a bounded allowlisted change set; the viewer has no edit/delete/export path.

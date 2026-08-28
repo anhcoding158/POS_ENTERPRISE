@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using POS.Application.Common;
 using POS.Application.Abstractions.Services;
 using POS.Application.DTOs.Audit;
 using POS.Domain.Enums;
@@ -50,6 +52,8 @@ public sealed class AuditActionOption(SecurityAuditAction? action, string displa
 public sealed class AuditLogViewModel : ViewModelBase
 {
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<AuditLogViewModel>? _logger;
+    private CancellationTokenSource? _loadSource;
     private string _actorFilter = string.Empty;
     private string _businessAreaFilter = string.Empty;
     private AuditActionOption? _selectedAction;
@@ -63,9 +67,10 @@ public sealed class AuditLogViewModel : ViewModelBase
     private AuditLogRowViewModel? _selectedAudit;
     private AuditDetailsDto? _details;
 
-    public AuditLogViewModel(IServiceScopeFactory scopeFactory)
+    public AuditLogViewModel(IServiceScopeFactory scopeFactory, ILogger<AuditLogViewModel>? logger = null)
     {
         _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
+        _logger = logger;
         ActionOptions = new([new(null, "Tất cả hành động"), .. Enum.GetValues<SecurityAuditAction>().Select(action => new AuditActionOption(action, ActionText(action)))]);
         SelectedAction = ActionOptions[0];
         RefreshCommand = new AsyncRelayCommand(() => LoadAsync(true), () => !IsBusy, HandleException);
@@ -99,32 +104,84 @@ public sealed class AuditLogViewModel : ViewModelBase
     private async Task LoadAsync(bool resetPage)
     {
         if (resetPage) PageNumber = 1;
+        var source = ReplaceSource(ref _loadSource);
         IsBusy = true; StatusMessage = "Đang tải nhật ký hoạt động...";
         try
         {
             using var scope = _scopeFactory.CreateScope();
             var service = scope.ServiceProvider.GetRequiredService<IAuditLogService>();
             var request = new AuditSearchRequest(ToUtc(FromDate, false), ToUtc(ToDate, true), ActorFilter, BusinessAreaFilter, SelectedAction?.Action, null, null, PageNumber, 25);
-            var result = await service.SearchAsync(request);
+            var result = await service.SearchAsync(request, source.Token);
+            if (source.IsCancellationRequested)
+                return;
             if (result.IsFailure) { StatusMessage = result.AppError.Message; return; }
             Audits.Clear(); foreach (var audit in result.Value.Items) Audits.Add(new AuditLogRowViewModel(audit));
             TotalCount = result.Value.TotalCount; TotalPages = result.Value.TotalPages; OnPropertyChanged(nameof(PageText));
             SelectedAudit = Audits.FirstOrDefault(); StatusMessage = TotalCount == 0 ? "Chưa có hoạt động nào được ghi nhận." : string.Empty;
         }
-        finally { IsBusy = false; }
+        catch (OperationCanceledException) when (source.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            HandleException(exception);
+        }
+        finally
+        {
+            if (ReferenceEquals(_loadSource, source))
+                IsBusy = false;
+        }
     }
 
     private async Task LoadDetailsAsync()
     {
         if (SelectedAudit is null) { Details = null; return; }
-        using var scope = _scopeFactory.CreateScope();
-        var result = await scope.ServiceProvider.GetRequiredService<IAuditLogService>().GetDetailsAsync(SelectedAudit.Id);
-        Details = result.IsSuccess ? result.Value : null;
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var result = await scope.ServiceProvider.GetRequiredService<IAuditLogService>().GetDetailsAsync(SelectedAudit.Id);
+            Details = result.IsSuccess ? result.Value : null;
+        }
+        catch (Exception exception)
+        {
+            Details = null;
+            HandleException(exception);
+        }
     }
 
     private Task ChangePageAsync(int delta) { PageNumber += delta; return LoadAsync(false); }
     private async Task ClearFiltersAsync() { ActorFilter = string.Empty; BusinessAreaFilter = string.Empty; SelectedAction = ActionOptions[0]; FromDate = DateTime.Today.AddDays(-6); ToDate = DateTime.Today; await LoadAsync(true); }
-    private void HandleException(Exception exception) { StatusMessage = "Không thể tải nhật ký hoạt động. Vui lòng thử lại."; global::System.Diagnostics.Trace.TraceError("AuditLogViewModel failed: {0}", exception.GetType().FullName); }
+    private void HandleException(Exception exception)
+    {
+        StatusMessage = "Không thể tải nhật ký hoạt động. Vui lòng thử lại.";
+        var chain = FormatExceptionChain(exception);
+        if (_logger is not null)
+            PosLog.Error(_logger, exception, "Không thể tải nhật ký hoạt động. ExceptionChain={ExceptionChain}", chain);
+        else
+            global::System.Diagnostics.Trace.TraceError("AuditLogViewModel failed. ExceptionChain={0}", chain);
+    }
+
+    private static string FormatExceptionChain(Exception exception)
+    {
+        var parts = new List<string>();
+        var current = exception;
+        var depth = 0;
+        while (current is not null && depth++ < 8)
+        {
+            parts.Add($"{current.GetType().FullName}: {SafeDiagnosticPolicy.SanitizeText(current.Message)}");
+            current = current.InnerException!;
+        }
+
+        return string.Join(" <- ", parts);
+    }
+
+    private static CancellationTokenSource ReplaceSource(ref CancellationTokenSource? source)
+    {
+        source?.Cancel();
+        source?.Dispose();
+        source = new CancellationTokenSource();
+        return source;
+    }
     private static DateTimeOffset? ToUtc(DateTime? value, bool endOfDay) => value is null ? null : new DateTimeOffset(value.Value.Date.AddDays(endOfDay ? 1 : 0), TimeSpan.Zero).AddTicks(endOfDay ? -1 : 0);
     private static string ActionText(SecurityAuditAction action) => new AuditLogRowViewModel(new AuditListItemDto(0, default, string.Empty, action, string.Empty, string.Empty, string.Empty, string.Empty, Guid.Empty)).ActionText;
 }

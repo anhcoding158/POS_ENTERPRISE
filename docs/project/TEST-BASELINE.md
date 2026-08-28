@@ -1,5 +1,12 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## Post-R4.4 handover-freeze hotfix baseline — 2026-08-29
+
+- The real Release composition regression probe reproduces and prevents the missing-`IAuditLogService` Audit load failure; Employee WPF bounds coverage verifies the list summary stays inside the master card and identity text does not overlap status at `1180×720`, `1366×768`, `1280×720` and `1000×620`. The focused hotfix suite is `10/10 PASS`.
+- Release solution build after the source changes is `0` warnings / `0` errors. The final official Quality Gate passed with `1360/1360 PASS`, failed `0`, skipped `0`, vulnerability PASS, EF pending-model PASS and Git checks PASS.
+- The latest isolated Release startup reached `DatabaseInitialized` and `ShellWindowReady`; external UIA still has no top-level HWND in this environment, so physical navigation and DPI smoke remain manual limitations.
+- Canonical database safety remains length `937984`, LastWriteTimeUtc `2026-08-09T14:26:03.9619805Z`, SHA-256 `C1F4BCCF022F896DD0948F2E25AFABE831DF3EF9CE1B289E9D933F9A33BDDBED`, with no WAL/SHM/journal. Development freeze is reactivated after closeout; R5.1 is not started.
+
 ## R4.4 Secure Audit Log UI baseline — 2026-08-29
 
 - R4.4 focused coverage is `7/7 PASS` in Release: allowlisted safe changes, credential exclusion, enriched audit metadata, Application permission denial/allow, and real `AuditLogWindow` construction/layout at `1180×720`, `1366×768`, `1280×720` and `900×560` with virtualization and initialized action filter.
