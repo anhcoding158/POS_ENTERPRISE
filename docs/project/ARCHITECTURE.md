@@ -1,5 +1,13 @@
 # ARCHITECTURE — POS ENTERPRISE RETAIL V1
 
+## R4.2 final manual UI correction boundary — 2026-08-28
+
+- Empty-state truth is supplied by the existing database-side summary plus the filtered query: `GlobalEmployeeCount == 0` is true-empty, while `GlobalEmployeeCount > 0 && FilteredResultCount == 0 && HasActiveSearchOrFilter` is filtered/search no-result. These properties are notified together with filter/page changes so only one presentation can be visible.
+- All Add entry points remain in the existing `EmployeeManagementViewModel` state machine. Filtered-empty Clear Filters invokes `ClearFiltersCommand`; Add invokes `NewEmployeeCommand`; a successful create clears incompatible filters only as needed to select the new persisted employee and then optionally opens the existing account-creation tab.
+- The Role filter remains a typed stable sentinel object. Its display is produced by the object’s friendly `ToString` value and the real WPF window test verifies selected content after Loaded/layout; no selected-index race or second DI/container boundary was introduced.
+- Create profile fields, optional account continuation and sticky actions remain WPF presentation over the existing Application service. The service never receives incomplete account data during employee creation; account creation still goes through the existing authorized secure command.
+- Sales readiness remains shared/authoritative: the current Sales route reloads external settings, evaluates typed blockers and uses the existing actionable readiness dialog. No authorization, readiness policy, Store Setup surface, Shell/sidebar route or persistence schema was changed by this correction.
+
 ## Post-modernization manual UX hotfix boundary — 2026-08-28
 
 - Sales readiness remains an Application/Infrastructure-owned typed evaluation. WPF reloads the singleton external settings store before evaluating it, presents only typed friendly blockers, and opens Store Setup through the existing authorized dialog service. Backup/tax optional conditions are warnings; core store/database errors remain blocking.

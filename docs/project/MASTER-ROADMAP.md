@@ -1,5 +1,11 @@
 # MASTER ROADMAP — POS ENTERPRISE RETAIL V1
 
+## Latest checkpoint position — 2026-08-28 (R4.2 final manual UI correction — CLOSED / COMMITTED / PUSHED)
+
+- The final R4.2 manual correction is CLOSED against live `93da2045ced774e8bd02e34777bfc145aac682db`. It is limited to Employee empty/create states, Role filter selected presentation and verification of the existing Sales readiness route.
+- Employee modernization, dark grouped Shell/sidebar, Store Setup UX and Inventory navigation hotfix remain preserved. No schema/migration or R4.3/R4.4 work is introduced.
+- **Exact next checkpoint:** R4.3 Role and Permission Management — NOT STARTED. R4.4 is also NOT STARTED.
+
 ## Latest checkpoint position — 2026-08-28 (post-modernization manual UX hotfix)
 
 - The focused manual UX hotfix is CLOSED / COMMITTED / PUSHED within R4.2. It repairs Store Readiness first-click behavior, optional warning classification, actionable readiness dialog, Employee filter initialization, filtered/true empty semantics, create transition, reduced-height empty layout, clear icon and long-code presentation.

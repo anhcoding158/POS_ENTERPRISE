@@ -16,7 +16,10 @@ namespace POS.Wpf.ViewModels;
 public sealed record EmployeeFilterOption(string DisplayName, EmployeeStatus? Value);
 public sealed record AccountFilterOption(string DisplayName, AccountStatus? Value);
 public sealed record RoleOption(string DisplayName, Role Value);
-public sealed record RoleFilterOption(string DisplayName, Role? Value);
+public sealed record RoleFilterOption(string DisplayName, Role? Value)
+{
+    public override string ToString() => DisplayName;
+}
 public sealed record PermissionGroupViewModel(string DisplayName, IReadOnlyList<string> Permissions);
 
 public sealed class EmployeeRowViewModel
@@ -113,6 +116,7 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
     private int _totalEmployees;
     private int _activeEmployees;
     private int _accountsNeedingAttention;
+    private int _selectedDetailTabIndex;
 
     public EmployeeManagementViewModel(IServiceScopeFactory scopeFactory, IPermissionService permissionService, ILogger<EmployeeManagementViewModel> logger)
     {
@@ -198,9 +202,12 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
     public bool HasDetailContent => IsCreateMode || HasSelection;
     public bool HasAccount => _details?.UserId is not null;
     public bool HasEmployees => Employees.Count > 0;
-    public bool HasSearchOrFilter => !string.IsNullOrWhiteSpace(SearchTerm) || SelectedEmployeeFilter.Value is not null || SelectedAccountFilter.Value is not null || SelectedRoleFilter?.Value is not null;
-    public bool IsEmptyState => IsLoaded && !IsBusy && !HasEmployees && !HasSearchOrFilter;
-    public bool IsNoResultState => IsLoaded && !IsBusy && !HasEmployees && HasSearchOrFilter;
+    public bool HasActiveSearchOrFilter => !string.IsNullOrWhiteSpace(SearchTerm) || SelectedEmployeeFilter.Value is not null || SelectedAccountFilter.Value is not null || SelectedRoleFilter.Value is not null;
+    public bool HasSearchOrFilter => HasActiveSearchOrFilter;
+    public bool IsTrueEmployeeDatabaseEmpty => IsLoaded && !IsBusy && GlobalEmployeeCount == 0;
+    public bool IsFilteredNoResult => IsLoaded && !IsBusy && GlobalEmployeeCount > 0 && FilteredResultCount == 0 && HasActiveSearchOrFilter;
+    public bool IsEmptyState => IsTrueEmployeeDatabaseEmpty;
+    public bool IsNoResultState => IsFilteredNoResult;
     public bool IsLoadingState => IsBusy || IsDetailBusy;
     public bool IsStatusVisible => !string.IsNullOrWhiteSpace(StatusMessage);
     public string DirtyStateText => IsDirty ? "Có thay đổi chưa lưu" : "Đã lưu";
@@ -218,10 +225,13 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
     public int PageNumber { get => _pageNumber; private set { if (SetProperty(ref _pageNumber, value)) NotifyCommands(); } }
     public int TotalPages { get => _totalPages; private set { if (SetProperty(ref _totalPages, value)) NotifyCommands(); } }
     public int TotalCount { get => _totalCount; private set { if (SetProperty(ref _totalCount, value)) NotifyListState(); } }
+    public int FilteredResultCount => TotalCount;
     public int SelectedPageSize { get => _selectedPageSize; set { if (SetProperty(ref _selectedPageSize, value) && IsLoaded && !IsBusy) _ = LoadAsync(resetPage: true); } }
-    public int TotalEmployees { get => _totalEmployees; private set => SetProperty(ref _totalEmployees, value); }
+    public int GlobalEmployeeCount => TotalEmployees;
+    public int TotalEmployees { get => _totalEmployees; private set { if (SetProperty(ref _totalEmployees, value)) NotifyListState(); } }
     public int ActiveEmployees { get => _activeEmployees; private set => SetProperty(ref _activeEmployees, value); }
     public int AccountsNeedingAttention { get => _accountsNeedingAttention; private set => SetProperty(ref _accountsNeedingAttention, value); }
+    public int SelectedDetailTabIndex { get => _selectedDetailTabIndex; set => SetProperty(ref _selectedDetailTabIndex, Math.Max(0, value)); }
     public string PageText => TotalCount == 0 ? "Không có nhân viên" : $"Hiển thị {(PageNumber - 1) * SelectedPageSize + 1:N0}–{Math.Min(PageNumber * SelectedPageSize, TotalCount):N0} trên {TotalCount:N0} nhân viên";
     public string PageNumberText => $"Trang {PageNumber} / {Math.Max(1, TotalPages)}";
     public string AccountStatusText => _details?.AccountStatus switch
@@ -283,12 +293,15 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
             if (result.IsFailure) { ShowError(result.AppError.Message); return; }
             var summary = await service.GetSummaryAsync(token);
             token.ThrowIfCancellationRequested();
-            if (summary.IsSuccess)
+            if (summary.IsFailure)
             {
-                TotalEmployees = summary.Value.TotalEmployees;
-                ActiveEmployees = summary.Value.ActiveEmployees;
-                AccountsNeedingAttention = summary.Value.AccountsNeedingAttention;
+                ShowError(summary.AppError.Message);
+                return;
             }
+
+            TotalEmployees = summary.Value.TotalEmployees;
+            ActiveEmployees = summary.Value.ActiveEmployees;
+            AccountsNeedingAttention = summary.Value.AccountsNeedingAttention;
 
             var oldSelectedId = preferredSelectionId ?? SelectedEmployee?.Id;
             Employees.Clear();
@@ -327,7 +340,7 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
 
     private Task NewEmployeeAsync()
     {
-        _details = null; SelectedEmployee = null; IsCreateMode = true; IsEditing = true; IsCreatingAccount = false; _suppressDirty = true;
+        _details = null; SelectedEmployee = null; IsCreateMode = true; IsEditing = true; IsCreatingAccount = false; SelectedDetailTabIndex = 0; _suppressDirty = true;
         try
         {
             EmployeeCode = string.Empty; FullName = string.Empty; PhoneNumber = string.Empty; EmailAddress = string.Empty; Username = string.Empty;
@@ -338,7 +351,7 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
     }
 
     private Task BeginEditAsync() { if (HasSelection) { IsEditing = true; IsDirty = false; } return Task.CompletedTask; }
-    private Task BeginCreateAccountAsync() { if (HasSelection && !HasAccount) { IsCreatingAccount = true; IsDirty = false; } return Task.CompletedTask; }
+    private Task BeginCreateAccountAsync() { if (HasSelection && !HasAccount) { IsCreatingAccount = true; SelectedDetailTabIndex = 1; IsDirty = false; } return Task.CompletedTask; }
 
     private async Task CancelEditAsync()
     {
@@ -370,12 +383,14 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
             await using var scope = _scopeFactory.CreateAsyncScope();
             var service = scope.ServiceProvider.GetRequiredService<IEmployeeAccountService>();
             Result<EmployeeDetailsDto> result;
+            var wasCreate = IsCreateMode;
+            var continueToAccount = wasCreate && CreateAccount;
             if (IsCreateMode)
             {
                 result = await service.CreateEmployeeAsync(new CreateEmployeeRequest
                 {
                     EmployeeCode = EmployeeCode, FullName = FullName, PhoneNumber = PhoneNumber, EmailAddress = EmailAddress,
-                    CreateAccount = CreateAccount, Username = CreateAccount ? Username : null, TemporaryPassword = CreateAccount ? _accountPassword : null, Role = SelectedRole.Value
+                    CreateAccount = false, Username = null, TemporaryPassword = null, Role = SelectedRole.Value
                 });
             }
             else if (_details is not null)
@@ -389,7 +404,21 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
             else return;
             if (result.IsFailure) { ShowError(result.AppError.Message); return; }
             var savedId = result.Value.Id; _details = result.Value; IsCreateMode = false; IsEditing = false; AssignDetails(result.Value);
+            if (wasCreate && HasActiveSearchOrFilter)
+            {
+                SearchTerm = string.Empty;
+                SelectedEmployeeFilter = EmployeeFilters[0];
+                SelectedAccountFilter = AccountFilters[0];
+                SelectedRoleFilter = RoleFilterOptions[0];
+            }
             ShowSuccess("Thông tin nhân viên đã được lưu."); await LoadAsync(preferredSelectionId: savedId, allowWhenBusy: true);
+            if (continueToAccount && HasSelection && !HasAccount)
+            {
+                IsCreatingAccount = true;
+                SelectedDetailTabIndex = 1;
+                IsDirty = false;
+                NotifyDetailState();
+            }
         }
         catch (Exception exception) { HandleException(exception); }
         finally { IsBusy = false; }
@@ -520,13 +549,15 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
     private void NotifyListState()
     {
         OnPropertyChanged(nameof(PageText)); OnPropertyChanged(nameof(PageNumberText)); OnPropertyChanged(nameof(HasSearchOrFilter));
+        OnPropertyChanged(nameof(HasActiveSearchOrFilter)); OnPropertyChanged(nameof(GlobalEmployeeCount)); OnPropertyChanged(nameof(FilteredResultCount));
+        OnPropertyChanged(nameof(IsTrueEmployeeDatabaseEmpty)); OnPropertyChanged(nameof(IsFilteredNoResult));
         OnPropertyChanged(nameof(IsEmptyState)); OnPropertyChanged(nameof(IsNoResultState));
     }
     private void NotifyFilterState()
     {
-        OnPropertyChanged(nameof(HasSearchOrFilter));
-        OnPropertyChanged(nameof(IsEmptyState));
-        OnPropertyChanged(nameof(IsNoResultState));
+        OnPropertyChanged(nameof(HasSearchOrFilter)); OnPropertyChanged(nameof(HasActiveSearchOrFilter));
+        OnPropertyChanged(nameof(IsTrueEmployeeDatabaseEmpty)); OnPropertyChanged(nameof(IsFilteredNoResult));
+        OnPropertyChanged(nameof(IsEmptyState)); OnPropertyChanged(nameof(IsNoResultState));
     }
     private void NotifyDetailState()
     {

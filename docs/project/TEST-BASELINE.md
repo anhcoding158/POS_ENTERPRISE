@@ -1,5 +1,13 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R4.2 final manual UI correction baseline — CLOSED — 2026-08-28
+
+- Entry baseline is live `main` at `93da2045ced774e8bd02e34777bfc145aac682db`, fetched/aligned `0/0` with `origin/main`, SDK `10.0.302`, clean/staged `0`, no active POS/worker/testhost/vstest process, and exact canonical database identity.
+- New real WPF regression coverage passes `8/8` in Release: Role selected-content after Loaded/layout, global-versus-filtered empty semantics, create mode/close affordance/responsive sizes/account continuation, source AutomationId/action contracts and existing Store Readiness dialog/readiness behavior.
+- Release build and official Quality Gate pass with `0` warnings/errors and `1352/1352` tests, failed `0`, skipped `0`; vulnerability scan, EF pending-model and Git checks pass. Final Release executable: `src/POS.Wpf/bin/Release/net10.0-windows/POS.Enterprise.exe`, SHA-256 `EDA67E1BEBBC3CB63A27784B892BA5DA51E774CFE724223EF756ED0C6941F69D`.
+- Isolated Release launcher used a fresh scenario-owned copy, reached `HostStarted`, `DatabaseInitialized`, `SessionLoopEntered`, `ShellWindowOpening`, `ShellWindowResolving`, `ShellWindowConstructed` and `ShellWindowReady`. External UIA exposed no top-level HWND; no unobserved click is claimed.
+- Canonical safety target remains length `937984`, LastWriteTimeUtc `2026-08-09T14:26:03.9619805Z`, SHA-256 `C1F4BCCF022F896DD0948F2E25AFABE831DF3EF9CE1B289E9D933F9A33BDDBED`, with no WAL/SHM/journal.
+
 ## Post-modernization manual UX hotfix baseline — 2026-08-28
 
 - Entry baseline was live `main` at `bf56138a46c0f56b1f84f7189c4f45311f739a87`, descendant of `cea5c4230487d95c379c9e18d3a7437e91dc7133`, fetched and aligned `0/0` with `origin/main`, SDK `10.0.302`, clean/staged `0`, and exact canonical database identity.

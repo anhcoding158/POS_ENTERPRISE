@@ -1,5 +1,12 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## R4.2 final manual UI correction — CLOSED — 2026-08-28
+
+- The prior manual observations were reproduced from the current source: the filtered-empty card combined a dynamic Clear Filters button with a second Add button, the filtered state was derived from the visible page only, and the Role ComboBox had a valid selected object but no selected-content text after real WPF layout.
+- The correction uses authoritative global/filtered counts, separate clear/add commands, a stable Role sentinel rendered by its friendly display value, a profile-first create form with X/Hủy dirty protection, and content-driven responsive empty/create regions.
+- The current Release binary reached `ShellWindowReady` from the exact post-baseline build. No old `Cấu hình cửa hàng chưa sẵn sàng` production source route remains; external UIA still exposes no top-level HWND, so final physical click/DPI visual acceptance remains a manual limitation and is not claimed here.
+- R4.3 and R4.4 remain NOT STARTED. Store Setup UX and the dark grouped sidebar remain preserved.
+
 ## Post-modernization manual UX hotfix — 2026-08-28
 
 - Resolved: Sales no longer blocks on a missing/unavailable optional backup directory or stale Store Setup snapshot. Core store/database errors remain blocking; optional backup and tax issues are surfaced as warnings.

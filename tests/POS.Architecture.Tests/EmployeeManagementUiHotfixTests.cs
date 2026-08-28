@@ -89,12 +89,30 @@ public sealed class EmployeeManagementUiHotfixTests
                 Assert.True(viewModel.CanLockAccounts);
                 Assert.True(viewModel.CanAssignRoles);
 
-                viewModel.InitializeAsync().GetAwaiter().GetResult();
+                window.Show();
+                while (!viewModel.IsLoaded)
+                    global::System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(
+                        global::System.Windows.Threading.DispatcherPriority.Background,
+                        new Action(() => { }));
+                window.Measure(new Size(1180, 720));
+                window.Arrange(new Rect(0, 0, 1180, 720));
+                window.UpdateLayout();
+                var roleFilter = Assert.IsType<System.Windows.Controls.ComboBox>(window.FindName("EmployeeRoleFilterComboBox"));
+                Assert.Same(viewModel, roleFilter.DataContext);
+                Assert.Equal(viewModel.RoleFilterOptions.Count, roleFilter.Items.Count);
+                Assert.Same(viewModel.SelectedRoleFilter, roleFilter.SelectedItem);
+                var renderedRoleTexts = string.Join(
+                    "|",
+                    FindVisualDescendants<System.Windows.Controls.TextBlock>(roleFilter)
+                        .Select(textBlock => $"{textBlock.Text}[{textBlock.ActualWidth:N1}x{textBlock.ActualHeight:N1}]"));
+                Assert.Contains("Tất cả vai trò", renderedRoleTexts, StringComparison.Ordinal);
                 Assert.NotEmpty(viewModel.Employees);
                 Assert.Equal(viewModel.Employees.Count, viewModel.TotalCount);
                 Assert.Same(viewModel.Employees[0], viewModel.SelectedEmployee);
                 Assert.True(viewModel.HasSelection);
                 Assert.Equal(viewModel.TotalCount, viewModel.TotalEmployees);
+                Assert.Equal(viewModel.TotalEmployees, viewModel.GlobalEmployeeCount);
+                Assert.Equal(viewModel.TotalCount, viewModel.FilteredResultCount);
                 Assert.True(viewModel.HasDetailContent);
                 viewModel.SelectEmployeeAsync(viewModel.Employees[0].Id).GetAwaiter().GetResult();
                 Assert.NotEqual("Ch\u01b0a c\u00f3", viewModel.EffectivePermissionsText);
@@ -110,6 +128,11 @@ public sealed class EmployeeManagementUiHotfixTests
                 viewModel.SelectedEmployeeFilter = viewModel.EmployeeFilters.Single(option => option.Value == EmployeeStatus.Inactive);
                 viewModel.InitializeAsync().GetAwaiter().GetResult();
                 Assert.Empty(viewModel.Employees);
+                Assert.Equal(1, viewModel.GlobalEmployeeCount);
+                Assert.Equal(0, viewModel.FilteredResultCount);
+                Assert.True(viewModel.HasActiveSearchOrFilter);
+                Assert.True(viewModel.IsFilteredNoResult);
+                Assert.False(viewModel.IsTrueEmployeeDatabaseEmpty);
                 Assert.False(viewModel.IsEmptyState);
                 Assert.True(viewModel.IsNoResultState);
 
@@ -118,8 +141,32 @@ public sealed class EmployeeManagementUiHotfixTests
                     Thread.Sleep(5);
                 Assert.True(viewModel.IsCreateMode);
                 Assert.True(viewModel.IsEditing);
+                window.UpdateLayout();
+                var createClose = Assert.IsType<System.Windows.Controls.Button>(window.FindName("EmployeeCreateCloseButton"));
+                Assert.True(createClose.IsVisible);
+                Assert.Equal(0, viewModel.SelectedDetailTabIndex);
                 Assert.Empty(viewModel.EmployeeCode);
                 Assert.Empty(viewModel.FullName);
+
+                foreach (var size in new[] { new Size(1366, 768), new Size(1280, 720), new Size(1000, 620) })
+                {
+                    window.Measure(size);
+                    window.Arrange(new Rect(0, 0, size.Width, size.Height));
+                    window.UpdateLayout();
+                    Assert.True(createClose.ActualWidth > 0 && createClose.ActualHeight > 0);
+                }
+
+                viewModel.EmployeeCode = "UX-" + Guid.NewGuid().ToString("N")[..8];
+                viewModel.FullName = "UI hotfix isolated employee";
+                viewModel.CreateAccount = true;
+                viewModel.SaveCommand.Execute(null);
+                while (viewModel.SaveCommand.IsExecuting)
+                    Thread.Sleep(5);
+                Assert.False(viewModel.IsCreateMode);
+                Assert.True(viewModel.HasSelection);
+                Assert.False(viewModel.HasAccount);
+                Assert.True(viewModel.IsCreatingAccount);
+                Assert.Equal(1, viewModel.SelectedDetailTabIndex);
 
                 viewModel.SearchTerm = string.Empty;
                 viewModel.SelectedEmployeeFilter = viewModel.EmployeeFilters[0];
@@ -229,5 +276,19 @@ public sealed class EmployeeManagementUiHotfixTests
 
         // SQLite/native handles can outlive the disposed provider until the testhost exits.
         // The exact temporary root is retried here and is finalized by checkpoint cleanup.
+    }
+
+    private static IEnumerable<T> FindVisualDescendants<T>(DependencyObject root)
+        where T : DependencyObject
+    {
+        for (var index = 0; index < System.Windows.Media.VisualTreeHelper.GetChildrenCount(root); index++)
+        {
+            var child = System.Windows.Media.VisualTreeHelper.GetChild(root, index);
+            if (child is T match)
+                yield return match;
+
+            foreach (var descendant in FindVisualDescendants<T>(child))
+                yield return descendant;
+        }
     }
 }

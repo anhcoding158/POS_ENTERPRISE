@@ -1,5 +1,17 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-039 — R4.2 final UI correction separates filtered-empty recovery from creation
+
+- **Status:** Accepted for final R4.2 manual UI correction on `2026-08-28`.
+- **Decision:** Treat global employee count and filtered result count as separate authoritative values. Show exactly one Add action for a true empty database; show Clear Filters plus a secondary Add action for filtered/search no-result. Both Add entry points call the existing `NewEmployeeCommand` and never dismiss the module.
+- **Create flow:** Save the employee profile first with no account payload. If the user selected continuation, select the new employee, move to the existing account tab and require the current secure username/role/temporary-password flow. Do not create an incomplete account.
+- **Role filter:** Keep one stable typed all-role sentinel and render its friendly value through the real WPF ComboBox selected-content path. Regression evidence must include `InitializeComponent`, Loaded/layout and selected-content observation.
+
+## DEC-040 — R4.2 final UI correction preserves the shared Sales readiness route
+
+- **Status:** Accepted for final R4.2 manual UI correction on `2026-08-28`.
+- **Decision:** Verify the exact Release executable and shared readiness service before changing Sales. Optional settings remain warnings under the existing policy; genuine core blockers use the typed owner-correct Store Readiness dialog and its authorized Store Setup action. A stale screenshot or unavailable external UIA is not evidence to reintroduce an obsolete MessageBox.
+
 ## DEC-037 — Manual UX hotfix keeps Store Readiness authoritative and separates optional warnings
 
 - **Status:** Accepted for post-modernization UX hotfix on `2026-08-28`.

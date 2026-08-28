@@ -1,5 +1,13 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## R4.2 final manual UI correction — CLOSED / COMMITTED / PUSHED — 2026-08-28
+
+- The live entry baseline is `93da2045ced774e8bd02e34777bfc145aac682db`, descendant of `cea5c4230487d95c379c9e18d3a7437e91dc7133`, with `main` aligned `0/0` to `origin/main`, clean/staged `0`, SDK `10.0.302`, and exact canonical database identity.
+- The final correction keeps the modern Employee master-detail screen, dark grouped Shell/sidebar, Store Setup UX and Inventory hotfix. It makes true-empty and filtered-empty states mutually exclusive using global and filtered counts, gives each visible action one authoritative command, fixes the real WPF Role selected-content binding, and makes create mode profile-first with explicit post-save account continuation.
+- Release reproduction reached `ShellWindowReady` from the current executable after `DatabaseInitialized`; the old generic readiness string is absent from current Sales production routes. External UIA does not expose a top-level HWND in this desktop, so no unobserved visual clicks or DPI/manual screenshot claims are made.
+- Final official Quality Gate is `1352/1352` PASS with `0` failed/skipped, `0/0` build warnings/errors, vulnerability PASS, EF pending-model PASS and Git checks PASS. Real WPF construction/layout tests and focused Release coverage are `8/8` PASS.
+- R4.3 and R4.4 remain NOT STARTED. Store Readiness is in scope only for route verification in this correction; Store Setup UX remains preserved.
+
 ## Post-modernization manual UX hotfix — CLOSED / COMMITTED / PUSHED — 2026-08-28
 
 - Sales first-click readiness was repaired without weakening authorization: Sales now reloads the authoritative external Store Setup snapshot before evaluation, and missing/unavailable backup storage is a warning rather than a sales blocker. Core store/database validity remains blocking. A typed owner-correct “Cửa hàng chưa sẵn sàng” dialog lists friendly blockers and can open the existing authorized Store Setup dialog.

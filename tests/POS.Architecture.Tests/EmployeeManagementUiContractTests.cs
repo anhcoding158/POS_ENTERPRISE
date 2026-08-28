@@ -20,7 +20,7 @@ public sealed class EmployeeManagementUiContractTests
             "EmployeeRoleFilter", "EmployeeList", "EmployeeDirtyState", "EmployeeValidationSummary", "EmployeeSaveButton",
             "EmployeeCreateAccountButton", "EmployeeResetPasswordButton", "EmployeeLockToggleButton",
             "EmployeeActiveToggleButton", "EmployeeChangeRoleButton", "EmployeeEmptyAddButton",
-            "EmployeeFilteredEmptyAddButton"
+            "EmployeeFilteredEmptyAddButton", "EmployeeFilteredEmptyClearButton", "EmployeeCreateCloseButton"
         })
         {
             Assert.Contains(automationId, view, StringComparison.Ordinal);
@@ -65,6 +65,10 @@ public sealed class EmployeeManagementUiContractTests
         Assert.Contains("Chọn một nhân viên", view, StringComparison.Ordinal);
         Assert.Contains("Không tìm thấy nhân viên phù hợp", view, StringComparison.Ordinal);
         Assert.Contains("RoleFilterOptions", viewModel, StringComparison.Ordinal);
+        Assert.Contains("GlobalEmployeeCount", viewModel, StringComparison.Ordinal);
+        Assert.Contains("FilteredResultCount", viewModel, StringComparison.Ordinal);
+        Assert.Contains("IsTrueEmployeeDatabaseEmpty", viewModel, StringComparison.Ordinal);
+        Assert.Contains("IsFilteredNoResult", viewModel, StringComparison.Ordinal);
         Assert.Contains("GetSummaryAsync", viewModel, StringComparison.Ordinal);
         Assert.Contains("SelectedEmployee = nextSelection", viewModel, StringComparison.Ordinal);
         Assert.Contains("CancelEditCommand", view, StringComparison.Ordinal);
@@ -73,6 +77,10 @@ public sealed class EmployeeManagementUiContractTests
         Assert.Contains("EmployeePermissionsTab", view, StringComparison.Ordinal);
         Assert.Contains("ToolTip=\"{Binding EmployeeCode}\"", view, StringComparison.Ordinal);
         Assert.Contains("<Path Data=\"M 2,2 L 10,10 M 10,2 L 2,10\"", view, StringComparison.Ordinal);
+        Assert.Contains("Command=\"{Binding ClearFiltersCommand}\"", view, StringComparison.Ordinal);
+        Assert.Contains("Content=\"Tiếp tục tạo tài khoản sau khi lưu\"", view, StringComparison.Ordinal);
+        Assert.Contains("Text=\"Hồ sơ nhân viên\"", view, StringComparison.Ordinal);
+        Assert.DoesNotContain("Tạo tài khoản ngay sau khi lưu", view, StringComparison.Ordinal);
         Assert.DoesNotContain("⌑", view, StringComparison.Ordinal);
         Assert.DoesNotContain("SelectedIndex=\"0\"", view, StringComparison.Ordinal);
         Assert.Contains("await _settingsStore.LoadAsync()", salesService, StringComparison.Ordinal);

@@ -11,6 +11,7 @@ public partial class EmployeeManagementWindow : global::System.Windows.Window
     {
         InitializeComponent();
         DataContext = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
+        RefreshRoleFilterBinding();
         Loaded += OnLoaded;
         Closing += OnClosing;
         Closed += OnClosed;
@@ -20,6 +21,15 @@ public partial class EmployeeManagementWindow : global::System.Windows.Window
     {
         Loaded -= OnLoaded;
         await ViewModel.InitializeAsync();
+        RefreshRoleFilterBinding();
+    }
+
+    private void RefreshRoleFilterBinding()
+    {
+        EmployeeRoleFilterComboBox.GetBindingExpression(
+            global::System.Windows.Controls.ComboBox.SelectedItemProperty)?.UpdateTarget();
+        EmployeeRoleFilterComboBox.GetBindingExpression(
+            global::System.Windows.Controls.ComboBox.TextProperty)?.UpdateTarget();
     }
 
     private async void OnSelectionChanged(object sender, global::System.Windows.Controls.SelectionChangedEventArgs e)
@@ -74,6 +84,30 @@ public partial class EmployeeManagementWindow : global::System.Windows.Window
             return;
 
         ViewModel.ChangeRoleCommand.Execute(null);
+    }
+
+    private void OnCreateCloseClick(object sender, global::System.Windows.RoutedEventArgs e)
+    {
+        if (ViewModel.IsDirty && global::System.Windows.MessageBox.Show(
+                this,
+                "Bạn có thay đổi chưa lưu. Bạn có muốn hủy việc thêm nhân viên?",
+                "Thay đổi chưa lưu",
+                global::System.Windows.MessageBoxButton.YesNo,
+                global::System.Windows.MessageBoxImage.Warning) != global::System.Windows.MessageBoxResult.Yes)
+            return;
+
+        ViewModel.CancelEditCommand.Execute(null);
+    }
+
+    private void OnCancelEditClick(object sender, global::System.Windows.RoutedEventArgs e)
+    {
+        if (ViewModel.IsCreateMode)
+        {
+            OnCreateCloseClick(sender, e);
+            return;
+        }
+
+        ViewModel.CancelEditCommand.Execute(null);
     }
 
     private void OnClosing(object? sender, CancelEventArgs e)
