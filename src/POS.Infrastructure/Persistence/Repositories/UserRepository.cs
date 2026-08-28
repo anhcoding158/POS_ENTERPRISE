@@ -232,6 +232,18 @@ public sealed class UserRepository :
             cancellationToken);
     }
 
+    public Task<int> CountByRoleAsync(
+        Role role,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Enum.IsDefined(role))
+            throw new ArgumentOutOfRangeException(nameof(role));
+
+        return _dbContext.Users
+            .AsNoTracking()
+            .CountAsync(user => user.Role == role, cancellationToken);
+    }
+
     public async Task AddAsync(
         User user,
         CancellationToken cancellationToken = default)

@@ -50,6 +50,7 @@ public partial class ShellWindow :
     private readonly IStoreSettingsDialogService? _storeSettingsDialogService;
 
     private readonly IEmployeeManagementDialogService? _employeeManagementDialogService;
+    private readonly IRolePermissionManagementDialogService? _rolePermissionManagementDialogService;
 
     private global::System.Windows.Controls.Button?
         _logoutButton;
@@ -70,7 +71,8 @@ public partial class ShellWindow :
         IStorageStatusDialogService storageStatusDialogService,
         AutomaticBackupStatusViewModel automaticBackupStatusViewModel,
         IStoreSettingsDialogService? storeSettingsDialogService = null,
-        IEmployeeManagementDialogService? employeeManagementDialogService = null)
+        IEmployeeManagementDialogService? employeeManagementDialogService = null,
+        IRolePermissionManagementDialogService? rolePermissionManagementDialogService = null)
     {
         _viewModel =
             viewModel ??
@@ -110,6 +112,7 @@ public partial class ShellWindow :
             throw new ArgumentNullException(nameof(automaticBackupStatusViewModel));
         _storeSettingsDialogService = storeSettingsDialogService;
         _employeeManagementDialogService = employeeManagementDialogService;
+        _rolePermissionManagementDialogService = rolePermissionManagementDialogService;
 
         if (!_currentUserService.IsAuthenticated)
         {
@@ -171,6 +174,12 @@ public partial class ShellWindow :
     {
         _employeeManagementDialogService?.Show(this);
     }
+
+    private void OnOpenRolePermissionManagementClick(
+        object sender,
+        global::System.Windows.RoutedEventArgs e) =>
+        _rolePermissionManagementDialogService?.Show(this);
+
 
     private void OnOpenRestoreWizardClick(
         object sender,
@@ -373,6 +382,13 @@ public partial class ShellWindow :
         EmployeeManagementNavigationButton.Visibility = canViewEmployees
             ? global::System.Windows.Visibility.Visible
             : global::System.Windows.Visibility.Collapsed;
+
+        var canManageRoles = _permissionService.HasPermission(SystemCapability.AssignRolesPermissions);
+        RolePermissionManagementNavigationButton.IsEnabled = canManageRoles;
+        RolePermissionManagementNavigationButton.Visibility = canManageRoles
+            ? global::System.Windows.Visibility.Visible
+            : global::System.Windows.Visibility.Collapsed;
+
 
         _permissionsConfigured =
             true;

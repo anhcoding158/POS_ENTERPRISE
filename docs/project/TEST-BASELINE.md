@@ -1,5 +1,11 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R4.3 Role and Permission Management baseline — 2026-08-29
+
+- Focused R4.3 role policy/service coverage: `3/3 PASS`.
+- Release solution build after R4.3 source changes: `0` warnings / `0` errors. The accepted full-suite baseline entering R4.3 was `1352/1352 PASS`; final R4.3 Quality Gate is recorded after the final gate run.
+- No canonical database, sidecar, credential or production settings changes are permitted. R4.4 metadata migration is intentionally not part of the R4.3 staged commit and remains the next checkpoint work.
+
 ## R4.2 final Employee detail visual polish baseline — CLOSED — 2026-08-28
 
 - Entry baseline was live `main` at `b8c17e0383cee79c1ed73b8c5d9dcc5f3e7b86a4`, fetched/aligned `0/0` with `origin/main`, SDK `10.0.302`, clean/staged `0`, and exact canonical database identity.

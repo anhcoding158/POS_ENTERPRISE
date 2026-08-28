@@ -1,5 +1,11 @@
 # ARCHITECTURE — POS ENTERPRISE RETAIL V1
 
+## R4.3 Role and Permission Management boundary — 2026-08-29
+
+- The role model remains `POS.Domain.Enums.Role` with four stable built-in values. `RolePermissionPolicy` remains the only evaluator mapping role to `SystemCapability`; `PermissionCatalog` adds presentation metadata without duplicating permission keys.
+- The R4.3 Application service queries role usage through `IUserRepository.CountByRoleAsync` and returns typed snapshots. WPF resolves it through the existing scoped DI composition and only adds a permission-gated grouped Shell route.
+- Custom roles are deferred because there is no persisted role/permission aggregate in the current dependency graph. No alternate authorization stack, schema change or role assignment path was introduced by R4.3.
+
 ## R4.2 final manual UI correction boundary — 2026-08-28
 
 - Empty-state truth is supplied by the existing database-side summary plus the filtered query: `GlobalEmployeeCount == 0` is true-empty, while `GlobalEmployeeCount > 0 && FilteredResultCount == 0 && HasActiveSearchOrFilter` is filtered/search no-result. These properties are notified together with filter/page changes so only one presentation can be visible.

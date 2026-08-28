@@ -42,5 +42,7 @@ public enum SystemCapability
 
     AssignRolesPermissions = 17,
 
-    ViewSecurityStatus = 18
+    ViewSecurityStatus = 18,
+
+    ViewAuditLog = 19
 }

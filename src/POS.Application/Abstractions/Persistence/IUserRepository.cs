@@ -63,6 +63,10 @@ public interface IUserRepository
         int? excludeUserId = null,
         CancellationToken cancellationToken = default);
 
+    Task<int> CountByRoleAsync(
+        Role role,
+        CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Thêm User vào persistence context.
     ///

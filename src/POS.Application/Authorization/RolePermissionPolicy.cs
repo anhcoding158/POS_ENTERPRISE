@@ -115,6 +115,9 @@ public static class RolePermissionPolicy
             SystemCapability.ViewSecurityStatus =>
                 "xem trạng thái bảo mật",
 
+            SystemCapability.ViewAuditLog =>
+                "xem nhật ký hoạt động",
+
             _ =>
                 throw new ArgumentOutOfRangeException(
                     nameof(permission),

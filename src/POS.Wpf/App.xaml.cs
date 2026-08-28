@@ -861,6 +861,8 @@ public partial class App :
         services.AddScoped<IEmployeeAccountService>(serviceProvider =>
             serviceProvider.GetRequiredService<EmployeeAccountService>());
 
+        services.AddScoped<IRolePermissionManagementService, RolePermissionManagementService>();
+
         ConfigureApplicationServiceDecorators(
             services);
 
@@ -1131,6 +1133,7 @@ public partial class App :
         services.AddSingleton<IStoreSettingsFilePicker, StoreSettingsFilePicker>();
         services.AddScoped<IStoreSettingsDialogService, StoreSettingsDialogService>();
         services.AddSingleton<IEmployeeManagementDialogService, EmployeeManagementDialogService>();
+        services.AddSingleton<IRolePermissionManagementDialogService, RolePermissionManagementDialogService>();
 
         services.AddScoped<
             ISupportBundleDialogService,
@@ -1229,6 +1232,8 @@ public partial class App :
         services.AddTransient<StoreSettingsViewModel>();
         services.AddTransient<StoreSettingsWindow>();
         services.AddTransient<EmployeeManagementViewModel>();
+        services.AddTransient<RolePermissionManagementViewModel>();
+        services.AddTransient<RolePermissionManagementWindow>();
 
         services.AddScoped<
             StorageStatusViewModel>();

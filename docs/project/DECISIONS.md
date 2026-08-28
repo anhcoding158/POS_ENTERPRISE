@@ -1,5 +1,11 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-041 — R4.3 keeps built-in role policy authoritative and defers custom roles
+
+- **Status:** Accepted for R4.3 on `2026-08-29`.
+- **Decision:** Add a permission-gated role/permission viewer backed by the existing four typed roles and centralized policy. Keep role assignment in the existing EmployeeAccountService boundary. Defer custom roles because the repository has no persisted Role aggregate or permission assignment relation; a safe implementation would be a separate additive contract with migration, concurrency, lifecycle, audit and final-Administrator protections.
+- **Security:** `ViewAuditLog` is a typed capability reserved for R4.4. UI filtering is supplemental; Application authorization remains authoritative and unknown role/permission values deny.
+
 ## DEC-039 — R4.2 final UI correction separates filtered-empty recovery from creation
 
 - **Status:** Accepted for final R4.2 manual UI correction on `2026-08-28`.

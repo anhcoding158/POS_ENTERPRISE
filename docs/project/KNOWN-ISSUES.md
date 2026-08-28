@@ -1,5 +1,10 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## R4.3 Role and Permission Management — CLOSED — 2026-08-29
+
+- Built-in role management is intentionally read-only in this checkpoint because the current production model is an enum-backed role policy, not database-backed custom roles. Assignment continues through the existing Employee and Account boundary.
+- The new matrix is permission-gated by `AssignRolesPermissions`; non-Administrator roles retain the existing least-privilege policy. R4.4 secure audit viewing is the next checkpoint.
+
 ## R4.2 final Employee detail visual polish — CLOSED — 2026-08-28
 
 - Resolved the selected-detail presentation gap: identity metadata and employment/account states are now composed in one bordered header, profile values are grouped in a warm-neutral information card, and lifecycle/profile commands sit in a deliberate action strip.

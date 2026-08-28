@@ -1,5 +1,12 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## R4.3 Role and Permission Management — CLOSED / COMMITTED / PUSHED — 2026-08-29
+
+- R4.3 adds a permission-gated WPF Role and Permission screen under the existing dark grouped Shell. It presents the four stable enum-backed built-in roles, Vietnamese labels, database-side account usage counts and the centralized effective-permission matrix.
+- Custom roles are deferred: the live architecture has no persisted Role aggregate or permission-assignment store; introducing one would be a new authorization model requiring additive lifecycle, assignment, concurrency, final-Administrator and audit contracts. Built-in role assignments remain through the existing authorized EmployeeAccountService.
+- `ViewAuditLog` is a new typed capability reserved for R4.4. No WPF visibility is treated as an authorization boundary; Application permission evaluation remains authoritative and unknown values deny by default.
+- R4.3 isolated acceptance and final gate evidence are recorded outside the repository. R4.4 is the next checkpoint and is in progress; R4.5 is not started.
+
 ## R4.2 final Employee detail visual polish — CLOSED / COMMITTED / PUSHED — 2026-08-28
 
 - This tightly scoped presentation checkpoint preserves the completed Employee master-detail behavior, filters, commands, persistence, authorization, security safeguards, dark grouped sidebar, Store Setup UX and Inventory navigation hotfix.

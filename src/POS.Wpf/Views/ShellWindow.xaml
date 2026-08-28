@@ -710,6 +710,17 @@
                                             <TextBlock Text="Cài đặt cửa hàng" VerticalAlignment="Center" Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                         </StackPanel>
                                     </Button>
+                                    <Button
+                                        x:Name="RolePermissionManagementNavigationButton"
+                                        Click="OnOpenRolePermissionManagementClick"
+                                        Style="{StaticResource ShellNavigationChildButtonStyle}"
+                                        ToolTip="Vai trò và quyền hạn"
+                                        AutomationProperties.AutomationId="RolePermissionManagementNavigationButton">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE8D4;" FontFamily="Segoe MDL2 Assets" FontSize="13" Width="24" VerticalAlignment="Center" />
+                                            <TextBlock Text="Vai trò &amp; quyền hạn" VerticalAlignment="Center" Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        </StackPanel>
+                                    </Button>
                                 </StackPanel>
                             </Expander>
 
