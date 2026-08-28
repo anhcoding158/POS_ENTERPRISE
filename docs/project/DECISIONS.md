@@ -1,5 +1,12 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-042 — R4.4 uses one append-only secure audit viewer
+
+- **Status:** Accepted for R4.4 closeout on `2026-08-29`.
+- **Decision:** Reuse the current audit write store and add only additive safe metadata: actor/target snapshots, typed business/target labels, privacy-safe terminal identity and bounded allowlisted before/after changes. No arbitrary entity serialization, audit editing/deletion, export or second audit store is introduced.
+- **Query/UI:** `ViewAuditLog` is enforced by the Application service; the WPF screen supplies friendly filters and detail presentation while database-side filtering, UTC ordering and bounded paging remain authoritative. Unknown historical metadata is shown explicitly as unknown/fallback, never invented.
+- **Freeze:** R4.3 and R4.4 are closed and development is frozen for handover. The next roadmap checkpoint is R5.1 Product CSV/Excel Import and has not started.
+
 ## DEC-041 — R4.3 keeps built-in role policy authoritative and defers custom roles
 
 - **Status:** Accepted for R4.3 on `2026-08-29`.

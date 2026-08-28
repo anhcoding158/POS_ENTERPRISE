@@ -758,6 +758,12 @@
                                             <TextBlock Text="Khôi phục dữ liệu" VerticalAlignment="Center" Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                         </StackPanel>
                                     </Button>
+                                    <Button x:Name="AuditLogNavigationButton" Click="OnOpenAuditLogClick" Style="{StaticResource ShellNavigationChildButtonStyle}" AutomationProperties.AutomationId="AuditLogNavigationButton">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE77B;" FontFamily="Segoe MDL2 Assets" FontSize="13" Width="24" VerticalAlignment="Center" />
+                                            <TextBlock Text="Nhật ký hoạt động" VerticalAlignment="Center" Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        </StackPanel>
+                                    </Button>
                                     <Button
                                         x:Name="StorageStatusNavigationButton"
                                         Click="OnOpenStorageStatusClick"

@@ -21,8 +21,17 @@ public sealed class SecurityAuditEventConfiguration : IEntityTypeConfiguration<S
         builder.Property(audit => audit.Action).HasConversion<int>().IsRequired();
         builder.Property(audit => audit.Result).HasMaxLength(100).IsRequired();
         builder.Property(audit => audit.OperationId).HasConversion<string>().HasMaxLength(36).IsRequired();
+        builder.Property(audit => audit.ActorDisplayNameSnapshot).HasMaxLength(200).IsRequired();
+        builder.Property(audit => audit.TargetDisplayNameSnapshot).HasMaxLength(200).IsRequired();
+        builder.Property(audit => audit.BusinessArea).HasMaxLength(120).IsRequired();
+        builder.Property(audit => audit.TargetType).HasMaxLength(80).IsRequired();
+        builder.Property(audit => audit.TerminalId).HasMaxLength(80).IsRequired();
+        builder.Property(audit => audit.BeforeValuesJson).HasMaxLength(64000).IsRequired();
+        builder.Property(audit => audit.AfterValuesJson).HasMaxLength(64000).IsRequired();
         builder.HasIndex(audit => new { audit.TargetEmployeeId, audit.CreatedAtUtc }).HasDatabaseName("IX_SecurityAuditEvents_TargetEmployee_Created");
         builder.HasIndex(audit => new { audit.TargetUserId, audit.CreatedAtUtc }).HasDatabaseName("IX_SecurityAuditEvents_TargetUser_Created");
+        builder.HasIndex(audit => new { audit.CreatedAtUtc, audit.Id }).HasDatabaseName("IX_SecurityAuditEvents_Created_Id");
+        builder.HasIndex(audit => new { audit.BusinessArea, audit.Action, audit.CreatedAtUtc }).HasDatabaseName("IX_SecurityAuditEvents_Area_Action_Created");
         builder.HasOne<User>().WithMany().HasForeignKey(audit => audit.ActorUserId).OnDelete(DeleteBehavior.SetNull);
         builder.HasOne<User>().WithMany().HasForeignKey(audit => audit.TargetUserId).OnDelete(DeleteBehavior.SetNull);
         builder.HasOne<Employee>().WithMany().HasForeignKey(audit => audit.TargetEmployeeId).OnDelete(DeleteBehavior.SetNull);

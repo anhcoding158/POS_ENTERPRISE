@@ -376,6 +376,8 @@ public static class DependencyInjection
 
         services.AddScoped<IEmployeeRepository, EmployeeRepository>();
         services.AddScoped<ISecurityAuditRepository, SecurityAuditRepository>();
+        services.AddScoped<ISecurityAuditQueryRepository, SecurityAuditQueryRepository>();
+        services.AddSingleton<POS.Application.Abstractions.Security.ITerminalIdentityProvider, POS.Infrastructure.Security.TerminalIdentityProvider>();
 
         services.AddScoped<
             IOrderRepository,

@@ -1,5 +1,12 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## R4.4 Secure Audit Log UI — CLOSED — 2026-08-29
+
+- The secure audit viewer is append-only and permission-gated by `ViewAuditLog`. It uses the existing audit store, typed action metadata, historical actor/target snapshots, a safe terminal abstraction (`TERM-ISOLATED` for isolated runs), and an allowlisted change-set contract. Passwords, hashes, tokens, connection strings and raw exceptions are not stored or displayed.
+- Filtering and paging remain database-side with stable UTC ordering; local-time conversion is presentation-only. Existing historical rows with empty new metadata use explicit unknown/fallback labels rather than invented before/after values.
+- Real WPF construction/layout and Release isolated startup passed. External UIA exposes no top-level HWND in this environment, so physical click and DPI smoke remain manual checks.
+- R4.3/R4.4 are closed; development freeze is active and R5.1 Product CSV/Excel Import is recorded as the next checkpoint, not started.
+
 ## R4.3 Role and Permission Management — CLOSED — 2026-08-29
 
 - Built-in role management is intentionally read-only in this checkpoint because the current production model is an enum-backed role policy, not database-backed custom roles. Assignment continues through the existing Employee and Account boundary.

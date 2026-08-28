@@ -1134,6 +1134,7 @@ public partial class App :
         services.AddScoped<IStoreSettingsDialogService, StoreSettingsDialogService>();
         services.AddSingleton<IEmployeeManagementDialogService, EmployeeManagementDialogService>();
         services.AddSingleton<IRolePermissionManagementDialogService, RolePermissionManagementDialogService>();
+        services.AddSingleton<IAuditLogDialogService, AuditLogDialogService>();
 
         services.AddScoped<
             ISupportBundleDialogService,
@@ -1234,6 +1235,8 @@ public partial class App :
         services.AddTransient<EmployeeManagementViewModel>();
         services.AddTransient<RolePermissionManagementViewModel>();
         services.AddTransient<RolePermissionManagementWindow>();
+        services.AddTransient<AuditLogViewModel>();
+        services.AddTransient<AuditLogWindow>();
 
         services.AddScoped<
             StorageStatusViewModel>();

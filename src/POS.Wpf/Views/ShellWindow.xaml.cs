@@ -51,6 +51,7 @@ public partial class ShellWindow :
 
     private readonly IEmployeeManagementDialogService? _employeeManagementDialogService;
     private readonly IRolePermissionManagementDialogService? _rolePermissionManagementDialogService;
+    private readonly IAuditLogDialogService? _auditLogDialogService;
 
     private global::System.Windows.Controls.Button?
         _logoutButton;
@@ -72,7 +73,8 @@ public partial class ShellWindow :
         AutomaticBackupStatusViewModel automaticBackupStatusViewModel,
         IStoreSettingsDialogService? storeSettingsDialogService = null,
         IEmployeeManagementDialogService? employeeManagementDialogService = null,
-        IRolePermissionManagementDialogService? rolePermissionManagementDialogService = null)
+        IRolePermissionManagementDialogService? rolePermissionManagementDialogService = null,
+        IAuditLogDialogService? auditLogDialogService = null)
     {
         _viewModel =
             viewModel ??
@@ -113,6 +115,7 @@ public partial class ShellWindow :
         _storeSettingsDialogService = storeSettingsDialogService;
         _employeeManagementDialogService = employeeManagementDialogService;
         _rolePermissionManagementDialogService = rolePermissionManagementDialogService;
+        _auditLogDialogService = auditLogDialogService;
 
         if (!_currentUserService.IsAuthenticated)
         {
@@ -179,6 +182,11 @@ public partial class ShellWindow :
         object sender,
         global::System.Windows.RoutedEventArgs e) =>
         _rolePermissionManagementDialogService?.Show(this);
+
+    private void OnOpenAuditLogClick(
+        object sender,
+        global::System.Windows.RoutedEventArgs e) =>
+        _auditLogDialogService?.Show(this);
 
 
     private void OnOpenRestoreWizardClick(
@@ -386,6 +394,12 @@ public partial class ShellWindow :
         var canManageRoles = _permissionService.HasPermission(SystemCapability.AssignRolesPermissions);
         RolePermissionManagementNavigationButton.IsEnabled = canManageRoles;
         RolePermissionManagementNavigationButton.Visibility = canManageRoles
+            ? global::System.Windows.Visibility.Visible
+            : global::System.Windows.Visibility.Collapsed;
+
+        var canViewAudit = _permissionService.HasPermission(SystemCapability.ViewAuditLog);
+        AuditLogNavigationButton.IsEnabled = canViewAudit;
+        AuditLogNavigationButton.Visibility = canViewAudit
             ? global::System.Windows.Visibility.Visible
             : global::System.Windows.Visibility.Collapsed;
 

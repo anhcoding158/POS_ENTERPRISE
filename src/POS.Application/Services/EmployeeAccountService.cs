@@ -3,6 +3,7 @@ using POS.Application.Abstractions.Authorization;
 using POS.Application.Abstractions.DateTime;
 using POS.Application.Abstractions.Persistence;
 using POS.Application.Abstractions.Services;
+using POS.Application.Abstractions.Security;
 using POS.Application.Authentication;
 using POS.Application.Authorization;
 using POS.Application.Common;
@@ -26,6 +27,7 @@ public sealed class EmployeeAccountService : IEmployeeAccountService
     private readonly ICurrentUserService _currentUserService;
     private readonly IPermissionService _permissionService;
     private readonly IClock _clock;
+    private readonly ITerminalIdentityProvider? _terminalIdentityProvider;
 
     public EmployeeAccountService(
         IEmployeeRepository employeeRepository,
@@ -35,7 +37,8 @@ public sealed class EmployeeAccountService : IEmployeeAccountService
         IPasswordHasher passwordHasher,
         ICurrentUserService currentUserService,
         IPermissionService permissionService,
-        IClock clock)
+        IClock clock,
+        ITerminalIdentityProvider? terminalIdentityProvider = null)
     {
         _employeeRepository = employeeRepository ?? throw new ArgumentNullException(nameof(employeeRepository));
         _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
@@ -45,6 +48,7 @@ public sealed class EmployeeAccountService : IEmployeeAccountService
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         _permissionService = permissionService ?? throw new ArgumentNullException(nameof(permissionService));
         _clock = clock ?? throw new ArgumentNullException(nameof(clock));
+        _terminalIdentityProvider = terminalIdentityProvider;
     }
 
     public async Task<Result<PagedResult<EmployeeListItemDto>>> SearchAsync(
@@ -289,13 +293,15 @@ public sealed class EmployeeAccountService : IEmployeeAccountService
         if (employee?.LoginAccount is null) return Failure(ErrorCodes.General.NotFound, "Không tìm thấy tài khoản đăng nhập.");
         if (!IsExpectedVersion(employee.UpdatedAtUtc, request.ExpectedUpdatedAtUtc)) return Conflict();
         if (employee.LoginAccount.Role == request.Role) return Result.Success();
-        if (employee.LoginAccount.Role == Role.Administrator && request.Role != Role.Administrator)
+        var previousRole = employee.LoginAccount.Role;
+        if (previousRole == Role.Administrator && request.Role != Role.Administrator)
         {
             var guard = await EnsureNotFinalAdministratorAsync(employee, cancellationToken);
             if (guard.IsFailure) return guard;
         }
         employee.LoginAccount.UpdateProfile(employee.FullName, request.Role, _clock.UtcNow);
-        return await SaveMutationResultAsync(employee, SecurityAuditAction.RoleChanged, cancellationToken);
+        return await SaveMutationResultAsync(employee, SecurityAuditAction.RoleChanged, cancellationToken,
+            [new SecurityAuditChange("Vai trò", RolePermissionPolicy.GetRoleDisplayName(previousRole), RolePermissionPolicy.GetRoleDisplayName(request.Role))]);
     }
 
     public async Task<Result> CompletePasswordChangeAsync(
@@ -339,7 +345,7 @@ public sealed class EmployeeAccountService : IEmployeeAccountService
         return saved.IsFailure ? Result.Failure<EmployeeDetailsDto>(saved.AppError) : Result.Success(MapDetails(employee));
     }
 
-    private async Task<Result> SaveMutationResultAsync(Employee employee, SecurityAuditAction action, CancellationToken cancellationToken)
+    private async Task<Result> SaveMutationResultAsync(Employee employee, SecurityAuditAction action, CancellationToken cancellationToken, IEnumerable<SecurityAuditChange>? changes = null)
     {
         await using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
         try
@@ -348,7 +354,9 @@ public sealed class EmployeeAccountService : IEmployeeAccountService
             // Save the mutation before constructing the audit event so every target identity is
             // durable and valid, while the surrounding transaction still keeps both writes atomic.
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            await _auditRepository.AddAsync(new SecurityAuditEvent(ActorId(), employee.Id, employee.LoginAccount?.Id, action, "Success", Guid.NewGuid(), _clock.UtcNow), cancellationToken);
+            await _auditRepository.AddAsync(new SecurityAuditEvent(ActorId(), employee.Id, employee.LoginAccount?.Id, action, "Success", Guid.NewGuid(), _clock.UtcNow,
+                _currentUserService.FullName, employee.FullName, "Nhân viên và tài khoản", employee.LoginAccount is null ? "Nhân viên" : "Tài khoản",
+                _terminalIdentityProvider?.TerminalId ?? "TERM-UNKNOWN", changes), cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return Result.Success();

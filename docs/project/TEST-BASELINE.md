@@ -1,5 +1,12 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R4.4 Secure Audit Log UI baseline — 2026-08-29
+
+- R4.4 focused coverage is `7/7 PASS` in Release: allowlisted safe changes, credential exclusion, enriched audit metadata, Application permission denial/allow, and real `AuditLogWindow` construction/layout at `1180×720`, `1366×768`, `1280×720` and `900×560` with virtualization and initialized action filter.
+- R4.3 focused coverage is `3/3 PASS`; its final official Quality Gate was `1355/1355 PASS`. Final R4.4 official Quality Gate is rerun after this documentation/source update and must remain at least `1359/1359 PASS`, with failed/skipped `0`, build `0/0`, vulnerability PASS, EF pending-model PASS and Git checks PASS.
+- Release executable is built from current `main` under `src/POS.Wpf/bin/Release/net10.0-windows/POS.Enterprise.exe`; isolated startup used an owned temporary copy and `POS_RUNTIME_MODE=IsolatedTest`. External UIA has no top-level HWND here, so no physical click claim is recorded.
+- Canonical database target remains length `937984`, LastWriteTimeUtc `2026-08-09T14:26:03.9619805Z`, SHA-256 `C1F4BCCF022F896DD0948F2E25AFABE831DF3EF9CE1B289E9D933F9A33BDDBED`, with no WAL/SHM/journal. Development freeze is active; R5.1 Product CSV/Excel Import is not started.
+
 ## R4.3 Role and Permission Management baseline — 2026-08-29
 
 - Focused R4.3 role policy/service coverage: `3/3 PASS`.

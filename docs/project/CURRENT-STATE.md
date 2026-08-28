@@ -1,11 +1,21 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## R4.4 Secure Audit Log UI — CLOSED / COMMITTED / PUSHED — 2026-08-29
+
+- R4.4 adds a permission-gated, append-only audit viewer under the existing dark grouped Shell. It reuses the current `SecurityAuditEvent` writer/repository boundary, adds safe actor/target snapshots, typed business metadata, privacy-safe terminal identity and allowlisted before/after changes; credentials, hashes, tokens and raw exceptions are excluded.
+- Audit queries are asynchronous, cancellation-aware, database-filtered and stably paged newest-first. The WPF screen provides initialized date/actor/business/action filters, friendly Vietnamese action text, local-time display, detail and safe before/after surfaces, with real WPF layout/virtualization coverage.
+- The additive migration `20260828173138_AddSecureAuditLogMetadata` preserves existing audit rows with honest empty metadata defaults and adds supporting indexes. `ViewAuditLog` is authoritative at the Application boundary; Administrator is granted, other built-in roles remain denied by default.
+- R4.4 isolated startup used the current Release executable and an owned temporary database; migration and host startup completed without startup/XAML/resource errors. External UIA exposes no top-level HWND on this desktop, so physical click/DPI claims remain manual limitations. Evidence is outside the repository.
+- R4.4 Quality Gate is `1359/1359` PASS with 0 failed/skipped, 0 build warnings/errors, vulnerability PASS, EF pending-model PASS and Git checks PASS. Development is frozen for machine handover. Exact next roadmap checkpoint is R5.1 Product CSV/Excel Import — recorded, not started.
+
+## R4.3 Role and Permission Management — CLOSED / COMMITTED / PUSHED — 2026-08-29
+
 ## R4.3 Role and Permission Management — CLOSED / COMMITTED / PUSHED — 2026-08-29
 
 - R4.3 adds a permission-gated WPF Role and Permission screen under the existing dark grouped Shell. It presents the four stable enum-backed built-in roles, Vietnamese labels, database-side account usage counts and the centralized effective-permission matrix.
 - Custom roles are deferred: the live architecture has no persisted Role aggregate or permission-assignment store; introducing one would be a new authorization model requiring additive lifecycle, assignment, concurrency, final-Administrator and audit contracts. Built-in role assignments remain through the existing authorized EmployeeAccountService.
 - `ViewAuditLog` is a new typed capability reserved for R4.4. No WPF visibility is treated as an authorization boundary; Application permission evaluation remains authoritative and unknown values deny by default.
-- R4.3 isolated acceptance and final gate evidence are recorded outside the repository. R4.4 is the next checkpoint and is in progress; R4.5 is not started.
+- R4.3 isolated acceptance and final gate evidence are recorded outside the repository: focused `3/3` and official gate `1355/1355` PASS. R4.4 is now closed; the next roadmap checkpoint is R5.1 Product CSV/Excel Import and remains not started.
 
 ## R4.2 final Employee detail visual polish — CLOSED / COMMITTED / PUSHED — 2026-08-28
 

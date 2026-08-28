@@ -1,5 +1,11 @@
 # ARCHITECTURE — POS ENTERPRISE RETAIL V1
 
+## R4.4 Secure Audit Log UI boundary — CLOSED — 2026-08-29
+
+- Audit writes continue through the existing `ISecurityAuditRepository` append boundary. `SecurityAuditEvent` now carries safe historical actor/target snapshots, typed business/target metadata, terminal identity and a bounded allowlisted change set; the viewer has no edit/delete/export path.
+- `IAuditLogService` enforces `ViewAuditLog` before delegating to `ISecurityAuditQueryRepository`, which applies filters, ordering and bounded pagination in the database. `AuditLogWindow` is a WPF composition surface only and does not authorize access.
+- `20260828173138_AddSecureAuditLogMetadata` is additive and preserves existing IDs/rows with explicit empty metadata defaults; indexes support newest-first and business/action queries. R5.1 Product CSV/Excel Import is the next recorded checkpoint and is not started.
+
 ## R4.3 Role and Permission Management boundary — 2026-08-29
 
 - The role model remains `POS.Domain.Enums.Role` with four stable built-in values. `RolePermissionPolicy` remains the only evaluator mapping role to `SystemCapability`; `PermissionCatalog` adds presentation metadata without duplicating permission keys.
