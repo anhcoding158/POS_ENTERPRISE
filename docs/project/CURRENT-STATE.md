@@ -1,5 +1,12 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## R5.1A — Product CSV/Excel secure preview foundation — CLOSED / VERIFIED — 2026-08-29
+
+- The single Application schema catalog covers exactly these 11 production-backed fields, in order: `ProductCode`, `Barcode`, `Tên`, `Danh mục`, `Đơn vị tính`, `Giá bán`, `Giá vốn`, `Tồn đầu`, `Tồn tối thiểu`, `Trạng thái` and `Ghi chú`. They map to `Product.Code`, `Barcode`, `Name`, `Category`/`CategoryId`, `UnitName`, `SalePrice`, `CostPrice`, opening `StockQuantity`, `MinimumStock`, `IsActive` and `Description`. Product stores unit as text; no parallel Unit model was introduced.
+- The read-only Application contract and Infrastructure parser accept only regular `.csv`/`.xlsx` files, validate signatures and bounded CSV/XLSX content, normalize typed preview rows, preserve barcode leading zeroes, reject formulas/external links/macros, report header/row issues and keep preview rows bounded while retaining full summary counts. No Product, Category, Inventory or Audit database write, migration, WPF wizard or authorization change was made.
+- Focused import tests pass `12/12` in Debug and `12/12` in Release. Normal-host full Release is `1374/1374 PASS`, failed/skipped `0/0`; Release build is `0/0` warnings/errors. Official Quality Gate without `-SkipEfCheck` passed with `1374/1374`, vulnerability PASS, EF pending-model PASS and Git checks PASS.
+- Six known secure local-storage/VietQR failures reproduce only in the Codex sandbox; the normal Windows host passed the secure-store classes and the full suite. No security weakening or test filtering was used. R5.1A is CLOSED, R5.1 is IN PROGRESS, R5.1B is NEXT; R4.2/R4.3/R4.4 remain CLOSED/PRESERVED and Development Freeze is ACTIVE outside this scoped checkpoint.
+
 ## Test portability and new-PC handover — ACTIVE FREEZE — 2026-08-29
 
 - The portability checkpoint is committed and pushed as `34d886681e494e30c5dd6b704b9afad8a5958eb1` (`test(portability): remove canonical database dependency`). Audit runtime, Employee UI and Shell/sidebar inventory tests now create unique migrated SQLite databases under owned `%TEMP%` children; they do not copy or modify the canonical database.

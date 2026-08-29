@@ -1,5 +1,13 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R5.1A Product CSV/Excel secure preview foundation — 2026-08-29
+
+- Focused import tests: `12/12 PASS` in Debug and `12/12 PASS` in Release. Coverage includes the exact 11-field source schema/order, Vietnamese aliases/BOM/delimiters, leading-zero barcode, header and row validation, duplicates, bounds, malformed/signature cases, XLSX formula/external-link rejection, cancellation, released handles and owned TEMP fixtures.
+- Release solution build: `0` warnings, `0` errors. Normal-host full Release suite: `1374/1374 PASS`, failed `0`, skipped `0`.
+- Official `scripts/Test-QualityGate.ps1` without `-SkipEfCheck`: PASS; vulnerability scan PASS, EF pending-model PASS and Git checks PASS.
+- The sandbox full run was `1368 PASS / 6 FAIL / 0 SKIP`; the six failures were the pre-existing CurrentUser DPAPI secure local-storage/VietQR tests. Normal-host verification passed the secure-store classes and full suite; no production security code or test assertion was weakened.
+- No package, SDK, EF schema/migration, canonical database or runtime data was changed. R5.1A is CLOSED; R5.1B remains NEXT.
+
 ## New-PC handover portability baseline — 2026-08-29
 
 - Source freeze before handover documentation: `34d886681e494e30c5dd6b704b9afad8a5958eb1`.

@@ -1,5 +1,13 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-044 — R5.1A uses one exact Product schema and a package-free secure preview boundary
+
+- **Status:** Accepted for R5.1A closeout on `2026-08-29`.
+- **Source of truth:** Define one Application catalog with exactly 11 fields in production order: ProductCode, Barcode, Tên, Danh mục, Đơn vị tính, Giá bán, Giá vốn, Tồn đầu, Tồn tối thiểu, Trạng thái and Ghi chú. Map them to the live `Product`/`Category` model (`UnitName` remains text and `Description` is the notes field); do not create a parallel import model or silently omit unsupported fields.
+- **Boundary:** Keep typed contracts/validation in Application and file I/O in Infrastructure. The R5.1A service only reads, maps, validates and returns bounded preview/summary data; it has no DbContext/repository write path and does not create categories/units or opening-stock movements.
+- **Security/dependency:** Use maintained BCL ZIP/XML APIs for XLSX rather than adding a package. Enforce regular-file/signature checks, size/count/cell limits, cancellation, hardened XML, no formula evaluation, no external links/macros and safe error messages. Revisit the package decision only if R5.1B requires a capability that cannot be met safely.
+- **Scope:** R5.1A is CLOSED; R5.1 is IN PROGRESS and R5.1B is NEXT. R4.2/R4.3/R4.4 remain preserved and Development Freeze is active outside this checkpoint.
+
 ## DEC-043 — Post-R4.4 hotfix isolates Audit loading failures and bounds Employee detail layout
 
 - **Status:** Accepted for the post-R4.4 handover-freeze hotfix on `2026-08-29`.

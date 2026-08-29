@@ -1,5 +1,11 @@
 # MASTER ROADMAP — POS ENTERPRISE RETAIL V1
 
+## Latest checkpoint position — 2026-08-29 (R5.1A — Product CSV/Excel secure preview foundation — CLOSED / COMMITTED / PUSHED)
+
+- R5.1A establishes the read-only Product CSV/XLSX preview foundation from the live Product model. The exact 11-field catalog covers code, barcode, name, category, unit, sale/cost price, opening/minimum stock, status and notes; no parallel product schema or database mutation was introduced.
+- Secure parsing, typed validation, bounded preview and summary behavior are complete. The foundation rejects unsupported/signature-mismatched files, formulas, external links/macros and unsafe/unbounded content; R5.1B is the next checkpoint for the authorized import workflow/UI.
+- Normal-host full Release and Quality Gate evidence is `1374/1374 PASS`, failed/skipped `0/0`, build `0/0`, vulnerability PASS and EF pending-model PASS. R4.2/R4.3/R4.4 remain CLOSED/PRESERVED; R5.1 is IN PROGRESS, R5.1A is CLOSED, R5.1B is NEXT and Development Freeze is ACTIVE outside this checkpoint.
+
 ## Latest checkpoint position — 2026-08-29 (post-R4.4 handover-freeze hotfix — CLOSED / COMMITTED / PUSHED)
 
 - The narrowly scoped hotfix repairs the proven missing-Audit-service composition registration, adds a module-specific sanitized load boundary, and bounds Employee master/detail summary and identity/status layout. R4.3/R4.4 behavior and security contracts remain preserved.

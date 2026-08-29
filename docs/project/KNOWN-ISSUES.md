@@ -1,5 +1,11 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## R5.1A — CLOSED — 2026-08-29
+
+- The secure Product preview foundation intentionally does not import or mutate Product, Category, Inventory or Audit data, and has no WPF Import Wizard. Import execution, conflict policy and user-facing wizard remain deferred to R5.1B/C/D.
+- The parser uses no additional CSV/XLSX package: `.xlsx` is read through the BCL ZIP/XML APIs with bounded entries and hardened XML settings. This keeps the dependency surface unchanged; formula evaluation and external resources are rejected.
+- Six secure local-storage/VietQR tests fail only under the Codex sandbox DPAPI/profile context and pass on the normal Windows host. This remains an environment limitation, not an R5.1A production defect; security assertions and CurrentUser protection are unchanged.
+
 ## Final Employee visual correction — CLOSED — 2026-08-29
 
 - Resolved the Employee DataGrid right-edge/header clipping and inconsistent column alignment with Employee-local styles, a wrapping tooltip header, automatic horizontal scrolling and a safe trailing inset. Identity, filter, action and footer surfaces remain responsive without changing commands or business behavior.

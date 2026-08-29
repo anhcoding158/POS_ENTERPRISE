@@ -1,13 +1,19 @@
 # POS Enterprise - New-PC Handover
 
+## Current checkpoint status — 2026-08-29
+
+- R5.1A Product CSV/Excel secure preview foundation is CLOSED and R5.1 overall is IN PROGRESS; R5.1B is NEXT. The foundation is read-only and does not create an Import Wizard or mutate database data.
+- The exact 11-field schema is sourced from the live Product model: ProductCode, Barcode, Tên, Danh mục, Đơn vị tính, Giá bán, Giá vốn, Tồn đầu, Tồn tối thiểu, Trạng thái and Ghi chú. Focused import coverage is `12/12 PASS` in Debug and Release; normal-host full Release is `1374/1374 PASS`; Quality Gate, vulnerability and EF checks PASS.
+- Development Freeze remains ACTIVE outside the authorized R5.1A checkpoint. R4.2/R4.3/R4.4 remain CLOSED/PRESERVED. No canonical database, production settings, credentials or package/SDK update was used.
+
 ## Handover status
 
 - Branch: `main`.
-- Development Freeze: ACTIVE after R4.4; do not begin R5.1 during handover.
+- Development Freeze: ACTIVE outside the authorized R5.1A checkpoint.
 - Source freeze immediately before this documentation commit: `34d886681e494e30c5dd6b704b9afad8a5958eb1` (`test(portability): remove canonical database dependency`).
 - R4.2, R4.3 and R4.4: CLOSED.
-- R5.1 Product CSV/Excel Import: NOT STARTED.
-- The handover-freeze Employee/Audit UI/runtime follow-up is verified in the current hotfix commit: full Release `1362/1362 PASS`, failed/skipped `0/0`, Release build `0/0` warnings/errors, vulnerability PASS, EF pending-model PASS and Git checks PASS. Physical UIA/DPI checks remain manual because this desktop exposes no top-level HWND.
+- R5.1 Product CSV/Excel Import: IN PROGRESS; R5.1A CLOSED, R5.1B NEXT.
+- The R5.1A foundation is verified in the current commit: focused import `12/12 PASS` in Debug/Release, normal-host full Release `1374/1374 PASS`, Release build `0/0` warnings/errors, vulnerability PASS and EF pending-model PASS. It is read-only; physical WPF UI checks are not applicable because the Import Wizard is deferred.
 
 ## Project and required tools
 

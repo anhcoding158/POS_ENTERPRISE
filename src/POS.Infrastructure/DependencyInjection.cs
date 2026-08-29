@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.Authorization;
 using POS.Application.Abstractions.DateTime;
+using POS.Application.Abstractions.ProductImports;
 using POS.Application.Abstractions.Orders;
 using POS.Application.Abstractions.Payments;
 using POS.Application.Abstractions.Persistence;
@@ -17,6 +18,7 @@ using POS.Application.Services;
 using POS.Infrastructure.Authentication;
 using POS.Infrastructure.Common;
 using POS.Infrastructure.Logging;
+using POS.Infrastructure.ProductImports;
 using POS.Infrastructure.Orders;
 using POS.Infrastructure.Payments;
 using POS.Infrastructure.Persistence;
@@ -113,6 +115,7 @@ public static class DependencyInjection
         }
 
         services.TryAddScoped<ISupportBundleService, SupportBundleService>();
+        services.TryAddSingleton<IProductImportPreviewService, ProductImportPreviewService>();
         services.TryAddScoped<IManualBackupService, ManualBackupService>();
         services.AddSingleton(_ => new StoreSettingsPathProvider(
             Environment.GetEnvironmentVariable(DatabaseRuntimeGuard.RuntimeModeEnvironmentVariable),
