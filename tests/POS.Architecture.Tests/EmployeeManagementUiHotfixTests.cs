@@ -119,12 +119,17 @@ public sealed class EmployeeManagementUiHotfixTests
                 Assert.NotEqual("Ch\u01b0a c\u00f3", viewModel.EffectivePermissionsText);
 
                 var identityHeader = Assert.IsType<System.Windows.Controls.Border>(window.FindName("EmployeeIdentityHeader"));
+                var identityAvatar = Assert.IsType<System.Windows.Controls.Border>(window.FindName("EmployeeIdentityAvatar"));
                 var identityTextBlock = Assert.IsType<System.Windows.Controls.StackPanel>(window.FindName("EmployeeIdentityTextBlock"));
                 var identityStatusCard = Assert.IsType<System.Windows.Controls.Border>(window.FindName("EmployeeIdentityStatusCard"));
                 var employeeList = FindVisualDescendants<System.Windows.Controls.DataGrid>(window)
                     .Single(grid => System.Windows.Automation.AutomationProperties.GetAutomationId(grid) == "EmployeeList");
                 var employeeMasterCard = FindVisualAncestor<System.Windows.Controls.Border>(employeeList);
                 Assert.NotNull(employeeMasterCard);
+                Assert.Equal(System.Windows.Controls.ScrollBarVisibility.Auto, System.Windows.Controls.ScrollViewer.GetHorizontalScrollBarVisibility(employeeList));
+                var failedLoginColumn = Assert.IsType<System.Windows.Controls.DataGridTextColumn>(employeeList.Columns.Single(column => Equals(column.Header, "Đăng nhập sai")));
+                Assert.Equal(106, failedLoginColumn.Width.Value);
+                Assert.Equal(104, failedLoginColumn.MinWidth);
                 var identityTexts = FindVisualDescendants<System.Windows.Controls.TextBlock>(identityHeader).Select(textBlock => textBlock.Text).ToArray();
                 Assert.Contains(viewModel.FullName, identityTexts);
                 Assert.Contains(viewModel.EmployeeCode, identityTexts);
@@ -161,7 +166,24 @@ public sealed class EmployeeManagementUiHotfixTests
                 viewModel.EmailAddress = originalEmail;
                 viewModel.DiscardUnsavedChanges();
 
-                foreach (var size in new[] { new Size(1920, 1080), new Size(1366, 768), new Size(1280, 720), new Size(1000, 620) })
+                var originalCode = viewModel.EmployeeCode;
+                var originalFullName = viewModel.FullName;
+                viewModel.EmployeeCode = "EMP-" + new string('9', 48);
+                viewModel.FullName = "Nhân viên có họ tên đủ dài để kiểm tra khả năng cắt gọn an toàn";
+                window.UpdateLayout();
+                var longCodeText = FindVisualDescendants<System.Windows.Controls.TextBlock>(identityHeader)
+                    .Single(textBlock => textBlock.Text == viewModel.EmployeeCode);
+                var longNameText = FindVisualDescendants<System.Windows.Controls.TextBlock>(identityHeader)
+                    .Single(textBlock => textBlock.Text == viewModel.FullName);
+                Assert.Equal(viewModel.EmployeeCode, longCodeText.ToolTip?.ToString());
+                Assert.Equal(viewModel.FullName, longNameText.ToolTip?.ToString());
+                Assert.True(longCodeText.TextWrapping == TextWrapping.Wrap || longCodeText.TextTrimming == TextTrimming.CharacterEllipsis);
+                Assert.Equal(TextTrimming.CharacterEllipsis, longNameText.TextTrimming);
+                viewModel.EmployeeCode = originalCode;
+                viewModel.FullName = originalFullName;
+                viewModel.DiscardUnsavedChanges();
+
+                foreach (var size in new[] { new Size(1920, 1080), new Size(1366, 768), new Size(1280, 720), new Size(1180, 720), new Size(1000, 620) })
                 {
                     window.Measure(size);
                     window.Arrange(new Rect(0, 0, size.Width, size.Height));
@@ -174,9 +196,54 @@ public sealed class EmployeeManagementUiHotfixTests
                     var actionBounds = new Rect(actionStrip.TransformToAncestor(window).Transform(new Point(0, 0)), new Size(actionStrip.ActualWidth, actionStrip.ActualHeight));
                     var identityTextBounds = Bounds(identityTextBlock, window);
                     var identityStatusBounds = Bounds(identityStatusCard, window);
+                    var identityAvatarBounds = Bounds(identityAvatar, window);
                     Assert.False(identityTextBounds.IntersectsWith(identityStatusBounds), $"Employee identity text overlaps status at {size}.");
+                    Assert.InRange(Math.Abs(identityTextBounds.Top - identityAvatarBounds.Top), 0, 2);
+                    Assert.InRange(Math.Abs(identityTextBounds.Top - identityStatusBounds.Top), 0, 2);
                     Assert.True(identityStatusCard.ActualWidth > 0 && identityStatusCard.ActualHeight > 0);
                     Assert.True(actionBounds.Top >= profileBounds.Bottom - 1);
+
+                    var row = Assert.IsType<System.Windows.Controls.DataGridRow>(employeeList.ItemContainerGenerator.ContainerFromIndex(0));
+                    var cells = FindVisualDescendants<System.Windows.Controls.DataGridCell>(row).ToArray();
+                    var codeCell = Assert.Single(cells, cell => cell.Column?.Header?.ToString() == "Mã nhân viên");
+                    var nameCell = Assert.Single(cells, cell => cell.Column?.Header?.ToString() == "Họ tên");
+                    var roleCell = Assert.Single(cells, cell => cell.Column?.Header?.ToString() == "Vai trò");
+                    var statusHeader = FindVisualDescendants<System.Windows.Controls.Primitives.DataGridColumnHeader>(employeeList)
+                        .Single(header => header.Content?.ToString() == "Trạng thái");
+                    var accountHeader = FindVisualDescendants<System.Windows.Controls.Primitives.DataGridColumnHeader>(employeeList)
+                        .Single(header => header.Content?.ToString() == "Tài khoản");
+                    var listCodeText = Assert.Single(FindVisualDescendants<System.Windows.Controls.TextBlock>(codeCell));
+                    var listNameText = FindVisualDescendants<System.Windows.Controls.TextBlock>(nameCell)
+                        .Single(textBlock => textBlock.Text == viewModel.Employees[0].FullName);
+                    var roleText = Assert.Single(FindVisualDescendants<System.Windows.Controls.TextBlock>(roleCell));
+                    Assert.Equal(viewModel.Employees[0].EmployeeCode, listCodeText.ToolTip?.ToString());
+                    Assert.Equal(viewModel.Employees[0].FullName, listNameText.ToolTip?.ToString());
+                    Assert.Equal(System.Windows.HorizontalAlignment.Left, statusHeader.HorizontalContentAlignment);
+                    Assert.Equal(System.Windows.HorizontalAlignment.Left, accountHeader.HorizontalContentAlignment);
+                    Assert.Equal(TextAlignment.Left, roleText.TextAlignment);
+                    var roleHeader = FindVisualDescendants<System.Windows.Controls.Primitives.DataGridColumnHeader>(employeeList)
+                        .Single(header => header.Content?.ToString() == "Vai trò");
+                    Assert.Equal(System.Windows.HorizontalAlignment.Left, roleHeader.HorizontalContentAlignment);
+
+                    var scrollViewer = FindVisualDescendants<System.Windows.Controls.ScrollViewer>(employeeList).Single();
+                    scrollViewer.ScrollToHorizontalOffset(double.MaxValue);
+                    window.UpdateLayout();
+                    var failedCell = Assert.Single(FindVisualDescendants<System.Windows.Controls.DataGridCell>(row),
+                        cell => cell.Column?.Header?.ToString() == "Đăng nhập sai");
+                    var failedText = Assert.Single(FindVisualDescendants<System.Windows.Controls.TextBlock>(failedCell));
+                    Assert.Equal(TextAlignment.Center, failedText.TextAlignment);
+                    var failedHeader = FindVisualDescendants<System.Windows.Controls.Primitives.DataGridColumnHeader>(employeeList)
+                        .Single(header => header.Content?.ToString() == "Đăng nhập sai");
+                    var failedHeaderText = Assert.Single(FindVisualDescendants<System.Windows.Controls.TextBlock>(failedHeader));
+                    Assert.Equal("Đăng nhập sai", failedHeaderText.Text);
+                    Assert.Equal("Số lần đăng nhập sai liên tiếp", failedHeaderText.ToolTip?.ToString());
+                    Assert.Equal(TextWrapping.Wrap, failedHeaderText.TextWrapping);
+                    Assert.Equal(TextTrimming.None, failedHeaderText.TextTrimming);
+                    Assert.True(failedHeaderText.ActualWidth > 0 && failedHeaderText.ActualHeight > 0);
+                    var viewport = Bounds(employeeList, window);
+                    var failedHeaderBounds = Bounds(failedHeader, window);
+                    var scrollViewport = Bounds(scrollViewer, window);
+                    Assert.True(failedHeaderBounds.Left >= scrollViewport.Left - 1 && failedHeaderBounds.Right <= scrollViewport.Right + 1, $"Rightmost header escaped the DataGrid viewport at {size}: header={failedHeaderBounds}, grid={viewport}, scroll={scrollViewport}, offset={scrollViewer.HorizontalOffset:N1}, extent={scrollViewer.ExtentWidth:N1}, view={scrollViewer.ViewportWidth:N1}.");
                 }
 
                 var footerText = FindVisualDescendants<System.Windows.Controls.TextBlock>(employeeMasterCard!)

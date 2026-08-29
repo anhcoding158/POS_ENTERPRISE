@@ -26,6 +26,13 @@
 - Coverage includes fresh migrated TEMP audit load, empty/filtered-empty distinction, search request/filter capture, clear/reset/reload, invalid-date no-query, safe failure/retry, no-selection detail placeholder, Employee identity/status non-overlap and footer pagination preservation.
 - All test databases were unique direct children of owned `%TEMP%\POS-Enterprise-*` roots and cleaned by the existing ownership-checked helper. No canonical database, settings, secrets, logs, screenshots, bin/obj or evidence was staged.
 
+## Final Employee visual correction baseline — 2026-08-29
+
+- Focused Employee WPF tests: `6/6 PASS` in Debug and `6/6 PASS` in Release, with real measure/arrange coverage at `1920×1080`, `1366×768`, `1280×720`, `1180×720` and `1000×620`.
+- Release build: `0` warnings, `0` errors. Normal-host full Release suite: `1362/1362 PASS`, failed/skipped `0/0`.
+- Official Quality Gate without `-SkipEfCheck`: PASS on the normal Windows host; vulnerability scan PASS, EF pending-model PASS and Git checks PASS.
+- Six secure local-storage/VietQR tests fail only under the Codex sandbox user because `CurrentUser` DPAPI reports an unloaded profile context; they pass individually under the normal Windows user. No production secure-storage, Audit Log or schema change was made.
+
 ## R4.4 Secure Audit Log UI baseline — 2026-08-29
 
 - R4.4 focused coverage is `7/7 PASS` in Release: allowlisted safe changes, credential exclusion, enriched audit metadata, Application permission denial/allow, and real `AuditLogWindow` construction/layout at `1180×720`, `1366×768`, `1280×720` and `900×560` with virtualization and initialized action filter.

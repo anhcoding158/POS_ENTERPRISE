@@ -84,6 +84,11 @@ public sealed class EmployeeManagementUiContractTests
         Assert.Contains("EmailDisplayText", view, StringComparison.Ordinal);
         Assert.Contains("ToolTip=\"{Binding EmployeeCode}\"", view, StringComparison.Ordinal);
         Assert.DoesNotContain("Text=\"{Binding PageText}\"", view, StringComparison.Ordinal);
+        Assert.Contains("EmployeeDataGridStyle", view, StringComparison.Ordinal);
+        Assert.Contains("EmployeeFailedLoginHeaderTemplate", view, StringComparison.Ordinal);
+        Assert.Contains("ToolTip=\"Số lần đăng nhập sai liên tiếp\"", view, StringComparison.Ordinal);
+        Assert.Contains("HorizontalScrollBarVisibility\" Value=\"Auto\"", view, StringComparison.Ordinal);
+        Assert.Contains("x:Name=\"EmployeeIdentityAvatar\"", view, StringComparison.Ordinal);
         Assert.Contains("ColumnDefinition Width=\"*\" MinWidth=\"0\"", view, StringComparison.Ordinal);
         Assert.Contains("TextWrapping=\"Wrap\" ToolTip=\"{Binding EmployeeCode}\"", view, StringComparison.Ordinal);
         Assert.Contains("<Path Data=\"M 2,2 L 10,10 M 10,2 L 2,10\"", view, StringComparison.Ordinal);

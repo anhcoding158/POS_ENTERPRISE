@@ -7,6 +7,13 @@
 - The post-portability official Quality Gate passed without `-SkipEfCheck`: `1360/1360 PASS`, failed/skipped `0/0`, build warnings/errors `0/0`, vulnerability PASS, EF pending-model PASS and Git checks PASS. New-PC instructions are tracked at `docs/project/NEW-PC-HANDOVER.md`.
 - Development Freeze is ACTIVE. R4.2, R4.3 and R4.4 remain CLOSED. R5.1 Product CSV/Excel Import remains NOT STARTED.
 
+## Final Employee visual correction — CLOSED / VERIFIED — 2026-08-29
+
+- Employee DataGrid now has local presentation styles with consistent header/cell padding and vertical centering, aligned left/center contracts, light separators, a wrapping `Đăng nhập sai` header with tooltip, safe trailing inset, and automatic horizontal scrolling. Long employee codes and names retain ellipsis/tooltips; the identity avatar/text/status groups share a top-aligned responsive layout and the footer uses separate pagination columns.
+- Focused Employee WPF coverage is `6/6 PASS` in Debug and Release, including real WPF measure/arrange at `1920×1080`, `1366×768`, `1280×720`, `1180×720` and `1000×620`. Audit Log production files and behavior were not changed.
+- Sandbox-only failures in six DPAPI secure-storage tests were reproduced deterministically under `codexsandboxoffline`; the same six tests passed under the normal Windows user with `DataProtectionScope.CurrentUser`. Normal-host full Release and official Quality Gate both passed `1362/1362`, failed/skipped `0/0`, build `0/0`, vulnerability PASS, EF pending-model PASS and Git checks PASS.
+- Development Freeze is ACTIVE; R4.2, R4.3 and R4.4 remain CLOSED/PRESERVED and R5.1 remains NOT STARTED.
+
 ## Employee + Audit UI/runtime follow-up — CLOSED / VERIFIED — 2026-08-29
 
 - The scoped follow-up removes the redundant Employee list-header range text; row count, page size and navigation remain in the footer. The detail identity header uses explicit avatar/identity/status columns, a zero-minimum identity column, wrapped long employee IDs and full-value tooltips, with real WPF bounds coverage at `1920×1080`, `1366×768`, `1280×720` and the supported minimum window size.

@@ -1,5 +1,11 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## Final Employee visual correction — CLOSED — 2026-08-29
+
+- Resolved the Employee DataGrid right-edge/header clipping and inconsistent column alignment with Employee-local styles, a wrapping tooltip header, automatic horizontal scrolling and a safe trailing inset. Identity, filter, action and footer surfaces remain responsive without changing commands or business behavior.
+- The six DPAPI secure-storage/VietQR failures were environment-only: the Codex sandbox user context cannot use `CurrentUser` DPAPI, while the normal Windows user passed all six tests and the full Release/official gate. No secure-storage production change was made.
+- Audit Log was not changed. Development Freeze remains ACTIVE; R4.2/R4.3/R4.4 remain CLOSED/PRESERVED and R5.1 remains NOT STARTED.
+
 ## Employee + Audit UI/runtime follow-up — CLOSED — 2026-08-29
 
 - Resolved the remaining Employee presentation gap: the redundant header range is gone, footer pagination remains useful, and the identity/status header is bounded by explicit responsive Grid columns. Long employee IDs wrap at constrained widths and retain a complete tooltip.
