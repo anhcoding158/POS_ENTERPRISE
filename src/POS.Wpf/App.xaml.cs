@@ -7,6 +7,7 @@ using POS.Application.Common;
 using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.Authorization;
 using POS.Application.Abstractions.Payments;
+using POS.Application.Abstractions.ProductImports;
 using POS.Application.Abstractions.Services;
 using POS.Application.Services;
 using POS.Infrastructure;
@@ -916,6 +917,12 @@ public partial class App :
                         serviceProvider
                             .GetRequiredService<
                                 IPermissionService>()));
+
+        services.AddScoped<ProductImportService>();
+        services.AddScoped<IProductImportService>(serviceProvider =>
+            new AuthorizedProductImportService(
+                serviceProvider.GetRequiredService<ProductImportService>(),
+                serviceProvider.GetRequiredService<IPermissionService>()));
 
         /*
          * Category service.

@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.IO;
 using System.IO.Compression;
+using System.Security.Cryptography;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
@@ -80,6 +81,17 @@ public sealed class ProductImportPreviewService : IProductImportPreviewService
 
             cancellationToken.ThrowIfCancellationRequested();
             var signature = await ReadSignatureAsync(stream, cancellationToken);
+            stream.Position = 0;
+
+            var contentHash =
+                await SHA256.HashDataAsync(
+                    stream,
+                    cancellationToken);
+            metadata = metadata with
+            {
+                ContentSha256 =
+                    Convert.ToHexString(contentHash)
+            };
             stream.Position = 0;
 
             if (extension == ".xlsx")
@@ -370,7 +382,15 @@ public sealed class ProductImportPreviewService : IProductImportPreviewService
             duplicateCodes,
             duplicateBarcodes);
 
-        return CreateResult(metadata, format, headers, fileIssues, previewRows, summary);
+        return CreateResult(
+            metadata,
+            format,
+            headers,
+            fileIssues,
+            previewRows,
+            summary,
+            allRows,
+            references);
     }
 
     private static ProductImportRow ConvertRow(
@@ -836,7 +856,40 @@ public sealed class ProductImportPreviewService : IProductImportPreviewService
 
     private static ProductImportPreviewResult Failure(ProductImportFileMetadata metadata, string code, string message, ProductImportFormat format = ProductImportFormat.Unknown) => CreateResult(metadata, format, [], [new ProductImportIssue(ProductImportIssueSeverity.Error, code, message)], [], new ProductImportSummary(0, 0, 0, 0, 1, 0, 0, 0));
 
-    private static ProductImportPreviewResult CreateResult(ProductImportFileMetadata metadata, ProductImportFormat format, IReadOnlyList<ProductImportHeader> headers, IReadOnlyList<ProductImportIssue> fileIssues, IReadOnlyList<ProductImportRow> rows, ProductImportSummary summary) => new(metadata, format, headers, fileIssues, rows, summary);
+    private static ProductImportPreviewResult CreateResult(
+        ProductImportFileMetadata metadata,
+        ProductImportFormat format,
+        IReadOnlyList<ProductImportHeader> headers,
+        IReadOnlyList<ProductImportIssue> fileIssues,
+        IReadOnlyList<ProductImportRow> rows,
+        ProductImportSummary summary,
+        IReadOnlyList<ProductImportRow>? validatedRows = null,
+        ProductImportReferenceData? references = null)
+    {
+        return new ProductImportPreviewResult(
+            metadata,
+            format,
+            headers,
+            fileIssues,
+            rows,
+            summary)
+        {
+            ValidatedRows = validatedRows ?? rows,
+            ReferenceSnapshot = references is null
+                ? null
+                : new ProductImportReferenceSnapshot(
+                    references.CategoryIdsByNormalizedName is null
+                        ? null
+                        : new Dictionary<string, int>(
+                            references.CategoryIdsByNormalizedName,
+                            StringComparer.Ordinal),
+                    references.KnownUnitNames is null
+                        ? null
+                        : new HashSet<string>(
+                            references.KnownUnitNames,
+                            StringComparer.OrdinalIgnoreCase))
+        };
+    }
 
     private sealed record RawRecord(int SourceRowNumber, IReadOnlyList<string> Values, IReadOnlySet<int> FormulaColumns);
 

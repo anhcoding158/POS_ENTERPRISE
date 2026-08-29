@@ -44,7 +44,12 @@ public sealed record ProductImportFileMetadata(
     string FileName,
     string Extension,
     long SizeBytes,
-    DateTimeOffset LastWriteTimeUtc);
+    DateTimeOffset LastWriteTimeUtc,
+    string? ContentSha256 = null);
+
+public sealed record ProductImportReferenceSnapshot(
+    IReadOnlyDictionary<string, int>? CategoryIdsByNormalizedName,
+    IReadOnlySet<string>? KnownUnitNames);
 
 public sealed record ProductImportHeader(
     int ColumnIndex,
@@ -97,6 +102,16 @@ public sealed record ProductImportPreviewResult(
     IReadOnlyList<ProductImportRow> PreviewRows,
     ProductImportSummary Summary)
 {
+    /// <summary>
+    /// Toàn bộ row đã validate; PreviewRows chỉ là phần hiển thị bounded.
+    /// </summary>
+    public IReadOnlyList<ProductImportRow> ValidatedRows { get; init; } = PreviewRows;
+
+    /// <summary>
+    /// Snapshot reference data dùng để chống import nhầm sau khi preview cũ.
+    /// </summary>
+    public ProductImportReferenceSnapshot? ReferenceSnapshot { get; init; }
+
     public bool CanImport =>
         Summary.TotalDataRows > 0 &&
         Summary.InvalidRows == 0 &&

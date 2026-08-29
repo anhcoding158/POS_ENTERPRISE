@@ -1,5 +1,11 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## R5.1B — CLOSED — 2026-08-29
+
+- Transactional Product import is complete for the Application/Infrastructure checkpoint. The WPF Import Wizard, file picker, mapping surface and user-facing preview confirmation remain intentionally deferred to R5.1C.
+- The production audit model currently has an action check constraint limited to values 1–10. R5.1B reuses the existing valid audit action with typed Product-import business/target metadata and a sanitized allowlisted summary; a new action/migration was intentionally not introduced.
+- Six secure local-storage/VietQR tests still fail only in the Codex sandbox DPAPI/profile context and pass on the normal Windows host. This is an environment limitation; no security assertion or encryption boundary was changed.
+
 ## R5.1A — CLOSED — 2026-08-29
 
 - The secure Product preview foundation intentionally does not import or mutate Product, Category, Inventory or Audit data, and has no WPF Import Wizard. Import execution, conflict policy and user-facing wizard remain deferred to R5.1B/C/D.

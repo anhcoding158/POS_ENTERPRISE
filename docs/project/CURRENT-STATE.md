@@ -1,5 +1,13 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## R5.1B — Transactional Product Import — CLOSED / VERIFIED — 2026-08-29
+
+- R5.1B adds an Application transactional import use case over the single R5.1A 11-field Product schema. It re-parses and fingerprints the preview file before confirmation, resolves only existing active Categories, keeps UnitName as Product text, and has no WPF Import Wizard or database schema change.
+- `Skip` preserves duplicates, `Update` changes the permitted Product fields while preserving Product ID/history and rejects non-zero opening stock on updates, and `Error` rejects duplicates. ProductCode/Barcode conflicts, same-file duplicates, stale reference snapshots and invalid categories fail safely before mutation.
+- Creation applies positive `Tồn đầu` through the existing Product domain reconciliation plus append-only `OpeningBalance` InventoryMovement inside the same EF database transaction. The committed batch writes a sanitized audit summary using the existing valid audit action/check constraint; rollback/cancellation/constraint failures do not write success audit.
+- Focused R5.1B integration tests pass `9/9` in Debug and `9/9` in Release; relevant Product/Inventory/RBAC regressions pass `32/32`. Release build is `0/0` warnings/errors. Normal-host full Release is `1383/1383 PASS`, failed/skipped `0/0`; official Quality Gate without `-SkipEfCheck` passes `1383/1383`, vulnerability PASS, EF pending-model PASS and Git checks PASS.
+- R5.1A remains CLOSED/PRESERVED; R5.1 is IN PROGRESS and R5.1C (WPF Import Wizard) is NEXT. R4.2/R4.3/R4.4 remain CLOSED/PRESERVED. Development Freeze is ACTIVE outside this R5.1B exception. No canonical database or production data was used.
+
 ## R5.1A — Product CSV/Excel secure preview foundation — CLOSED / VERIFIED — 2026-08-29
 
 - The single Application schema catalog covers exactly these 11 production-backed fields, in order: `ProductCode`, `Barcode`, `Tên`, `Danh mục`, `Đơn vị tính`, `Giá bán`, `Giá vốn`, `Tồn đầu`, `Tồn tối thiểu`, `Trạng thái` and `Ghi chú`. They map to `Product.Code`, `Barcode`, `Name`, `Category`/`CategoryId`, `UnitName`, `SalePrice`, `CostPrice`, opening `StockQuantity`, `MinimumStock`, `IsActive` and `Description`. Product stores unit as text; no parallel Unit model was introduced.

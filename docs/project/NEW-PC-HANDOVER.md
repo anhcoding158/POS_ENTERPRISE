@@ -1,19 +1,26 @@
 # POS Enterprise - New-PC Handover
 
-## Current checkpoint status — 2026-08-29
+## Current checkpoint status — R5.1B — 2026-08-29
 
-- R5.1A Product CSV/Excel secure preview foundation is CLOSED and R5.1 overall is IN PROGRESS; R5.1B is NEXT. The foundation is read-only and does not create an Import Wizard or mutate database data.
+- R5.1B Transactional Product Import is CLOSED and R5.1 remains IN PROGRESS; R5.1C WPF Import Wizard is NEXT. R5.1A is CLOSED/PRESERVED.
+- The import use case is Application/Infrastructure only: it revalidates the exact 11-field typed preview snapshot, applies explicit duplicate policy in an EF database transaction, uses active existing Categories and the existing opening-balance ledger, and writes no canonical/runtime data. No migration or package was added.
+- Focused R5.1B is `9/9 PASS` in Debug and Release; relevant Product/Inventory/RBAC is `32/32 PASS`; normal-host full Release is `1383/1383 PASS`; Release build and Quality Gate are `0/0` warnings/errors with vulnerability and EF checks PASS. Six sandbox-only DPAPI tests remain a known environment limitation and pass on normal host.
+- Development Freeze is ACTIVE outside this authorized R5.1B checkpoint. R4.2/R4.3/R4.4 remain CLOSED/PRESERVED.
+
+## Previous handover checkpoint — R5.1A — 2026-08-29
+
+- R5.1A Product CSV/Excel secure preview foundation was CLOSED and R5.1 overall was IN PROGRESS; R5.1B was NEXT. The foundation is read-only and does not create an Import Wizard or mutate database data.
 - The exact 11-field schema is sourced from the live Product model: ProductCode, Barcode, Tên, Danh mục, Đơn vị tính, Giá bán, Giá vốn, Tồn đầu, Tồn tối thiểu, Trạng thái and Ghi chú. Focused import coverage is `12/12 PASS` in Debug and Release; normal-host full Release is `1374/1374 PASS`; Quality Gate, vulnerability and EF checks PASS.
-- Development Freeze remains ACTIVE outside the authorized R5.1A checkpoint. R4.2/R4.3/R4.4 remain CLOSED/PRESERVED. No canonical database, production settings, credentials or package/SDK update was used.
+- That handover state used no canonical database, production settings, credentials or package/SDK update.
 
 ## Handover status
 
 - Branch: `main`.
-- Development Freeze: ACTIVE outside the authorized R5.1A checkpoint.
+- Development Freeze: ACTIVE outside the authorized R5.1B checkpoint.
 - Source freeze immediately before this documentation commit: `34d886681e494e30c5dd6b704b9afad8a5958eb1` (`test(portability): remove canonical database dependency`).
 - R4.2, R4.3 and R4.4: CLOSED.
-- R5.1 Product CSV/Excel Import: IN PROGRESS; R5.1A CLOSED, R5.1B NEXT.
-- The R5.1A foundation is verified in the current commit: focused import `12/12 PASS` in Debug/Release, normal-host full Release `1374/1374 PASS`, Release build `0/0` warnings/errors, vulnerability PASS and EF pending-model PASS. It is read-only; physical WPF UI checks are not applicable because the Import Wizard is deferred.
+- R5.1 Product CSV/Excel Import: IN PROGRESS; R5.1A CLOSED/PRESERVED, R5.1B CLOSED, R5.1C NEXT.
+- The current R5.1B verification is recorded above: focused `9/9 PASS` in Debug/Release, relevant `32/32 PASS`, normal-host full Release `1383/1383 PASS`, Release build `0/0` warnings/errors, vulnerability PASS and EF pending-model PASS. Physical WPF import-wizard checks are deferred to R5.1C.
 
 ## Project and required tools
 
@@ -100,10 +107,10 @@ Keep the old computer unchanged until new-PC acceptance is complete.
 2. Confirm SDK `10.0.302`, Visual Studio WPF/.NET desktop workload, Git and PowerShell.
 3. Restore the local EF tool manifest and NuGet packages.
 4. Rebuild Release with zero warnings and errors.
-5. Run the full suite and confirm `1362/1362 PASS`, failed/skipped `0/0`.
+5. Run the full suite and confirm the current baseline `1383/1383 PASS`, failed/skipped `0/0`.
 6. Run the official Quality Gate without `-SkipEfCheck`; confirm vulnerability and EF pending-model PASS.
 7. Perform the approved isolated startup smoke.
 8. Complete manual application acceptance: Administrator login, Store Setup, Sales, Employee, Role/Permission and Audit Log.
 9. Only after acceptance passes, transfer the separately approved runtime/business data and validate its operational backup/recovery process.
 
-R5.1 Product CSV/Excel Import remains NOT STARTED. No feature work is included in this handover.
+R5.1B transactional Product import is CLOSED. R5.1C WPF Import Wizard remains the next authorized checkpoint; no R5.1C feature work is included in this handover.

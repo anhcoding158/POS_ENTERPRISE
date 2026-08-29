@@ -1,5 +1,13 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-045 — R5.1B uses an atomic validated-snapshot import and the existing audit action boundary
+
+- **Status:** Accepted for R5.1B closeout on `2026-08-29`.
+- **Import boundary:** Keep the exact R5.1A 11-field catalog as the only import schema. The Application use case consumes a typed preview, re-parses the same regular file and compares SHA-256 plus reference data before mutation. Infrastructure uses the existing EF `IUnitOfWork` transaction, Product repositories, Category active-ID resolution and append-only InventoryMovement opening-balance workflow.
+- **Conflict/stock semantics:** The caller must choose `Skip`, `Update` or `Error`. Update preserves Product ID/history and rejects non-zero opening stock because the production Product update contract does not overwrite stock. New products use the existing product-creation default of tracked inventory; no new import-only tracking/unit/category model is introduced.
+- **Audit/schema constraint:** Do not add a new `SecurityAuditAction`: the live EF model/database check constraint accepts actions 1–10 and this checkpoint does not authorize a migration. A successful import therefore records a sanitized batch summary through the existing audit repository with the existing valid `EmployeeUpdated` action plus `BusinessArea="Sản phẩm và nhập dữ liệu"` and `TargetType="Product import batch"`. Product rows, file content and secrets are never written to audit.
+- **Scope:** R5.1B is CLOSED; R5.1 remains IN PROGRESS and R5.1C (WPF Import Wizard) is NEXT. R4.2/R4.3/R4.4 remain preserved and Development Freeze remains active outside this checkpoint.
+
 ## DEC-044 — R5.1A uses one exact Product schema and a package-free secure preview boundary
 
 - **Status:** Accepted for R5.1A closeout on `2026-08-29`.

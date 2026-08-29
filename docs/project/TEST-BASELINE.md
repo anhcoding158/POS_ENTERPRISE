@@ -1,5 +1,13 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R5.1B Transactional Product Import — 2026-08-29
+
+- Focused R5.1B integration coverage: `9/9 PASS` in Debug and `9/9 PASS` in Release. Relevant Product/Inventory/authorized-product regressions: `32/32 PASS` in Release.
+- Release solution build: `0` warnings, `0` errors. Normal-host full Release suite: `1383/1383 PASS`, failed `0`, skipped `0`.
+- Official `scripts/Test-QualityGate.ps1` without `-SkipEfCheck`: PASS; vulnerability scan PASS, EF pending-model PASS and Git checks PASS.
+- Coverage includes atomic full-schema create/opening ledger/audit, Skip/Update/Error and same-file/database duplicates, identity conflicts, active-category enforcement, no category/unit creation, RBAC denial, update stock protection, stale preview fingerprint, cancellation safety, result counts and TEMP-only migrated databases. No package, migration, canonical database or runtime data was changed.
+- R5.1B is CLOSED; R5.1A remains CLOSED/PRESERVED and R5.1C is NEXT. The sandbox full run was `1377 PASS / 6 FAIL / 0 SKIP`; the six pre-existing CurrentUser DPAPI secure-store failures passed on normal host.
+
 ## R5.1A Product CSV/Excel secure preview foundation — 2026-08-29
 
 - Focused import tests: `12/12 PASS` in Debug and `12/12 PASS` in Release. Coverage includes the exact 11-field source schema/order, Vietnamese aliases/BOM/delimiters, leading-zero barcode, header and row validation, duplicates, bounds, malformed/signature cases, XLSX formula/external-link rejection, cancellation, released handles and owned TEMP fixtures.

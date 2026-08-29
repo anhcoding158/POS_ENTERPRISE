@@ -1,5 +1,11 @@
 # MASTER ROADMAP — POS ENTERPRISE RETAIL V1
 
+## Latest checkpoint position — 2026-08-29 (R5.1B — Transactional Product Import — CLOSED / COMMITTED / PUSHED)
+
+- R5.1B is closed on the Product CSV/XLSX foundation. The Application/Infrastructure use case revalidates the typed preview snapshot and imports the exact 11 production-backed fields atomically without introducing a parallel Product model, UI wizard, package or migration.
+- Duplicate policy is explicit per batch: `Skip` preserves existing rows, `Update` preserves Product identity/history and never overwrites current stock through `Tồn đầu`, and `Error` rolls back/rejects duplicates. Category resolution is active-ID-only; UnitName remains text; opening stock uses the existing domain and append-only inventory movement workflow.
+- Normal-host full Release and Quality Gate evidence is `1383/1383 PASS`, failed/skipped `0/0`, build `0/0`, vulnerability PASS and EF pending-model PASS. R5.1A is CLOSED/PRESERVED, R5.1 is IN PROGRESS, R5.1C is NEXT, R4.2/R4.3/R4.4 remain CLOSED/PRESERVED and Development Freeze is ACTIVE outside this checkpoint.
+
 ## Latest checkpoint position — 2026-08-29 (R5.1A — Product CSV/Excel secure preview foundation — CLOSED / COMMITTED / PUSHED)
 
 - R5.1A establishes the read-only Product CSV/XLSX preview foundation from the live Product model. The exact 11-field catalog covers code, barcode, name, category, unit, sale/cost price, opening/minimum stock, status and notes; no parallel product schema or database mutation was introduced.
