@@ -9,5 +9,6 @@ public partial class AuditLogWindow : global::System.Windows.Window
         InitializeComponent();
         DataContext = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
         Loaded += async (_, _) => await viewModel.InitializeAsync();
+        Closed += (_, _) => viewModel.Dispose();
     }
 }

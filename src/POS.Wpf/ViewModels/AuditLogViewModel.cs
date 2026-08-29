@@ -49,11 +49,12 @@ public sealed class AuditActionOption(SecurityAuditAction? action, string displa
     public string DisplayName { get; } = displayName;
 }
 
-public sealed class AuditLogViewModel : ViewModelBase
+public sealed class AuditLogViewModel : ViewModelBase, IDisposable
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<AuditLogViewModel>? _logger;
     private CancellationTokenSource? _loadSource;
+    private CancellationTokenSource? _detailSource;
     private string _actorFilter = string.Empty;
     private string _businessAreaFilter = string.Empty;
     private AuditActionOption? _selectedAction;
@@ -66,6 +67,8 @@ public sealed class AuditLogViewModel : ViewModelBase
     private int _totalCount;
     private AuditLogRowViewModel? _selectedAudit;
     private AuditDetailsDto? _details;
+    private bool _hasLoaded;
+    private bool _hasError;
 
     public AuditLogViewModel(IServiceScopeFactory scopeFactory, ILogger<AuditLogViewModel>? logger = null)
     {
@@ -73,7 +76,9 @@ public sealed class AuditLogViewModel : ViewModelBase
         _logger = logger;
         ActionOptions = new([new(null, "Tất cả hành động"), .. Enum.GetValues<SecurityAuditAction>().Select(action => new AuditActionOption(action, ActionText(action)))]);
         SelectedAction = ActionOptions[0];
+        SearchCommand = new AsyncRelayCommand(() => LoadAsync(true), () => !IsBusy, HandleException);
         RefreshCommand = new AsyncRelayCommand(() => LoadAsync(true), () => !IsBusy, HandleException);
+        RetryCommand = new AsyncRelayCommand(() => LoadAsync(true), () => !IsBusy, HandleException);
         ClearFiltersCommand = new AsyncRelayCommand(ClearFiltersAsync, () => !IsBusy, HandleException);
         PreviousPageCommand = new AsyncRelayCommand(() => ChangePageAsync(-1), () => !IsBusy && PageNumber > 1, HandleException);
         NextPageCommand = new AsyncRelayCommand(() => ChangePageAsync(1), () => !IsBusy && PageNumber < TotalPages, HandleException);
@@ -81,50 +86,102 @@ public sealed class AuditLogViewModel : ViewModelBase
 
     public ObservableCollection<AuditLogRowViewModel> Audits { get; } = [];
     public ObservableCollection<AuditActionOption> ActionOptions { get; }
+    public AsyncRelayCommand SearchCommand { get; }
     public AsyncRelayCommand RefreshCommand { get; }
+    public AsyncRelayCommand RetryCommand { get; }
     public AsyncRelayCommand ClearFiltersCommand { get; }
     public AsyncRelayCommand PreviousPageCommand { get; }
     public AsyncRelayCommand NextPageCommand { get; }
-    public AuditLogRowViewModel? SelectedAudit { get => _selectedAudit; set { if (SetProperty(ref _selectedAudit, value)) _ = LoadDetailsAsync(); } }
-    public AuditDetailsDto? Details { get => _details; private set => SetProperty(ref _details, value); }
-    public string ActorFilter { get => _actorFilter; set => SetProperty(ref _actorFilter, value ?? string.Empty); }
-    public string BusinessAreaFilter { get => _businessAreaFilter; set => SetProperty(ref _businessAreaFilter, value ?? string.Empty); }
-    public AuditActionOption? SelectedAction { get => _selectedAction; set => SetProperty(ref _selectedAction, value); }
-    public DateTime? FromDate { get => _fromDate; set => SetProperty(ref _fromDate, value); }
-    public DateTime? ToDate { get => _toDate; set => SetProperty(ref _toDate, value); }
-    public bool IsBusy { get => _isBusy; private set { if (SetProperty(ref _isBusy, value)) { RefreshCommand.NotifyCanExecuteChanged(); ClearFiltersCommand.NotifyCanExecuteChanged(); PreviousPageCommand.NotifyCanExecuteChanged(); NextPageCommand.NotifyCanExecuteChanged(); } } }
+    public AuditLogRowViewModel? SelectedAudit
+    {
+        get => _selectedAudit;
+        set
+        {
+            if (!SetProperty(ref _selectedAudit, value))
+                return;
+
+            OnPropertyChanged(nameof(IsNoSelection));
+            _ = LoadDetailsAsync(value);
+        }
+    }
+    public AuditDetailsDto? Details
+    {
+        get => _details;
+        private set
+        {
+            if (SetProperty(ref _details, value))
+                OnPropertyChanged(nameof(HasDetails));
+        }
+    }
+    public string ActorFilter { get => _actorFilter; set { if (SetProperty(ref _actorFilter, value ?? string.Empty)) NotifyFilterState(); } }
+    public string BusinessAreaFilter { get => _businessAreaFilter; set { if (SetProperty(ref _businessAreaFilter, value ?? string.Empty)) NotifyFilterState(); } }
+    public AuditActionOption? SelectedAction { get => _selectedAction; set { if (SetProperty(ref _selectedAction, value)) NotifyFilterState(); } }
+    public DateTime? FromDate { get => _fromDate; set { if (SetProperty(ref _fromDate, value)) NotifyFilterState(); } }
+    public DateTime? ToDate { get => _toDate; set { if (SetProperty(ref _toDate, value)) NotifyFilterState(); } }
+    public bool IsBusy { get => _isBusy; private set { if (SetProperty(ref _isBusy, value)) { OnPropertyChanged(nameof(IsLoadingState)); NotifyCommands(); } } }
     public string StatusMessage { get => _statusMessage; private set => SetProperty(ref _statusMessage, value); }
-    public int PageNumber { get => _pageNumber; private set => SetProperty(ref _pageNumber, value); }
+    public int PageNumber { get => _pageNumber; private set { if (SetProperty(ref _pageNumber, value)) OnPropertyChanged(nameof(PageText)); } }
     public int TotalPages { get => _totalPages; private set { if (SetProperty(ref _totalPages, value)) { NextPageCommand.NotifyCanExecuteChanged(); PreviousPageCommand.NotifyCanExecuteChanged(); } } }
-    public int TotalCount { get => _totalCount; private set => SetProperty(ref _totalCount, value); }
+    public int TotalCount { get => _totalCount; private set { if (SetProperty(ref _totalCount, value)) { OnPropertyChanged(nameof(PageText)); NotifyState(); } } }
     public string PageText => TotalCount == 0 ? "Không có hoạt động" : $"Trang {PageNumber}/{TotalPages} · {TotalCount:N0} hoạt động";
+    public bool IsLoadingState => IsBusy;
+    public bool HasError => _hasError;
+    public bool IsDatabaseEmpty => _hasLoaded && !_hasError && TotalCount == 0 && !HasActiveFilters;
+    public bool IsFilteredNoResult => _hasLoaded && !_hasError && TotalCount == 0 && HasActiveFilters;
+    public bool IsNoSelection => _hasLoaded && !_hasError && SelectedAudit is null;
+    public bool HasDetails => Details is not null;
+    public bool HasActiveFilters => !string.IsNullOrWhiteSpace(ActorFilter)
+        || !string.IsNullOrWhiteSpace(BusinessAreaFilter)
+        || SelectedAction?.Action is not null
+        || FromDate?.Date != DefaultFromDate
+        || ToDate?.Date != DateTime.Today;
 
     public Task InitializeAsync() => LoadAsync(true);
 
     private async Task LoadAsync(bool resetPage)
     {
+        if (!TryBuildRequest(out var request))
+            return;
+
         if (resetPage) PageNumber = 1;
         var source = ReplaceSource(ref _loadSource);
-        IsBusy = true; StatusMessage = "Đang tải nhật ký hoạt động...";
+        IsBusy = true;
+        _hasError = false;
+        _hasLoaded = false;
+        StatusMessage = "Đang tải nhật ký hoạt động...";
+        Audits.Clear();
+        TotalCount = 0;
+        TotalPages = 0;
+        SelectedAudit = null;
+        Details = null;
+        NotifyState();
         try
         {
             using var scope = _scopeFactory.CreateScope();
             var service = scope.ServiceProvider.GetRequiredService<IAuditLogService>();
-            var request = new AuditSearchRequest(ToUtc(FromDate, false), ToUtc(ToDate, true), ActorFilter, BusinessAreaFilter, SelectedAction?.Action, null, null, PageNumber, 25);
             var result = await service.SearchAsync(request, source.Token);
             if (source.IsCancellationRequested)
                 return;
-            if (result.IsFailure) { StatusMessage = result.AppError.Message; return; }
+            if (result.IsFailure)
+            {
+                SetFailure();
+                return;
+            }
+
             Audits.Clear(); foreach (var audit in result.Value.Items) Audits.Add(new AuditLogRowViewModel(audit));
-            TotalCount = result.Value.TotalCount; TotalPages = result.Value.TotalPages; OnPropertyChanged(nameof(PageText));
-            SelectedAudit = Audits.FirstOrDefault(); StatusMessage = TotalCount == 0 ? "Chưa có hoạt động nào được ghi nhận." : string.Empty;
+            TotalCount = result.Value.TotalCount;
+            TotalPages = result.Value.TotalPages;
+            _hasLoaded = true;
+            StatusMessage = string.Empty;
+            NotifyState();
+            SelectedAudit = Audits.FirstOrDefault();
         }
         catch (OperationCanceledException) when (source.IsCancellationRequested)
         {
         }
         catch (Exception exception)
         {
-            HandleException(exception);
+            SetFailure(exception);
         }
         finally
         {
@@ -133,32 +190,99 @@ public sealed class AuditLogViewModel : ViewModelBase
         }
     }
 
-    private async Task LoadDetailsAsync()
+    private async Task LoadDetailsAsync(AuditLogRowViewModel? selection)
     {
-        if (SelectedAudit is null) { Details = null; return; }
+        _detailSource?.Cancel();
+        _detailSource?.Dispose();
+        _detailSource = new CancellationTokenSource();
+        var source = _detailSource;
+        if (selection is null)
+        {
+            Details = null;
+            return;
+        }
+
         try
         {
             using var scope = _scopeFactory.CreateScope();
-            var result = await scope.ServiceProvider.GetRequiredService<IAuditLogService>().GetDetailsAsync(SelectedAudit.Id);
+            var result = await scope.ServiceProvider.GetRequiredService<IAuditLogService>().GetDetailsAsync(selection.Id, source.Token);
+            if (source.IsCancellationRequested || !ReferenceEquals(_selectedAudit, selection))
+                return;
             Details = result.IsSuccess ? result.Value : null;
         }
         catch (Exception exception)
         {
             Details = null;
-            HandleException(exception);
+            if (!source.IsCancellationRequested)
+                SetFailure(exception);
         }
     }
 
     private Task ChangePageAsync(int delta) { PageNumber += delta; return LoadAsync(false); }
-    private async Task ClearFiltersAsync() { ActorFilter = string.Empty; BusinessAreaFilter = string.Empty; SelectedAction = ActionOptions[0]; FromDate = DateTime.Today.AddDays(-6); ToDate = DateTime.Today; await LoadAsync(true); }
-    private void HandleException(Exception exception)
+    private async Task ClearFiltersAsync() { ActorFilter = string.Empty; BusinessAreaFilter = string.Empty; SelectedAction = ActionOptions[0]; FromDate = DefaultFromDate; ToDate = DateTime.Today; await LoadAsync(true); }
+    private bool TryBuildRequest(out AuditSearchRequest request)
     {
-        StatusMessage = "Không thể tải nhật ký hoạt động. Vui lòng thử lại.";
+        if (FromDate?.Date > ToDate?.Date)
+        {
+            request = new AuditSearchRequest();
+            SetFailure("Từ ngày phải nhỏ hơn hoặc bằng Đến ngày. Vui lòng chọn lại khoảng thời gian.");
+            return false;
+        }
+
+        request = new AuditSearchRequest(ToUtc(FromDate, false), ToUtc(ToDate, true), ActorFilter, BusinessAreaFilter, SelectedAction?.Action, null, null, PageNumber, 25);
+        return true;
+    }
+
+    private void SetFailure(Exception exception) => SetFailure("Không thể tải nhật ký hoạt động. Vui lòng thử lại.", exception);
+
+    private void SetFailure() => SetFailure("Không thể tải nhật ký hoạt động. Vui lòng thử lại.");
+
+    private void SetFailure(string message, Exception? exception = null)
+    {
+        _hasError = true;
+        _hasLoaded = false;
+        StatusMessage = message;
+        Audits.Clear();
+        TotalCount = 0;
+        TotalPages = 0;
+        SelectedAudit = null;
+        Details = null;
+        NotifyState();
+        if (exception is null)
+            return;
+
         var chain = FormatExceptionChain(exception);
         if (_logger is not null)
             PosLog.Error(_logger, exception, "Không thể tải nhật ký hoạt động. ExceptionChain={ExceptionChain}", chain);
         else
             global::System.Diagnostics.Trace.TraceError("AuditLogViewModel failed. ExceptionChain={0}", chain);
+    }
+
+    private void HandleException(Exception exception) => SetFailure(exception);
+
+    private void NotifyFilterState()
+    {
+        OnPropertyChanged(nameof(HasActiveFilters));
+        NotifyState();
+    }
+
+    private void NotifyState()
+    {
+        OnPropertyChanged(nameof(IsDatabaseEmpty));
+        OnPropertyChanged(nameof(IsFilteredNoResult));
+        OnPropertyChanged(nameof(IsNoSelection));
+        OnPropertyChanged(nameof(HasError));
+        OnPropertyChanged(nameof(PageText));
+    }
+
+    private void NotifyCommands()
+    {
+        SearchCommand.NotifyCanExecuteChanged();
+        RefreshCommand.NotifyCanExecuteChanged();
+        RetryCommand.NotifyCanExecuteChanged();
+        ClearFiltersCommand.NotifyCanExecuteChanged();
+        PreviousPageCommand.NotifyCanExecuteChanged();
+        NextPageCommand.NotifyCanExecuteChanged();
     }
 
     private static string FormatExceptionChain(Exception exception)
@@ -182,6 +306,24 @@ public sealed class AuditLogViewModel : ViewModelBase
         source = new CancellationTokenSource();
         return source;
     }
-    private static DateTimeOffset? ToUtc(DateTime? value, bool endOfDay) => value is null ? null : new DateTimeOffset(value.Value.Date.AddDays(endOfDay ? 1 : 0), TimeSpan.Zero).AddTicks(endOfDay ? -1 : 0);
+    private static DateTime DefaultFromDate => DateTime.Today.AddDays(-6);
+    private static DateTimeOffset? ToUtc(DateTime? value, bool endOfDay)
+    {
+        if (value is null)
+            return null;
+
+        var local = DateTime.SpecifyKind(value.Value.Date.AddDays(endOfDay ? 1 : 0).AddTicks(endOfDay ? -1 : 0), DateTimeKind.Unspecified);
+        return new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(local, TimeZoneInfo.Local));
+    }
     private static string ActionText(SecurityAuditAction action) => new AuditLogRowViewModel(new AuditListItemDto(0, default, string.Empty, action, string.Empty, string.Empty, string.Empty, string.Empty, Guid.Empty)).ActionText;
+
+    public void Dispose()
+    {
+        _loadSource?.Cancel();
+        _loadSource?.Dispose();
+        _loadSource = null;
+        _detailSource?.Cancel();
+        _detailSource?.Dispose();
+        _detailSource = null;
+    }
 }

@@ -23,6 +23,39 @@
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
         </Style>
+        <Style x:Key="AuditLoadingVisibilityStyle" TargetType="FrameworkElement">
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsLoadingState}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="AuditEmptyVisibilityStyle" TargetType="FrameworkElement">
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsDatabaseEmpty}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger>
+                <DataTrigger Binding="{Binding IsFilteredNoResult}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="AuditDatabaseEmptyVisibilityStyle" TargetType="FrameworkElement">
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers><DataTrigger Binding="{Binding IsDatabaseEmpty}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers>
+        </Style>
+        <Style x:Key="AuditFilteredEmptyVisibilityStyle" TargetType="FrameworkElement">
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers><DataTrigger Binding="{Binding IsFilteredNoResult}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers>
+        </Style>
+        <Style x:Key="AuditErrorVisibilityStyle" TargetType="FrameworkElement">
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers><DataTrigger Binding="{Binding HasError}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers>
+        </Style>
+        <Style x:Key="AuditNoSelectionVisibilityStyle" TargetType="FrameworkElement">
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers><DataTrigger Binding="{Binding IsNoSelection}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers>
+        </Style>
+        <Style x:Key="AuditDetailsVisibilityStyle" TargetType="FrameworkElement">
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers><DataTrigger Binding="{Binding HasDetails}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers>
+        </Style>
     </Window.Resources>
     <Grid Margin="26,22,26,24">
         <Grid.RowDefinitions>
@@ -73,7 +106,11 @@
                               Style="{StaticResource AuditComboBoxStyle}"
                               AutomationProperties.AutomationId="AuditActionFilter" />
                 </StackPanel>
-                <Button Content="Xóa bộ lọc" Command="{Binding ClearFiltersCommand}"
+                 <Button Content="Tìm kiếm" Command="{Binding SearchCommand}" IsDefault="True"
+                         VerticalAlignment="Bottom" Margin="0,0,10,1"
+                         Style="{StaticResource PrimaryButtonStyle}"
+                         AutomationProperties.AutomationId="AuditSearchButton" />
+                 <Button Content="Xóa bộ lọc" Command="{Binding ClearFiltersCommand}"
                         VerticalAlignment="Bottom" Margin="0,0,0,1"
                         Style="{StaticResource SecondaryButtonStyle}"
                         AutomationProperties.AutomationId="AuditClearFiltersButton" />
@@ -99,7 +136,8 @@
                         <TextBlock Text="{Binding PageText}" Style="{StaticResource SecondaryTextStyle}"
                                    HorizontalAlignment="Right" />
                     </Grid>
-                    <DataGrid Grid.Row="1" ItemsSource="{Binding Audits}"
+                    <Grid Grid.Row="1">
+                    <DataGrid ItemsSource="{Binding Audits}"
                               SelectedItem="{Binding SelectedAudit, Mode=TwoWay}"
                               Style="{StaticResource ModernDataGridStyle}"
                               AutomationProperties.AutomationId="AuditList" AutoGenerateColumns="False"
@@ -115,6 +153,28 @@
                             <DataGridTextColumn Header="Máy/Quầy" Binding="{Binding TerminalId}" Width="105" MinWidth="95" />
                         </DataGrid.Columns>
                     </DataGrid>
+                    <Grid Style="{StaticResource AuditLoadingVisibilityStyle}" Background="{StaticResource SurfaceBrush}">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <ProgressBar IsIndeterminate="True" Width="180" Height="4" />
+                            <TextBlock Text="Đang tải nhật ký hoạt động..." Style="{StaticResource SecondaryTextStyle}" Margin="0,12,0,0" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Grid>
+                    <Border Style="{StaticResource AuditEmptyVisibilityStyle}" Background="{StaticResource SurfaceBrush}" Padding="20">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="360">
+                            <TextBlock Text="⌕" FontSize="30" Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Center" />
+                            <TextBlock Style="{StaticResource AuditDatabaseEmptyVisibilityStyle}" Text="Chưa có nhật ký hoạt động" FontSize="17" FontWeight="SemiBold" TextAlignment="Center" HorizontalAlignment="Center" Margin="0,8,0,0" />
+                            <TextBlock Style="{StaticResource AuditFilteredEmptyVisibilityStyle}" Text="Không có hoạt động phù hợp với bộ lọc" FontSize="17" FontWeight="SemiBold" TextAlignment="Center" HorizontalAlignment="Center" Margin="0,8,0,0" />
+                            <TextBlock Text="Thử thay đổi bộ lọc hoặc làm mới để kiểm tra lại." TextWrapping="Wrap" TextAlignment="Center" Style="{StaticResource SecondaryTextStyle}" Margin="0,8,0,0" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource AuditErrorVisibilityStyle}" Background="{StaticResource SurfaceBrush}" Padding="20">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="360">
+                            <TextBlock Text="Không thể tải nhật ký hoạt động" FontSize="17" FontWeight="SemiBold" TextAlignment="Center" HorizontalAlignment="Center" />
+                            <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" TextAlignment="Center" Style="{StaticResource SecondaryTextStyle}" Margin="0,8,0,14" />
+                            <Button Content="Thử lại" Command="{Binding RetryCommand}" Style="{StaticResource PrimaryButtonStyle}" HorizontalAlignment="Center" AutomationProperties.AutomationId="AuditRetryButton" />
+                        </StackPanel>
+                    </Border>
+                    </Grid>
                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="12">
                         <Button Content="‹" Command="{Binding PreviousPageCommand}" Style="{StaticResource SecondaryButtonStyle}"
                                 Width="38" AutomationProperties.AutomationId="AuditPreviousPage" />
@@ -125,8 +185,12 @@
             </Border>
 
             <Border Grid.Column="2" Style="{StaticResource CardStyle}" Padding="18">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel DataContext="{Binding Details}">
+                <Grid>
+                    <Border Style="{StaticResource AuditNoSelectionVisibilityStyle}" Padding="18">
+                        <TextBlock Text="Chọn một hoạt động để xem chi tiết" TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="17" FontWeight="SemiBold" />
+                    </Border>
+                    <ScrollViewer Style="{StaticResource AuditDetailsVisibilityStyle}" VerticalScrollBarVisibility="Auto">
+                        <StackPanel DataContext="{Binding Details}">
                         <TextBlock Text="Chi tiết hoạt động" Style="{StaticResource SectionTitleTextStyle}" />
                         <TextBlock Text="{Binding LocalTimeText, StringFormat='Giờ địa phương: {0}'}"
                                    Style="{StaticResource SecondaryTextStyle}" Margin="0,12,0,0" />
@@ -164,8 +228,9 @@
                                 </Style>
                             </TextBlock.Style>
                         </TextBlock>
-                    </StackPanel>
-                </ScrollViewer>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
             </Border>
         </Grid>
     </Grid>

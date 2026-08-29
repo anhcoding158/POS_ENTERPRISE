@@ -83,6 +83,9 @@ public sealed class EmployeeManagementUiContractTests
         Assert.Contains("PhoneDisplayText", view, StringComparison.Ordinal);
         Assert.Contains("EmailDisplayText", view, StringComparison.Ordinal);
         Assert.Contains("ToolTip=\"{Binding EmployeeCode}\"", view, StringComparison.Ordinal);
+        Assert.DoesNotContain("Text=\"{Binding PageText}\"", view, StringComparison.Ordinal);
+        Assert.Contains("ColumnDefinition Width=\"*\" MinWidth=\"0\"", view, StringComparison.Ordinal);
+        Assert.Contains("TextWrapping=\"Wrap\" ToolTip=\"{Binding EmployeeCode}\"", view, StringComparison.Ordinal);
         Assert.Contains("<Path Data=\"M 2,2 L 10,10 M 10,2 L 2,10\"", view, StringComparison.Ordinal);
         Assert.Contains("Command=\"{Binding ClearFiltersCommand}\"", view, StringComparison.Ordinal);
         Assert.Contains("Content=\"Tiếp tục tạo tài khoản sau khi lưu\"", view, StringComparison.Ordinal);

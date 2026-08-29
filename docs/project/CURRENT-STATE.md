@@ -7,6 +7,13 @@
 - The post-portability official Quality Gate passed without `-SkipEfCheck`: `1360/1360 PASS`, failed/skipped `0/0`, build warnings/errors `0/0`, vulnerability PASS, EF pending-model PASS and Git checks PASS. New-PC instructions are tracked at `docs/project/NEW-PC-HANDOVER.md`.
 - Development Freeze is ACTIVE. R4.2, R4.3 and R4.4 remain CLOSED. R5.1 Product CSV/Excel Import remains NOT STARTED.
 
+## Employee + Audit UI/runtime follow-up — CLOSED / VERIFIED — 2026-08-29
+
+- The scoped follow-up removes the redundant Employee list-header range text; row count, page size and navigation remain in the footer. The detail identity header uses explicit avatar/identity/status columns, a zero-minimum identity column, wrapped long employee IDs and full-value tooltips, with real WPF bounds coverage at `1920×1080`, `1366×768`, `1280×720` and the supported minimum window size.
+- Audit now has a primary `Tìm kiếm` command, default-button Enter behavior, disabled/loading command state, explicit `Làm mới`, filter reset/reload, safe retry, local date-range validation and distinct loading/database-empty/filtered-empty/failure/no-selection presentation. Search remains application-authorized and database-side; paging/order, cancellation, append-only audit and redaction boundaries are unchanged.
+- Focused Debug and Release coverage is `10/10 PASS`; relevant Employee/Audit/RBAC/Shell/Store Setup/Sales Release regressions are `182/182 PASS`; full Release is `1362/1362 PASS` with failed/skipped `0/0`. Release rebuild and official Quality Gate both report `0/0` warnings/errors, vulnerability PASS, EF pending-model PASS and Git checks PASS.
+- No physical click/UIA or DPI `100%/125%/150%` observation is claimed because this desktop exposes no inspectable top-level HWND; those visual checks remain manual. Development Freeze is ACTIVE after this exception; R4.2, R4.3 and R4.4 remain CLOSED/PRESERVED and R5.1 remains NOT STARTED.
+
 ## Post-R4.4 handover-freeze hotfix — CLOSED / COMMITTED / PUSHED — 2026-08-29
 
 - The Audit runtime failure was reproduced in the real Release composition: `AuditLogWindow` loaded, then `AuditLogViewModel` failed while resolving `IAuditLogService` because the WPF composition root had omitted that registration. The async module load consequently escaped to the global startup-safety message. No query, migration, mapping or schema defect was involved.

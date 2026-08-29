@@ -17,6 +17,15 @@
 - The latest isolated Release startup reached `DatabaseInitialized` and `ShellWindowReady`; external UIA still has no top-level HWND in this environment, so physical navigation and DPI smoke remain manual limitations.
 - Canonical database safety remains length `937984`, LastWriteTimeUtc `2026-08-09T14:26:03.9619805Z`, SHA-256 `C1F4BCCF022F896DD0948F2E25AFABE831DF3EF9CE1B289E9D933F9A33BDDBED`, with no WAL/SHM/journal. Development freeze is reactivated after closeout; R5.1 is not started.
 
+## Employee + Audit UI/runtime follow-up baseline — 2026-08-29
+
+- Focused Debug coverage: `10/10 PASS`.
+- Focused Release coverage: `10/10 PASS`; relevant Employee/Audit/RBAC/Shell/Store Setup/Sales regressions: `182/182 PASS`.
+- Release rebuild: `0` warnings, `0` errors. Full Release suite: `1362/1362 PASS`, failed `0`, skipped `0`.
+- Official Quality Gate without `-SkipEfCheck`: PASS; Debug full suite `1362/1362 PASS`, vulnerability scan PASS, EF pending-model PASS and Git checks PASS.
+- Coverage includes fresh migrated TEMP audit load, empty/filtered-empty distinction, search request/filter capture, clear/reset/reload, invalid-date no-query, safe failure/retry, no-selection detail placeholder, Employee identity/status non-overlap and footer pagination preservation.
+- All test databases were unique direct children of owned `%TEMP%\POS-Enterprise-*` roots and cleaned by the existing ownership-checked helper. No canonical database, settings, secrets, logs, screenshots, bin/obj or evidence was staged.
+
 ## R4.4 Secure Audit Log UI baseline — 2026-08-29
 
 - R4.4 focused coverage is `7/7 PASS` in Release: allowlisted safe changes, credential exclusion, enriched audit metadata, Application permission denial/allow, and real `AuditLogWindow` construction/layout at `1180×720`, `1366×768`, `1280×720` and `900×560` with virtualization and initialized action filter.

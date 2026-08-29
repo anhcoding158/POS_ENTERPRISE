@@ -7,6 +7,7 @@
 - Source freeze immediately before this documentation commit: `34d886681e494e30c5dd6b704b9afad8a5958eb1` (`test(portability): remove canonical database dependency`).
 - R4.2, R4.3 and R4.4: CLOSED.
 - R5.1 Product CSV/Excel Import: NOT STARTED.
+- The handover-freeze Employee/Audit UI/runtime follow-up is verified in the current hotfix commit: full Release `1362/1362 PASS`, failed/skipped `0/0`, Release build `0/0` warnings/errors, vulnerability PASS, EF pending-model PASS and Git checks PASS. Physical UIA/DPI checks remain manual because this desktop exposes no top-level HWND.
 
 ## Project and required tools
 
@@ -42,7 +43,7 @@ dotnet test POS.Enterprise.slnx --configuration Release --no-build --no-restore 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-QualityGate.ps1
 ```
 
-Expected automated baseline at handover is `1360/1360 PASS`, failed `0`, skipped `0`, build warnings/errors `0/0`, vulnerability scan PASS, EF pending-model PASS and Git checks PASS.
+Expected automated baseline at handover after the scoped hotfix is `1362/1362 PASS`, failed `0`, skipped `0`, build warnings/errors `0/0`, vulnerability scan PASS, EF pending-model PASS and Git checks PASS.
 
 For an isolated startup smoke, build Release first and provide a source database path only when the source is an approved isolated fixture. The launcher copies that source into its own TEMP boundary and must not be pointed at production mode:
 
@@ -93,7 +94,7 @@ Keep the old computer unchanged until new-PC acceptance is complete.
 2. Confirm SDK `10.0.302`, Visual Studio WPF/.NET desktop workload, Git and PowerShell.
 3. Restore the local EF tool manifest and NuGet packages.
 4. Rebuild Release with zero warnings and errors.
-5. Run the full suite and confirm `1360/1360 PASS`, failed/skipped `0/0`.
+5. Run the full suite and confirm `1362/1362 PASS`, failed/skipped `0/0`.
 6. Run the official Quality Gate without `-SkipEfCheck`; confirm vulnerability and EF pending-model PASS.
 7. Perform the approved isolated startup smoke.
 8. Complete manual application acceptance: Administrator login, Store Setup, Sales, Employee, Role/Permission and Audit Log.

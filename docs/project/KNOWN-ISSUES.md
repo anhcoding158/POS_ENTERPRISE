@@ -1,5 +1,12 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## Employee + Audit UI/runtime follow-up — CLOSED — 2026-08-29
+
+- Resolved the remaining Employee presentation gap: the redundant header range is gone, footer pagination remains useful, and the identity/status header is bounded by explicit responsive Grid columns. Long employee IDs wrap at constrained widths and retain a complete tooltip.
+- Resolved the remaining Audit UX gap: users can explicitly search, clear/reload filters, retry failures and distinguish loading, true-empty, filtered-empty, failure and no-selection detail states. Invalid date ranges are rejected before the Application query boundary.
+- Existing `ViewAuditLog` authorization, database-side filtering/paging, newest-first stable ordering, cancellation, append-only audit and allowlisted redaction are preserved. No migration was needed.
+- Remaining limitation: this desktop exposes no top-level HWND/UIA, so physical click and DPI smoke for the requested display matrix remain manual and are not claimed here. R5.1 remains NOT STARTED and Development Freeze is ACTIVE.
+
 ## Post-R4.4 handover-freeze hotfix — CLOSED — 2026-08-29
 
 - The observed Audit load dialog was caused by the missing `IAuditLogService` registration in the WPF composition root, not by an invalid audit query or migration. The service is now registered and the Audit ViewModel contains a sanitized module-level load/detail boundary with retry.
