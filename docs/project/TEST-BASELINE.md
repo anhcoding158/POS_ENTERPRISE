@@ -1,5 +1,15 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## New-PC handover portability baseline — 2026-08-29
+
+- Source freeze before handover documentation: `34d886681e494e30c5dd6b704b9afad8a5958eb1`.
+- Portable test design: unique direct `%TEMP%\POS-Enterprise-*` SQLite databases, normal current EF migrations, deterministic minimum test data, exact owned-root cleanup and no canonical database copy/read/migration.
+- Portability coverage: Audit runtime `1/1` PASS, Employee UI hotfix `2/2` PASS, Shell/sidebar inventory `4/4` PASS, migration/initialization focused coverage `16/16` PASS, relevant R4.3/R4.4 regressions with portability `12/12` PASS.
+- Release rebuild: `0` warnings, `0` errors. Full Release suite: `1360/1360 PASS`, failed `0`, skipped `0`.
+- Official Quality Gate without `-SkipEfCheck`: PASS; vulnerability scan PASS, EF pending-model PASS and Git checks PASS.
+- Canonical database identity stayed exact and no canonical WAL/SHM/journal sidecars were produced. R5.1 remains NOT STARTED and Development Freeze is ACTIVE.
+- Handover guide: `docs/project/NEW-PC-HANDOVER.md`.
+
 ## Post-R4.4 handover-freeze hotfix baseline — 2026-08-29
 
 - The real Release composition regression probe reproduces and prevents the missing-`IAuditLogService` Audit load failure; Employee WPF bounds coverage verifies the list summary stays inside the master card and identity text does not overlap status at `1180×720`, `1366×768`, `1280×720` and `1000×620`. The focused hotfix suite is `10/10 PASS`.

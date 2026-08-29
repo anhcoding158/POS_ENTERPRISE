@@ -1,5 +1,12 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## Test portability and new-PC handover — ACTIVE FREEZE — 2026-08-29
+
+- The portability checkpoint is committed and pushed as `34d886681e494e30c5dd6b704b9afad8a5958eb1` (`test(portability): remove canonical database dependency`). Audit runtime, Employee UI and Shell/sidebar inventory tests now create unique migrated SQLite databases under owned `%TEMP%` children; they do not copy or modify the canonical database.
+- The shared test helper uses the current EF migration path, deterministic test-only data where required, exact TEMP ownership/reparse guards and bounded cleanup after provider disposal. The canonical database remained unchanged at `937984` bytes, timestamp `2026-08-09T14:26:03.9619805Z`, SHA-256 `C1F4BCCF022F896DD0948F2E25AFABE831DF3EF9CE1B289E9D933F9A33BDDBED`, with WAL/SHM/journal absent.
+- The post-portability official Quality Gate passed without `-SkipEfCheck`: `1360/1360 PASS`, failed/skipped `0/0`, build warnings/errors `0/0`, vulnerability PASS, EF pending-model PASS and Git checks PASS. New-PC instructions are tracked at `docs/project/NEW-PC-HANDOVER.md`.
+- Development Freeze is ACTIVE. R4.2, R4.3 and R4.4 remain CLOSED. R5.1 Product CSV/Excel Import remains NOT STARTED.
+
 ## Post-R4.4 handover-freeze hotfix — CLOSED / COMMITTED / PUSHED — 2026-08-29
 
 - The Audit runtime failure was reproduced in the real Release composition: `AuditLogWindow` loaded, then `AuditLogViewModel` failed while resolving `IAuditLogService` because the WPF composition root had omitted that registration. The async module load consequently escaped to the global startup-safety message. No query, migration, mapping or schema defect was involved.
