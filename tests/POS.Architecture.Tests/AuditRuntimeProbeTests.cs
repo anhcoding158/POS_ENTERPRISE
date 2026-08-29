@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Data.Sqlite;
 using POS.Application.Abstractions.Authentication;
 using POS.Application.DTOs.Authentication;
 using POS.Infrastructure.Persistence;
@@ -20,8 +21,10 @@ public sealed class AuditRuntimeProbeTests
         var scenario = Path.Combine(Path.GetTempPath(), "POS-Enterprise-Audit-Probe-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(scenario);
         var database = Path.Combine(scenario, "pos-enterprise-isolated.db");
-        File.Copy(Path.Combine(root, "data", "pos-enterprise.db"), database);
+        await PortableDevelopmentDatabase.CreateMigratedAsync(database);
 
+        ServiceProvider? provider = null;
+        IServiceScope? scope = null;
         try
         {
             var services = new ServiceCollection();
@@ -38,8 +41,8 @@ public sealed class AuditRuntimeProbeTests
 
             typeof(App).GetMethod("ConfigureApplicationServices", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!
                 .Invoke(null, [services, configuration]);
-            using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
-            using var scope = provider.CreateScope();
+            provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
+            scope = provider.CreateScope();
             await scope.ServiceProvider.GetRequiredService<DatabaseInitializer>().InitializeAsync();
             provider.GetRequiredService<ICurrentUserService>().SetCurrentUser(new AuthenticatedUserDto(
                 1, "isolated-admin", "Isolated Administrator", Role.Administrator, DateTimeOffset.UtcNow, false));
@@ -49,7 +52,10 @@ public sealed class AuditRuntimeProbeTests
         }
         finally
         {
-            try { Directory.Delete(scenario, recursive: true); } catch { }
+            scope?.Dispose();
+            provider?.Dispose();
+            SqliteConnection.ClearAllPools();
+            PortableDevelopmentDatabase.DeleteOwnedScenario(scenario);
         }
     }
 }

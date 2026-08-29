@@ -171,7 +171,7 @@ public sealed class ShellSidebarInventoryHotfixTests
             "POS-Enterprise-Sidebar-Inventory-Test-" + Guid.NewGuid().ToString("N"));
         var databasePath = Path.Combine(scenarioRoot, "pos-enterprise-isolated.db");
         Directory.CreateDirectory(scenarioRoot);
-        File.Copy(Path.Combine(root, "data", "pos-enterprise.db"), databasePath);
+        await PortableDevelopmentDatabase.CreateMigratedAsync(databasePath);
 
         try
         {
@@ -191,6 +191,7 @@ public sealed class ShellSidebarInventoryHotfixTests
                     .AddInMemoryCollection(new Dictionary<string, string?>
                     {
                         ["Infrastructure:DatabasePath"] = databasePath,
+                        ["Infrastructure:SeedDemoProductCatalog"] = bool.TrueString,
                         ["Infrastructure:SeedDefaultAdministrator"] = bool.FalseString
                     })
                     .Build();
@@ -287,7 +288,7 @@ public sealed class ShellSidebarInventoryHotfixTests
         }
         finally
         {
-            DeleteOwnedScenario(scenarioRoot);
+            PortableDevelopmentDatabase.DeleteOwnedScenario(scenarioRoot);
         }
     }
 
@@ -346,32 +347,6 @@ public sealed class ShellSidebarInventoryHotfixTests
 
     private static string SolutionRoot() => Path.GetFullPath(
         Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
-
-    private static void DeleteOwnedScenario(string scenarioRoot)
-    {
-        var fullRoot = Path.GetFullPath(scenarioRoot);
-        var tempRoot = Path.GetFullPath(Path.GetTempPath());
-        if (!fullRoot.StartsWith(tempRoot, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("The test scenario escaped the temporary boundary.");
-
-        for (var attempt = 0; attempt < 20 && Directory.Exists(fullRoot); attempt++)
-        {
-            try
-            {
-                Directory.Delete(fullRoot, recursive: true);
-            }
-            catch (IOException)
-            {
-                if (attempt == 19) return;
-                Thread.Sleep(50);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                if (attempt == 19) return;
-                Thread.Sleep(50);
-            }
-        }
-    }
 
     private sealed class CountingProductService : IProductService
     {

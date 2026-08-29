@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Windows;
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -28,7 +29,7 @@ public sealed class EmployeeManagementUiHotfixTests
             "POS-Enterprise-R4.2-UI-Hotfix-Test-" + Guid.NewGuid().ToString("N"));
         var databasePath = Path.Combine(scenarioRoot, "pos-enterprise-isolated.db");
         Directory.CreateDirectory(scenarioRoot);
-        File.Copy(Path.Combine(root, "data", "pos-enterprise.db"), databasePath);
+        await PortableDevelopmentDatabase.CreateMigratedAsync(databasePath, seedEmployee: true);
 
         try
         {
@@ -264,6 +265,7 @@ public sealed class EmployeeManagementUiHotfixTests
                 window.Close();
                 scope.Dispose();
                 provider.Dispose();
+                SqliteConnection.ClearAllPools();
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
                 return Task.CompletedTask;
@@ -271,7 +273,7 @@ public sealed class EmployeeManagementUiHotfixTests
         }
         finally
         {
-            DeleteOwnedScenario(scenarioRoot);
+            PortableDevelopmentDatabase.DeleteOwnedScenario(scenarioRoot);
         }
     }
 
@@ -315,34 +317,6 @@ public sealed class EmployeeManagementUiHotfixTests
 
     private static string SolutionRoot() => Path.GetFullPath(
         Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
-
-    private static void DeleteOwnedScenario(string scenarioRoot)
-    {
-        var fullRoot = Path.GetFullPath(scenarioRoot);
-        var tempRoot = Path.GetFullPath(Path.GetTempPath());
-        if (!fullRoot.StartsWith(tempRoot, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("The test scenario escaped the temporary boundary.");
-        for (var attempt = 0; attempt < 20 && Directory.Exists(fullRoot); attempt++)
-        {
-            try
-            {
-                Directory.Delete(fullRoot, recursive: true);
-            }
-            catch (IOException)
-            {
-                if (attempt == 19) return;
-                Thread.Sleep(50);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                if (attempt == 19) return;
-                Thread.Sleep(50);
-            }
-        }
-
-        // SQLite/native handles can outlive the disposed provider until the testhost exits.
-        // The exact temporary root is retried here and is finalized by checkpoint cleanup.
-    }
 
     private static IEnumerable<T> FindVisualDescendants<T>(DependencyObject root)
         where T : DependencyObject
