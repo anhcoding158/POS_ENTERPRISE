@@ -24,6 +24,8 @@ public sealed record ProductListItemDto(
     bool IsActive,
     bool IsArchived = false)
 {
+    public DateTimeOffset UpdatedAtUtc { get; init; }
+
     public string? ImagePath
     {
         get;

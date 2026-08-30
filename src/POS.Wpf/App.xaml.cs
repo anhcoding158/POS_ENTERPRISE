@@ -930,6 +930,7 @@ public partial class App :
         services.AddScoped<IProductExportService>(serviceProvider =>
             serviceProvider.GetRequiredService<ProductExportService>());
         services.AddSingleton<IProductExportWriter, ProductExportFileWriter>();
+        services.AddScoped<IBulkProductOperationService, BulkProductOperationService>();
 
         /*
          * Category service.
@@ -1038,6 +1039,10 @@ public partial class App :
         services.AddSingleton<
             IProductExportDialogService,
             ProductExportDialogService>();
+
+        services.AddSingleton<
+            IBulkProductDialogService,
+            BulkProductDialogService>();
 
         services.AddSingleton<
             ICategoryDialogService,

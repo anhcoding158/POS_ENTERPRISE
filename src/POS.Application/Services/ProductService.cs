@@ -1053,8 +1053,8 @@ public sealed class ProductService :
             product.IsActive,
             product.IsArchived)
         {
-            ImagePath =
-                product.ImagePath
+            ImagePath = product.ImagePath,
+            UpdatedAtUtc = product.UpdatedAtUtc
         };
     }
 

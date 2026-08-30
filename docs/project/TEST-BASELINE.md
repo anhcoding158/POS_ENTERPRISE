@@ -675,3 +675,7 @@ R0.5D did not run restore, build, tests, Quality Gate, EF commands, migration, d
 
 - Focused Export tests pass `5/5` in Debug and Release. Coverage includes typed product/history/template contracts, production low-stock predicate forwarding, cost omission without ManageProducts, leading-zero barcode handling, CSV BOM/escaping/formula protection and readable formula-free XLSX output.
 - Complete in-progress normal-host verification is `1424/1424 PASS`, failed/skipped `0/0`; Release solution build is `0 warnings / 0 errors`; official Quality Gate, vulnerability scan and EF pending-model check pass. Physical export save/open and visual checks remain manual pending.
+- R5.3 Bulk Operations — 2026-08-30
+
+- Focused bulk service tests pass `4/4` in Debug and Release. They cover permission denial before product reads, stale preview rejection, price commit with one audit summary and minimum-stock update without current-stock mutation.
+- Full normal-host Release is `1426/1426 PASS`, failed/skipped `0/0`; Release build is `0 warnings / 0 errors`; official Quality Gate, vulnerability and EF pending-model checks pass after the stabilized source revision. Bulk UI/manual interaction and label-printer hardware are not verified here.

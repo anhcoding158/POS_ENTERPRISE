@@ -1,11 +1,18 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## R5.3 — Bulk Operations — PARTIAL IMPLEMENTATION / AUTOMATED VERIFIED — 2026-08-30
+
+- Product list now has an explicit “Chọn nhiều” mode with page-scoped checkboxes and a single action entry that opens a real preview/confirm dialog. Supported operations are bulk price update, category change, active/inactive status and minimum-stock threshold; ordinary single-product selection and commands remain separate.
+- Application bulk service checks `ManageProducts` before reading, validates the whole selected set, uses `UpdatedAtUtc` snapshots to reject stale previews, applies domain methods inside the existing EF transaction and writes only a sanitized existing audit action. It never changes current stock, inventory movements, order snapshots or archive state.
+- Bulk label printing is not implemented or claimed because no production label renderer/printer pipeline exists in the current repository; receipt printing cannot satisfy that dependency. “Select all filtered results” is also intentionally not exposed because an immutable bounded ID-set contract is not present.
+- Focused R5.3 verification is `6/6 PASS` Debug and Release for preview-before-mutation, price commit/audit, minimum-stock no-stock-write, stale snapshot, permission denial and bindable selection. Complete normal-host verification is `1426/1426 PASS`, failed/skipped `0/0`, build `0/0`; final Quality Gate is run after this source revision. R5.3 remains open and R5.4 has not started.
+
 ## R5.2 — Export — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
 
 - Added permission-gated CSV/XLSX export for product catalog, current stock, low-stock products, archived products, Inventory History and the exact 11-field Product import template. Product and History exports use the existing database-side filters and bounded projections; export is read-only and does not inherit a selected row as an implicit scope.
 - CSV is UTF-8 BOM with quoting, newline/Unicode handling and formula-injection protection for untrusted text. XLSX is a real typed package with text code/barcode cells, numeric money/quantity cells, frozen header, filter and no formula/macro/external-link content. Output is written to an exact sibling temporary path and replaces the destination only after success.
 - Cost price is included only under the existing `ManageProducts` capability because the production permission catalog has no separate cost-view/export capability; otherwise the column is omitted. The import template is available from the Import Wizard and reuses `ProductImportSchemaCatalog` directly.
-- Focused Export coverage is `5/5 PASS` Debug and Release; normal-host full Release and Quality Gate after the complete in-progress diff are `1424/1424 PASS`, failed/skipped `0/0`, build `0/0`, vulnerability PASS and EF pending-model PASS. Physical WPF save-dialog and visual acceptance remain manual pending. R5.2 is implementation-complete/automated-verified but not manually closed; R5.3 remains in progress.
+- Focused Export coverage is `5/5 PASS` Debug and Release; the preceding stabilized normal-host full Release and Quality Gate were `1424/1424 PASS`, failed/skipped `0/0`, build `0/0`, vulnerability PASS and EF pending-model PASS. Physical WPF save-dialog and visual acceptance remain manual pending. R5.2 is implementation-complete/automated-verified but not manually closed; R5.3 remains in progress.
 
 ## Inventory History type/date correction — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
 

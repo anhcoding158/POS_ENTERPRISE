@@ -57,6 +57,12 @@ public sealed class ShellViewModel :
     private readonly IProductImportDialogService?
         _productImportDialogService;
 
+    private readonly IProductExportDialogService?
+        _productExportDialogService;
+
+    private readonly IBulkProductDialogService?
+        _bulkProductDialogService;
+
     private readonly ICategoryManagementDialogService
         _categoryManagementDialogService;
 
@@ -113,6 +119,7 @@ public sealed class ShellViewModel :
     private bool _isManagementExpanded;
     private bool _isDataExpanded;
     private bool _isSidebarCompact;
+    private bool _isBulkSelectionMode;
     private ShellRoute _activeRoute =
         ShellRoute.Products;
 
@@ -126,7 +133,9 @@ public sealed class ShellViewModel :
         IPermissionService permissionService,
         ILogger<ShellViewModel> logger,
         ICurrentUserService? currentUserService = null,
-        IProductImportDialogService? productImportDialogService = null)
+        IProductImportDialogService? productImportDialogService = null,
+        IProductExportDialogService? productExportDialogService = null,
+        IBulkProductDialogService? bulkProductDialogService = null)
     {
         _scopeFactory =
             scopeFactory ??
@@ -140,6 +149,12 @@ public sealed class ShellViewModel :
 
         _productImportDialogService =
             productImportDialogService;
+
+        _productExportDialogService =
+            productExportDialogService;
+
+        _bulkProductDialogService =
+            bulkProductDialogService;
 
         _categoryManagementDialogService =
             categoryManagementDialogService ??
@@ -253,6 +268,24 @@ public sealed class ShellViewModel :
                 CanImportProducts,
                 HandleCommandException);
 
+        ExportProductsCommand =
+            new AsyncRelayCommand(
+                ExportProductsAsync,
+                CanExportProducts,
+                HandleCommandException);
+
+        ToggleBulkSelectionCommand =
+            new AsyncRelayCommand(
+                ToggleBulkSelectionAsync,
+                () => !IsLoading,
+                HandleCommandException);
+
+        ApplyBulkOperationCommand =
+            new AsyncRelayCommand(
+                ApplyBulkOperationAsync,
+                CanApplyBulkOperation,
+                HandleCommandException);
+
         OpenCategoryManagementCommand =
             new AsyncRelayCommand(
                 OpenCategoryManagementAsync,
@@ -356,6 +389,12 @@ public sealed class ShellViewModel :
     public AsyncRelayCommand AddProductCommand { get; }
 
     public AsyncRelayCommand ImportProductsCommand { get; }
+
+    public AsyncRelayCommand ExportProductsCommand { get; }
+
+    public AsyncRelayCommand ToggleBulkSelectionCommand { get; }
+
+    public AsyncRelayCommand ApplyBulkOperationCommand { get; }
 
     public AsyncRelayCommand
         OpenCategoryManagementCommand
@@ -497,6 +536,29 @@ public sealed class ShellViewModel :
 
     public bool HasSelectedProduct =>
         SelectedProduct is not null;
+
+    public bool IsBulkSelectionMode
+    {
+        get => _isBulkSelectionMode;
+        private set
+        {
+            if (!SetProperty(ref _isBulkSelectionMode, value))
+                return;
+            OnPropertyChanged(nameof(BulkSelectionModeText));
+            OnPropertyChanged(nameof(HasBulkSelection));
+            OnPropertyChanged(nameof(SelectedBulkProductCount));
+            NotifyCommandStates();
+        }
+    }
+
+    public string BulkSelectionModeText =>
+        IsBulkSelectionMode ? "Thoát chọn nhiều" : "Chọn nhiều";
+
+    public int SelectedBulkProductCount =>
+        Products.Count(row => row.IsBulkSelected);
+
+    public bool HasBulkSelection =>
+        IsBulkSelectionMode && SelectedBulkProductCount > 0;
 
     public bool CanModifySelectedProduct =>
         SelectedProduct is
@@ -1065,6 +1127,80 @@ public sealed class ShellViewModel :
                    SystemCapability.ManageProducts);
     }
 
+    private async Task ExportProductsAsync()
+    {
+        if (_productExportDialogService is null)
+        {
+            StatusMessage = "Chức năng xuất dữ liệu chưa được đăng ký.";
+            return;
+        }
+
+        var filters = new ProductSearchRequest(
+            SearchTerm,
+            categoryId: null,
+            SelectedProductStatusFilter?.IsActive,
+            SelectedStockFilter?.IsLowStock,
+            pageNumber: 1,
+            pageSize: ProductSearchRequest.MaximumPageSize,
+            SelectedProductStatusFilter?.IsArchived);
+
+        await _productExportDialogService.ShowAsync(filters);
+    }
+
+    private bool CanExportProducts()
+    {
+        return !IsLoading && _productExportDialogService is not null;
+    }
+
+    private async Task ToggleBulkSelectionAsync()
+    {
+        IsBulkSelectionMode = !IsBulkSelectionMode;
+        if (!IsBulkSelectionMode)
+        {
+            foreach (var row in Products)
+                row.IsBulkSelected = false;
+        }
+
+        OnPropertyChanged(nameof(SelectedBulkProductCount));
+        OnPropertyChanged(nameof(HasBulkSelection));
+        await Task.CompletedTask;
+    }
+
+    private async Task ApplyBulkOperationAsync()
+    {
+        if (_bulkProductDialogService is null)
+        {
+            StatusMessage = "Thao tác hàng loạt chưa được đăng ký.";
+            return;
+        }
+
+        var selected = Products
+            .Where(row => row.IsBulkSelected)
+            .ToArray();
+        if (selected.Length == 0)
+        {
+            StatusMessage = "Chọn ít nhất một sản phẩm trên trang hiện tại.";
+            return;
+        }
+
+        var committed = await _bulkProductDialogService.ShowAsync(selected);
+        if (committed)
+        {
+            foreach (var row in Products)
+                row.IsBulkSelected = false;
+            await LoadProductsAsync(SelectedProduct?.Id);
+            StatusMessage = "Đã cập nhật các sản phẩm được chọn.";
+        }
+    }
+
+    private bool CanApplyBulkOperation()
+    {
+        return IsBulkSelectionMode &&
+               HasBulkSelection &&
+               !IsLoading &&
+               _bulkProductDialogService is not null;
+    }
+
     private Task NavigateToOverviewAsync()
     {
         ActiveRoute =
@@ -1540,6 +1676,7 @@ public sealed class ShellViewModel :
 
             foreach (var row in rows)
             {
+                row.PropertyChanged += OnProductRowPropertyChanged;
                 Products.Add(row);
             }
 
@@ -1807,6 +1944,15 @@ public sealed class ShellViewModel :
         ImportProductsCommand
             .NotifyCanExecuteChanged();
 
+        ExportProductsCommand
+            .NotifyCanExecuteChanged();
+
+        ToggleBulkSelectionCommand
+            .NotifyCanExecuteChanged();
+
+        ApplyBulkOperationCommand
+            .NotifyCanExecuteChanged();
+
         OpenCategoryManagementCommand
             .NotifyCanExecuteChanged();
 
@@ -1842,5 +1988,17 @@ public sealed class ShellViewModel :
 
         ResetProductFiltersCommand
             .NotifyCanExecuteChanged();
+    }
+
+    private void OnProductRowPropertyChanged(
+        object? sender,
+        System.ComponentModel.PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName != nameof(ProductRowViewModel.IsBulkSelected))
+            return;
+
+        OnPropertyChanged(nameof(SelectedBulkProductCount));
+        OnPropertyChanged(nameof(HasBulkSelection));
+        ApplyBulkOperationCommand.NotifyCanExecuteChanged();
     }
 }

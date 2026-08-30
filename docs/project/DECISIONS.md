@@ -578,3 +578,8 @@ Mọi thay đổi kiến trúc hoặc roadmap sau khi register này tồn tại 
 
 - Export uses BCL ZIP/XML and text APIs already present in the solution; no package, migration or parallel report model was needed. XLSX uses typed text/numeric cells, freezes the header row and contains no formulas, macros or external links.
 - Export cost-price visibility follows the existing `ManageProducts` capability because the production permission catalog has no separate cost-view/export capability. Without that capability, cost columns are omitted from data, metadata and templates rather than inferred or leaked.
+- 2026-08-30 — R5.3 Bulk Operations decisions
+
+- Bulk operations use the existing `ManageProducts` capability and existing domain methods. Preview captures `Product.Id` plus `UpdatedAtUtc`, and commit rechecks the snapshot inside the existing EF transaction; no parallel permission or product model was introduced.
+- Bulk non-stock changes reuse the existing valid `SecurityAuditAction.EmployeeUpdated` value with a sanitized allowlisted summary because the audit action constraint is limited to existing values. No inventory movement is created for price, category, status or minimum-stock changes.
+- Label printing is not faked or coupled to receipt printing. The repository currently has no production label renderer/printer pipeline, so that dependency remains open for the later authorized printing checkpoint.

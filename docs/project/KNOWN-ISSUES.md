@@ -655,3 +655,7 @@ The counts above were recounted directly from these 13 stable IDs: `POS-OPS-001`
 - Export reports and the blank import template are implemented and covered by typed writer/service tests. Physical save-dialog, Excel-open and DPI visual checks remain manual; no claim of manual acceptance is made here.
 - CSV cannot carry cell types and spreadsheet applications may reinterpret long numeric-looking codes when opened. XLSX keeps ProductCode and Barcode as text cells; the UI/documentation should continue to recommend XLSX when preserving identifiers matters.
 - R5.3 label printing remains a separate dependency: the current repository has receipt printing but no production label renderer/printer pipeline.
+- R5.3 Bulk Operations — PARTIAL / AUTOMATED VERIFIED — 2026-08-30
+
+- Bulk price/category/status/minimum-stock changes are available only for the explicitly selected rows on the current page and require preview/confirmation. “Select all filtered results” is intentionally deferred until a bounded immutable selection snapshot exists.
+- Bulk label printing is blocked by the absence of a production label renderer/printer pipeline. Existing receipt printing is not silently reused; R5.3 is not closed while printing remains unresolved.

@@ -1504,6 +1504,39 @@
                             </Button>
 
                             <Button
+                                Command="{Binding ExportProductsCommand}"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                MinWidth="104"
+                                Margin="9,0,0,0"
+                                ToolTip="Xuất danh sách, tồn kho hoặc lịch sử ra Excel/CSV">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE74E;" FontFamily="Segoe MDL2 Assets" FontSize="13" Margin="0,0,7,0" VerticalAlignment="Center" />
+                                    <TextBlock Text="Xuất file" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+
+                            <Button
+                                Command="{Binding ToggleBulkSelectionCommand}"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                MinWidth="108"
+                                Margin="9,0,0,0"
+                                Content="{Binding BulkSelectionModeText}"
+                                ToolTip="Chọn nhiều sản phẩm trên trang để cập nhật cùng lúc"
+                                AutomationProperties.Name="Chọn nhiều sản phẩm" />
+
+                            <Button
+                                Command="{Binding ApplyBulkOperationCommand}"
+                                Style="{StaticResource PrimaryButtonStyle}"
+                                MinWidth="145"
+                                Margin="9,0,0,0"
+                                Content="{Binding SelectedBulkProductCount,
+                                    StringFormat={}Thao tác đã chọn ({0:N0})}"
+                                Visibility="{Binding HasBulkSelection,
+                                    Converter={StaticResource BooleanToVisibilityConverter}}"
+                                ToolTip="Xem trước và áp dụng thay đổi cho các sản phẩm đã chọn"
+                                AutomationProperties.Name="Thao tác hàng loạt cho sản phẩm đã chọn" />
+
+                            <Button
                                 Command="{Binding EditProductCommand}"
                                 Style="{StaticResource SecondaryButtonStyle}"
                                 MinWidth="82"
@@ -2087,6 +2120,21 @@
                             ScrollViewer.IsDeferredScrollingEnabled="True">
 
                             <DataGrid.Columns>
+
+                                <DataGridTemplateColumn Header="CHỌN" Width="68">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <CheckBox
+                                                IsChecked="{Binding IsBulkSelected, Mode=TwoWay}"
+                                                Visibility="{Binding DataContext.IsBulkSelectionMode,
+                                                    RelativeSource={RelativeSource AncestorType={x:Type DataGrid}},
+                                                    Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                AutomationProperties.Name="Chọn sản phẩm" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
 
                                 <!-- SẢN PHẨM: Đã cập nhật HeaderTemplate và CellTemplate Margin để căn trái mượt mà -->
                                 <DataGridTemplateColumn

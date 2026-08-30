@@ -9,7 +9,7 @@ namespace POS.Wpf.ViewModels;
 /// DTO Application không chứa logic giao diện.
 /// Việc định dạng VND và trạng thái hiển thị nằm tại WPF.
 /// </summary>
-public sealed class ProductRowViewModel
+public sealed class ProductRowViewModel : ViewModelBase
 {
     private static readonly CultureInfo
         VietnameseCulture =
@@ -41,9 +41,20 @@ public sealed class ProductRowViewModel
         IsOutOfStock = product.IsOutOfStock;
         IsActive = product.IsActive;
         IsArchived = product.IsArchived;
+        UpdatedAtUtc = product.UpdatedAtUtc;
     }
 
     public int Id { get; }
+
+    public DateTimeOffset UpdatedAtUtc { get; }
+
+    private bool _isBulkSelected;
+
+    public bool IsBulkSelected
+    {
+        get => _isBulkSelected;
+        set => SetProperty(ref _isBulkSelected, value);
+    }
 
     public int CategoryId { get; }
 
