@@ -1,5 +1,12 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R5.1C/D store-user UX remediation — 2026-08-30
+
+- Focused Product import/WPF coverage: `27/27 PASS` in Debug and `27/27 PASS` in Release. Relevant Product/Inventory/RBAC/Audit Release coverage: `250/250 PASS`.
+- Full normal-host Release suite: `1389/1389 PASS`, failed `0`, skipped `0`. Release build: `0` warnings, `0` errors. Official Quality Gate without `-SkipEfCheck`: PASS, including vulnerability, EF pending-model and Git checks.
+- New regression proof covers compact canonical auto-mapping for all 11 fields, non-default typed values and leading-zero barcode, real WPF staged initial state and supported layout construction. Existing R5.1A/B transaction/security tests remain green; no parser bypass, assertion weakening, package, migration or database change was made.
+- Manual click/UIA/DPI acceptance and end-user fixture click-through remain pending; this is not reported as a physical visual PASS.
+
 ## R5.1C/D Product Import Wizard and hardening — 2026-08-30
 
 - Import-focused WPF/Application coverage is `25/25 PASS` in Debug and `25/25 PASS` in Release. Relevant Product/Inventory/RBAC/Audit Release regressions passed `248/248`; normal-host full Release passed `1387/1387`, failed `0`, skipped `0`.

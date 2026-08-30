@@ -1,5 +1,12 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-047 — R5.1C/D uses progressive disclosure and deterministic compact-header aliases
+
+- **Status:** Accepted for the R5.1C/D UX remediation on `2026-08-30`; physical WPF acceptance remains pending.
+- **User flow:** Present only the action useful for the current stage: choose a file, inspect and correct only when needed, explicitly choose the duplicate behavior, then perform one import action and show a business result. Full 11-field details and row diagnostics remain available behind user-invoked views.
+- **Mapping:** Extend the existing `ProductImportSchemaCatalog` with verified compact canonical aliases (`unitname`, `saleprice`, `costprice`, `initialstock`, `minimumstock`, `isactive`). Do not use fuzzy matching or change the production schema. A missing/active-category failure remains reference data, not a header-mapping failure.
+- **Scope:** Keep the existing Application/Infrastructure parser, validated snapshot, authorization, transaction and stock/audit semantics. No package, migration, shared-style change, export/template capability or new checkpoint is introduced.
+
 ## DEC-046 — R5.1C/D reuses the secure import services behind a transient WPF wizard
 
 - **Status:** Accepted for R5.1C/D implementation on `2026-08-30`; physical WPF click/UIA/DPI acceptance remains pending.

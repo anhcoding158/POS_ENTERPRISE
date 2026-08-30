@@ -42,6 +42,29 @@ public sealed class ProductImportWizardTests
         Assert.True(selected.CanImport);
         Assert.Equal("Products", selected.SelectedWorksheetName);
         Assert.Equal("000123", Assert.Single(selected.PreviewRows).Barcode);
+        Assert.Equal(
+            ProductImportSchemaCatalog.Fields.Select(field => field.CanonicalKey),
+            selected.Headers.Select(header => header.CanonicalFieldKey));
+    }
+
+    [Fact]
+    public async Task Compact_canonical_headers_auto_map_all_eleven_fields_without_manual_mapping()
+    {
+        using var fixture = new FixtureScope();
+        var result = await new ProductImportPreviewService().PreviewAsync(fixture.WriteCanonicalCsv());
+
+        Assert.True(result.CanImport);
+        Assert.Equal(
+            ProductImportSchemaCatalog.Fields.Select(field => field.CanonicalKey),
+            result.Headers.Select(header => header.CanonicalFieldKey));
+        Assert.DoesNotContain(result.FileIssues, issue => issue.Code == "HEADER_UNKNOWN");
+        var row = Assert.Single(result.PreviewRows);
+        Assert.Equal("000987", row.Barcode);
+        Assert.Equal(42000, row.SalePrice);
+        Assert.Equal(27500, row.CostPrice);
+        Assert.Equal(7, row.InitialStockQuantity);
+        Assert.Equal(2, row.MinimumStock);
+        Assert.False(row.IsActive);
     }
 
     [Fact]
@@ -102,9 +125,31 @@ public sealed class ProductImportWizardTests
                 Assert.True(window.ActualHeight <= size.Height || window.Height <= size.Height);
             }
 
-            Assert.Equal("Nhập sản phẩm từ CSV / Excel", window.Title);
+            Assert.Equal("Nhập sản phẩm từ Excel/CSV", window.Title);
             window.Close();
         });
+    }
+
+    [Fact]
+    public void Wizard_initial_state_has_one_primary_file_action_and_safe_duplicate_choices()
+    {
+        using var provider = new ServiceCollection().AddLogging().BuildServiceProvider();
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddDebug());
+        using var user = new CurrentUserScope();
+        var viewModel = new ProductImportWizardViewModel(
+            provider.GetRequiredService<IServiceScopeFactory>(),
+            new ProductImportPreviewService(),
+            new PermissionService(user.Service),
+            loggerFactory.CreateLogger<ProductImportWizardViewModel>());
+
+        Assert.Equal(0, viewModel.CurrentStep);
+        Assert.True(viewModel.ShowChooseFileAction);
+        Assert.False(viewModel.ShowImportAction);
+        Assert.False(viewModel.ShowChangeFileAction);
+        Assert.False(viewModel.HasPreview);
+        Assert.Equal("Chỉ thêm sản phẩm mới", viewModel.DuplicatePolicies[0].DisplayName);
+        Assert.Equal("Dừng nếu có sản phẩm trùng", viewModel.DuplicatePolicies[2].DisplayName);
+        Assert.Contains("25", viewModel.ImportLimitsHint, StringComparison.Ordinal);
     }
 
     private static Task RunOnSta(Action action)
@@ -159,6 +204,15 @@ public sealed class ProductImportWizardTests
             return path;
         }
 
+        public string WriteCanonicalCsv()
+        {
+            var path = Path.Combine(_root, "canonical.csv");
+            var headers = "ProductCode,Barcode,Name,Category,UnitName,SalePrice,CostPrice,InitialStock,MinimumStock,IsActive,Description";
+            var row = "IMP-CANONICAL-001,000987,Canonical sample,Drinks,Bottle,42000,27500,7,2,Inactive,All eleven fields";
+            File.WriteAllText(path, headers + Environment.NewLine + row, new UTF8Encoding(false));
+            return path;
+        }
+
         public string WriteWorkbook()
         {
             var path = Path.Combine(_root, "multi.xlsx");
@@ -181,7 +235,7 @@ public sealed class ProductImportWizardTests
             return $"<?xml version=\"1.0\"?><worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetData><row r=\"1\">{headerCells}</row><row r=\"2\">{rowCells}</row></sheetData></worksheet>";
         }
 
-        private static string[] ProductImportPreviewTestsHeader() => ["ProductCode", "Barcode", "Tên", "Danh mục", "Đơn vị tính", "Giá bán", "Giá vốn", "Tồn đầu", "Tồn tối thiểu", "Trạng thái", "Ghi chú"];
+        private static string[] ProductImportPreviewTestsHeader() => ["ProductCode", "Barcode", "Name", "Category", "UnitName", "SalePrice", "CostPrice", "InitialStock", "MinimumStock", "IsActive", "Description"];
         private static string InlineCell(int row, int column, string value) => $"<c r=\"{(char)('A' + column)}{row}\" t=\"inlineStr\"><is><t>{SecurityElement.Escape(value)}</t></is></c>";
 
         private static void WriteEntry(ZipArchive archive, string name, string content)

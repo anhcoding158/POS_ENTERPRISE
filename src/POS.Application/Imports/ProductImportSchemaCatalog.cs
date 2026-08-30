@@ -67,7 +67,7 @@ public static class ProductImportSchemaCatalog
         new(
             "unit_name",
             "Đơn vị tính",
-            ["đơn vị", "don vi", "đơn vị tính", "don vi tinh", "unit", "unit name", "unit_name"],
+            ["đơn vị", "don vi", "đơn vị tính", "don vi tinh", "unit", "unit name", "unit_name", "unitname"],
             true,
             ProductImportFieldType.Text,
             BusinessRules.Products.UnitNameMaxLength,
@@ -77,7 +77,7 @@ public static class ProductImportSchemaCatalog
         new(
             "sale_price",
             "Giá bán (VND)",
-            ["giá bán", "gia ban", "giá bán (vnd)", "gia ban (vnd)", "price", "sale price", "sale_price"],
+            ["giá bán", "gia ban", "giá bán (vnd)", "gia ban (vnd)", "price", "sale price", "sale_price", "saleprice"],
             true,
             ProductImportFieldType.VndAmount,
             null,
@@ -87,7 +87,7 @@ public static class ProductImportSchemaCatalog
         new(
             "cost_price",
             "Giá vốn (VND)",
-            ["giá vốn", "gia von", "giá vốn (vnd)", "gia von (vnd)", "cost", "cost price", "cost_price"],
+            ["giá vốn", "gia von", "giá vốn (vnd)", "gia von (vnd)", "cost", "cost price", "cost_price", "costprice"],
             true,
             ProductImportFieldType.VndAmount,
             null,
@@ -97,7 +97,7 @@ public static class ProductImportSchemaCatalog
         new(
             "initial_stock_quantity",
             "Tồn đầu kỳ",
-            ["tồn đầu", "ton dau", "tồn đầu kỳ", "ton dau ky", "initial stock", "initial_stock", "opening stock", "opening balance"],
+            ["tồn đầu", "ton dau", "tồn đầu kỳ", "ton dau ky", "initial stock", "initial_stock", "initialstock", "opening stock", "opening balance"],
             false,
             ProductImportFieldType.NonNegativeInteger,
             null,
@@ -107,7 +107,7 @@ public static class ProductImportSchemaCatalog
         new(
             "minimum_stock",
             "Tồn tối thiểu",
-            ["tồn tối thiểu", "ton toi thieu", "minimum stock", "minimum_stock", "reorder level"],
+            ["tồn tối thiểu", "ton toi thieu", "minimum stock", "minimum_stock", "minimumstock", "reorder level"],
             false,
             ProductImportFieldType.NonNegativeInteger,
             null,
@@ -117,7 +117,7 @@ public static class ProductImportSchemaCatalog
         new(
             "is_active",
             "Trạng thái",
-            ["trạng thái", "trang thai", "status", "state", "is active", "is_active", "đang bán", "dang ban"],
+            ["trạng thái", "trang thai", "status", "state", "is active", "is_active", "isactive", "đang bán", "dang ban"],
             false,
             ProductImportFieldType.Boolean,
             null,

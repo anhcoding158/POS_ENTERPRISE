@@ -593,7 +593,7 @@ public sealed class ProductImportPreviewService : IProductImportPreviewService
         if (category is not null && references?.CategoryIdsByNormalizedName is not null &&
             !references.CategoryIdsByNormalizedName.Keys.Any(key => ProductImportSchemaCatalog.NormalizeHeader(key) == ProductImportSchemaCatalog.NormalizeHeader(category)))
         {
-            issues.Add(Error("CATEGORY_NOT_FOUND", "Danh mục không tồn tại trong danh mục tham chiếu; không tự tạo danh mục.", record, "category_name"));
+            issues.Add(Error("CATEGORY_NOT_FOUND", $"Danh mục '{SafeCell(category)}' chưa có trong cửa hàng; hãy sửa tên hoặc tạo danh mục trước khi nhập.", record, "category_name"));
         }
         else if (category is not null && references?.CategoryIdsByNormalizedName is null)
         {
@@ -895,7 +895,13 @@ public sealed class ProductImportPreviewService : IProductImportPreviewService
     private static ProductImportIssue Error(string code, string message, RawRecord record, string field) => new(ProductImportIssueSeverity.Error, code, message, record.SourceRowNumber, field);
     private static ProductImportIssue Warning(string code, string message, RawRecord record, string field) => new(ProductImportIssueSeverity.Warning, code, message, record.SourceRowNumber, field);
 
-    private static string SafeHeader(string value) => value.Length <= 80 ? value : value[..80] + "…";
+    private static string SafeHeader(string value) => SafeCell(value);
+
+    private static string SafeCell(string value)
+    {
+        var sanitized = value.Replace('\r', ' ').Replace('\n', ' ').Trim();
+        return sanitized.Length <= 80 ? sanitized : sanitized[..80] + "…";
+    }
 
     private static async Task<byte[]> ReadSignatureAsync(Stream stream, CancellationToken cancellationToken)
     {

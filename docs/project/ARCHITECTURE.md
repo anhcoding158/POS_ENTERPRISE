@@ -1,5 +1,11 @@
 # ARCHITECTURE — POS ENTERPRISE RETAIL V1
 
+## R5.1C/D store-user import UX boundary — 2026-08-30
+
+- The WPF import surface is a staged presentation over the existing Application/Infrastructure contracts: file selection and preview are asynchronous read-only operations, while the single `Nhập sản phẩm` action is the only mutation trigger. Mapping and full-column detail are progressive disclosures, not a second schema or validation engine.
+- The schema catalog remains the sole auto-mapping authority. Compact canonical aliases are explicit catalog entries, so `UnitName`/`SalePrice`/`CostPrice` and the other compact production keys are deterministic; fuzzy matching is not introduced. Category reference failures stay distinct from header recognition and continue through the existing active-category snapshot boundary.
+- The wizard remains local to Product & Inventory and does not modify shared DataGrid styles, Audit Log, permissions, transaction boundaries or stock workflows. R5.2 export/template work is not started.
+
 ## R5.1C/D Product import presentation boundary — 2026-08-30
 
 - The Product & Inventory Shell route opens a transient WPF wizard through `IProductImportDialogService`; the wizard ViewModel owns asynchronous file selection, preview/mapping state, cancellation and confirmation, while Application contracts remain free of WPF types. The dialog service enforces the existing `ManageProducts` capability before construction.

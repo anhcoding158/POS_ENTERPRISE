@@ -1,5 +1,11 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## R5.1C/D UX remediation — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
+
+- The reported `UnitName`/`SalePrice`/`CostPrice` missing-column behavior was a deterministic catalog-alias gap, not a Category lookup failure. Compact canonical headers are now recognized; a missing or inactive `Drinks`/`Food` reference is shown separately with the category name and corrective guidance.
+- The wizard is simplified for store users with staged actions, progressive mapping/details, grouped issues and business-language results. Automated WPF construction/arrange and import regressions pass. Physical click-through, UIA/accessibility and DPI acceptance remain pending because this environment exposes no inspectable top-level HWND.
+- Synthetic fixtures remain ignored under `D:\Projects_1\POS_Enterprise_DotNet\artifacts\R5.1C-manual-fixtures`. Manual testing must create or activate the exact categories used by a fixture in the isolated setup; no category is auto-created and no canonical database is used.
+
 ## R5.1C/D — IMPLEMENTED / AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
 
 - The Product CSV/Excel wizard is implemented and its automated import-focused and normal-host full-suite gates pass. Physical click-through, UIA accessibility inspection and DPI-equivalent visual acceptance remain manual because this environment exposes no inspectable top-level WPF HWND. The prepared synthetic fixtures are under the ignored `artifacts/R5.1C-manual-fixtures` directory.

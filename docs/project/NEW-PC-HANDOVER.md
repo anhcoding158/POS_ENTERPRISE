@@ -1,5 +1,12 @@
 # POS Enterprise - New-PC Handover
 
+## Current checkpoint status — R5.1C/D UX remediation — 2026-08-30
+
+- The Product import wizard was simplified for store users: choose a file, inspect only the necessary details, select duplicate handling, and perform one explicit import action. Compact canonical headers in the prepared CSV/XLSX fixtures auto-map all 11 fields; missing categories are a separate reference-data issue.
+- Focused coverage is `27/27 PASS` in Debug/Release, relevant Release is `250/250 PASS`, normal-host full Release is `1389/1389 PASS`, failed/skipped `0/0`, build `0/0`, and official Quality Gate without `-SkipEfCheck` is PASS, including vulnerability, EF pending-model and Git checks. No canonical DB, credentials, package or migration was used.
+- Manual fixtures remain at `D:\Projects_1\POS_Enterprise_DotNet\artifacts\R5.1C-manual-fixtures`; create/activate the exact fixture categories in the isolated setup before import. The isolated launcher accepts only an isolated source DB; select the fixture in the wizard after startup.
+- Physical WPF click/UIA/DPI acceptance is still manual pending. R5.1A/B and R4.2–R4.4 remain CLOSED/PRESERVED, R5.1 is IN PROGRESS, R5.2 is NOT STARTED and Development Freeze is ACTIVE outside R5.1.
+
 ## Current checkpoint status — R5.1C/D — 2026-08-30
 
 - R5.1C/D Product CSV/Excel Import Wizard is IMPLEMENTED and AUTOMATED VERIFIED; physical WPF click/UIA/DPI acceptance is MANUAL PENDING. R5.1A/B remain CLOSED/PRESERVED, R5.1 remains IN PROGRESS and R5.2 is NOT STARTED.

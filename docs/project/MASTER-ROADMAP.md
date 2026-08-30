@@ -1,5 +1,11 @@
 # MASTER ROADMAP — POS ENTERPRISE RETAIL V1
 
+## Latest checkpoint position — 2026-08-30 (R5.1C/D UX remediation — IMPLEMENTED / AUTOMATED VERIFIED / MANUAL PENDING)
+
+- The store-user remediation keeps R5.1C/D within the authorized Product import checkpoint. The wizard now uses a three-stage, progressive-disclosure flow with one contextual primary action, Vietnamese business wording, compact canonical-header auto-mapping and distinct reference-data guidance. Full validation, 11-field preservation, duplicate semantics and transaction confirmation remain intact.
+- Regression evidence is `27/27 PASS` focused in Debug/Release, `250/250 PASS` relevant Release, full normal-host Release `1389/1389 PASS`, failed/skipped `0/0`, Release build `0/0`, and official Quality Gate without `-SkipEfCheck` is PASS, including vulnerability, EF pending-model and Git checks. The six known sandbox DPAPI tests remain normal-host verified; no security boundary changed.
+- Physical WPF click/UIA/DPI and manual fixture click-through remain pending due to the environment limitation. R5.1C/D are IMPLEMENTED/AUTOMATED VERIFIED/MANUAL PENDING, R5.1 remains IN PROGRESS, R5.2 is NOT STARTED, R5.1A/B and R4.2–R4.4 remain CLOSED/PRESERVED, and Development Freeze remains ACTIVE outside R5.1.
+
 ## Latest checkpoint position — 2026-08-30 (R5.1C/D — IMPLEMENTED / AUTOMATED VERIFIED / MANUAL PENDING)
 
 - R5.1C connects the existing Product & Inventory route to a real WPF import wizard. It reuses the R5.1A parser/schema and R5.1B service for file selection, explicit worksheet/mapping, full validation, bounded preview, duplicate-policy confirmation, cancellation and typed transaction results. R5.1D hardening covers the stale-preview, re-entrant, rollback, result-display and parser/security integration paths without adding a package, migration, parallel model or UI-side mutation.
