@@ -1,5 +1,12 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## Selection and global Inventory History hotfix — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
+
+- The Product & Inventory selected-product rail now has a visible `× Bỏ chọn` command bound to the real `SelectedProduct`/DataGrid selection. It clears only selection, refreshes command guards and presentation, does not reload or mutate product/stock/archive data, and does not reselect the first row.
+- The existing `Kho & lưu trữ → Lịch sử kho` menu command now always opens the general history route with an empty product criterion. It no longer inherits the selected product's code/name; the history service and its supported product-search behavior remain unchanged, and the selection on the Shell remains intact while the history window is opened.
+- Focused selection/navigation coverage is `28/28 PASS` in Debug and `28/28 PASS` in Release; relevant Product/Inventory/Category/Import/RBAC/Shell Release coverage is `286/286 PASS`. Release solution build is `0` warnings and `0` errors. Normal-host full Release is `1413/1413 PASS`, failed/skipped `0/0`; Official Quality Gate passed with vulnerability, EF pending-model and Git checks PASS.
+- The Codex sandbox full Release was `1407 PASS / 6 FAIL / 0 SKIP` only for the known CurrentUser DPAPI secure-storage/VietQR tests; the normal-host rerun passed `12/12`, with no security change. Physical WPF click/UIA/DPI acceptance remains manual pending. The persistent manual database and launcher were not touched; R5.1 remains in manual acceptance and R5.2 is NOT STARTED.
+
 ## Persistent manual database launcher — VERIFIED — 2026-08-30
 
 - The source-tree canonical development database `data/pos-enterprise.db` was not present at preflight, so no existing canonical data needed migration or preservation. A user-authorized persistent profile was initialized at `C:\Users\pc\AppData\Local\POS Enterprise\ManualAcceptance\pos-enterprise-manual.db`; the application created it and applied the current 18 migrations without copying a source database.

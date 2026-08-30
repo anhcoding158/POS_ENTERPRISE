@@ -1612,6 +1612,7 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
                             <Border
@@ -1758,6 +1759,22 @@
                                     </Border>
                                 </WrapPanel>
                             </StackPanel>
+
+                            <Button
+                                x:Name="ClearSelectedProductButton"
+                                Grid.Column="2"
+                                Content="× Bỏ chọn"
+                                Command="{Binding ClearSelectedProductCommand}"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Height="34"
+                                MinWidth="112"
+                                Margin="12,0,0,0"
+                                Padding="12,0"
+                                ToolTip="Bỏ chọn sản phẩm đang chọn"
+                                AutomationProperties.Name="Bỏ chọn sản phẩm đang chọn"
+                                ToolTipService.ShowOnDisabled="True"
+                                Visibility="{Binding HasSelectedProduct,
+                                    Converter={StaticResource BooleanToVisibilityConverter}}" />
 
                         </Grid>
                     </Border>

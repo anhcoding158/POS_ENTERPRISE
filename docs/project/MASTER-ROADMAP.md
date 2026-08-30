@@ -1,5 +1,12 @@
 # MASTER ROADMAP — POS ENTERPRISE RETAIL V1
 
+## Latest checkpoint position — Selection and global Inventory History hotfix — 2026-08-30
+
+- This authorized R5.1 manual-acceptance hotfix adds an explicit `× Bỏ chọn` action to the existing Product selection rail and decouples the single `Kho & lưu trữ → Lịch sử kho` route from the currently selected Product row. No stock write, archive behavior, inventory-history query/service, RBAC boundary, persistent manual profile or unrelated module changed.
+- The clear-selection action updates the real selection and command state without reload or mutation. The global history route passes no product criterion, opens the default general history view, and does not change selection in the Shell.
+- Automated evidence is `28/28 PASS` focused in Debug and Release, `286/286 PASS` relevant Release, normal-host full Release `1413/1413 PASS`, failed/skipped `0/0`, Release build `0/0`, and Official Quality Gate PASS including vulnerability, EF pending-model and Git checks. Physical WPF click/UIA/DPI acceptance remains manual pending.
+- R5.1 remains in manual acceptance and is not closed by this hotfix. R5.1A–R5.1D and R4.2–R4.4 remain preserved, R5.2 is NOT STARTED, and Development Freeze remains ACTIVE outside this authorized exception.
+
 ## Latest checkpoint position — Inventory History navigation/filter-card hotfix — 2026-08-30
 
 - This limited exception corrects the final Inventory History presentation/navigation defects while preserving the accepted database-side search and query semantics. There is one primary Shell route through `Kho & lưu trữ → Lịch sử kho`; the duplicate sidebar command is removed, and the screen uses one light local filter card with a safe `Tìm`/clear-search layout plus colocated reset/refresh actions.

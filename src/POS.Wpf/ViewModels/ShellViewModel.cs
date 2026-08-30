@@ -281,6 +281,12 @@ public sealed class ShellViewModel :
                 CanAdjustSelectedProduct,
                 HandleCommandException);
 
+        ClearSelectedProductCommand =
+            new AsyncRelayCommand(
+                ClearSelectedProductAsync,
+                CanClearSelectedProduct,
+                HandleCommandException);
+
         ViewInventoryHistoryCommand =
             new AsyncRelayCommand(
                 ViewInventoryHistoryAsync,
@@ -364,6 +370,11 @@ public sealed class ShellViewModel :
     public AsyncRelayCommand EditProductCommand { get; }
 
     public AsyncRelayCommand AdjustInventoryCommand
+    {
+        get;
+    }
+
+    public AsyncRelayCommand ClearSelectedProductCommand
     {
         get;
     }
@@ -563,12 +574,9 @@ public sealed class ShellViewModel :
     {
         get
         {
-            var selectedProduct =
-                SelectedProduct;
-
-            return selectedProduct is null
-                ? "Mở lịch sử tồn kho của toàn bộ sản phẩm."
-                : $"Mở lịch sử tồn kho của {selectedProduct.Name}.";
+            // Giữ property instance-bound để WPF tự cập nhật cùng selection.
+            _ = SelectedProduct;
+            return "Mở lịch sử tồn kho của toàn bộ sản phẩm.";
         }
     }
 
@@ -1252,32 +1260,28 @@ public sealed class ShellViewModel :
 
     private async Task ViewInventoryHistoryAsync()
     {
-        var selectedProduct =
-            SelectedProduct;
-
-        var productCode =
-            selectedProduct?.Code;
-        var productDisplayText =
-            selectedProduct is null
-                ? null
-                : $"{selectedProduct.Name} · {selectedProduct.Code}";
-
         StatusMessage =
-            selectedProduct is null
-                ? "Đang mở lịch sử tồn kho toàn hệ thống..."
-                : $"Đang mở lịch sử kho của " +
-                  $"'{selectedProduct.Name}'...";
+            "Đang mở lịch sử tồn kho toàn bộ sản phẩm...";
 
         await _inventoryDialogService
-            .ShowHistoryAsync(
-                productCode,
-                productDisplayText);
+            .ShowHistoryAsync();
 
         StatusMessage =
-            selectedProduct is null
-                ? "Đã đóng màn hình lịch sử tồn kho."
-                : $"Đã đóng lịch sử kho của " +
-                  $"'{selectedProduct.Name}'.";
+            "Đã đóng màn hình lịch sử tồn kho.";
+    }
+
+    private Task ClearSelectedProductAsync()
+    {
+        if (!CanClearSelectedProduct())
+        {
+            return Task.CompletedTask;
+        }
+
+        SelectedProduct = null;
+        StatusMessage =
+            "Đã bỏ chọn sản phẩm. Chọn một sản phẩm để thao tác.";
+
+        return Task.CompletedTask;
     }
 
     private async Task ToggleProductActiveAsync()
@@ -1683,6 +1687,12 @@ public sealed class ShellViewModel :
                };
     }
 
+    private bool CanClearSelectedProduct()
+    {
+        return !IsLoading &&
+               SelectedProduct is not null;
+    }
+
     private bool CanArchiveSelectedProduct()
     {
         return !IsLoading &&
@@ -1807,6 +1817,9 @@ public sealed class ShellViewModel :
             .NotifyCanExecuteChanged();
 
         AdjustInventoryCommand
+            .NotifyCanExecuteChanged();
+
+        ClearSelectedProductCommand
             .NotifyCanExecuteChanged();
 
         ViewInventoryHistoryCommand

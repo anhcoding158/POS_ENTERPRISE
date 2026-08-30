@@ -1,5 +1,11 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## Selection and global Inventory History hotfix — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
+
+- The product rail previously had no user-facing way to clear the bound `SelectedProduct`, leaving product actions dependent on a selection that users could not explicitly remove. The new `ClearSelectedProductCommand` clears the binding-backed selection and notifies all dependent commands without a data reload or write.
+- The global history menu previously read the selected row and passed its code/name to `ShowHistoryAsync`, so a menu action described as general history opened with an implicit product criterion. It now calls the same service with no product criterion; product search remains available inside Inventory History.
+- Focused coverage is `28/28 PASS` in Debug and Release; relevant Release coverage is `286/286 PASS`; normal-host full Release is `1413/1413 PASS`, failed/skipped `0/0`, and the Quality Gate passed. Physical WPF click/UIA/DPI acceptance remains manual pending; the persistent manual database was not used or modified.
+
 ## Persistent manual database — ACTIVE USER SETUP — 2026-08-30
 
 - The long-lived manual database is `C:\Users\pc\AppData\Local\POS Enterprise\ManualAcceptance\pos-enterprise-manual.db`. It was created by the application on first launcher use and reached the initial account setup screen; the user must create and remember the account through the UI.

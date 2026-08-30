@@ -1,5 +1,12 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## Selection and global Inventory History hotfix — 2026-08-30
+
+- Focused selection/navigation coverage: `28/28 PASS` in Debug and `28/28 PASS` in Release. Relevant Product/Inventory/Category/Import/RBAC/Shell Release coverage: `286/286 PASS`.
+- Release solution build: `0` warnings and `0` errors. Normal-host full Release: `1413/1413 PASS`, failed/skipped `0/0`. Official `scripts/Test-QualityGate.ps1` without `-SkipEfCheck`: PASS, including Debug build, full tests, vulnerability scan, local tool restore, EF pending-model and Git checks.
+- New regression coverage verifies the real selected-product clear command, no reload/service write after deselection, disabled product mutation commands, global history availability with and without selection, and null product context passed by the existing history route. Existing archive, product filtering, history query and RBAC tests remain green.
+- The sandbox full Release observed `1407 PASS / 6 FAIL / 0 SKIP` in the known CurrentUser DPAPI secure-storage/VietQR classes; the normal-host rerun passed those `12/12`. No database, credential, launcher, security implementation or persistent manual profile was touched. Physical WPF click/UIA/DPI acceptance remains manual pending.
+
 ## Persistent manual database launcher — 2026-08-30
 
 - Launcher contract test: `1/1 PASS` in Debug and `1/1 PASS` in Release. PowerShell parser check: PASS. The script uses one fixed LocalApplicationData profile path, existing runtime isolation/single-instance boundaries and no source-database copy/GUID/timestamp/reset/delete operation.

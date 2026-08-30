@@ -68,6 +68,9 @@ public sealed class ProductArchivingUiContractTests
         Assert.Contains("Text=\"&#xE7B8;\"", source, StringComparison.Ordinal);
         Assert.Contains("AdjustInventoryCommand", source, StringComparison.Ordinal);
         Assert.Contains("ViewInventoryHistoryCommand", source, StringComparison.Ordinal);
+        Assert.Contains("ClearSelectedProductButton", source, StringComparison.Ordinal);
+        Assert.Contains("Content=\"× Bỏ chọn\"", source, StringComparison.Ordinal);
+        Assert.Contains("ClearSelectedProductCommand", source, StringComparison.Ordinal);
         Assert.DoesNotContain("OpenInventoryHistoryCommand", source, StringComparison.Ordinal);
         Assert.DoesNotContain("ShellInventoryHistoryNavigationButton", source, StringComparison.Ordinal);
         Assert.Contains("OnToggleProductArchiveClick", source, StringComparison.Ordinal);
@@ -218,7 +221,7 @@ public sealed class ProductArchivingUiContractTests
     }
 
     [Fact]
-    public async Task Selected_product_history_uses_visible_code_search_without_hidden_id_scope()
+    public async Task Global_inventory_history_does_not_inherit_selected_product_scope()
     {
         var context = CreateContext();
         context.ViewModel.SelectedProduct =
@@ -227,10 +230,41 @@ public sealed class ProductArchivingUiContractTests
         context.ViewModel.ViewInventoryHistoryCommand.Execute(null);
         await WaitForHistoryAsync(context.ViewModel);
 
-        Assert.Equal("SP-017", context.InventoryDialog.LastHistorySearchTerm);
-        Assert.Equal(
-            "Sản phẩm kiểm thử · SP-017",
-            context.InventoryDialog.LastHistoryDisplayText);
+        Assert.Null(context.InventoryDialog.LastHistorySearchTerm);
+        Assert.Null(context.InventoryDialog.LastHistoryDisplayText);
+    }
+
+    [Fact]
+    public async Task Clear_selected_product_clears_real_selection_without_reloading_or_mutating_data()
+    {
+        var context = CreateContext();
+        context.ViewModel.SelectedProduct =
+            new ProductRowViewModel(CreateProduct(isArchived: false));
+
+        context.ViewModel.ClearSelectedProductCommand.Execute(null);
+        await WaitForClearSelectionAsync(context.ViewModel);
+
+        Assert.Null(context.ViewModel.SelectedProduct);
+        Assert.False(context.ViewModel.HasSelectedProduct);
+        Assert.Equal(0, context.Service.SearchCalls);
+        Assert.False(context.ViewModel.EditProductCommand.CanExecute(null));
+        Assert.False(context.ViewModel.AdjustInventoryCommand.CanExecute(null));
+        Assert.False(context.ViewModel.ToggleProductArchiveCommand.CanExecute(null));
+        Assert.True(context.ViewModel.ViewInventoryHistoryCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task Global_inventory_history_is_available_without_a_product_selection()
+    {
+        var context = CreateContext();
+
+        Assert.True(context.ViewModel.ViewInventoryHistoryCommand.CanExecute(null));
+
+        context.ViewModel.ViewInventoryHistoryCommand.Execute(null);
+        await WaitForHistoryAsync(context.ViewModel);
+
+        Assert.Null(context.InventoryDialog.LastHistorySearchTerm);
+        Assert.Null(context.InventoryDialog.LastHistoryDisplayText);
     }
 
     private static TestContext CreateContext()
@@ -352,6 +386,8 @@ public sealed class ProductArchivingUiContractTests
 
         public int RestoreCallCount { get; private set; }
 
+        public int SearchCalls { get; private set; }
+
         public ProductSearchRequest?
             LastSearchRequest
         { get; private set; }
@@ -362,6 +398,7 @@ public sealed class ProductArchivingUiContractTests
                 ProductSearchRequest request,
                 CancellationToken cancellationToken = default)
         {
+            SearchCalls++;
             LastSearchRequest = request;
 
             return Task.FromResult(
@@ -482,5 +519,17 @@ public sealed class ProductArchivingUiContractTests
         }
 
         Assert.False(viewModel.ViewInventoryHistoryCommand.IsExecuting);
+    }
+
+    private static async Task WaitForClearSelectionAsync(ShellViewModel viewModel)
+    {
+        var timeout = DateTimeOffset.UtcNow.AddSeconds(5);
+        while (viewModel.ClearSelectedProductCommand.IsExecuting &&
+               DateTimeOffset.UtcNow < timeout)
+        {
+            await Task.Delay(10);
+        }
+
+        Assert.False(viewModel.ClearSelectedProductCommand.IsExecuting);
     }
 }
