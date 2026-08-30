@@ -142,7 +142,7 @@ public sealed class CategoryEditorViewModel :
 
     public string HeaderDescription =>
         IsEditMode
-            ? "Cập nhật tên, mô tả, thứ tự hiển thị và trạng thái."
+            ? "Cập nhật tên, mô tả và trạng thái."
             : "Tạo nhóm sản phẩm để sắp xếp thực đơn và màn hình bán hàng.";
 
     public string SaveButtonText =>

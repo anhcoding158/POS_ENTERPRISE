@@ -1,5 +1,11 @@
 # MASTER ROADMAP — POS ENTERPRISE RETAIL V1
 
+## Latest checkpoint position — Inventory History / Adjustment / Category UX hotfix — 2026-08-30
+
+- Authorized hotfix is limited to presentation/read-query behavior for Inventory History, empty quantity UX for manual stock adjustment, and category name ordering/display-order form removal. Product archiving/storage, Import Wizard and later checkpoints are unchanged.
+- Inventory History uses the existing direct search pipeline; category search/list order is Vietnamese-name-first before paging with stable Id tie-breaker. `DisplayOrder` remains persisted and is still passed internally to existing create/update contracts.
+- Focused `44/44` Debug and Release, relevant Release `284/284`, normal-host full Release `1407/1407`, failed/skipped `0/0`; physical manual acceptance remains pending. R5.1 remains in manual acceptance, R5.2 is NOT STARTED.
+
 ## Latest checkpoint position — 2026-08-30 (Inventory History UX/query hotfix — AUTOMATED VERIFIED / MANUAL PENDING)
 
 - This authorized hotfix stays within the existing Inventory History capability. Product name/code/barcode search now reaches the history query directly; filters, paging, selection, loading/error/empty states and visible navigation scope share one typed ViewModel pipeline.

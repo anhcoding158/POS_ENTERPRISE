@@ -25,6 +25,10 @@ public sealed class InventoryHistoryUxTests
                 "src", "POS.Wpf", "Views", "InventoryHistoryWindow.xaml"));
 
         Assert.Contains("Tìm theo tên, mã sản phẩm hoặc mã vạch", source, StringComparison.Ordinal);
+        Assert.Contains("Text=\"Tìm sản phẩm\"", source, StringComparison.Ordinal);
+        Assert.Contains("<ColumnDefinition Width=\"300\"", source, StringComparison.Ordinal);
+        Assert.Contains("<UniformGrid Grid.Row=\"0\" Columns=\"3\"", source, StringComparison.Ordinal);
+        Assert.Contains("Command=\"{Binding ApplyFiltersCommand}\"", source, StringComparison.Ordinal);
         Assert.Contains("Xóa bộ lọc", source, StringComparison.Ordinal);
         Assert.Contains("Làm mới", source, StringComparison.Ordinal);
         Assert.DoesNotContain("Lọc lịch sử", source, StringComparison.Ordinal);
@@ -32,6 +36,21 @@ public sealed class InventoryHistoryUxTests
         Assert.DoesNotContain("Tải lại", source, StringComparison.Ordinal);
         Assert.DoesNotContain("AUDIT TRAIL", source, StringComparison.Ordinal);
         Assert.DoesNotContain("Movement có delta", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Inventory_history_legacy_layout_must_keep_a_compact_sidebar_and_safe_table()
+    {
+        var source = File.ReadAllText(
+            Path.Combine(
+                AppContext.BaseDirectory,
+                "..", "..", "..", "..", "..",
+                "src", "POS.Wpf", "Views", "InventoryHistoryWindow.xaml"));
+
+        Assert.Contains("ScrollViewer.HorizontalScrollBarVisibility\" Value=\"Auto\"", source, StringComparison.Ordinal);
+        Assert.Contains("TextTrimming=\"CharacterEllipsis\"", source, StringComparison.Ordinal);
+        Assert.Contains("ToolTip=\"{Binding ReferenceText}\"", source, StringComparison.Ordinal);
+        Assert.Contains("Chọn một thay đổi để xem chi tiết", source, StringComparison.Ordinal);
     }
 
     [Fact]

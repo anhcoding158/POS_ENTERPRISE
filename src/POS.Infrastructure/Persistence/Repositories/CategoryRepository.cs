@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using POS.Application.Abstractions.Persistence;
 using POS.Application.Common;
 using POS.Domain.Entities;
@@ -12,6 +13,11 @@ public sealed class CategoryRepository :
     ICategoryRepository
 {
     private const string LikeEscapeCharacter = "\\";
+
+    private static readonly StringComparer VietnameseNameComparer =
+        StringComparer.Create(
+            CultureInfo.GetCultureInfo("vi-VN"),
+            ignoreCase: true);
 
     private readonly PosDbContext _dbContext;
 
@@ -73,19 +79,18 @@ public sealed class CategoryRepository :
                 .Where(
                     category =>
                         category.IsActive)
-                .OrderBy(
-                    category =>
-                        category.DisplayOrder)
-                .ThenBy(
-                    category =>
-                        category.Name)
-                .ThenBy(
-                    category =>
-                        category.Id)
                 .ToListAsync(
                     cancellationToken);
 
-        return categories;
+        return categories
+            .OrderBy(
+                category =>
+                    category.Name,
+                VietnameseNameComparer)
+            .ThenBy(
+                category =>
+                    category.Id)
+            .ToArray();
     }
 
     public async Task<PagedResult<Category>> SearchAsync(
@@ -141,21 +146,26 @@ public sealed class CategoryRepository :
             await query.CountAsync(
                 cancellationToken);
 
-        var items =
+        var categories =
             await query
+                .ToListAsync(
+                    cancellationToken);
+
+        // Tên danh mục là thứ tự hiển thị của giao diện. Sắp xếp trước
+        // phân trang bằng comparer tiếng Việt để DisplayOrder cũ không
+        // âm thầm chi phối thứ tự người dùng nhìn thấy.
+        var items =
+            categories
                 .OrderBy(
                     category =>
-                        category.DisplayOrder)
-                .ThenBy(
-                    category =>
-                        category.Name)
+                        category.Name,
+                    VietnameseNameComparer)
                 .ThenBy(
                     category =>
                         category.Id)
                 .Skip(skip)
                 .Take(pageSize)
-                .ToListAsync(
-                    cancellationToken);
+                .ToArray();
 
         return new PagedResult<Category>(
             items,

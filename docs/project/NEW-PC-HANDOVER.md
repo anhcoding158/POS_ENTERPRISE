@@ -1,5 +1,11 @@
 # POS Enterprise - New-PC Handover
 
+## Current checkpoint status — Inventory History / Adjustment / Category UX hotfix — 2026-08-30
+
+- Inventory History uses the familiar compact sidebar and card workspace while retaining direct search by product name/code/barcode. Manual stock adjustment quantity is blank until entered; Category form/list no longer exposes DisplayOrder and lists sort by Vietnamese name.
+- Automated evidence: focused `44/44` Debug/Release, relevant `284/284` Release, normal-host full `1407/1407`, build `0/0`. Physical WPF click/UIA/DPI verification remains pending.
+- No canonical database was opened or copied. R5.1 remains manual acceptance; R5.2 is NOT STARTED.
+
 ## Current checkpoint status — Inventory History UX/query hotfix — 2026-08-30
 
 - Inventory History now searches directly by product name, code or barcode; search updates automatically, Enter applies immediately, `Xóa bộ lọc` clears all conditions including navigation scope, and `Làm mới` preserves them.

@@ -78,10 +78,7 @@ public sealed class CategoryService :
             categories
                 .OrderBy(
                     category =>
-                        category.DisplayOrder)
-                .ThenBy(
-                    category =>
-                     category.Name,
+                        category.Name,
                     VietnameseNameComparer)
                 .ThenBy(
                     category =>

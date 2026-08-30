@@ -1,5 +1,12 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## Inventory History / Adjustment / Category UX hotfix — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
+
+- Inventory History giữ pipeline tìm kiếm database-side của `dc27148` nhưng trở lại bố cục cũ: sidebar bộ lọc gọn, KPI card, bảng, chi tiết và phân trang. `Tìm`, Enter và debounce dùng cùng query; `Xóa bộ lọc`/`Làm mới`, loading, empty, error, scope navigation và paging vẫn giữ semantics mới.
+- Điều chỉnh tồn kho không còn tự điền `1`; ô số lượng rỗng, placeholder theo nghiệp vụ, preview không giả định dữ liệu và nút lưu chỉ bật khi request hợp lệ. Danh mục không còn hiển thị `DisplayOrder`; dữ liệu vẫn giữ trường tương thích, còn danh sách được sắp tên tiếng Việt ổn định trước phân trang.
+- Focused Debug/Release: `44/44 PASS`; relevant Release: `284/284 PASS`; normal-host full Release: `1407/1407 PASS`, failed/skipped `0/0`; build sau cùng ghi nhận `0/0` warnings/errors. Không thay đổi lưu trữ sản phẩm, Import Wizard, R5.2 hoặc nghiệp vụ ghi tồn.
+- Physical WPF click/UIA/DPI acceptance vẫn manual pending; automated measure/arrange và contract tests không được coi là kiểm thử vật lý. R5.1 vẫn manual acceptance, R5.2 NOT STARTED và Development Freeze ACTIVE ngoài phạm vi hotfix.
+
 ## Inventory History UX/query hotfix — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
 
 - The Inventory History screen now uses one direct product search for name, code or barcode. Search is debounced, Enter applies immediately, filters update the same database-side history query, and the old product lookup plus second `Lọc lịch sử` action are removed from the user flow.

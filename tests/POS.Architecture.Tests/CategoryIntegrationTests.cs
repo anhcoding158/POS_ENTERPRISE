@@ -383,7 +383,7 @@ public sealed class CategoryIntegrationTests
                         name:
                             "Ăn sáng",
                         displayOrder:
-                            1));
+                            100));
 
             Assert.True(
                 categoryA.IsSuccess,
@@ -445,6 +445,42 @@ public sealed class CategoryIntegrationTests
                     category.Id ==
                     inactiveCategoryId);
         }
+    }
+
+    [Fact]
+    public async Task Search_must_sort_by_vietnamese_name_before_paging()
+    {
+        await using var database =
+            await CategoryTestDatabase.CreateAsync();
+
+        await using (var context = database.CreateContext())
+        {
+            var service = CreateService(context, CreatedAtUtc);
+
+            foreach (var request in new[]
+            {
+                new CreateCategoryRequest("Zeta", displayOrder: 0),
+                new CreateCategoryRequest("Alpha", displayOrder: 100),
+                new CreateCategoryRequest("Beta", displayOrder: 1)
+            })
+            {
+                var result = await service.CreateAsync(request);
+                Assert.True(result.IsSuccess, result.AppError.ToString());
+            }
+        }
+
+        await using var searchContext = database.CreateContext();
+        var searchService = CreateService(searchContext, CreatedAtUtc);
+
+        var firstPage = await searchService.SearchAsync(
+            new CategorySearchRequest(pageNumber: 1, pageSize: 2));
+        var secondPage = await searchService.SearchAsync(
+            new CategorySearchRequest(pageNumber: 2, pageSize: 2));
+
+        Assert.True(firstPage.IsSuccess, firstPage.AppError.ToString());
+        Assert.True(secondPage.IsSuccess, secondPage.AppError.ToString());
+        Assert.Equal(["Alpha", "Beta"], firstPage.Value.Items.Select(x => x.Name));
+        Assert.Equal(["Zeta"], secondPage.Value.Items.Select(x => x.Name));
     }
 
     [Fact]

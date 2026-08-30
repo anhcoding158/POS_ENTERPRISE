@@ -1,5 +1,11 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## Inventory History / Adjustment / Category UX hotfix — 2026-08-30
+
+- Focused Inventory History, manual adjustment and Category coverage: `44/44 PASS` in Debug and `44/44 PASS` in Release. Relevant Product/Inventory/Category/RBAC/Import Release coverage: `284/284 PASS`.
+- Normal-host full Release: `1407/1407 PASS`, failed/skipped `0/0`; Release build: `0` warnings and `0` errors. Added regression coverage for legacy Inventory History layout contracts, empty quantity/preview/save gating, operation changes and category-name ordering before paging.
+- No canonical database or runtime production data used. Physical WPF click/UIA/DPI acceptance remains manual pending.
+
 ## Inventory History UX/query hotfix — 2026-08-30
 
 - Focused Inventory History coverage: `16/16 PASS` in Debug and `16/16 PASS` in Release. Relevant Inventory/Product/RBAC/Audit Release coverage: `260/260 PASS`.

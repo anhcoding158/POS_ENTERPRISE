@@ -192,6 +192,20 @@ public sealed class CategoryManagementUxTests
     }
 
     [Fact]
+    public void Category_editor_and_list_must_not_expose_display_order()
+    {
+        var editor = Read(
+            "src", "POS.Wpf", "Views", "CategoryEditorWindow.xaml");
+        var management = Read(
+            "src", "POS.Wpf", "Views", "CategoryManagementWindow.xaml");
+
+        Assert.DoesNotContain("Thứ tự hiển thị", editor, StringComparison.Ordinal);
+        Assert.DoesNotContain("DisplayOrderText", editor, StringComparison.Ordinal);
+        Assert.DoesNotContain("Header=\"THỨ TỰ\"", management, StringComparison.Ordinal);
+        Assert.DoesNotContain("thứ tự hiển thị", management, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task Category_window_must_construct_on_STA()
     {
         var completion = new TaskCompletionSource<Exception?>(

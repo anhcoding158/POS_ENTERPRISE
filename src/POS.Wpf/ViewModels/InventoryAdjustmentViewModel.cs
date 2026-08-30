@@ -63,7 +63,7 @@ public sealed class InventoryAdjustmentViewModel :
     private bool _isBusy;
 
     private string _quantityText =
-        "1";
+        string.Empty;
 
     private string _reason =
         string.Empty;
@@ -305,17 +305,12 @@ public sealed class InventoryAdjustmentViewModel :
             OnPropertyChanged(
                 nameof(QuantityHint));
 
-            /*
-             * Đưa ra giá trị khởi đầu phù hợp,
-             * nhưng người dùng vẫn có thể sửa ngay.
-             */
-            QuantityText =
-                value.Value ==
-                    InventoryMovementType.Stocktake
-                    ? CurrentStock.ToString(
-                        "N0",
-                        VietnameseCulture)
-                    : "1";
+            OnPropertyChanged(
+                nameof(QuantityPlaceholderText));
+
+            // Đổi nghiệp vụ phải yêu cầu người dùng nhập lại để
+            // không diễn giải âm thầm số cũ theo ý nghĩa khác.
+            QuantityText = string.Empty;
 
             ClearMessages();
             RefreshPreview();
@@ -335,8 +330,17 @@ public sealed class InventoryAdjustmentViewModel :
                 return;
             }
 
+            OnPropertyChanged(
+                nameof(HasQuantityText));
+
+            OnPropertyChanged(
+                nameof(ShowQuantityPlaceholder));
+
             ClearError();
             RefreshPreview();
+
+            SaveCommand
+                .NotifyCanExecuteChanged();
         }
     }
 
@@ -374,6 +378,9 @@ public sealed class InventoryAdjustmentViewModel :
             }
 
             ClearError();
+
+            SaveCommand
+                .NotifyCanExecuteChanged();
         }
     }
 
@@ -391,6 +398,9 @@ public sealed class InventoryAdjustmentViewModel :
             }
 
             ClearError();
+
+            SaveCommand
+                .NotifyCanExecuteChanged();
         }
     }
 
@@ -571,6 +581,31 @@ public sealed class InventoryAdjustmentViewModel :
                 string.Empty
         };
 
+    public string QuantityPlaceholderText =>
+        SelectedMovement.Value switch
+        {
+            InventoryMovementType.StockIn =>
+                "Nhập số lượng cần thêm",
+
+            InventoryMovementType.StockOut =>
+                "Nhập số lượng cần giảm",
+
+            InventoryMovementType.Adjustment =>
+                "Nhập mức tăng hoặc giảm",
+
+            InventoryMovementType.Stocktake =>
+                "Nhập số tồn thực tế",
+
+            _ =>
+                "Nhập số lượng"
+        };
+
+    public bool HasQuantityText =>
+        !string.IsNullOrWhiteSpace(QuantityText);
+
+    public bool ShowQuantityPlaceholder =>
+        !HasQuantityText;
+
     public async Task<bool> InitializeAsync(
         int productId)
     {
@@ -640,7 +675,7 @@ public sealed class InventoryAdjustmentViewModel :
             SelectedMovement =
                 MovementOptions[0];
 
-            QuantityText = "1";
+            QuantityText = string.Empty;
 
             RefreshPreview();
 
@@ -826,6 +861,15 @@ public sealed class InventoryAdjustmentViewModel :
 
     private void RefreshPreview()
     {
+        if (string.IsNullOrWhiteSpace(QuantityText))
+        {
+            PreviewAfterText = "—";
+            PreviewDeltaText = "Chưa nhập số lượng";
+            PreviewStateText = "Chưa nhập số lượng";
+            PreviewIsNegative = false;
+            return;
+        }
+
         if (!TryParseQuantity(
                 QuantityText,
                 out var quantity))
@@ -1065,10 +1109,10 @@ public sealed class InventoryAdjustmentViewModel :
 
     private bool CanSave()
     {
-        return _isInitialized &&
-               !IsBusy &&
-               !string.IsNullOrWhiteSpace(
-                   Reason);
+        return !IsBusy &&
+               TryCreateRequest(
+                   out _,
+                   out _);
     }
 
     private void ClearMessages()

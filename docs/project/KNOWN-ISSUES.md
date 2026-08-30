@@ -1,5 +1,11 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## Inventory History / Adjustment / Category UX hotfix — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
+
+- Inventory History đã trả về bố cục sidebar/workspace cũ nhưng giữ tìm kiếm trực tiếp theo tên, mã và barcode của hotfix trước.
+- Điều chỉnh tồn kho bắt đầu với số lượng rỗng; Category form/list không còn buộc người dùng nhập hoặc xem thứ tự hiển thị. `DisplayOrder` vẫn tồn tại để tương thích dữ liệu và contract persistence.
+- Normal-host full Release `1407/1407 PASS`; kiểm thử click-through WPF, UIA accessibility và DPI vật lý vẫn cần thực hiện thủ công trên máy có HWND.
+
 ## Inventory History UX/query hotfix — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
 
 - The reported stale-history behavior was caused by `Tìm` querying only a bounded Product dropdown; the history request still used the previously selected ProductId. The hotfix sends the text filter through the history repository query and removes the second filtering action.

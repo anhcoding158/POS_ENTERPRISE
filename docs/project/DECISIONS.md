@@ -1,5 +1,12 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-049 — Keep legacy Inventory History composition while retaining the new query pipeline
+
+- **Status:** Accepted for the 2026-08-30 UX hotfix; physical WPF acceptance remains pending.
+- **Decision:** Restore the pre-`dc27148` sidebar/workspace composition and local presentation styles, while retaining direct database-side name/code/barcode search, debounce, reset/refresh semantics, scope visibility and race protection.
+- **Related behavior:** Manual stock adjustment starts with no quantity and category screens order by Vietnamese name before paging. `DisplayOrder` is not removed from persistence or contracts; it is no longer a user-facing ordering control.
+- **Scope:** No product archiving/storage, Import Wizard, schema, migration, authorization, inventory write semantics or shared-style changes.
+
 ## DEC-048 — Inventory History uses direct database-side product search with one filter pipeline
 
 - **Status:** Accepted for the Inventory History UX/query hotfix on `2026-08-30`; physical WPF acceptance remains pending.

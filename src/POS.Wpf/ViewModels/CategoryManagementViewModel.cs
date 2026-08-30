@@ -294,8 +294,7 @@ public sealed class CategoryManagementViewModel :
     public string SelectedCategoryTitle =>
         SelectedCategory is null
             ? "Chưa chọn danh mục"
-            : $"{SelectedCategory.Name} • " +
-              $"Thứ tự {SelectedCategory.DisplayOrderText}";
+            : SelectedCategory.Name;
 
     public string SelectedCategoryDescription =>
         SelectedCategory is null

@@ -236,30 +236,6 @@
                             Text="{Binding NameError}"
                             Style="{StaticResource CategoryEditorErrorStyle}" />
 
-                        <!-- Display order -->
-
-                        <TextBlock
-                            Text="Thứ tự hiển thị *"
-                            Style="{StaticResource CategoryEditorLabelStyle}"
-                            Margin="0,18,0,7" />
-
-                        <TextBox
-                            Text="{Binding DisplayOrderText,
-                                UpdateSourceTrigger=PropertyChanged,
-                                ValidatesOnNotifyDataErrors=True}"
-                            Style="{StaticResource CategoryEditorTextBoxStyle}"
-                            MaxLength="10" />
-
-                        <TextBlock
-                            Text="{Binding DisplayOrderError}"
-                            Style="{StaticResource CategoryEditorErrorStyle}" />
-
-                        <TextBlock
-                            Text="Số nhỏ hơn sẽ được hiển thị trước. Các danh mục cùng thứ tự sẽ được sắp theo tên."
-                            Style="{StaticResource CaptionTextStyle}"
-                            TextWrapping="Wrap"
-                            Margin="2,6,0,0" />
-
                         <!-- Description -->
 
                         <Grid Margin="0,18,0,7">

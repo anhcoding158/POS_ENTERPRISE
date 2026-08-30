@@ -27,7 +27,7 @@ public interface ICategoryRepository
 
     /// <summary>
     /// Lấy toàn bộ danh mục đang hoạt động,
-    /// sắp xếp theo DisplayOrder rồi đến Name.
+    /// sắp xếp theo tên tiếng Việt rồi đến Id để ổn định.
     ///
     /// Dùng để hiển thị combobox hoặc bộ lọc sản phẩm.
     /// </summary>

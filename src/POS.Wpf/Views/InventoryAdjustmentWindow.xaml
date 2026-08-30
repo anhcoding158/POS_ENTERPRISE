@@ -535,11 +535,24 @@
                                         Text="{Binding QuantityLabel}"
                                         Style="{StaticResource InventoryFormLabelStyle}" />
 
-                                    <TextBox
-                                        Text="{Binding QuantityText,
-                                            UpdateSourceTrigger=PropertyChanged}"
-                                        Style="{StaticResource InventoryTextBoxStyle}"
-                                        MaxLength="15" />
+                                    <Grid>
+
+                                        <TextBox
+                                            Text="{Binding QuantityText,
+                                                UpdateSourceTrigger=PropertyChanged}"
+                                            Style="{StaticResource InventoryTextBoxStyle}"
+                                            MaxLength="15" />
+
+                                        <TextBlock
+                                            Text="{Binding QuantityPlaceholderText}"
+                                            Foreground="{StaticResource TextMutedBrush}"
+                                            FontSize="13"
+                                            VerticalAlignment="Center"
+                                            Margin="13,0"
+                                            IsHitTestVisible="False"
+                                            Visibility="{Binding ShowQuantityPlaceholder,
+                                                Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                    </Grid>
 
                                     <TextBlock
                                         Text="{Binding QuantityHint}"

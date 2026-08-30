@@ -1,5 +1,11 @@
 # ARCHITECTURE — POS ENTERPRISE RETAIL V1
 
+## Inventory/category/adjustment UX hotfix boundary — 2026-08-30
+
+- Inventory History presentation is again a local legacy-style sidebar/workspace layout over the existing typed query ViewModel; database-side product search, cancellation/latest-response-wins and read-only behavior are preserved.
+- Category repository materializes the filtered category set, applies the Vietnamese comparer and stable Id tie-breaker before paging. This prevents legacy `DisplayOrder` values from controlling visible order while keeping the persisted field and Application CRUD contracts intact.
+- Manual adjustment changes are presentation validation only: empty quantity and operation-specific preview/placeholder are handled in WPF; InventoryService, transaction, RBAC and movement workflow remain unchanged.
+
 ## Inventory History query/presentation boundary — 2026-08-30
 
 - Inventory History keeps a single Application `InventorySearchRequest` pipeline. Product search text is an additive read-query field and is translated by the Infrastructure repository into parameterized `LIKE` predicates over Product code, name and barcode before count/paging; WPF does not load a bounded product list to simulate history search.
