@@ -1025,6 +1025,10 @@ public partial class App :
             ProductDialogService>();
 
         services.AddSingleton<
+            IProductImportDialogService,
+            ProductImportDialogService>();
+
+        services.AddSingleton<
             ICategoryDialogService,
             CategoryDialogService>();
 
@@ -1192,6 +1196,9 @@ public partial class App :
          */
         services.AddTransient<
             ProductEditorViewModel>();
+
+        services.AddTransient<ProductImportWizardViewModel>();
+        services.AddTransient<ProductImportWizardWindow>();
 
         services.AddTransient<
             CategoryEditorViewModel>();

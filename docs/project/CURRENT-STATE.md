@@ -1,5 +1,12 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## R5.1C/D — Product CSV/Excel Import Wizard — IMPLEMENTED / AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
+
+- The WPF Product & Inventory surface now exposes `Nhập CSV/Excel` through the existing `ManageProducts` authorization boundary. The wizard uses the R5.1A preview/parser and R5.1B transactional service; it provides file selection, explicit multi-worksheet selection, visible/editable 11-field mapping, full-file validation with bounded preview, row issues, duplicate policy, explicit confirmation, cancellation/busy protection and typed committed/rollback results. No second parser, Product model, database mutation path, package or migration was introduced.
+- Mapping, worksheet, policy and file changes invalidate the previous preview. Preview remains read-only; only explicit confirmation calls `IProductImportService`, and successful commit refreshes the Product list. The wizard preserves A/B security limits and semantics, including leading-zero text fields, full-batch validation beyond 100 preview rows, safe errors and no automatic retry/re-import.
+- R5.1 import-focused WPF/application coverage is `25/25 PASS` in Debug and Release. Relevant Product/Inventory/RBAC/Audit regressions passed `248/248` in Release; the normal-host full Release suite passed `1387/1387`, failed/skipped `0/0`. Release build is `0/0` warnings/errors and the official Quality Gate without `-SkipEfCheck` passed with vulnerability, EF pending-model and Git checks PASS. Isolated startup reached the safe `InitialSetupWindowReady` milestone using an owned TEMP source database; no canonical data was used.
+- Automated construction/measure/arrange and integration coverage is complete. Physical click/UIA/DPI acceptance and an end-user import against the prepared synthetic fixtures remain manual because this environment exposes no inspectable top-level HWND. Therefore R5.1C and R5.1D are IMPLEMENTED / AUTOMATED VERIFIED / MANUAL ACCEPTANCE PENDING; R5.1 remains IN PROGRESS, R5.2 is NOT STARTED, R5.1A/B and R4.2–R4.4 remain CLOSED/PRESERVED, and Development Freeze is ACTIVE outside R5.1.
+
 ## R5.1B — Transactional Product Import — CLOSED / VERIFIED — 2026-08-29
 
 - R5.1B adds an Application transactional import use case over the single R5.1A 11-field Product schema. It re-parses and fingerprints the preview file before confirmation, resolves only existing active Categories, keeps UnitName as Product text, and has no WPF Import Wizard or database schema change.

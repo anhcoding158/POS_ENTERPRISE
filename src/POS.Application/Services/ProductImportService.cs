@@ -95,7 +95,9 @@ public sealed class ProductImportService : IProductImportService
                 new ProductImportPreviewOptions(
                     References: new ProductImportReferenceData(
                         preview.ReferenceSnapshot.CategoryIdsByNormalizedName,
-                        preview.ReferenceSnapshot.KnownUnitNames)),
+                        preview.ReferenceSnapshot.KnownUnitNames),
+                    WorksheetName: preview.SelectedWorksheetName,
+                    ColumnMappings: preview.ColumnMappings),
                 cancellationToken);
         }
         catch (OperationCanceledException)

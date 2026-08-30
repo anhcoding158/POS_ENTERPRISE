@@ -145,6 +145,20 @@ public static class ProductImportSchemaCatalog
             field.Aliases.Any(alias => NormalizeHeader(alias) == normalized));
     }
 
+    public static ProductImportFieldDefinition? FindByCanonicalKey(string? canonicalKey)
+    {
+        if (string.IsNullOrWhiteSpace(canonicalKey))
+        {
+            return null;
+        }
+
+        return Fields.FirstOrDefault(field =>
+            string.Equals(
+                field.CanonicalKey,
+                canonicalKey.Trim(),
+                StringComparison.Ordinal));
+    }
+
     public static string NormalizeHeader(string value)
     {
         ArgumentNullException.ThrowIfNull(value);

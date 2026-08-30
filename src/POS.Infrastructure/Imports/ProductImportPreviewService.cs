@@ -101,7 +101,7 @@ public sealed class ProductImportPreviewService : IProductImportPreviewService
                     return Failure(metadata, "SIGNATURE_MISMATCH", "Tệp .xlsx không có chữ ký container hợp lệ.", ProductImportFormat.Xlsx);
                 }
 
-                return await ParseXlsxAsync(stream, metadata, limits, options?.References, cancellationToken);
+                return await ParseXlsxAsync(stream, metadata, limits, options, cancellationToken);
             }
 
             if (LooksLikeBinaryOrZip(signature))
@@ -109,7 +109,7 @@ public sealed class ProductImportPreviewService : IProductImportPreviewService
                 return Failure(metadata, "SIGNATURE_MISMATCH", "Tệp .csv có chữ ký nhị phân không phù hợp.", ProductImportFormat.Csv);
             }
 
-            return await ParseCsvAsync(stream, metadata, limits, options?.References, cancellationToken);
+            return await ParseCsvAsync(stream, metadata, limits, options, cancellationToken);
         }
         catch (OperationCanceledException)
         {
@@ -129,7 +129,7 @@ public sealed class ProductImportPreviewService : IProductImportPreviewService
         Stream stream,
         ProductImportFileMetadata metadata,
         ProductImportLimits limits,
-        ProductImportReferenceData? references,
+        ProductImportPreviewOptions? options,
         CancellationToken cancellationToken)
     {
         using var reader = new StreamReader(
@@ -142,14 +142,14 @@ public sealed class ProductImportPreviewService : IProductImportPreviewService
         var content = await reader.ReadToEndAsync(cancellationToken);
         var delimiter = DetectDelimiter(content);
         var records = ParseCsvRecords(content, delimiter, limits, cancellationToken);
-        return BuildPreview(metadata, ProductImportFormat.Csv, records, limits, references);
+        return BuildPreview(metadata, ProductImportFormat.Csv, records, limits, options?.References, options?.ColumnMappings, "CSV", ["CSV"]);
     }
 
     private static async Task<ProductImportPreviewResult> ParseXlsxAsync(
         Stream stream,
         ProductImportFileMetadata metadata,
         ProductImportLimits limits,
-        ProductImportReferenceData? references,
+        ProductImportPreviewOptions? options,
         CancellationToken cancellationToken)
     {
         using var archive = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: true);
@@ -220,10 +220,47 @@ public sealed class ProductImportPreviewService : IProductImportPreviewService
             }
         }
 
-        var firstSheet = sheetElements[0];
-        var relationshipId = firstSheet.Attribute(XNamespace.Xmlns + "r") is null
-            ? firstSheet.Attribute("{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id")?.Value
-            : firstSheet.Attribute("{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id")?.Value;
+        var worksheetNames = sheetElements
+            .Select(sheet => sheet.Attribute("name")?.Value?.Trim())
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Select(name => name!)
+            .ToArray();
+
+        if (worksheetNames.Length != sheetElements.Length || worksheetNames.Distinct(StringComparer.Ordinal).Count() != worksheetNames.Length)
+        {
+            return Failure(metadata, "WORKSHEET_NAME_INVALID", "Tên worksheet không hợp lệ hoặc bị trùng.", ProductImportFormat.Xlsx);
+        }
+
+        var selectedWorksheetName = options?.WorksheetName;
+        if (sheetElements.Length > 1 && string.IsNullOrWhiteSpace(selectedWorksheetName))
+        {
+            return CreateResult(
+                metadata,
+                ProductImportFormat.Xlsx,
+                [],
+                [new ProductImportIssue(ProductImportIssueSeverity.Error, "WORKSHEET_SELECTION_REQUIRED", "Tệp có nhiều worksheet; hãy chọn worksheet cần nhập.")],
+                [],
+                new ProductImportSummary(0, 0, 0, 0, 1, 0, 0, 0),
+                worksheetNames: worksheetNames);
+        }
+
+        var selectedIndex = string.IsNullOrWhiteSpace(selectedWorksheetName)
+            ? 0
+            : Array.FindIndex(worksheetNames, name => string.Equals(name, selectedWorksheetName.Trim(), StringComparison.Ordinal));
+        if (selectedIndex < 0)
+        {
+            return CreateResult(
+                metadata,
+                ProductImportFormat.Xlsx,
+                [],
+                [new ProductImportIssue(ProductImportIssueSeverity.Error, "WORKSHEET_NOT_FOUND", "Worksheet đã chọn không còn tồn tại trong tệp.")],
+                [],
+                new ProductImportSummary(0, 0, 0, 0, 1, 0, 0, 0),
+                worksheetNames: worksheetNames);
+        }
+
+        var selectedSheet = sheetElements[selectedIndex];
+        var relationshipId = selectedSheet.Attribute("{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id")?.Value;
         if (relationshipId is null || !relationships.TryGetValue(relationshipId, out var target))
         {
             return Failure(metadata, "WORKSHEET_RELATIONSHIP_INVALID", "Worksheet không có liên kết nội bộ hợp lệ.", ProductImportFormat.Xlsx);
@@ -250,18 +287,27 @@ public sealed class ProductImportPreviewService : IProductImportPreviewService
             var document = ReferenceEquals(entry, worksheetEntry) ? worksheet : await ReadXmlAsync(entry, limits, cancellationToken);
             if (document.Descendants().Any(element => element.Name.LocalName == "f"))
             {
-                var formulaResult = BuildPreview(
+                return CreateResult(
                     metadata,
                     ProductImportFormat.Xlsx,
-                    ParseWorksheet(document, sharedStrings, limits, cancellationToken),
-                    limits,
-                    references);
-                var issues = formulaResult.FileIssues.Concat([new ProductImportIssue(ProductImportIssueSeverity.Error, "FORMULA_CELL", "Ô công thức không được đánh giá trong preview.")]).ToArray();
-                return formulaResult with { FileIssues = issues };
+                    [],
+                    [new ProductImportIssue(ProductImportIssueSeverity.Error, "FORMULA_CELL", "Ô công thức không được đánh giá trong preview.")],
+                    [],
+                    new ProductImportSummary(0, 0, 0, 0, 1, 0, 0, 0),
+                    worksheetNames: worksheetNames,
+                    selectedWorksheetName: worksheetNames[selectedIndex]);
             }
         }
 
-        return BuildPreview(metadata, ProductImportFormat.Xlsx, ParseWorksheet(worksheet, sharedStrings, limits, cancellationToken), limits, references);
+        return BuildPreview(
+            metadata,
+            ProductImportFormat.Xlsx,
+            ParseWorksheet(worksheet, sharedStrings, limits, cancellationToken),
+            limits,
+            options?.References,
+            options?.ColumnMappings,
+            worksheetNames[selectedIndex],
+            worksheetNames);
     }
 
     private static ProductImportPreviewResult BuildPreview(
@@ -269,7 +315,10 @@ public sealed class ProductImportPreviewService : IProductImportPreviewService
         ProductImportFormat format,
         IReadOnlyList<RawRecord> records,
         ProductImportLimits limits,
-        ProductImportReferenceData? references)
+        ProductImportReferenceData? references,
+        IReadOnlyList<ProductImportColumnMapping>? columnMappings,
+        string? selectedWorksheetName,
+        IReadOnlyList<string>? worksheetNames)
     {
         var fileIssues = new List<ProductImportIssue>();
         if (records.Count == 0)
@@ -287,12 +336,39 @@ public sealed class ProductImportPreviewService : IProductImportPreviewService
         var headers = new List<ProductImportHeader>(headerRecord.Values.Count);
         var mapped = new Dictionary<int, ProductImportFieldDefinition>();
         var seenKeys = new HashSet<string>(StringComparer.Ordinal);
+        var mappingByColumn = columnMappings?
+            .GroupBy(mapping => mapping.ColumnIndex)
+            .ToDictionary(group => group.Key, group => group.Last())
+            ?? new Dictionary<int, ProductImportColumnMapping>();
+
+        if (columnMappings is not null && mappingByColumn.Count != columnMappings.Count)
+        {
+            fileIssues.Add(new(ProductImportIssueSeverity.Error, "MAPPING_COLUMN_DUPLICATE", "Một cột nguồn được ánh xạ nhiều lần."));
+        }
+
+        foreach (var mapping in mappingByColumn.Values.Where(mapping => mapping.ColumnIndex < 0 || mapping.ColumnIndex >= headerRecord.Values.Count))
+        {
+            fileIssues.Add(new(ProductImportIssueSeverity.Error, "MAPPING_COLUMN_INVALID", "Cột nguồn được ánh xạ không tồn tại trong header."));
+        }
+
         for (var index = 0; index < headerRecord.Values.Count; index++)
         {
             var original = headerRecord.Values[index].Trim().TrimStart('\uFEFF');
-            var definition = string.IsNullOrWhiteSpace(original) ? null : ProductImportSchemaCatalog.Find(original);
+            var hasOverride = mappingByColumn.TryGetValue(index, out var overrideMapping);
+            var definition = hasOverride
+                ? ProductImportSchemaCatalog.FindByCanonicalKey(overrideMapping!.CanonicalFieldKey)
+                : string.IsNullOrWhiteSpace(original) ? null : ProductImportSchemaCatalog.Find(original);
+            if (hasOverride && !string.IsNullOrWhiteSpace(overrideMapping!.CanonicalFieldKey) && definition is null)
+            {
+                fileIssues.Add(new(ProductImportIssueSeverity.Error, "MAPPING_TARGET_INVALID", "Trường đích được chọn không hợp lệ.", null, null, index));
+            }
             var isKnown = definition is not null;
-            headers.Add(new(index, original, definition?.CanonicalKey, isKnown));
+            headers.Add(new(index, original, definition?.CanonicalKey, isKnown)
+            {
+                SampleValue = records.Count > 1 && index < records[1].Values.Count
+                    ? records[1].Values[index]
+                    : null
+            });
 
             if (definition is null)
             {
@@ -390,7 +466,10 @@ public sealed class ProductImportPreviewService : IProductImportPreviewService
             previewRows,
             summary,
             allRows,
-            references);
+            references,
+            selectedWorksheetName,
+            worksheetNames,
+            columnMappings);
     }
 
     private static ProductImportRow ConvertRow(
@@ -864,7 +943,10 @@ public sealed class ProductImportPreviewService : IProductImportPreviewService
         IReadOnlyList<ProductImportRow> rows,
         ProductImportSummary summary,
         IReadOnlyList<ProductImportRow>? validatedRows = null,
-        ProductImportReferenceData? references = null)
+        ProductImportReferenceData? references = null,
+        string? selectedWorksheetName = null,
+        IReadOnlyList<string>? worksheetNames = null,
+        IReadOnlyList<ProductImportColumnMapping>? columnMappings = null)
     {
         return new ProductImportPreviewResult(
             metadata,
@@ -888,6 +970,10 @@ public sealed class ProductImportPreviewService : IProductImportPreviewService
                         : new HashSet<string>(
                             references.KnownUnitNames,
                             StringComparer.OrdinalIgnoreCase))
+            ,
+            SelectedWorksheetName = selectedWorksheetName,
+            WorksheetNames = worksheetNames ?? [],
+            ColumnMappings = columnMappings
         };
     }
 

@@ -1,5 +1,11 @@
 # ARCHITECTURE — POS ENTERPRISE RETAIL V1
 
+## R5.1C/D Product import presentation boundary — 2026-08-30
+
+- The Product & Inventory Shell route opens a transient WPF wizard through `IProductImportDialogService`; the wizard ViewModel owns asynchronous file selection, preview/mapping state, cancellation and confirmation, while Application contracts remain free of WPF types. The dialog service enforces the existing `ManageProducts` capability before construction.
+- The wizard delegates all parsing, security limits, typed mapping/validation and transaction semantics to the existing R5.1A/B Application/Infrastructure services. It does not access a database directly, mutate stock, create categories/units or implement a second import engine. Worksheet and mapping choices are carried through the typed preview snapshot so the B-layer reparse/fingerprint boundary remains authoritative.
+- The wizard is intentionally local to Product & Inventory; no shared DataGrid/theme or Audit Log surface was changed. R5.1C/D adds no package, migration, authorization policy or persistence boundary.
+
 ## Post-R4.4 handover-freeze hotfix boundary — 2026-08-29
 
 - `App.ConfigureApplicationServices` now composes the existing `IAuditLogService` implementation used by `AuditLogViewModel`; no second service, container or authorization path was introduced. The ViewModel catches recoverable list/detail failures, logs only a sanitized exception chain and exposes a retryable module status while the Shell remains alive.

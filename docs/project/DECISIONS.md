@@ -1,5 +1,12 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-046 — R5.1C/D reuses the secure import services behind a transient WPF wizard
+
+- **Status:** Accepted for R5.1C/D implementation on `2026-08-30`; physical WPF click/UIA/DPI acceptance remains pending.
+- **Boundary:** Add one Product & Inventory entry point and a transient `ProductImportWizardWindow`/ViewModel. The wizard obtains metadata from `ProductImportSchemaCatalog`, delegates preview to `IProductImportPreviewService` and delegates mutation only after explicit confirmation to `IProductImportService`. No WPF type crosses into Application/Domain and no UI-side database access is introduced.
+- **Staleness and safety:** File, worksheet, mapping and duplicate-policy changes invalidate the confirmation state. The typed preview carries the selected worksheet and mapping into the R5.1B reparse/fingerprint boundary. The existing 25 MiB, worksheet/row/column/cell and 100-row preview limits remain authoritative; the wizard never evaluates formulas or imports a bounded preview subset.
+- **Dependency/scope:** No package, SDK, migration, parallel Product model, shared-style change or new authorization policy is needed. R5.1C/D remains within the existing Product/Inventory route; R5.2 and other modules are not started.
+
 ## DEC-045 — R5.1B uses an atomic validated-snapshot import and the existing audit action boundary
 
 - **Status:** Accepted for R5.1B closeout on `2026-08-29`.

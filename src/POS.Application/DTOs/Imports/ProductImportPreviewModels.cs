@@ -36,9 +36,19 @@ public sealed record ProductImportReferenceData(
     IReadOnlyDictionary<string, int>? CategoryIdsByNormalizedName = null,
     IReadOnlySet<string>? KnownUnitNames = null);
 
+/// <summary>
+/// Ánh xạ một cột nguồn vào một trường Product chuẩn hóa.
+/// CanonicalFieldKey null nghĩa là người dùng chủ động bỏ ánh xạ cột.
+/// </summary>
+public sealed record ProductImportColumnMapping(
+    int ColumnIndex,
+    string? CanonicalFieldKey);
+
 public sealed record ProductImportPreviewOptions(
     ProductImportLimits? Limits = null,
-    ProductImportReferenceData? References = null);
+    ProductImportReferenceData? References = null,
+    string? WorksheetName = null,
+    IReadOnlyList<ProductImportColumnMapping>? ColumnMappings = null);
 
 public sealed record ProductImportFileMetadata(
     string FileName,
@@ -55,7 +65,10 @@ public sealed record ProductImportHeader(
     int ColumnIndex,
     string OriginalName,
     string? CanonicalFieldKey,
-    bool IsKnown);
+    bool IsKnown)
+{
+    public string? SampleValue { get; init; }
+}
 
 public sealed record ProductImportIssue(
     ProductImportIssueSeverity Severity,
@@ -111,6 +124,21 @@ public sealed record ProductImportPreviewResult(
     /// Snapshot reference data dùng để chống import nhầm sau khi preview cũ.
     /// </summary>
     public ProductImportReferenceSnapshot? ReferenceSnapshot { get; init; }
+
+    /// <summary>
+    /// Tên worksheet đã chọn. CSV dùng tên cố định "CSV".
+    /// </summary>
+    public string? SelectedWorksheetName { get; init; }
+
+    /// <summary>
+    /// Danh sách worksheet an toàn để UI cho người dùng chọn.
+    /// </summary>
+    public IReadOnlyList<string> WorksheetNames { get; init; } = [];
+
+    /// <summary>
+    /// Mapping người dùng đã xác nhận; null nghĩa là dùng auto-mapping.
+    /// </summary>
+    public IReadOnlyList<ProductImportColumnMapping>? ColumnMappings { get; init; }
 
     public bool CanImport =>
         Summary.TotalDataRows > 0 &&

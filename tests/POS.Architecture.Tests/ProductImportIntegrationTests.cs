@@ -5,6 +5,7 @@ using POS.Application.Abstractions.DateTime;
 using POS.Application.Abstractions.ProductImports;
 using POS.Application.DTOs.Authentication;
 using POS.Application.DTOs.ProductImports;
+using POS.Application.ProductImports;
 using POS.Application.Services;
 using POS.Domain.Entities;
 using POS.Domain.Enums;
@@ -18,6 +19,33 @@ namespace POS.Architecture.Tests;
 
 public sealed class ProductImportIntegrationTests
 {
+    [Fact]
+    public async Task Confirmed_custom_mapping_is_reparsed_and_imported_by_the_real_service()
+    {
+        await using var fixture = await ImportFixture.CreateAsync();
+        var headers = Enumerable.Range(1, 11).Select(index => "Nguồn " + index).ToArray();
+        var file = fixture.WriteCsvWithHeaders(
+            "custom-mapping",
+            headers,
+            Row("IMP-MAP-001", "000321", "Mapped", "35", "25", "2", "1", "Đang bán", ""));
+        var mapping = ProductImportSchemaCatalog.Fields
+            .Select((field, index) => new ProductImportColumnMapping(index, field.CanonicalKey))
+            .ToArray();
+        var preview = await fixture.PreviewAsync(
+            file,
+            new ProductImportPreviewOptions(ColumnMappings: mapping));
+
+        var result = await fixture.CreateService().ImportAsync(
+            new ProductImportRequest(file, preview, ProductImportDuplicatePolicy.Error));
+
+        Assert.True(result.IsCommitted);
+        Assert.Equal(1, result.CreatedCount);
+        await using var verify = fixture.CreateContext();
+        var product = await verify.Products.SingleAsync();
+        Assert.Equal("IMP-MAP-001", product.Code);
+        Assert.Equal("000321", product.Barcode);
+    }
+
     [Fact]
     public async Task Full_schema_create_commits_product_opening_balance_and_audit_summary()
     {
@@ -251,20 +279,25 @@ public sealed class ProductImportIntegrationTests
             return new PosDbContext(options);
         }
 
-        public string WriteCsv(string name, params string[] rows)
+        public string WriteCsv(string name, params string[] rows) =>
+            WriteCsvWithHeaders(name, ["ProductCode", "Barcode", "Tên", "Danh mục", "Đơn vị tính", "Giá bán", "Giá vốn", "Tồn đầu", "Tồn tối thiểu", "Trạng thái", "Ghi chú"], rows);
+
+        public string WriteCsvWithHeaders(string name, string[] headers, params string[] rows)
         {
             var path = Path.Combine(_root, name + ".csv");
-            File.WriteAllText(path, "ProductCode,Barcode,Tên,Danh mục,Đơn vị tính,Giá bán,Giá vốn,Tồn đầu,Tồn tối thiểu,Trạng thái,Ghi chú\n" + string.Join(Environment.NewLine, rows));
+            File.WriteAllText(path, string.Join(',', headers) + Environment.NewLine + string.Join(Environment.NewLine, rows));
             return path;
         }
 
-        public async Task<ProductImportPreviewResult> PreviewAsync(string file)
+        public async Task<ProductImportPreviewResult> PreviewAsync(string file, ProductImportPreviewOptions? options = null)
         {
             var parser = new POS.Infrastructure.ProductImports.ProductImportPreviewService();
-            return await parser.PreviewAsync(file, new ProductImportPreviewOptions(
-                References: new ProductImportReferenceData(
-                    new Dictionary<string, int> { ["Đồ uống"] = CategoryId },
-                    new HashSet<string>(["Cái"], StringComparer.OrdinalIgnoreCase))));
+            var references = new ProductImportReferenceData(
+                new Dictionary<string, int> { ["Đồ uống"] = CategoryId },
+                new HashSet<string>(["Cái"], StringComparer.OrdinalIgnoreCase));
+            return await parser.PreviewAsync(file, options is null
+                ? new ProductImportPreviewOptions(References: references)
+                : options with { References = references });
         }
 
         public ProductImportService CreateService()

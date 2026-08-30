@@ -1,5 +1,12 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R5.1C/D Product Import Wizard and hardening — 2026-08-30
+
+- Import-focused WPF/Application coverage is `25/25 PASS` in Debug and `25/25 PASS` in Release. Relevant Product/Inventory/RBAC/Audit Release regressions passed `248/248`; normal-host full Release passed `1387/1387`, failed `0`, skipped `0`.
+- Release solution build passed with `0` warnings and `0` errors. Official `scripts/Test-QualityGate.ps1` without `-SkipEfCheck` passed; vulnerability scan, EF pending-model and Git checks passed. The six known sandbox-only CurrentUser DPAPI failures passed on the normal Windows host and were not weakened or filtered.
+- Coverage includes CSV/XLSX wizard construction, explicit worksheet selection, editable 11-field mapping, leading-zero barcode, bounded preview with full validation, errors beyond row 100, stale mapping/file state, all duplicate policies through the real service, cancellation/re-entrancy protection, result presentation and owned TEMP fixtures. No package, migration, canonical database or runtime data was changed.
+- Automated verification is complete; physical WPF click/UIA/DPI acceptance remains pending and is not counted as PASS. R5.1C/D are IMPLEMENTED/AUTOMATED VERIFIED/MANUAL PENDING, R5.1 remains IN PROGRESS and R5.2 is NOT STARTED.
+
 ## R5.1B Transactional Product Import — 2026-08-29
 
 - Focused R5.1B integration coverage: `9/9 PASS` in Debug and `9/9 PASS` in Release. Relevant Product/Inventory/authorized-product regressions: `32/32 PASS` in Release.

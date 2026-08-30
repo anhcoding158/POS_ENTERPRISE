@@ -1,5 +1,11 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## R5.1C/D — IMPLEMENTED / AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
+
+- The Product CSV/Excel wizard is implemented and its automated import-focused and normal-host full-suite gates pass. Physical click-through, UIA accessibility inspection and DPI-equivalent visual acceptance remain manual because this environment exposes no inspectable top-level WPF HWND. The prepared synthetic fixtures are under the ignored `artifacts/R5.1C-manual-fixtures` directory.
+- A fresh isolated launcher invocation reaches `InitialSetupWindowReady`; the launcher does not accept an import-file argument, so manual acceptance must choose the fixture after opening the authorized Product & Inventory wizard. No canonical database or runtime settings are used by the provided isolated smoke procedure.
+- The six CurrentUser DPAPI secure-storage/VietQR failures remain a sandbox-only environment limitation and pass on the normal Windows host. No security assertion, encryption, ACL or DPAPI behavior was changed by R5.1C/D.
+
 ## R5.1B — CLOSED — 2026-08-29
 
 - Transactional Product import is complete for the Application/Infrastructure checkpoint. The WPF Import Wizard, file picker, mapping surface and user-facing preview confirmation remain intentionally deferred to R5.1C.

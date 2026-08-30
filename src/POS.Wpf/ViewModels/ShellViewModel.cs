@@ -54,6 +54,9 @@ public sealed class ShellViewModel :
     private readonly IProductDialogService
         _productDialogService;
 
+    private readonly IProductImportDialogService?
+        _productImportDialogService;
+
     private readonly ICategoryManagementDialogService
         _categoryManagementDialogService;
 
@@ -122,7 +125,8 @@ public sealed class ShellViewModel :
         IOrderHistoryWindowService orderHistoryWindowService,
         IPermissionService permissionService,
         ILogger<ShellViewModel> logger,
-        ICurrentUserService? currentUserService = null)
+        ICurrentUserService? currentUserService = null,
+        IProductImportDialogService? productImportDialogService = null)
     {
         _scopeFactory =
             scopeFactory ??
@@ -133,6 +137,9 @@ public sealed class ShellViewModel :
             productDialogService ??
             throw new ArgumentNullException(
                 nameof(productDialogService));
+
+        _productImportDialogService =
+            productImportDialogService;
 
         _categoryManagementDialogService =
             categoryManagementDialogService ??
@@ -240,6 +247,12 @@ public sealed class ShellViewModel :
                 CanLoadProducts,
                 HandleCommandException);
 
+        ImportProductsCommand =
+            new AsyncRelayCommand(
+                ImportProductsAsync,
+                CanImportProducts,
+                HandleCommandException);
+
         OpenCategoryManagementCommand =
             new AsyncRelayCommand(
                 OpenCategoryManagementAsync,
@@ -335,6 +348,8 @@ public sealed class ShellViewModel :
     public AsyncRelayCommand NextPageCommand { get; }
 
     public AsyncRelayCommand AddProductCommand { get; }
+
+    public AsyncRelayCommand ImportProductsCommand { get; }
 
     public AsyncRelayCommand
         OpenCategoryManagementCommand
@@ -1014,6 +1029,32 @@ public sealed class ShellViewModel :
             StatusMessage =
                 "Sản phẩm mới đã được tạo thành công.";
         }
+    }
+
+    private async Task ImportProductsAsync()
+    {
+        if (_productImportDialogService is null)
+        {
+            StatusMessage = "Chức năng nhập sản phẩm chưa được đăng ký.";
+            return;
+        }
+
+        var imported =
+            await _productImportDialogService
+                .ShowAsync();
+
+        if (imported)
+        {
+            await LoadProductsAsync(
+                SelectedProduct?.Id);
+        }
+    }
+
+    private bool CanImportProducts()
+    {
+        return !IsLoading &&
+               _permissionService.HasPermission(
+                   SystemCapability.ManageProducts);
     }
 
     private Task NavigateToOverviewAsync()
@@ -1746,6 +1787,9 @@ public sealed class ShellViewModel :
             .NotifyCanExecuteChanged();
 
         AddProductCommand
+            .NotifyCanExecuteChanged();
+
+        ImportProductsCommand
             .NotifyCanExecuteChanged();
 
         OpenCategoryManagementCommand

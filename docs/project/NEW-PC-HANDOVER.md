@@ -1,5 +1,13 @@
 # POS Enterprise - New-PC Handover
 
+## Current checkpoint status — R5.1C/D — 2026-08-30
+
+- R5.1C/D Product CSV/Excel Import Wizard is IMPLEMENTED and AUTOMATED VERIFIED; physical WPF click/UIA/DPI acceptance is MANUAL PENDING. R5.1A/B remain CLOSED/PRESERVED, R5.1 remains IN PROGRESS and R5.2 is NOT STARTED.
+- Open the Product & Inventory route and use `Nhập CSV/Excel`. The wizard uses the existing secure parser and transactional service, supports the exact 11-field schema, explicit worksheet/mapping/policy, full validation, bounded preview and typed commit/rollback result. No mutation occurs before `Xác nhận nhập`.
+- Evidence: import-focused `25/25 PASS` in Debug/Release, relevant Release `248/248 PASS`, normal-host full Release `1387/1387 PASS`, build `0/0`, official Quality Gate PASS with vulnerability and EF checks. Isolated startup reached `InitialSetupWindowReady` with an owned TEMP source DB; no canonical/runtime data was used.
+- Synthetic manual fixtures are at `D:\Projects_1\POS_Enterprise_DotNet\artifacts\R5.1C-manual-fixtures`: `valid-products.csv`, `valid-products.xlsx`, `duplicate-products.csv`, `row-errors-products.csv` and `over-100-products.csv` (the last has an invalid value at source row 126). The launcher requires a separate isolated source DB and the fixture is selected in the wizard after startup.
+- Manual limitation: this environment exposes no inspectable top-level HWND/UIA, so click-through, accessibility and physical DPI checks are not claimed. R4.2/R4.3/R4.4 remain CLOSED/PRESERVED and Development Freeze is ACTIVE outside R5.1.
+
 ## Current checkpoint status — R5.1B — 2026-08-29
 
 - R5.1B Transactional Product Import is CLOSED and R5.1 remains IN PROGRESS; R5.1C WPF Import Wizard is NEXT. R5.1A is CLOSED/PRESERVED.

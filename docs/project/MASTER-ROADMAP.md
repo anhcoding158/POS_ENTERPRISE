@@ -1,5 +1,11 @@
 # MASTER ROADMAP — POS ENTERPRISE RETAIL V1
 
+## Latest checkpoint position — 2026-08-30 (R5.1C/D — IMPLEMENTED / AUTOMATED VERIFIED / MANUAL PENDING)
+
+- R5.1C connects the existing Product & Inventory route to a real WPF import wizard. It reuses the R5.1A parser/schema and R5.1B service for file selection, explicit worksheet/mapping, full validation, bounded preview, duplicate-policy confirmation, cancellation and typed transaction results. R5.1D hardening covers the stale-preview, re-entrant, rollback, result-display and parser/security integration paths without adding a package, migration, parallel model or UI-side mutation.
+- The current automated evidence is `25/25 PASS` for the import-focused Debug/Release coverage, `248/248 PASS` for relevant Release regressions, normal-host full Release `1387/1387 PASS`, failed/skipped `0/0`, Release build `0/0`, and official Quality Gate PASS including vulnerability and EF pending-model checks. Isolated startup reached `InitialSetupWindowReady` with an owned TEMP database.
+- R5.1C/D implementation is complete, but physical WPF click/UIA/DPI acceptance remains pending because no inspectable top-level HWND is exposed in this environment. R5.1 remains IN PROGRESS; R5.1A/B and R4.2/R4.3/R4.4 are CLOSED/PRESERVED; R5.2 is NOT STARTED; Development Freeze remains ACTIVE outside R5.1.
+
 ## Latest checkpoint position — 2026-08-29 (R5.1B — Transactional Product Import — CLOSED / COMMITTED / PUSHED)
 
 - R5.1B is closed on the Product CSV/XLSX foundation. The Application/Infrastructure use case revalidates the typed preview snapshot and imports the exact 11 production-backed fields atomically without introducing a parallel Product model, UI wizard, package or migration.
