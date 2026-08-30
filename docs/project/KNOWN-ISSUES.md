@@ -1,5 +1,11 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## Persistent manual database — ACTIVE USER SETUP — 2026-08-30
+
+- The long-lived manual database is `C:\Users\pc\AppData\Local\POS Enterprise\ManualAcceptance\pos-enterprise-manual.db`. It was created by the application on first launcher use and reached the initial account setup screen; the user must create and remember the account through the UI.
+- The normal isolated launcher intentionally creates a new TEMP snapshot, so it must not be used for daily persistent work. Use `scripts\Start-POS-PersistentManual.ps1` for this profile; it points directly to the same file and does not copy, reset, delete or select another database.
+- The profile is currently open by the POS process. Do not run a second instance against it; the existing application single-instance boundary will report the conflict. The database, WAL/SHM sidecars, settings and logs remain outside Git and are not test fixtures.
+
 ## Inventory History navigation/filter-card hotfix — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
 
 - The reported clipped `Tìm` control was caused by the search row reserving a 56-DIP column while the inherited shared button style required a larger minimum width. The fix uses a local bounded search-button style and an expanding input column, with a keyboard-accessible in-field clear button.

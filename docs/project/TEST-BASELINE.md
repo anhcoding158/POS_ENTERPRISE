@@ -1,5 +1,12 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## Persistent manual database launcher — 2026-08-30
+
+- Launcher contract test: `1/1 PASS` in Debug and `1/1 PASS` in Release. PowerShell parser check: PASS. The script uses one fixed LocalApplicationData profile path, existing runtime isolation/single-instance boundaries and no source-database copy/GUID/timestamp/reset/delete operation.
+- Full normal-host Release after the launcher/test change: `1411/1411 PASS`, failed/skipped `0/0`. Release test assembly build: `0` warnings, `0` errors. Official `scripts/Test-QualityGate.ps1` without `-SkipEfCheck`: PASS, including Debug build `0/0`, `1411/1411` tests, vulnerability scan, local tool restore, EF pending-model and Git checks.
+- The first persistent launch created only `C:\Users\pc\AppData\Local\POS Enterprise\ManualAcceptance\pos-enterprise-manual.db` through the production migration/bootstrap path and reached `InitialSetupWindowReady`. No account or business data was created by automation; the profile is not used by automated tests or Quality Gate.
+- The Release application remained open during verification, so the full solution Release rebuild was not performed after launch; the explicit test-assembly Release build avoided replacing locked application binaries and passed with `0/0`. A normal full Release build can be run after the user closes POS if required; no production source changed.
+
 ## Inventory History navigation/filter-card hotfix — 2026-08-30
 
 - Focused Inventory History/navigation coverage: `22/22 PASS` in Debug and `22/22 PASS` in Release. Relevant Product/Inventory/Category/Import/RBAC/Shell Release coverage: `284/284 PASS`.

@@ -1,5 +1,12 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## Persistent manual database launcher — VERIFIED — 2026-08-30
+
+- The source-tree canonical development database `data/pos-enterprise.db` was not present at preflight, so no existing canonical data needed migration or preservation. A user-authorized persistent profile was initialized at `C:\Users\pc\AppData\Local\POS Enterprise\ManualAcceptance\pos-enterprise-manual.db`; the application created it and applied the current 18 migrations without copying a source database.
+- `scripts/Start-POS-PersistentManual.ps1` launches the existing Release executable with the existing `POS_RUNTIME_MODE=IsolatedTest` external-path boundary and the same fixed LocalApplicationData path on every run. It validates regular-file/reparse-point safety, does not create timestamp/GUID directories, does not delete or overwrite the database, and leaves single-instance/migration/backup/ACL behavior in the application.
+- First startup reached `HostStarted`, `DatabaseInitialized`, `SessionLoopEntered` and `InitialSetupWindowReady`. No account, password, product or business data was created by the agent; the setup window remains open for the user. Automated launcher coverage is `1/1 PASS` in Debug and Release; full normal-host Release is `1411/1411 PASS`, failed/skipped `0/0`, and the official Quality Gate is PASS.
+- The persistent database and its live SQLite sidecars are outside the repository and ignored; automated tests continue to use isolated TEMP databases. R5.1 remains in manual acceptance, R5.2 is NOT STARTED, and Development Freeze is ACTIVE outside authorized work.
+
 ## Inventory History navigation/filter-card hotfix — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
 
 - The duplicate Shell sidebar entry and its dedicated command were removed. The single primary route remains `Sản phẩm & tồn kho → Kho & lưu trữ → Lịch sử kho`; the existing context-menu command still opens general history without inheriting a selected row, while product-context opening seeds the same visible search criterion.

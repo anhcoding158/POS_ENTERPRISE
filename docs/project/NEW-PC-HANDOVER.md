@@ -1,5 +1,12 @@
 # POS Enterprise - New-PC Handover
 
+## Persistent manual database profile — 2026-08-30
+
+- Daily manual launcher: `powershell.exe -NoProfile -ExecutionPolicy Bypass -File "D:\Projects_1\POS_Enterprise_DotNet\scripts\Start-POS-PersistentManual.ps1"`
+- Fixed database: `C:\Users\pc\AppData\Local\POS Enterprise\ManualAcceptance\pos-enterprise-manual.db`. The first run initializes/migrates it and opens account setup; later runs use the same path and open login. The user creates the account and supplies the password; no credential is stored in the repository or handover.
+- Do not use `Start-POS-IsolatedTest.ps1` for this workflow because it intentionally copies to a new TEMP snapshot. Do not start two POS instances for this profile; the application single-instance guard remains active.
+- The profile was initialized successfully and is currently open at `InitialSetupWindowReady`. Automated launcher coverage is `1/1` in Debug/Release, full normal-host Release is `1411/1411`, and Quality Gate is PASS. The profile/database/sidecars/settings/logs are outside the repository and remain untracked.
+
 ## Current checkpoint status — Inventory History navigation/filter-card hotfix — 2026-08-30
 
 - The duplicate Shell Inventory History entry is removed; use `Sản phẩm & tồn kho → Kho & lưu trữ → Lịch sử kho`. The screen has one light filter card with database-side product search, safe `Tìm`/Enter/debounce, in-field clear, `Xóa bộ lọc` and `Làm mới`.
