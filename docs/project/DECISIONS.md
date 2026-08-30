@@ -1,5 +1,12 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-048 — Inventory History uses direct database-side product search with one filter pipeline
+
+- **Status:** Accepted for the Inventory History UX/query hotfix on `2026-08-30`; physical WPF acceptance remains pending.
+- **Query:** Add optional normalized product search text to the existing typed inventory search request. Infrastructure applies escaped, parameterized matching against Product code/name/barcode before total count and paging. No client-side first-page lookup or hidden ProductId substitution is allowed.
+- **Interaction:** Search debounces at 300 ms and Enter applies immediately. `Xóa bộ lọc` clears all user/navigation conditions; `Làm mới` preserves them. Older asynchronous responses cannot replace a newer query result.
+- **Scope:** Read-only Inventory History presentation/query behavior only. No movement, stock, audit, authorization, schema, migration, package, Import Wizard or shared-style change.
+
 ## DEC-047 — R5.1C/D uses progressive disclosure and deterministic compact-header aliases
 
 - **Status:** Accepted for the R5.1C/D UX remediation on `2026-08-30`; physical WPF acceptance remains pending.

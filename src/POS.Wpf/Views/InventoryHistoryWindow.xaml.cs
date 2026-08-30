@@ -26,5 +26,8 @@ public partial class InventoryHistoryWindow :
 
         DataContext =
             _viewModel;
+
+        Closed +=
+            (_, _) => _viewModel.Dispose();
     }
 }

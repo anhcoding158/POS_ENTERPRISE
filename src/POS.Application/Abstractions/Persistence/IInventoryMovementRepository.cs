@@ -23,6 +23,7 @@ public interface IInventoryMovementRepository
         string? referenceType,
         int pageNumber,
         int pageSize,
+        string? productSearchTerm = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>

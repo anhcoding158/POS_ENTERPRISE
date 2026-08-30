@@ -1,5 +1,12 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## Inventory History UX/query hotfix — 2026-08-30
+
+- Focused Inventory History coverage: `16/16 PASS` in Debug and `16/16 PASS` in Release. Relevant Inventory/Product/RBAC/Audit Release coverage: `260/260 PASS`.
+- Release build: `0` warnings, `0` errors. Sandbox full Release was `1393 PASS / 6 FAIL / 0 SKIP`, limited to the known DPAPI/local-secure-storage tests; normal-host full Release passed `1399/1399`, failed/skipped `0/0`.
+- Official Quality Gate without `-SkipEfCheck` is run after this documentation update; vulnerability, EF pending-model and Git checks must be recorded from that final run. The new tests cover direct database-side name/code/barcode search, debounce/Enter, reset versus refresh, navigation scope, latest-response-wins, invalid dates, empty/error separation and WPF measure construction.
+- No canonical database, write workflow, migration, package or unrelated module was changed. Physical WPF click/UIA/DPI acceptance remains manual pending.
+
 ## R5.1C/D store-user UX remediation — 2026-08-30
 
 - Focused Product import/WPF coverage: `27/27 PASS` in Debug and `27/27 PASS` in Release. Relevant Product/Inventory/RBAC/Audit Release coverage: `250/250 PASS`.

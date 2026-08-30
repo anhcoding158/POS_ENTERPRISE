@@ -18,7 +18,8 @@ public sealed class InventorySearchRequest
         DateTimeOffset? toUtc = null,
         string? referenceType = null,
         int pageNumber = 1,
-        int pageSize = 50)
+        int pageSize = 50,
+        string? productSearchTerm = null)
     {
         if (productId.HasValue &&
             productId.Value <= 0)
@@ -77,6 +78,7 @@ public sealed class InventorySearchRequest
         }
 
         ProductId = productId;
+        ProductSearchTerm = NormalizeOptionalProductSearchTerm(productSearchTerm);
         MovementType = movementType;
 
         FromUtc = normalizedFrom;
@@ -91,6 +93,12 @@ public sealed class InventorySearchRequest
     }
 
     public int? ProductId { get; }
+
+    /// <summary>
+    /// Tìm trực tiếp trên lịch sử theo mã, tên hoặc mã vạch sản phẩm.
+    /// Việc lọc được thực hiện trong cùng truy vấn database với lịch sử.
+    /// </summary>
+    public string? ProductSearchTerm { get; }
 
     public InventoryMovementType? MovementType { get; }
 
@@ -140,6 +148,25 @@ public sealed class InventorySearchRequest
         {
             throw new ArgumentException(
                 "Loại tham chiếu vượt quá giới hạn.",
+                nameof(value));
+        }
+
+        return normalized;
+    }
+
+    private static string? NormalizeOptionalProductSearchTerm(
+        string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var normalized = value.Trim();
+        if (normalized.Length > BusinessRules.Products.NameMaxLength)
+        {
+            throw new ArgumentException(
+                "Từ khóa tìm kiếm sản phẩm quá dài.",
                 nameof(value));
         }
 

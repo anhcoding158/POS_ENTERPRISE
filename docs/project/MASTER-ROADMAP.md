@@ -1,5 +1,12 @@
 # MASTER ROADMAP — POS ENTERPRISE RETAIL V1
 
+## Latest checkpoint position — 2026-08-30 (Inventory History UX/query hotfix — AUTOMATED VERIFIED / MANUAL PENDING)
+
+- This authorized hotfix stays within the existing Inventory History capability. Product name/code/barcode search now reaches the history query directly; filters, paging, selection, loading/error/empty states and visible navigation scope share one typed ViewModel pipeline.
+- The old product lookup/search-two-step flow is removed from the main surface. `Xóa bộ lọc` clears all user and navigation conditions, while `Làm mới` preserves them. No inventory write, movement creation/deletion, audit mutation, permission boundary or Import Wizard behavior changed.
+- Focused history coverage is `16/16 PASS` in Debug and Release, relevant Release is `260/260 PASS`, normal-host full Release is `1399/1399 PASS`, failed/skipped `0/0`, Release build `0/0`; the six sandbox DPAPI failures passed on the normal host. Official Quality Gate is recorded after this documentation update.
+- Manual WPF click/UIA/DPI acceptance remains pending. R5.1 remains IN PROGRESS, R5.2 is NOT STARTED, R5.1A–R5.1D and R4.2–R4.4 remain preserved, and Development Freeze remains ACTIVE outside the authorized hotfix.
+
 ## Latest checkpoint position — 2026-08-30 (R5.1C/D UX remediation — IMPLEMENTED / AUTOMATED VERIFIED / MANUAL PENDING)
 
 - The store-user remediation keeps R5.1C/D within the authorized Product import checkpoint. The wizard now uses a three-stage, progressive-disclosure flow with one contextual primary action, Vietnamese business wording, compact canonical-header auto-mapping and distinct reference-data guidance. Full validation, 11-field preservation, duplicate semantics and transaction confirmation remain intact.

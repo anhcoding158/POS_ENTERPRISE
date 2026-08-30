@@ -1,5 +1,13 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## Inventory History UX/query hotfix — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
+
+- The Inventory History screen now uses one direct product search for name, code or barcode. Search is debounced, Enter applies immediately, filters update the same database-side history query, and the old product lookup plus second `Lọc lịch sử` action are removed from the user flow.
+- Reset is now `Xóa bộ lọc`: it clears text, navigation product scope, extra filters, dates and selection, then performs exactly one default query. `Làm mới` preserves the current conditions and valid page. Navigation scope is visible and removable; no hidden ProductId survives reset.
+- Loading, empty, failure and selected-detail states are separate; reference sources use friendly labels while unknown legacy values remain visible. Product, stock, movement and audit data are read-only in this hotfix; authorization and transaction/write workflows are unchanged.
+- Focused Debug/Release history coverage is `16/16 PASS`; relevant Inventory/Product/RBAC/Audit Release coverage is `260/260 PASS`; normal-host full Release is `1399/1399 PASS`, failed/skipped `0/0`, Release build `0/0` warnings/errors. Sandbox full Release was `1393 PASS / 6 FAIL / 0 SKIP` only in the known CurrentUser DPAPI/local-secure-storage tests; normal-host rerun passed all six. Official Quality Gate is recorded after this Memory update.
+- Physical WPF click/UIA/DPI acceptance remains manual because no inspectable top-level HWND is exposed. R5.1 remains IN PROGRESS; R5.1A–R5.1D and R4.2–R4.4 are preserved, R5.2 is NOT STARTED and Development Freeze remains ACTIVE outside authorized hotfix scope.
+
 ## R5.1C/D — Store-user UX remediation — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
 
 - The import wizard now presents three user-facing stages: `Chọn file`, `Kiểm tra và nhập` and `Kết quả`. Technical mapping details, full 11-field preview and row diagnostics are progressive disclosures; the primary action is contextual (`Chọn file Excel/CSV`, `Kiểm tra lại`, `Nhập sản phẩm`, or the result action). The old secure-preview/service/schema wording and competing confirmation buttons are no longer in the main surface.

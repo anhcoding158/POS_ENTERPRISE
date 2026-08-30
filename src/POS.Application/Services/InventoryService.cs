@@ -206,6 +206,7 @@ public sealed class InventoryService : IInventoryService
                 request.ReferenceType,
                 request.PageNumber,
                 request.PageSize,
+                request.ProductSearchTerm,
                 cancellationToken);
 
         var items =

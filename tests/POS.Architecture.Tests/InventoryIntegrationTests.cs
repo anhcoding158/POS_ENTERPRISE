@@ -427,6 +427,116 @@ public sealed class InventoryIntegrationTests
     }
 
     [Fact]
+    public async Task History_search_must_filter_products_by_name_code_or_leading_zero_barcode_before_paging()
+    {
+        await using var database =
+            await InventoryTestDatabase.CreateAsync();
+
+        var products = new[]
+        {
+            new Product(
+                categoryId: 1,
+                code: "MILK-001",
+                name: "Sữa tươi nguyên chất",
+                unitName: "Hộp",
+                costPrice: 21_000,
+                salePrice: 28_500,
+                stockQuantity: 0,
+                minimumStock: 1,
+                trackInventory: true,
+                allowNegativeStock: false,
+                CreatedAtUtc,
+                barcode: "000012345678"),
+            new Product(
+                categoryId: 1,
+                code: "BISCUIT-002",
+                name: "Bánh quy bơ",
+                unitName: "Gói",
+                costPrice: 30_000,
+                salePrice: 42_000,
+                stockQuantity: 0,
+                minimumStock: 1,
+                trackInventory: true,
+                allowNegativeStock: false,
+                CreatedAtUtc,
+                barcode: "000000000042")
+        };
+
+        await using (var seedContext = database.CreateContext())
+        {
+            await seedContext.Products.AddRangeAsync(products);
+            await seedContext.SaveChangesAsync();
+        }
+
+        await using (var movementContext = database.CreateContext())
+        {
+            var service = CreateService(
+                movementContext,
+                new SequenceClock(
+                [
+                    CreatedAtUtc.AddMinutes(10),
+                    CreatedAtUtc.AddMinutes(20)
+                ]));
+
+            Assert.True((await service.AdjustAsync(
+                new InventoryAdjustmentRequest(
+                    products[0].Id,
+                    InventoryMovementType.StockIn,
+                    quantity: 1,
+                    reason: "Sữa nhập thử"))).IsSuccess);
+
+            Assert.True((await service.AdjustAsync(
+                new InventoryAdjustmentRequest(
+                    products[1].Id,
+                    InventoryMovementType.StockIn,
+                    quantity: 1,
+                    reason: "Bánh nhập thử"))).IsSuccess);
+        }
+
+        await using var searchContext = database.CreateContext();
+        var repository = new InventoryMovementRepository(searchContext);
+
+        var byName = await repository.SearchAsync(
+            productId: null,
+            movementType: null,
+            fromUtc: null,
+            toUtc: null,
+            referenceType: null,
+            pageNumber: 1,
+            pageSize: 30,
+            productSearchTerm: "  sữa tươi  ");
+
+        Assert.Single(byName.Items);
+        Assert.Equal("MILK-001", byName.Items[0].Product!.Code);
+
+        var byCode = await repository.SearchAsync(
+            productId: null,
+            movementType: null,
+            fromUtc: null,
+            toUtc: null,
+            referenceType: null,
+            pageNumber: 1,
+            pageSize: 30,
+            productSearchTerm: "biscuit-002");
+
+        Assert.Single(byCode.Items);
+        Assert.Equal("BISCUIT-002", byCode.Items[0].Product!.Code);
+
+        var byBarcode = await repository.SearchAsync(
+            productId: null,
+            movementType: null,
+            fromUtc: null,
+            toUtc: null,
+            referenceType: null,
+            pageNumber: 1,
+            pageSize: 30,
+            productSearchTerm: "000000000042");
+
+        Assert.Single(byBarcode.Items);
+        Assert.Equal("BISCUIT-002", byBarcode.Items[0].Product!.Code);
+    }
+
+    [Fact]
     public async Task History_search_must_return_newest_first_and_paginate()
     {
         await using var database =

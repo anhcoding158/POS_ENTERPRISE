@@ -1,5 +1,11 @@
 # POS Enterprise - New-PC Handover
 
+## Current checkpoint status — Inventory History UX/query hotfix — 2026-08-30
+
+- Inventory History now searches directly by product name, code or barcode; search updates automatically, Enter applies immediately, `Xóa bộ lọc` clears all conditions including navigation scope, and `Làm mới` preserves them.
+- Focused coverage is `16/16 PASS` in Debug/Release, relevant Release is `260/260 PASS`, normal-host full Release is `1399/1399 PASS`, failed/skipped `0/0`, Release build `0/0`. The six sandbox DPAPI/local-secure-storage failures pass on normal Windows; no security boundary changed.
+- Physical WPF click/UIA/DPI acceptance remains manual pending. No canonical database or runtime data was used; R5.1 remains IN PROGRESS and R5.2 is NOT STARTED.
+
 ## Current checkpoint status — R5.1C/D UX remediation — 2026-08-30
 
 - The Product import wizard was simplified for store users: choose a file, inspect only the necessary details, select duplicate handling, and perform one explicit import action. Compact canonical headers in the prepared CSV/XLSX fixtures auto-map all 11 fields; missing categories are a separate reference-data issue.

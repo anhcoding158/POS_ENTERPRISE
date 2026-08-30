@@ -12,6 +12,8 @@ namespace POS.Infrastructure.Persistence.Repositories;
 public sealed class InventoryMovementRepository :
     IInventoryMovementRepository
 {
+    private const string LikeEscapeCharacter = "\\";
+
     private readonly PosDbContext _dbContext;
 
     public InventoryMovementRepository(
@@ -54,6 +56,7 @@ public sealed class InventoryMovementRepository :
             string? referenceType,
             int pageNumber,
             int pageSize,
+            string? productSearchTerm = null,
             CancellationToken cancellationToken = default)
     {
         var skip =
@@ -80,6 +83,32 @@ public sealed class InventoryMovementRepository :
                 movement =>
                     movement.ProductId ==
                     productId.Value);
+        }
+
+        var normalizedProductSearchTerm =
+            NormalizeOptionalText(productSearchTerm);
+
+        if (normalizedProductSearchTerm is not null)
+        {
+            var pattern =
+                BuildContainsPattern(normalizedProductSearchTerm);
+
+            query = query.Where(
+                movement =>
+                    movement.Product != null &&
+                    (EF.Functions.Like(
+                         movement.Product.Code,
+                         pattern,
+                         LikeEscapeCharacter) ||
+                     EF.Functions.Like(
+                         movement.Product.Name,
+                         pattern,
+                         LikeEscapeCharacter) ||
+                     (movement.Product.Barcode != null &&
+                      EF.Functions.Like(
+                          movement.Product.Barcode,
+                          pattern,
+                          LikeEscapeCharacter))));
         }
 
         if (movementType.HasValue)
@@ -239,5 +268,15 @@ public sealed class InventoryMovementRepository :
         return string.IsNullOrWhiteSpace(value)
             ? null
             : value.Trim();
+    }
+
+    private static string BuildContainsPattern(string value)
+    {
+        var escaped = value
+            .Replace("\\", "\\\\", StringComparison.Ordinal)
+            .Replace("%", "\\%", StringComparison.Ordinal)
+            .Replace("_", "\\_", StringComparison.Ordinal);
+
+        return $"%{escaped}%";
     }
 }

@@ -1,5 +1,11 @@
 # ARCHITECTURE — POS ENTERPRISE RETAIL V1
 
+## Inventory History query/presentation boundary — 2026-08-30
+
+- Inventory History keeps a single Application `InventorySearchRequest` pipeline. Product search text is an additive read-query field and is translated by the Infrastructure repository into parameterized `LIKE` predicates over Product code, name and barcode before count/paging; WPF does not load a bounded product list to simulate history search.
+- The WPF ViewModel owns debounce, cancellation, latest-request-wins, visible filter state, navigation scope removal and read-only result presentation. Each query uses its own short-lived DI scope; closing the window cancels and disposes the ViewModel.
+- This hotfix does not alter Product/StockQuantity, InventoryMovement creation, audit, authorization, transaction boundaries, shared styles or Import Wizard behavior. Unknown legacy reference types remain displayable and known production values receive friendly labels.
+
 ## R5.1C/D store-user import UX boundary — 2026-08-30
 
 - The WPF import surface is a staged presentation over the existing Application/Infrastructure contracts: file selection and preview are asynchronous read-only operations, while the single `Nhập sản phẩm` action is the only mutation trigger. Mapping and full-column detail are progressive disclosures, not a second schema or validation engine.

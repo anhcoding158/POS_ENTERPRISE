@@ -1,5 +1,11 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## Inventory History UX/query hotfix — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
+
+- The reported stale-history behavior was caused by `Tìm` querying only a bounded Product dropdown; the history request still used the previously selected ProductId. The hotfix sends the text filter through the history repository query and removes the second filtering action.
+- Normal-host full Release passed `1399/1399`; the sandbox still shows the six known CurrentUser DPAPI/local-secure-storage failures (`1393/1399`) and they pass on normal Windows. No security behavior was changed.
+- Physical click-through, UIA/accessibility and DPI checks remain pending because this environment exposes no inspectable top-level WPF HWND.
+
 ## R5.1C/D UX remediation — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
 
 - The reported `UnitName`/`SalePrice`/`CostPrice` missing-column behavior was a deterministic catalog-alias gap, not a Category lookup failure. Compact canonical headers are now recognized; a missing or inactive `Drinks`/`Food` reference is shown separately with the category name and corrective guidance.

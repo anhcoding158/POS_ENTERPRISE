@@ -183,9 +183,20 @@ public sealed class InventoryMovementRowViewModel
             }
 
             return
-                $"{ReferenceType} • {ReferenceId}";
+                $"{ReferenceTypeText} • {ReferenceId}";
         }
     }
+
+    public string ReferenceTypeText =>
+        ReferenceType?.ToUpperInvariant() switch
+        {
+            "ORDER" => "Bán hàng",
+            "RECEIPT" => "Nhập hàng",
+            "REFUND" => "Hoàn hàng",
+            "ORDER_RETURN" => "Hoàn hàng theo đơn",
+            "PRODUCT_IMPORT" => "Nhập sản phẩm",
+            _ => ReferenceType ?? "Không có nguồn"
+        };
 
     public string PerformedByText =>
         PerformedByUserId.HasValue
