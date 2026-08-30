@@ -1,5 +1,12 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## Inventory History navigation/filter-card hotfix — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
+
+- The reported clipped `Tìm` control was caused by the search row reserving a 56-DIP column while the inherited shared button style required a larger minimum width. The fix uses a local bounded search-button style and an expanding input column, with a keyboard-accessible in-field clear button.
+- The duplicate Shell navigation entry was not a second business route; it was a separate `OpenInventoryHistoryCommand`/button added beside the existing `Kho & lưu trữ → Lịch sử kho` command. It is removed without changing the existing permission-gated route.
+- The filter card now uses local light surface/border styles and keeps all filter actions together. Automated WPF construction/arrange verifies the search input and button fit inside the sidebar at the minimum supported layout; physical screenshot, click-through, UIA and DPI checks remain pending because no inspectable top-level WPF HWND is exposed here.
+- Normal-host full Release and the official Quality Gate pass at `1410/1410`, with no security, persistence, query or shared-style change.
+
 ## Inventory History redesign — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
 
 - The confusing behavior came from the only existing open route carrying the selected product as a hidden `ProductId`, while the visible text search was a separate criterion. The redesigned route uses a single visible product search criterion and adds a permission-gated general Shell entry; reset/clear cannot retain a stale product scope or select the first product.

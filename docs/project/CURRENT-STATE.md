@@ -1,5 +1,12 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## Inventory History navigation/filter-card hotfix — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
+
+- The duplicate Shell sidebar entry and its dedicated command were removed. The single primary route remains `Sản phẩm & tồn kho → Kho & lưu trữ → Lịch sử kho`; the existing context-menu command still opens general history without inheriting a selected row, while product-context opening seeds the same visible search criterion.
+- Inventory History now has one light local filter card with `Tìm`, Enter/debounce, an in-field `×`, `Xóa bộ lọc` and `Làm mới` together. The search button uses its own bounded style and Grid column; the card no longer uses the dark sidebar surface, and no shared theme was changed. Database-side search, latest-request-wins, reset/refresh, loading/error/empty/detail, paging, KPI and permission semantics are preserved.
+- Focused navigation/history coverage is `22/22 PASS` in Debug and `22/22 PASS` in Release; relevant Product/Inventory/Category/Import/RBAC/Shell Release coverage is `284/284 PASS`; normal-host full Release is `1410/1410 PASS`, failed/skipped `0/0`; Release build is `0` warnings and `0` errors. Official Quality Gate passed, including vulnerability, EF pending-model and Git checks.
+- Physical WPF screenshot/click/UIA and 100%/125%/150% DPI acceptance remain manual pending because this execution desktop exposes no inspectable top-level HWND and no existing render harness was available. No canonical database, runtime data, stock write, archive behavior, Import Wizard or unrelated module was changed. R5.1 remains manual acceptance, R5.2 is NOT STARTED and Development Freeze is ACTIVE outside this hotfix.
+
 ## Inventory History redesign — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
 
 - Inventory History now has one explicit product criterion: the general Shell entry opens all permitted products, while a product-context entry seeds the same visible search box with that product code/name. Editing or clearing the search replaces/removes the criterion; no hidden `ProductId`, red scope banner or separate “bỏ giới hạn” flow remains.

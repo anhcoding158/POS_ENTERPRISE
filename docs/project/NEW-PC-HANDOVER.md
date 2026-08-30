@@ -1,5 +1,11 @@
 # POS Enterprise - New-PC Handover
 
+## Current checkpoint status — Inventory History navigation/filter-card hotfix — 2026-08-30
+
+- The duplicate Shell Inventory History entry is removed; use `Sản phẩm & tồn kho → Kho & lưu trữ → Lịch sử kho`. The screen has one light filter card with database-side product search, safe `Tìm`/Enter/debounce, in-field clear, `Xóa bộ lọc` and `Làm mới`.
+- Focused coverage is `22/22 PASS` in Debug and Release, relevant Release is `284/284 PASS`, normal-host full Release is `1410/1410 PASS`, build is `0/0`, and official Quality Gate is PASS with vulnerability and EF checks. No canonical database or runtime data was used.
+- Physical WPF click/UIA/DPI acceptance remains manual pending because this desktop exposes no inspectable top-level HWND. R5.1 remains in manual acceptance, R5.2 is NOT STARTED, R4.2–R4.4 remain CLOSED/PRESERVED and Development Freeze is ACTIVE outside this hotfix.
+
 ## Current checkpoint status — Inventory History / Adjustment / Category UX hotfix — 2026-08-30
 
 - Inventory History uses the familiar compact sidebar and card workspace while retaining direct search by product name/code/barcode. Manual stock adjustment quantity is blank until entered; Category form/list no longer exposes DisplayOrder and lists sort by Vietnamese name.

@@ -68,8 +68,8 @@ public sealed class ProductArchivingUiContractTests
         Assert.Contains("Text=\"&#xE7B8;\"", source, StringComparison.Ordinal);
         Assert.Contains("AdjustInventoryCommand", source, StringComparison.Ordinal);
         Assert.Contains("ViewInventoryHistoryCommand", source, StringComparison.Ordinal);
-        Assert.Contains("OpenInventoryHistoryCommand", source, StringComparison.Ordinal);
-        Assert.Contains("ShellInventoryHistoryNavigationButton", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("OpenInventoryHistoryCommand", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("ShellInventoryHistoryNavigationButton", source, StringComparison.Ordinal);
         Assert.Contains("OnToggleProductArchiveClick", source, StringComparison.Ordinal);
     }
 

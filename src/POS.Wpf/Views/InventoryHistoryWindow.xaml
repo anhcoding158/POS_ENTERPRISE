@@ -25,9 +25,57 @@
         </Style>
         <Style x:Key="HistoryInputStyle" TargetType="TextBox" BasedOn="{StaticResource SearchTextBoxStyle}">
             <Setter Property="Height" Value="42" />
-            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="Padding" Value="12,0,38,0" />
             <Setter Property="FontSize" Value="13" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="HistorySearchButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+            <Setter Property="Width" Value="68" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="Height" Value="42" />
+            <Setter Property="Padding" Value="6,0" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+        <Style x:Key="HistoryActionButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="Height" Value="38" />
+            <Setter Property="Padding" Value="8,0" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+        <Style x:Key="HistoryClearSearchButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="FontWeight" Value="Normal" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ClearSearchBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ClearSearchBorder" Property="Background" Value="{StaticResource AccentSoftBrush}" />
+                                <Setter TargetName="ClearSearchBorder" Property="BorderBrush" Value="{StaticResource AccentBorderBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="ClearSearchBorder" Property="BorderBrush" Value="{StaticResource GoldBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
         <Style x:Key="HistoryComboStyle" TargetType="ComboBox">
             <Setter Property="Height" Value="42" />
@@ -46,6 +94,14 @@
             <Setter Property="BorderBrush" Value="{StaticResource BorderStrongBrush}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="FontSize" Value="12" />
+        </Style>
+        <Style x:Key="HistoryCustomDatePanelStyle" TargetType="Border">
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding SelectedDateRangeOption.Key}" Value="custom">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
         </Style>
         <Style x:Key="HistoryDataGridStyle" TargetType="DataGrid" BasedOn="{StaticResource ModernDataGridStyle}">
             <Setter Property="GridLinesVisibility" Value="All" />
@@ -99,14 +155,6 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
-        <Style x:Key="HistoryContextStyle" TargetType="Border">
-            <Setter Property="Visibility" Value="Collapsed" />
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding HasInitialProductContext}" Value="True">
-                    <Setter Property="Visibility" Value="Visible" />
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
     </Window.Resources>
 
     <Grid Background="{StaticResource AppBackgroundBrush}">
@@ -131,8 +179,7 @@
                     </StackPanel>
                 </StackPanel>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right">
-                    <Button Content="Làm mới" Command="{Binding RefreshCommand}" Style="{StaticResource SecondaryButtonStyle}" MinWidth="96" ToolTip="Đọc lại dữ liệu theo đúng điều kiện đang xem." />
-                    <TextBlock Text="{Binding LastUpdatedText}" Foreground="{StaticResource SidebarMutedBrush}" FontSize="11" Margin="0,4,0,0" HorizontalAlignment="Right" />
+                    <TextBlock Text="{Binding LastUpdatedText}" Foreground="{StaticResource SidebarMutedBrush}" FontSize="11" HorizontalAlignment="Right" />
                 </StackPanel>
             </Grid>
         </Border>
@@ -144,73 +191,70 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" Style="{StaticResource CardStyle}" Background="{StaticResource SidebarBrush}" Padding="0" ClipToBounds="True">
+            <Border x:Name="HistoryFilterCard" Grid.Column="0" Style="{StaticResource CardStyle}" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" Padding="0" ClipToBounds="True">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <Border Padding="17,15" BorderBrush="{StaticResource GoldBorderBrush}" BorderThickness="0,0,0,1">
+                    <Border Padding="17,15" Background="{StaticResource SurfaceMutedBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
                         <StackPanel>
-                            <TextBlock Text="BỘ LỌC" Foreground="{StaticResource GoldHoverBrush}" FontFamily="Georgia" FontSize="17" FontWeight="SemiBold" />
-                            <TextBlock Text="Chọn điều kiện để xem lịch sử." Foreground="{StaticResource SidebarMutedBrush}" FontSize="11" Margin="0,4,0,0" TextWrapping="Wrap" />
+                            <TextBlock Text="Bộ lọc" Foreground="{StaticResource TextPrimaryBrush}" FontFamily="Georgia" FontSize="17" FontWeight="SemiBold" />
+                            <TextBlock Text="Chọn điều kiện để xem lịch sử." Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,4,0,0" TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <StackPanel Margin="17,17">
-                            <TextBlock Text="Tìm sản phẩm" Style="{StaticResource HistoryLabelStyle}" Foreground="White" />
+                            <TextBlock Text="Tìm sản phẩm" Style="{StaticResource HistoryLabelStyle}" />
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="7" />
-                                    <ColumnDefinition Width="56" />
-                                </Grid.ColumnDefinitions>
-                                <TextBox Text="{Binding ProductSearchTerm, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource HistoryInputStyle}" ToolTip="Tên, mã sản phẩm hoặc mã vạch.">
-                                    <TextBox.InputBindings>
-                                        <KeyBinding Key="Enter" Command="{Binding SearchCommand}" />
-                                    </TextBox.InputBindings>
-                                </TextBox>
-                                <Button Grid.Column="2" Content="Tìm" Command="{Binding SearchCommand}" Style="{StaticResource SecondaryButtonStyle}" Height="42" Padding="6,0" ToolTip="Tìm ngay trong toàn bộ lịch sử." AutomationProperties.Name="Tìm lịch sử tồn kho" />
-                            </Grid>
-                            <TextBlock Text="Tên, mã sản phẩm hoặc mã vạch" Foreground="{StaticResource SidebarMutedBrush}" FontSize="11" TextWrapping="Wrap" Margin="2,6,0,0" />
-                            <Button Content="Xóa nội dung tìm kiếm" Command="{Binding ClearSearchCommand}" Style="{StaticResource SecondaryButtonStyle}" Height="30" Padding="8,0" HorizontalAlignment="Left" Margin="0,8,0,0" ToolTip="Chỉ xóa tiêu chí sản phẩm, giữ nguyên các bộ lọc khác." />
-
-                            <Border Style="{StaticResource HistoryContextStyle}" Background="{StaticResource SidebarSurfaceBrush}" BorderBrush="{StaticResource GoldBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="10,8" Margin="0,13,0,0">
-                                <StackPanel>
-                                    <TextBlock Text="Đang xem sản phẩm" Foreground="{StaticResource GoldHoverBrush}" FontSize="11" FontWeight="SemiBold" />
-                                    <TextBlock Text="{Binding InitialProductContextText}" Foreground="White" FontSize="12" TextWrapping="Wrap" Margin="0,3,0,0" ToolTip="{Binding InitialProductContextText}" />
-                                </StackPanel>
-                            </Border>
-
-                            <TextBlock Text="Thời gian" Style="{StaticResource HistoryLabelStyle}" Foreground="White" Margin="0,17,0,6" />
-                            <ComboBox ItemsSource="{Binding DateRangeOptions}" SelectedItem="{Binding SelectedDateRangeOption, Mode=TwoWay}" DisplayMemberPath="DisplayName" Style="{StaticResource HistoryComboStyle}" />
-                            <Grid Margin="0,11,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="8" />
-                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="68" />
                                 </Grid.ColumnDefinitions>
+                                <Grid>
+                                    <TextBox x:Name="HistorySearchInput" Text="{Binding ProductSearchTerm, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource HistoryInputStyle}" ToolTip="Tên, mã sản phẩm hoặc mã vạch.">
+                                        <TextBox.InputBindings>
+                                            <KeyBinding Key="Enter" Command="{Binding SearchCommand}" />
+                                        </TextBox.InputBindings>
+                                    </TextBox>
+                                    <Button x:Name="HistoryClearSearchButton" Content="×" Command="{Binding ClearSearchCommand}" Style="{StaticResource HistoryClearSearchButtonStyle}" HorizontalAlignment="Right" VerticalAlignment="Center" Visibility="{Binding HasSearchTerm, Converter={StaticResource BooleanToVisibilityConverter}}" ToolTip="Xóa tiêu chí tìm sản phẩm" AutomationProperties.Name="Xóa tìm kiếm" />
+                                </Grid>
+                                <Button x:Name="HistorySearchButton" Grid.Column="2" Content="Tìm" Command="{Binding SearchCommand}" Style="{StaticResource HistorySearchButtonStyle}" ToolTip="Tìm ngay trong toàn bộ lịch sử." AutomationProperties.Name="Tìm lịch sử tồn kho" />
+                            </Grid>
+                            <TextBlock Text="Tên, mã sản phẩm hoặc mã vạch" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" TextWrapping="Wrap" Margin="2,6,0,0" />
+
+                            <TextBlock Text="Thời gian" Style="{StaticResource HistoryLabelStyle}" Margin="0,17,0,6" />
+                            <ComboBox ItemsSource="{Binding DateRangeOptions}" SelectedItem="{Binding SelectedDateRangeOption, Mode=TwoWay}" DisplayMemberPath="DisplayName" Style="{StaticResource HistoryComboStyle}" />
+                            <TextBlock Text="{Binding DateRangeText}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="2,8,0,0" />
+                            <Border Style="{StaticResource HistoryCustomDatePanelStyle}" Margin="0,10,0,0">
                                 <StackPanel>
-                                    <TextBlock Text="Từ ngày" Style="{StaticResource HistoryLabelStyle}" Foreground="{StaticResource SidebarMutedBrush}" />
+                                    <TextBlock Text="Từ ngày" Style="{StaticResource HistoryLabelStyle}" />
                                     <DatePicker SelectedDate="{Binding FromDate, Mode=TwoWay}" SelectedDateFormat="Short" Language="vi-VN" Style="{StaticResource HistoryDateStyle}" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Đến ngày" Style="{StaticResource HistoryLabelStyle}" Foreground="{StaticResource SidebarMutedBrush}" />
+                                    <TextBlock Text="Đến ngày" Style="{StaticResource HistoryLabelStyle}" Margin="0,11,0,6" />
                                     <DatePicker SelectedDate="{Binding ToDate, Mode=TwoWay}" SelectedDateFormat="Short" Language="vi-VN" Style="{StaticResource HistoryDateStyle}" />
                                 </StackPanel>
-                            </Grid>
+                            </Border>
                             <TextBlock Text="{Binding DateRangeError}" Foreground="{StaticResource DangerBrush}" FontSize="11" TextWrapping="Wrap" Margin="2,6,0,0" Visibility="{Binding HasDateRangeError, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
-                            <TextBlock Text="Loại thay đổi" Style="{StaticResource HistoryLabelStyle}" Foreground="White" Margin="0,16,0,6" />
+                            <TextBlock Text="Loại thay đổi" Style="{StaticResource HistoryLabelStyle}" Margin="0,16,0,6" />
                             <ComboBox ItemsSource="{Binding MovementFilters}" SelectedItem="{Binding SelectedMovementFilter, Mode=TwoWay}" DisplayMemberPath="DisplayName" Style="{StaticResource HistoryComboStyle}" />
-                            <TextBlock Text="Nguồn giao dịch" Style="{StaticResource HistoryLabelStyle}" Foreground="White" Margin="0,15,0,6" />
+                            <TextBlock Text="Nguồn giao dịch" Style="{StaticResource HistoryLabelStyle}" Margin="0,15,0,6" />
                             <ComboBox ItemsSource="{Binding ReferenceFilters}" SelectedItem="{Binding SelectedReferenceFilter, Mode=TwoWay}" DisplayMemberPath="DisplayName" Style="{StaticResource HistoryComboStyle}" />
                         </StackPanel>
                     </ScrollViewer>
                     <StackPanel Grid.Row="2" Margin="17,10,17,17">
-                        <Button Content="Xóa bộ lọc" Command="{Binding ClearFiltersCommand}" Style="{StaticResource SecondaryButtonStyle}" Visibility="{Binding HasActiveFilters, Converter={StaticResource BooleanToVisibilityConverter}}" ToolTip="Về 30 ngày gần nhất và xem tất cả sản phẩm." />
-                        <TextBlock Text="{Binding FilterSummaryText}" Foreground="{StaticResource SidebarMutedBrush}" FontSize="10" TextWrapping="Wrap" Margin="2,9,0,0" />
+                        <TextBlock Text="{Binding FilterSummaryText}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" TextWrapping="Wrap" Margin="2,0,0,9" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button Content="Xóa bộ lọc" Command="{Binding ClearFiltersCommand}" Style="{StaticResource HistoryActionButtonStyle}" Visibility="{Binding HasActiveFilters, Converter={StaticResource BooleanToVisibilityConverter}}" ToolTip="Về 30 ngày gần nhất và xem tất cả sản phẩm." />
+                            <Button Grid.Column="2" Content="Làm mới" Command="{Binding RefreshCommand}" Style="{StaticResource HistoryActionButtonStyle}" ToolTip="Đọc lại dữ liệu theo đúng điều kiện đang xem." />
+                        </Grid>
                     </StackPanel>
                 </Grid>
             </Border>

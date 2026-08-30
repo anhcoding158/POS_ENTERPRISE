@@ -1,5 +1,11 @@
 # MASTER ROADMAP — POS ENTERPRISE RETAIL V1
 
+## Latest checkpoint position — Inventory History navigation/filter-card hotfix — 2026-08-30
+
+- This limited exception corrects the final Inventory History presentation/navigation defects while preserving the accepted database-side search and query semantics. There is one primary Shell route through `Kho & lưu trữ → Lịch sử kho`; the duplicate sidebar command is removed, and the screen uses one light local filter card with a safe `Tìm`/clear-search layout plus colocated reset/refresh actions.
+- Focused history/navigation coverage is `22/22 PASS` in Debug and Release, relevant Release coverage is `284/284 PASS`, normal-host full Release is `1410/1410 PASS`, failed/skipped `0/0`, and Release build is `0/0`. Official Quality Gate passed with vulnerability, EF pending-model and Git checks PASS.
+- Physical WPF screenshot/UIA/DPI acceptance remains manual pending. R5.1 remains in manual acceptance and is not closed by this hotfix; R5.1A–R5.1D and R4.2–R4.4 are preserved, R5.2 is NOT STARTED, and Development Freeze remains ACTIVE outside this authorized exception.
+
 ## Latest checkpoint position — Inventory History redesign — 2026-08-30
 
 - This authorized Inventory History hotfix keeps the completed search/query behavior while replacing the confusing hidden-product-scope presentation with one visible product criterion and a general Shell entry. The screen now uses a compact filter sidebar, business-language summary cards, a spacious history table and on-demand detail without changing inventory writes, ledger, audit, RBAC or other modules.

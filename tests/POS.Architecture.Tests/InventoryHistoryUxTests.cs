@@ -26,6 +26,10 @@ public sealed class InventoryHistoryUxTests
 
         Assert.Contains("Tên, mã sản phẩm hoặc mã vạch", source, StringComparison.Ordinal);
         Assert.Contains("Text=\"Tìm sản phẩm\"", source, StringComparison.Ordinal);
+        Assert.Contains("Content=\"Tìm\"", source, StringComparison.Ordinal);
+        Assert.Contains("HistorySearchButtonStyle", source, StringComparison.Ordinal);
+        Assert.Contains("HistoryClearSearchButtonStyle", source, StringComparison.Ordinal);
+        Assert.Contains("Background=\"{StaticResource SurfaceBrush}\"", source, StringComparison.Ordinal);
         Assert.Contains("<ColumnDefinition Width=\"250\"", source, StringComparison.Ordinal);
         Assert.Contains("<UniformGrid Grid.Row=\"0\" Columns=\"3\"", source, StringComparison.Ordinal);
         Assert.Contains("Command=\"{Binding SearchCommand}\"", source, StringComparison.Ordinal);
@@ -34,6 +38,7 @@ public sealed class InventoryHistoryUxTests
         Assert.DoesNotContain("Lọc lịch sử", source, StringComparison.Ordinal);
         Assert.DoesNotContain("Đặt lại", source, StringComparison.Ordinal);
         Assert.DoesNotContain("Tải lại", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("Xóa nội dung tìm kiếm", source, StringComparison.Ordinal);
         Assert.DoesNotContain("AUDIT TRAIL", source, StringComparison.Ordinal);
         Assert.DoesNotContain("Movement có delta", source, StringComparison.Ordinal);
         Assert.DoesNotContain("Bỏ giới hạn sản phẩm", source, StringComparison.Ordinal);
@@ -270,6 +275,47 @@ public sealed class InventoryHistoryUxTests
 
             window.Close();
         });
+    }
+
+    [Fact]
+    public void Inventory_history_filter_controls_fit_inside_the_light_sidebar_at_minimum_size()
+    {
+        RunOnSta(() =>
+        {
+            if (global::System.Windows.Application.Current is null)
+            {
+                var application = new POS.Wpf.App();
+                application.InitializeComponent();
+            }
+
+            using var viewModel = CreateViewModel(new FakeInventoryService());
+            var window = new InventoryHistoryWindow(viewModel);
+            var root = Assert.IsType<System.Windows.Controls.Grid>(window.Content);
+            root.Measure(new Size(1000, 620));
+            root.Arrange(new Rect(new Point(), new Size(1000, 620)));
+
+            var filterCard = Assert.IsType<System.Windows.Controls.Border>(window.FindName("HistoryFilterCard"));
+            var searchButton = Assert.IsType<System.Windows.Controls.Button>(window.FindName("HistorySearchButton"));
+            var searchInput = Assert.IsType<System.Windows.Controls.TextBox>(window.FindName("HistorySearchInput"));
+
+            Assert.True(filterCard.ActualWidth > 0);
+            Assert.True(searchButton.ActualWidth >= 68);
+            Assert.True(searchInput.ActualWidth > 0);
+            AssertWithinAncestor(filterCard, searchButton);
+            AssertWithinAncestor(filterCard, searchInput);
+
+            window.Close();
+        });
+    }
+
+    private static void AssertWithinAncestor(
+        FrameworkElement ancestor,
+        FrameworkElement element)
+    {
+        var origin = element.TransformToAncestor(ancestor).Transform(new Point());
+        Assert.True(origin.X >= -1);
+        Assert.True(origin.Y >= -1);
+        Assert.True(origin.X + element.ActualWidth <= ancestor.ActualWidth + 1);
     }
 
     private static InventoryHistoryViewModel CreateViewModel(FakeInventoryService service)

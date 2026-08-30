@@ -1,5 +1,12 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## Inventory History navigation/filter-card hotfix — 2026-08-30
+
+- Focused Inventory History/navigation coverage: `22/22 PASS` in Debug and `22/22 PASS` in Release. Relevant Product/Inventory/Category/Import/RBAC/Shell Release coverage: `284/284 PASS`.
+- Normal-host full Release: `1410/1410 PASS`, failed/skipped `0/0`; explicit Release solution build: `0` warnings and `0` errors. Official `scripts/Test-QualityGate.ps1` without `-SkipEfCheck` passed: restore/build/tests, vulnerability scan, local tool restore, EF pending-model and Git checks all PASS.
+- New regression coverage checks removal of the duplicate Shell route, the existing context-menu route, the light local filter card, one safe expanding search row with bounded `Tìm` and in-field clear control, and real WPF measure/arrange bounds at the minimum layout. Existing database-side search/debounce/Enter/reset/refresh/latest-response and permission regressions remain green.
+- No canonical database, runtime data, stock write, migration, package, shared theme or unrelated module was changed. Physical screenshot/click/UIA/DPI acceptance remains manual pending and is not counted as automated PASS.
+
 ## Inventory History redesign — 2026-08-30
 
 - Focused Inventory History and product-navigation coverage: `21/21 PASS` in Debug and `21/21 PASS` in Release. Relevant Inventory/Product/RBAC/Shell/History Release coverage: `90/90 PASS`.

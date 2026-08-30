@@ -348,11 +348,6 @@ public partial class ShellWindow :
             SystemCapability.ViewInventoryHistory);
 
         ApplyCommandPermission(
-            _viewModel.OpenInventoryHistoryCommand,
-            permissionState.CanViewInventoryHistory,
-            SystemCapability.ViewInventoryHistory);
-
-        ApplyCommandPermission(
             _viewModel.OpenOrderHistoryCommand,
             permissionState.CanViewReports,
             SystemCapability.ViewReports);
