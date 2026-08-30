@@ -1,5 +1,11 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## R5.1–R5.3 hotfix A/B/C — 2026-08-30
+
+- Automated composition/behavior verification đạt `29/29 PASS` Debug và Release; normal-host full Release đạt `1434/1434 PASS`, build `0/0`, Quality Gate/vulnerability/EF checks PASS. Bulk UI đã có đường vào thật và export/template caller đã nhận kết quả typed.
+- Physical click-through, UIA/DPI, save dialog/file-open thực tế và người dùng chọn từng bulk operation vẫn cần manual acceptance; measure/arrange và STA composition không được coi là visual/manual PASS.
+- R5.3 label printing vẫn blocked bởi không có production label renderer/printer pipeline; không dựng nút giả hoặc tái sử dụng receipt printing.
+
 ## R5.1–R5.3 nghiệm thu hotfix — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
 
 - Ba lỗi được tái hiện ở boundary UI: các dialog export/bulk được tạo độc lập nhưng tham chiếu `ShellCaptionTextStyle` khai báo cục bộ trong `ShellWindow`; editor trả hàng bind trực tiếp `int` với `PropertyChanged` nên thao tác xóa/gõ bị source cũ ghi ngược; Shell vẫn giữ `SelectedProduct` và single command active trong bulk mode.

@@ -1,5 +1,12 @@
 # MASTER ROADMAP — POS ENTERPRISE RETAIL V1
 
+## Latest checkpoint position — R5.1–R5.3 hotfix A/B/C — 2026-08-30
+
+- Hotfix đã nối chọn nhiều từ Product & Inventory UI tới dialog preview/confirm thật bằng tập checkbox theo trang, bổ sung header select-all và hướng dẫn trạng thái chưa chọn; không fallback sang `SelectedProduct`, không thay đổi stock/movement và giữ nguyên bốn bulk operations hiện có.
+- History chung hiện có một lối mở duy nhất tại `Hàng hóa → Lịch sử kho`, không kế thừa selection sản phẩm; mục trùng trong menu sản phẩm đã bỏ. Export/template dialog trả trạng thái typed sau writer và caller hiển thị feedback thành công/hủy/lỗi đúng cửa sổ khởi phát.
+- Focused A/B/C `29/29 PASS` Debug và Release; full normal-host Release `1434/1434 PASS`, failed/skipped `0/0`; Release build `0/0`; Official Quality Gate đầy đủ PASS. Physical click/UIA/DPI, save-dialog/file-open và manual bulk interaction vẫn pending, vì vậy không đóng manual acceptance.
+- Giữ R5.1A/B CLOSED/PRESERVED, R5.1C/D và toàn R5.1 theo bằng chứng manual thực tế; R5.2 automated verified/manual pending; R5.3 vẫn PARTIAL do label-printing pipeline production chưa tồn tại. R4.2–R4.4 CLOSED/PRESERVED, R5.4 chưa bắt đầu.
+
 ## Latest checkpoint position — R5.1–R5.3 nghiệm thu hotfix — 2026-08-30
 
 - Hotfix giới hạn đã nối lại ba entry point export/template qua dialog có resource đúng phạm vi, sửa text-editing state của nhập số trả hàng và tách command single-product khỏi tập chọn nhiều trong Product & Inventory. Không thay đổi transaction, stock movement, audit, RBAC, importer, archive hoặc schema.

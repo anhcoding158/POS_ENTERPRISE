@@ -6,6 +6,7 @@ using POS.Application.Abstractions.Exports;
 using POS.Application.Abstractions.Services;
 using POS.Wpf.ViewModels;
 using POS.Wpf.Views;
+using POS.Wpf.Services;
 using Xunit;
 
 namespace POS.Architecture.Tests;
@@ -62,6 +63,28 @@ public sealed class ProductWorkflowCompositionTests
         });
     }
 
+    [Fact]
+    public async Task Export_result_is_saved_only_after_the_writer_completes()
+    {
+        var path = Path.Combine(
+            Path.GetTempPath(),
+            "POS-Enterprise-export-feedback-" + Guid.NewGuid().ToString("N") + ".xlsx");
+        var writer = new RecordingProductExportWriter();
+        using var viewModel = new ProductExportViewModel(
+            new NoOpProductExportService(),
+            writer,
+            initialReport: ProductExportReportType.ProductImportTemplate);
+
+        var saved = await viewModel.ExportAsync(path);
+
+        Assert.True(saved);
+        Assert.True(writer.Completed);
+        Assert.NotNull(viewModel.DialogResult);
+        Assert.Equal(ProductExportDialogOutcome.Saved, viewModel.DialogResult!.Outcome);
+        Assert.Equal(Path.GetFileName(path), viewModel.DialogResult.FileName);
+        Assert.Equal(path, viewModel.DialogResult.DestinationPath);
+    }
+
     private static void EnsureApplication()
     {
         if (global::System.Windows.Application.Current is null)
@@ -108,6 +131,21 @@ public sealed class ProductWorkflowCompositionTests
             string destinationPath,
             CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
+    }
+
+    private sealed class RecordingProductExportWriter : IProductExportWriter
+    {
+        public bool Completed { get; private set; }
+
+        public Task WriteAsync(
+            ProductExportData data,
+            ProductExportFormat format,
+            string destinationPath,
+            CancellationToken cancellationToken = default)
+        {
+            Completed = true;
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class NoOpBulkProductOperationService : IBulkProductOperationService

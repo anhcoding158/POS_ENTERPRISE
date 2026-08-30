@@ -1,5 +1,11 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-050 — R5.1–R5.3 UX callers receive typed export completion
+
+- **Status:** Accepted for the 2026-08-30 A/B/C hotfix; physical save-dialog/file-open acceptance remains pending.
+- **Decision:** `IProductExportDialogService` returns `Saved`, `Canceled` or `Failed` with safe filename/path/count metadata. Product, Inventory History and Import Wizard caller ViewModels update their own visible status only after the writer completes; selecting a destination or closing the dialog alone is not success evidence.
+- **Scope:** This is a WPF caller/dialog contract change only. Existing export writer, report schema, permission checks, atomic file replacement and import/business services remain unchanged. No database, migration, package or shared-theme change.
+
 ## DEC-049 — Keep legacy Inventory History composition while retaining the new query pipeline
 
 - **Status:** Accepted for the 2026-08-30 UX hotfix; physical WPF acceptance remains pending.

@@ -510,7 +510,17 @@ public sealed class ProductImportWizardViewModel : ViewModelBase, IDisposable
     private async Task DownloadTemplateAsync()
     {
         if (_exportDialogService is not null)
-            await _exportDialogService.ShowTemplateAsync();
+        {
+            var result = await _exportDialogService.ShowTemplateAsync();
+            StatusMessage = result.Outcome switch
+            {
+                ProductExportDialogOutcome.Saved =>
+                    $"Đã lưu mẫu nhập: {result.FileName}. " +
+                    $"Nơi lưu: {result.DestinationPath}",
+                ProductExportDialogOutcome.Canceled => "Đã hủy lưu mẫu nhập.",
+                _ => result.Message ?? "Không thể lưu mẫu nhập."
+            };
+        }
     }
 
     private void ApplyPreview(ProductImportPreviewResult result)

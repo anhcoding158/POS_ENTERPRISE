@@ -5,9 +5,9 @@ namespace POS.Wpf.Services;
 
 public interface IProductExportDialogService
 {
-    Task<bool> ShowAsync(
+    Task<ProductExportDialogResult> ShowAsync(
         ProductSearchRequest? productFilters = null,
         InventorySearchRequest? historyFilters = null);
 
-    Task<bool> ShowTemplateAsync();
+    Task<ProductExportDialogResult> ShowTemplateAsync();
 }

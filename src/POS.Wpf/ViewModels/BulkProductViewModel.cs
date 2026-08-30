@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Globalization;
 using POS.Application.Abstractions.Services;
 using POS.Application.DTOs.Categories;
@@ -191,6 +192,15 @@ public sealed class BulkProductViewModel : ViewModelBase, IDisposable
     private static bool TryParseLong(string value, out long result) => long.TryParse(value.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out result) && result >= 0;
     private static bool TryParseInt(string value, out int result) => int.TryParse(value.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out result) && result >= 0;
     private void NotifyCommands() { PreviewCommand.NotifyCanExecuteChanged(); ConfirmCommand.NotifyCanExecuteChanged(); CancelCommand.NotifyCanExecuteChanged(); CloseCommand.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(HasPreview)); OnPropertyChanged(nameof(HasErrors)); OnPropertyChanged(nameof(SummaryText)); }
-    private static void HandleException(Exception exception) { }
+    private void HandleException(Exception exception)
+    {
+        Trace.TraceError(
+            "Bulk product operation failed. ExceptionType={0}",
+            exception.GetType().FullName);
+        ErrorMessage =
+            "Không thể hoàn tất thao tác hàng loạt. " +
+            "Hãy kiểm tra lại dữ liệu và thử lại.";
+        StatusMessage = "Thao tác hàng loạt thất bại.";
+    }
     public void Dispose() { _cancellation?.Cancel(); _cancellation?.Dispose(); }
 }

@@ -1,5 +1,12 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R5.1–R5.3 hotfix A/B/C — 2026-08-30
+
+- Focused A/B/C Debug `29/29 PASS`; focused A/B/C Release `29/29 PASS`; failed/skipped `0/0`. Coverage includes real production-resource Shell composition, sidebar History binding and duplicate-route removal, bulk mode guidance/select-all/checked-row target behavior, four operation exposure, typed export result after writer completion and Import Wizard success feedback.
+- Release solution build: `0` warnings, `0` errors. Full normal-host Release: `1434/1434 PASS`, failed/skipped `0/0`.
+- Official `scripts/Test-QualityGate.ps1` without `-SkipEfCheck`: PASS; vulnerability scan, local tool restore, EF pending-model (“No changes have been made to the model since the last migration”) and Git checks PASS.
+- No canonical/manual database, runtime export, credential, migration, package or label-printer hardware was used. Physical click/UIA/DPI, save-dialog/file-open and manual bulk interaction remain pending.
+
 ## R5.1–R5.3 nghiệm thu hotfix — 2026-08-30
 
 - Focused Debug: `58/58 PASS`; focused Release: `185/185 PASS`; failed/skipped `0/0`. Coverage includes Product/History export dialog composition with production App resources, Import template command delegation, return quantity edit/validation, Shell single-vs-bulk command guards and real bulk-selection column width.

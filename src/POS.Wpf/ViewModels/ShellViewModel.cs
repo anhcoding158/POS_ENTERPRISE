@@ -280,6 +280,12 @@ public sealed class ShellViewModel :
                 () => !IsLoading,
                 HandleCommandException);
 
+        ToggleBulkPageSelectionCommand =
+            new AsyncRelayCommand(
+                ToggleBulkPageSelectionAsync,
+                CanToggleBulkPageSelection,
+                HandleCommandException);
+
         ApplyBulkOperationCommand =
             new AsyncRelayCommand(
                 ApplyBulkOperationAsync,
@@ -393,6 +399,8 @@ public sealed class ShellViewModel :
     public AsyncRelayCommand ExportProductsCommand { get; }
 
     public AsyncRelayCommand ToggleBulkSelectionCommand { get; }
+
+    public AsyncRelayCommand ToggleBulkPageSelectionCommand { get; }
 
     public AsyncRelayCommand ApplyBulkOperationCommand { get; }
 
@@ -547,6 +555,7 @@ public sealed class ShellViewModel :
             OnPropertyChanged(nameof(BulkSelectionModeText));
             OnPropertyChanged(nameof(HasBulkSelection));
             OnPropertyChanged(nameof(SelectedBulkProductCount));
+            OnPropertyChanged(nameof(BulkPageSelectionState));
             OnPropertyChanged(nameof(ShowSingleProductContext));
             OnPropertyChanged(nameof(SelectedProductHint));
             NotifyCommandStates();
@@ -558,6 +567,25 @@ public sealed class ShellViewModel :
 
     public int SelectedBulkProductCount =>
         Products.Count(row => row.IsBulkSelected);
+
+    public bool? BulkPageSelectionState
+    {
+        get
+        {
+            if (Products.Count == 0)
+            {
+                return false;
+            }
+
+            var selectedCount = Products.Count(row => row.IsBulkSelected);
+            return selectedCount switch
+            {
+                0 => false,
+                _ when selectedCount == Products.Count => true,
+                _ => null
+            };
+        }
+    }
 
     public bool HasBulkSelection =>
         IsBulkSelectionMode && SelectedBulkProductCount > 0;
@@ -593,6 +621,12 @@ public sealed class ShellViewModel :
 
             if (IsBulkSelectionMode)
             {
+                if (SelectedBulkProductCount == 0)
+                {
+                    return
+                        "Tích chọn sản phẩm bên dưới, sau đó chọn thao tác hàng loạt.";
+                }
+
                 return $"Đã chọn {SelectedBulkProductCount:N0} sản phẩm trên trang hiện tại.";
             }
 
@@ -639,16 +673,6 @@ public sealed class ShellViewModel :
             return
                 $"Mở nghiệp vụ nhập, xuất, điều chỉnh hoặc kiểm kê " +
                 $"cho {selectedProduct.Name}.";
-        }
-    }
-
-    public string InventoryHistoryActionHint
-    {
-        get
-        {
-            // Giữ property instance-bound để WPF tự cập nhật cùng selection.
-            _ = SelectedProduct;
-            return "Mở lịch sử tồn kho của toàn bộ sản phẩm.";
         }
     }
 
@@ -1154,7 +1178,15 @@ public sealed class ShellViewModel :
             pageSize: ProductSearchRequest.MaximumPageSize,
             SelectedProductStatusFilter?.IsArchived);
 
-        await _productExportDialogService.ShowAsync(filters);
+        var result = await _productExportDialogService.ShowAsync(filters);
+        StatusMessage = result.Outcome switch
+        {
+            ProductExportDialogOutcome.Saved =>
+                $"Đã xuất file: {result.FileName} ({result.RowCount:N0} dòng). " +
+                $"Nơi lưu: {result.DestinationPath}",
+            ProductExportDialogOutcome.Canceled => "Đã hủy xuất file.",
+            _ => result.Message ?? "Xuất file thất bại."
+        };
     }
 
     private bool CanExportProducts()
@@ -1173,7 +1205,27 @@ public sealed class ShellViewModel :
 
         OnPropertyChanged(nameof(SelectedBulkProductCount));
         OnPropertyChanged(nameof(HasBulkSelection));
+        OnPropertyChanged(nameof(BulkPageSelectionState));
         await Task.CompletedTask;
+    }
+
+    private async Task ToggleBulkPageSelectionAsync()
+    {
+        var selectRows = BulkPageSelectionState != true;
+        foreach (var row in Products)
+        {
+            row.IsBulkSelected = selectRows;
+        }
+
+        OnPropertyChanged(nameof(SelectedBulkProductCount));
+        OnPropertyChanged(nameof(HasBulkSelection));
+        OnPropertyChanged(nameof(BulkPageSelectionState));
+        await Task.CompletedTask;
+    }
+
+    private bool CanToggleBulkPageSelection()
+    {
+        return IsBulkSelectionMode && !IsLoading && Products.Count > 0;
     }
 
     private async Task ApplyBulkOperationAsync()
@@ -1690,6 +1742,8 @@ public sealed class ShellViewModel :
                 Products.Add(row);
             }
 
+            OnPropertyChanged(nameof(BulkPageSelectionState));
+
             PageNumber =
                 page.PageNumber;
 
@@ -1918,10 +1972,6 @@ public sealed class ShellViewModel :
 
         OnPropertyChanged(
             nameof(
-                InventoryHistoryActionHint));
-
-        OnPropertyChanged(
-            nameof(
                 SelectedProductCodeText));
 
         OnPropertyChanged(
@@ -1961,6 +2011,9 @@ public sealed class ShellViewModel :
             .NotifyCanExecuteChanged();
 
         ToggleBulkSelectionCommand
+            .NotifyCanExecuteChanged();
+
+        ToggleBulkPageSelectionCommand
             .NotifyCanExecuteChanged();
 
         ApplyBulkOperationCommand
@@ -2012,6 +2065,9 @@ public sealed class ShellViewModel :
 
         OnPropertyChanged(nameof(SelectedBulkProductCount));
         OnPropertyChanged(nameof(HasBulkSelection));
+        OnPropertyChanged(nameof(BulkPageSelectionState));
+        OnPropertyChanged(nameof(SelectedProductHint));
         ApplyBulkOperationCommand.NotifyCanExecuteChanged();
+        ToggleBulkPageSelectionCommand.NotifyCanExecuteChanged();
     }
 }

@@ -583,7 +583,15 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        await _exportDialogService.ShowAsync(historyFilters: request);
+        var result = await _exportDialogService.ShowAsync(historyFilters: request);
+        StatusMessage = result.Outcome switch
+        {
+            ProductExportDialogOutcome.Saved =>
+                $"Đã xuất file: {result.FileName} ({result.RowCount:N0} dòng). " +
+                $"Nơi lưu: {result.DestinationPath}",
+            ProductExportDialogOutcome.Canceled => "Đã hủy xuất file.",
+            _ => result.Message ?? "Xuất lịch sử kho thất bại."
+        };
     }
 
     private async Task DebouncedApplyAsync(CancellationTokenSource source)

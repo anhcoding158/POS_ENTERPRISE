@@ -356,15 +356,15 @@ public partial class ShellWindow :
             permissionState.CanViewInventoryHistory,
             SystemCapability.ViewInventoryHistory);
 
+        ShellInventoryHistoryNavigationButton.Visibility =
+            permissionState.CanViewInventoryHistory
+                ? global::System.Windows.Visibility.Visible
+                : global::System.Windows.Visibility.Collapsed;
+
         ApplyCommandPermission(
             _viewModel.OpenOrderHistoryCommand,
             permissionState.CanViewReports,
             SystemCapability.ViewReports);
-
-        ApplyMenuItemPermission(
-            InventoryHistoryMenuItem,
-            permissionState.CanViewInventoryHistory,
-            SystemCapability.ViewInventoryHistory);
 
         var canUseCheckout =
         _permissionService.HasPermission(
@@ -1154,6 +1154,18 @@ public partial class ShellWindow :
             width;
         _bulkSelectionColumn.Width =
             new global::System.Windows.Controls.DataGridLength(width);
+    }
+
+    private void OnBulkPageSelectionClick(
+        object sender,
+        global::System.Windows.RoutedEventArgs e)
+    {
+        if (_viewModel.ToggleBulkPageSelectionCommand.CanExecute(null))
+        {
+            _viewModel.ToggleBulkPageSelectionCommand.Execute(null);
+        }
+
+        e.Handled = true;
     }
 
     private static string GetRoleDisplayName(

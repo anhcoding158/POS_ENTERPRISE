@@ -16,13 +16,13 @@ public sealed class ProductExportDialogService : IProductExportDialogService
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
     }
 
-    public Task<bool> ShowAsync(ProductSearchRequest? productFilters = null, InventorySearchRequest? historyFilters = null)
+    public Task<ProductExportDialogResult> ShowAsync(ProductSearchRequest? productFilters = null, InventorySearchRequest? historyFilters = null)
         => ShowCoreAsync(productFilters, historyFilters, null);
 
-    public Task<bool> ShowTemplateAsync()
+    public Task<ProductExportDialogResult> ShowTemplateAsync()
         => ShowCoreAsync(null, null, ProductExportReportType.ProductImportTemplate);
 
-    private Task<bool> ShowCoreAsync(ProductSearchRequest? productFilters, InventorySearchRequest? historyFilters, ProductExportReportType? initialReport)
+    private Task<ProductExportDialogResult> ShowCoreAsync(ProductSearchRequest? productFilters, InventorySearchRequest? historyFilters, ProductExportReportType? initialReport)
     {
         using var scope = _serviceProvider.CreateScope();
         var viewModel = new ProductExportViewModel(
@@ -37,7 +37,13 @@ public sealed class ProductExportDialogService : IProductExportDialogService
             {
                 Owner = global::System.Windows.Application.Current?.MainWindow
             };
-            return Task.FromResult(window.ShowDialog() == true);
+            window.ShowDialog();
+            return Task.FromResult(viewModel.DialogResult ?? new ProductExportDialogResult(
+                ProductExportDialogOutcome.Canceled,
+                null,
+                null,
+                0,
+                "Đã hủy thao tác."));
         }
     }
 }

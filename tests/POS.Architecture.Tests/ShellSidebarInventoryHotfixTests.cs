@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Globalization;
 using System.Xml.Linq;
 using System.Windows;
 using System.Windows.Automation;
@@ -50,7 +51,7 @@ public sealed class ShellSidebarInventoryHotfixTests
         foreach (var label in new[]
         {
             "Tổng quan", "Bán hàng", "Hàng hóa", "Sản phẩm & tồn kho",
-            "Danh mục sản phẩm", "Đơn hàng", "Lịch sử đơn hàng",
+            "Danh mục sản phẩm", "Lịch sử kho", "Đơn hàng", "Lịch sử đơn hàng",
             "Thanh toán QR", "Quản lý cửa hàng", "Nhân viên & tài khoản",
             "Cài đặt cửa hàng", "Dữ liệu & hỗ trợ", "Sao lưu dữ liệu",
             "Khôi phục dữ liệu", "Dung lượng", "Gói hỗ trợ"
@@ -75,7 +76,7 @@ public sealed class ShellSidebarInventoryHotfixTests
         {
             "ShellOverviewNavigationButton", "ShellSalesNavigationButton",
             "ShellInventoryGroup", "ShellProductsNavigationButton",
-            "ShellCategoriesNavigationButton", "ShellOrdersGroup",
+            "ShellCategoriesNavigationButton", "ShellInventoryHistoryNavigationButton", "ShellOrdersGroup",
             "ShellOrderHistoryNavigationButton", "ShellQrGroup",
             "ShellManagementGroup", "EmployeeManagementNavigationButton",
             "StoreSettingsNavigationButton", "ShellDataSupportGroup",
@@ -232,8 +233,12 @@ public sealed class ShellSidebarInventoryHotfixTests
                 var productsButton = NamedField<Button>(window, "ShellProductsNavigationButton");
                 var categoriesButton = NamedField<Button>(window, "ShellCategoriesNavigationButton");
                 var inventoryGroup = NamedField<Expander>(window, "ShellInventoryGroup");
-                var grid = NamedField<DataGrid>(window, "ProductInventoryGrid");
-                var cards = NamedField<UniformGrid>(window, "InventorySummaryCards");
+            var grid = NamedField<DataGrid>(window, "ProductInventoryGrid");
+            var cards = NamedField<UniformGrid>(window, "InventorySummaryCards");
+            var bulkContextText = NamedField<TextBlock>(window, "BulkSelectionContextText");
+            var bulkOperationButton = NamedField<Button>(window, "BulkOperationButton");
+            var exitBulkSelectionButton = NamedField<Button>(window, "ExitBulkSelectionButton");
+            var historyButton = NamedField<Button>(window, "ShellInventoryHistoryNavigationButton");
 
                 Assert.Equal(
                     nameof(ShellViewModel.NavigateToProductsCommand),
@@ -246,6 +251,9 @@ public sealed class ShellSidebarInventoryHotfixTests
                     BindingOperations.GetBinding(inventoryGroup, Expander.IsExpandedProperty)?.Path.Path);
                 Assert.Equal("ShellProductsNavigationButton", AutomationProperties.GetAutomationId(productsButton));
                 Assert.Equal("Sản phẩm & tồn kho", productsButton.ToolTip);
+                Assert.Equal(nameof(ShellViewModel.ViewInventoryHistoryCommand),
+                    BindingOperations.GetBinding(historyButton, Button.CommandProperty)?.Path.Path);
+                Assert.Equal("ShellInventoryHistoryNavigationButton", AutomationProperties.GetAutomationId(historyButton));
                 Assert.Equal(ScrollBarVisibility.Auto, ScrollViewer.GetHorizontalScrollBarVisibility(grid));
                 Assert.Equal(1024d, window.MinWidth);
 
@@ -260,6 +268,28 @@ public sealed class ShellSidebarInventoryHotfixTests
                 window.UpdateLayout();
                 Assert.True(viewModel.IsBulkSelectionMode);
                 Assert.Equal(68d, grid.Columns[0].Width.Value);
+                Assert.Equal(Visibility.Visible, bulkContextText.Visibility);
+                Assert.Equal(nameof(ShellViewModel.SelectedProductHint),
+                    BindingOperations.GetBinding(bulkContextText, TextBlock.TextProperty)?.Path.Path);
+                Assert.Contains("Tích chọn sản phẩm", viewModel.SelectedProductHint, StringComparison.Ordinal);
+                Assert.False(viewModel.ApplyBulkOperationCommand.CanExecute(null));
+                Assert.True(exitBulkSelectionButton.IsVisible || exitBulkSelectionButton.Visibility == Visibility.Visible);
+                Assert.NotNull(grid.Columns[0].HeaderTemplate);
+
+                viewModel.ToggleBulkPageSelectionCommand.Execute(null);
+                while (viewModel.ToggleBulkPageSelectionCommand.IsExecuting)
+                    Thread.Sleep(1);
+                window.UpdateLayout();
+                Assert.Equal(viewModel.Products.Count, viewModel.SelectedBulkProductCount);
+                Assert.Contains($"Đã chọn {viewModel.Products.Count} sản phẩm", viewModel.SelectedProductHint, StringComparison.Ordinal);
+                Assert.True(viewModel.BulkPageSelectionState);
+                Assert.True(viewModel.ApplyBulkOperationCommand.CanExecute(null));
+                Assert.Equal(nameof(ShellViewModel.ApplyBulkOperationCommand),
+                    BindingOperations.GetBinding(bulkOperationButton, Button.CommandProperty)?.Path.Path);
+
+                viewModel.Products[0].IsBulkSelected = false;
+                Assert.Null(viewModel.BulkPageSelectionState);
+                viewModel.Products[0].IsBulkSelected = true;
 
                 viewModel.ToggleBulkSelectionCommand.Execute(null);
                 while (viewModel.ToggleBulkSelectionCommand.IsExecuting)
@@ -307,6 +337,59 @@ public sealed class ShellSidebarInventoryHotfixTests
             PortableDevelopmentDatabase.DeleteOwnedScenario(scenarioRoot);
         }
     }
+
+    [Fact]
+    public async Task Bulk_command_uses_only_checked_rows_and_never_falls_back_to_single_selection()
+    {
+        using var services = new ServiceCollection().BuildServiceProvider();
+        var bulkDialog = new RecordingBulkDialogService();
+        var viewModel = new ShellViewModel(
+            services.GetRequiredService<IServiceScopeFactory>(),
+            new FakeProductDialogService(),
+            new CountingCategoryDialogService(),
+            new FakeInventoryDialogService(),
+            new FakeOrderHistoryWindowService(),
+            new AllowAllPermissionService(),
+            NullLogger<ShellViewModel>.Instance,
+            bulkProductDialogService: bulkDialog);
+
+        viewModel.Products.Add(new ProductRowViewModel(CreateProductRow(1, "P001")));
+        viewModel.Products.Add(new ProductRowViewModel(CreateProductRow(2, "P002")));
+        viewModel.SelectedProduct = viewModel.Products[1];
+
+        viewModel.ToggleBulkSelectionCommand.Execute(null);
+        await WaitForIdleAsync(viewModel.ToggleBulkSelectionCommand);
+        viewModel.ToggleBulkPageSelectionCommand.Execute(null);
+        await WaitForIdleAsync(viewModel.ToggleBulkPageSelectionCommand);
+
+        Assert.Equal(2, viewModel.SelectedBulkProductCount);
+        Assert.True(viewModel.ApplyBulkOperationCommand.CanExecute(null));
+
+        viewModel.ApplyBulkOperationCommand.Execute(null);
+        await WaitForIdleAsync(viewModel.ApplyBulkOperationCommand);
+
+        Assert.Equal([1, 2], bulkDialog.SelectedIds);
+    }
+
+    private static ProductListItemDto CreateProductRow(int id, string code) =>
+        new(
+            id,
+            1,
+            "Đồ uống",
+            code,
+            id.ToString("D6", CultureInfo.InvariantCulture),
+            "Sản phẩm " + code,
+            "Cái",
+            10000,
+            7000,
+            10,
+            1,
+            0,
+            true,
+            false,
+            true,
+            false,
+            true);
 
     private static ShellViewModel CreateViewModel(
         ServiceProvider services,
@@ -416,5 +499,16 @@ public sealed class ShellSidebarInventoryHotfixTests
     private sealed class FakeOrderHistoryWindowService : IOrderHistoryWindowService
     {
         public Task ShowAsync() => Task.CompletedTask;
+    }
+
+    private sealed class RecordingBulkDialogService : IBulkProductDialogService
+    {
+        public IReadOnlyList<int> SelectedIds { get; private set; } = [];
+
+        public Task<bool> ShowAsync(IReadOnlyList<ProductRowViewModel> selectedProducts)
+        {
+            SelectedIds = selectedProducts.Select(product => product.Id).ToArray();
+            return Task.FromResult(false);
+        }
     }
 }

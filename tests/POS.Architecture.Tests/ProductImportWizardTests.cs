@@ -174,6 +174,7 @@ public sealed class ProductImportWizardTests
             await Task.Delay(1);
 
         Assert.True(exportDialog.TemplateRequested);
+        Assert.Contains("Đã lưu mẫu nhập", viewModel.StatusMessage, StringComparison.Ordinal);
     }
 
     private static Task RunOnSta(Action action)
@@ -217,15 +218,21 @@ public sealed class ProductImportWizardTests
     {
         public bool TemplateRequested { get; private set; }
 
-        public Task<bool> ShowAsync(
+        public Task<ProductExportDialogResult> ShowAsync(
             ProductSearchRequest? productFilters = null,
             InventorySearchRequest? historyFilters = null) =>
-            Task.FromResult(false);
+            Task.FromResult(new ProductExportDialogResult(
+                ProductExportDialogOutcome.Canceled, null, null, 0, "Đã hủy thao tác."));
 
-        public Task<bool> ShowTemplateAsync()
+        public Task<ProductExportDialogResult> ShowTemplateAsync()
         {
             TemplateRequested = true;
-            return Task.FromResult(false);
+            return Task.FromResult(new ProductExportDialogResult(
+                ProductExportDialogOutcome.Saved,
+                "mau-nhap.xlsx",
+                Path.Combine(Path.GetTempPath(), "mau-nhap.xlsx"),
+                0,
+                "Đã lưu mẫu nhập."));
         }
     }
 

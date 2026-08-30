@@ -497,6 +497,20 @@
                                                 Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                         </StackPanel>
                                     </Button>
+                                    <Button
+                                        x:Name="ShellInventoryHistoryNavigationButton"
+                                        Command="{Binding ViewInventoryHistoryCommand}"
+                                        Style="{StaticResource ShellNavigationChildButtonStyle}"
+                                        ToolTip="Xem lịch sử biến động tồn kho"
+                                        AutomationProperties.AutomationId="ShellInventoryHistoryNavigationButton">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE81C;" FontFamily="Segoe MDL2 Assets" FontSize="13" Width="24" VerticalAlignment="Center" />
+                                            <TextBlock
+                                                Text="Lịch sử kho"
+                                                VerticalAlignment="Center"
+                                                Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        </StackPanel>
+                                    </Button>
                                 </StackPanel>
                             </Expander>
 
@@ -1711,7 +1725,7 @@
                                         MinWidth="132"
                                         Padding="10,0"
                                         Margin="8,0,0,0"
-                                        ToolTip="Điều chỉnh tồn, xem lịch sử kho, lưu trữ hoặc khôi phục sản phẩm">
+                                        ToolTip="Điều chỉnh tồn, lưu trữ hoặc khôi phục sản phẩm">
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="Kho &amp; lưu trữ" VerticalAlignment="Center" />
                                             <TextBlock Text="&#xE70D;" FontFamily="Segoe MDL2 Assets" FontSize="10" Margin="7,0,0,0" VerticalAlignment="Center" />
@@ -1728,11 +1742,6 @@
                                                     Command="{Binding AdjustInventoryCommand}"
                                                     ToolTip="{Binding InventoryActionHint}"
                                                     ToolTipService.ShowOnDisabled="True" />
-                                                <MenuItem
-                                                    x:Name="InventoryHistoryMenuItem"
-                                                    Header="Lịch sử kho"
-                                                    Command="{Binding ViewInventoryHistoryCommand}"
-                                                    ToolTip="{Binding InventoryHistoryActionHint}" />
                                                 <Separator />
                                                 <MenuItem
                                                     x:Name="ToggleProductArchiveMenuItem"
@@ -1757,9 +1766,10 @@
                                 </StackPanel>
 
                                 <StackPanel Orientation="Horizontal"
-                                            Visibility="{Binding HasBulkSelection,
+                                            Visibility="{Binding IsBulkSelectionMode,
                                                 Converter={StaticResource BooleanToVisibilityConverter}}">
                                     <TextBlock
+                                        x:Name="BulkSelectionContextText"
                                         Text="{Binding SelectedProductHint}"
                                         Foreground="{StaticResource TextPrimaryBrush}"
                                         FontSize="12"
@@ -1767,6 +1777,7 @@
                                         VerticalAlignment="Center"
                                         Margin="12,0,10,0" />
                                     <Button
+                                        x:Name="BulkOperationButton"
                                         Command="{Binding ApplyBulkOperationCommand}"
                                         Style="{StaticResource PrimaryButtonStyle}"
                                         Height="34"
@@ -1775,6 +1786,17 @@
                                         Content="Thao tác hàng loạt"
                                         ToolTip="Xem trước và áp dụng thay đổi cho các sản phẩm đã chọn"
                                         AutomationProperties.Name="Thao tác hàng loạt cho sản phẩm đã chọn" />
+                                    <Button
+                                        x:Name="ExitBulkSelectionButton"
+                                        Command="{Binding ToggleBulkSelectionCommand}"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Height="34"
+                                        MinWidth="128"
+                                        Padding="10,0"
+                                        Margin="8,0,0,0"
+                                        Content="Thoát chọn nhiều"
+                                        ToolTip="Bỏ chế độ chọn nhiều; không thay đổi dữ liệu"
+                                        AutomationProperties.Name="Thoát chế độ chọn nhiều" />
                                 </StackPanel>
                             </StackPanel>
 
@@ -1933,6 +1955,8 @@
                                     MinWidth="108"
                                     Margin="9,0,0,0"
                                     Content="{Binding BulkSelectionModeText}"
+                                    Visibility="{Binding IsBulkSelectionMode,
+                                        Converter={StaticResource InverseBooleanToVisibilityConverter}}"
                                     ToolTip="Chọn nhiều sản phẩm trên trang để cập nhật cùng lúc"
                                     AutomationProperties.Name="Chọn nhiều sản phẩm" />
                             </StackPanel>
@@ -2100,6 +2124,20 @@
                             <DataGrid.Columns>
 
                                 <DataGridTemplateColumn Header="CHỌN" Width="68">
+                                    <DataGridTemplateColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <CheckBox
+                                                IsThreeState="True"
+                                                IsChecked="{Binding DataContext.BulkPageSelectionState,
+                                                    RelativeSource={RelativeSource AncestorType={x:Type DataGrid}},
+                                                    Mode=OneWay}"
+                                                Click="OnBulkPageSelectionClick"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                ToolTip="Chọn hoặc bỏ chọn tất cả sản phẩm trên trang hiện tại"
+                                                AutomationProperties.Name="Chọn tất cả sản phẩm trên trang hiện tại" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.HeaderTemplate>
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <CheckBox

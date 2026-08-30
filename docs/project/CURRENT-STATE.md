@@ -1,5 +1,13 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## R5.1–R5.3 hotfix A/B/C — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
+
+- Đã hoàn thiện ba điểm UX/hành vi: Product & Inventory có chế độ chọn nhiều với checkbox chọn toàn bộ trang, hướng dẫn khi chưa tick và đường vào dialog bulk thật; các command đơn lẻ bị tách khỏi bulk target. Bốn thao tác hiện có vẫn đi qua preview, permission, concurrency, transaction và audit hiện hữu.
+- Lối mở chung History được đặt tại `Hàng hóa → Lịch sử kho`, dùng command độc lập với selection sản phẩm; mục History trùng trong menu sản phẩm đã bỏ, còn Điều chỉnh kho và Lưu trữ vẫn giữ contextual target/permission.
+- Dialog export trả kết quả typed `Saved/Canceled/Failed` sau khi writer hoàn tất; Shell, Inventory History và Import Wizard hiển thị tên file, số dòng khi có và đường dẫn tại cửa sổ khởi phát. Không thay writer, schema, permission hoặc dữ liệu nghiệp vụ.
+- Focused A/B/C Debug và Release là `29/29 PASS`; full normal-host Release là `1434/1434 PASS`, failed/skipped `0/0`; Release build `0/0`. Official Quality Gate không dùng `-SkipEfCheck` PASS với vulnerability, local tool restore, EF pending-model và Git checks.
+- Không sửa CustomerReturn/Refund, stock write, Import Wizard engine, archive, database, migration, package hoặc label-printing pipeline. R5.1A/B vẫn `CLOSED/PRESERVED`; R5.1C/D đã implementation/automated verified nhưng R5.1 và manual acceptance vẫn `IN PROGRESS`; R5.2 automated verified/manual pending; R5.3 vẫn `PARTIAL` vì label printing chưa có production pipeline; R4.2–R4.4 `CLOSED/PRESERVED`, Development Freeze `ACTIVE` ngoài ngoại lệ này, R5.4 chưa bắt đầu.
+
 ## R5.1–R5.3 nghiệm thu hotfix — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
 
 - Đã xử lý ba lỗi runtime/UI trong phạm vi nghiệm thu: `ProductExportWindow` và `BulkProductWindow` không còn phụ thuộc nhầm `ShellCaptionTextStyle` chỉ tồn tại trong `ShellWindow`; cả xuất sản phẩm, xuất History và tải mẫu dùng được cùng dialog resource production.

@@ -8,6 +8,7 @@ using POS.Application.DTOs.Exports;
 using POS.Application.DTOs.Inventory;
 using POS.Application.DTOs.Products;
 using POS.Wpf.Commands;
+using POS.Wpf.Services;
 
 namespace POS.Wpf.ViewModels;
 
@@ -24,6 +25,7 @@ public sealed class ProductExportViewModel : ViewModelBase, IDisposable
     private string _statusMessage = "Chọn loại dữ liệu và định dạng tệp.";
     private ProductExportReportOption _selectedReport;
     private ProductExportFormatOption _selectedFormat;
+    private ProductExportDialogResult? _dialogResult;
 
     public ProductExportViewModel(
         IProductExportService exportService,
@@ -58,6 +60,11 @@ public sealed class ProductExportViewModel : ViewModelBase, IDisposable
     }
 
     public event Action<bool?>? RequestClose;
+    public ProductExportDialogResult? DialogResult
+    {
+        get => _dialogResult;
+        private set => SetProperty(ref _dialogResult, value);
+    }
     public IReadOnlyList<ProductExportReportOption> Reports { get; }
     public IReadOnlyList<ProductExportFormatOption> Formats { get; }
     public AsyncRelayCommand ExportCommand { get; }
@@ -82,6 +89,7 @@ public sealed class ProductExportViewModel : ViewModelBase, IDisposable
     public async Task<bool> ExportAsync(string destinationPath, CancellationToken cancellationToken = default)
     {
         if (IsBusy) return false;
+        DialogResult = null;
         IsBusy = true;
         try
         {
@@ -94,28 +102,58 @@ public sealed class ProductExportViewModel : ViewModelBase, IDisposable
             if (result.IsFailure)
             {
                 StatusMessage = result.AppError.Message;
+                DialogResult = new(
+                    ProductExportDialogOutcome.Failed,
+                    null,
+                    destinationPath,
+                    0,
+                    result.AppError.Message);
                 return false;
             }
 
             if (result.Value.RowCount == 0 && result.Value.ReportType != ProductExportReportType.ProductImportTemplate)
             {
                 StatusMessage = "Không có dữ liệu phù hợp để xuất.";
+                DialogResult = new(
+                    ProductExportDialogOutcome.Failed,
+                    null,
+                    destinationPath,
+                    0,
+                    StatusMessage);
                 return false;
             }
 
             StatusMessage = "Đang tạo tệp; vui lòng chờ...";
             await _writer.WriteAsync(result.Value, SelectedFormat.Format, destinationPath, cancellationToken);
             StatusMessage = $"Đã tạo tệp {result.Value.RowCount:N0} dòng. Tệp cũ chỉ được thay thế sau khi ghi thành công.";
+            DialogResult = new(
+                ProductExportDialogOutcome.Saved,
+                Path.GetFileName(destinationPath),
+                destinationPath,
+                result.Value.RowCount,
+                StatusMessage);
             return true;
         }
         catch (OperationCanceledException)
         {
             StatusMessage = "Đã hủy xuất tệp; tệp cũ không bị thay đổi.";
+            DialogResult = new(
+                ProductExportDialogOutcome.Canceled,
+                null,
+                destinationPath,
+                0,
+                StatusMessage);
             return false;
         }
         catch (IOException)
         {
             StatusMessage = "Không thể ghi tệp. Hãy đóng tệp đang mở hoặc chọn thư mục có quyền ghi.";
+            DialogResult = new(
+                ProductExportDialogOutcome.Failed,
+                null,
+                destinationPath,
+                0,
+                StatusMessage);
             return false;
         }
         finally
@@ -147,11 +185,20 @@ public sealed class ProductExportViewModel : ViewModelBase, IDisposable
         {
             await ExportAsync(dialog.FileName);
         }
+        else
+        {
+            DialogResult = new(
+                ProductExportDialogOutcome.Canceled,
+                null,
+                null,
+                0,
+                "Đã hủy xuất tệp.");
+        }
     }
 
     private Task CloseAsync()
     {
-        RequestClose?.Invoke(false);
+        RequestClose?.Invoke(DialogResult?.Outcome == ProductExportDialogOutcome.Saved);
         return Task.CompletedTask;
     }
 
@@ -160,6 +207,12 @@ public sealed class ProductExportViewModel : ViewModelBase, IDisposable
         StatusMessage = exception is UnauthorizedAccessException
             ? "Không có quyền ghi vào thư mục đã chọn."
             : "Không thể xuất tệp. Hãy kiểm tra lại dữ liệu và thư mục đích.";
+        DialogResult = new(
+            ProductExportDialogOutcome.Failed,
+            null,
+            null,
+            0,
+            StatusMessage);
     }
 
     public void Dispose() { }

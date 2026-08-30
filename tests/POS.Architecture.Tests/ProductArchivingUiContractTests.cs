@@ -61,17 +61,18 @@ public sealed class ProductArchivingUiContractTests
         Assert.Contains("Kho &amp; lưu trữ", source, StringComparison.Ordinal);
         Assert.DoesNotContain("Thao tác khác", source, StringComparison.Ordinal);
         Assert.Contains(
-            "Điều chỉnh tồn, xem lịch sử kho, lưu trữ hoặc khôi phục sản phẩm",
+            "Điều chỉnh tồn, lưu trữ hoặc khôi phục sản phẩm",
             source,
             StringComparison.Ordinal);
         Assert.DoesNotContain("Content=\"⋮\"", source, StringComparison.Ordinal);
         Assert.Contains("AdjustInventoryCommand", source, StringComparison.Ordinal);
         Assert.Contains("ViewInventoryHistoryCommand", source, StringComparison.Ordinal);
+        Assert.Contains("ShellInventoryHistoryNavigationButton", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("x:Name=\"InventoryHistoryMenuItem\"", source, StringComparison.Ordinal);
         Assert.Contains("ClearSelectedProductButton", source, StringComparison.Ordinal);
         Assert.Contains("Content=\"× Bỏ chọn\"", source, StringComparison.Ordinal);
         Assert.Contains("ClearSelectedProductCommand", source, StringComparison.Ordinal);
         Assert.DoesNotContain("OpenInventoryHistoryCommand", source, StringComparison.Ordinal);
-        Assert.DoesNotContain("ShellInventoryHistoryNavigationButton", source, StringComparison.Ordinal);
         Assert.Contains("OnToggleProductArchiveClick", source, StringComparison.Ordinal);
     }
 
