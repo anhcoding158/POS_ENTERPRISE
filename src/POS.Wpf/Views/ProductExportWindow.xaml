@@ -13,10 +13,10 @@
             <TextBlock Text="Tệp được tạo theo phạm vi và quyền hiện tại. Không làm thay đổi dữ liệu trong cửa hàng." Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" FontSize="12" Margin="0,5,0,0"/>
         </StackPanel>
         <StackPanel Grid.Row="1" Margin="0,24,0,18">
-            <TextBlock Text="Loại dữ liệu" Style="{StaticResource ShellCaptionTextStyle}" FontWeight="SemiBold"/>
+            <TextBlock Text="Loại dữ liệu" Style="{StaticResource CaptionTextStyle}" FontWeight="SemiBold"/>
             <ComboBox ItemsSource="{Binding Reports}" SelectedItem="{Binding SelectedReport}" DisplayMemberPath="DisplayName" Height="40" Margin="0,6,0,0" Padding="10,4"/>
             <TextBlock Text="{Binding SelectedDescription}" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,6,0,18"/>
-            <TextBlock Text="Định dạng" Style="{StaticResource ShellCaptionTextStyle}" FontWeight="SemiBold"/>
+            <TextBlock Text="Định dạng" Style="{StaticResource CaptionTextStyle}" FontWeight="SemiBold"/>
             <ComboBox ItemsSource="{Binding Formats}" SelectedItem="{Binding SelectedFormat}" DisplayMemberPath="DisplayName" Height="40" Margin="0,6,0,0" Padding="10,4"/>
             <Border Background="{StaticResource InfoSoftBrush}" CornerRadius="8" Padding="12" Margin="0,20,0,0">
                 <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"/>

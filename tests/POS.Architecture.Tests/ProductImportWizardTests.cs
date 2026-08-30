@@ -7,7 +7,9 @@ using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.Authorization;
 using POS.Application.Abstractions.ProductImports;
 using POS.Application.DTOs.Authentication;
+using POS.Application.DTOs.Inventory;
 using POS.Application.DTOs.ProductImports;
+using POS.Application.DTOs.Products;
 using POS.Application.Authorization;
 using POS.Application.ProductImports;
 using POS.Application.Services;
@@ -16,6 +18,7 @@ using POS.Infrastructure.Authentication;
 using POS.Infrastructure.ProductImports;
 using POS.Wpf.ViewModels;
 using POS.Wpf.Views;
+using POS.Wpf.Services;
 using Xunit;
 
 namespace POS.Architecture.Tests;
@@ -152,6 +155,27 @@ public sealed class ProductImportWizardTests
         Assert.Contains("25", viewModel.ImportLimitsHint, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task Download_template_command_must_open_the_real_export_dialog_service()
+    {
+        using var provider = new ServiceCollection().AddLogging().BuildServiceProvider();
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddDebug());
+        using var user = new CurrentUserScope();
+        var exportDialog = new RecordingExportDialogService();
+        using var viewModel = new ProductImportWizardViewModel(
+            provider.GetRequiredService<IServiceScopeFactory>(),
+            new ProductImportPreviewService(),
+            new PermissionService(user.Service),
+            loggerFactory.CreateLogger<ProductImportWizardViewModel>(),
+            exportDialog);
+
+        viewModel.DownloadTemplateCommand.Execute(null);
+        for (var index = 0; index < 100 && viewModel.DownloadTemplateCommand.IsExecuting; index++)
+            await Task.Delay(1);
+
+        Assert.True(exportDialog.TemplateRequested);
+    }
+
     private static Task RunOnSta(Action action)
     {
         var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -187,6 +211,22 @@ public sealed class ProductImportWizardTests
 
         public CurrentUserService Service { get; }
         public void Dispose() => Service.Clear();
+    }
+
+    private sealed class RecordingExportDialogService : IProductExportDialogService
+    {
+        public bool TemplateRequested { get; private set; }
+
+        public Task<bool> ShowAsync(
+            ProductSearchRequest? productFilters = null,
+            InventorySearchRequest? historyFilters = null) =>
+            Task.FromResult(false);
+
+        public Task<bool> ShowTemplateAsync()
+        {
+            TemplateRequested = true;
+            return Task.FromResult(false);
+        }
     }
 
     private sealed class FixtureScope : IDisposable

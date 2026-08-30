@@ -104,6 +104,53 @@ public sealed class OrderReturnUiTests
     }
 
     [Fact]
+    public void Quantity_editing_must_start_empty_and_keep_invalid_input_visible()
+    {
+        var line = new OrderReturnLineViewModel(
+            new ReturnableOrderLineDto(
+                1, 2, "P1", "Snapshot", "Cái",
+                3, 1, 2, 7, true, true));
+
+        Assert.Equal(string.Empty, line.ReturnQuantityText);
+        Assert.Equal(string.Empty, line.RestockQuantityText);
+
+        line.ReturnQuantityText = "1";
+        Assert.Equal(1, line.ReturnQuantity);
+        Assert.True(line.IsValid);
+
+        line.ReturnQuantityText = string.Empty;
+        Assert.Equal(0, line.ReturnQuantity);
+        Assert.Equal(0, line.PreviewRefundAmount);
+        Assert.True(line.IsValid);
+
+        line.ReturnQuantityText = "3";
+        Assert.Equal(3, line.ReturnQuantity);
+        Assert.False(line.IsValid);
+        Assert.Equal(0, line.PreviewRefundAmount);
+
+        line.ReturnQuantityText = "not-a-number";
+        Assert.Equal(-1, line.ReturnQuantity);
+        Assert.False(line.IsValid);
+    }
+
+    [Fact]
+    public void Restock_editing_must_not_silently_clamp_to_return_quantity()
+    {
+        var line = new OrderReturnLineViewModel(
+            new ReturnableOrderLineDto(
+                1, 2, "P1", "Snapshot", "Cái",
+                3, 1, 2, 7, true, true))
+        {
+            ReturnQuantity = 1
+        };
+
+        line.RestockQuantityText = "2";
+
+        Assert.Equal(2, line.RestockQuantity);
+        Assert.False(line.IsValid);
+    }
+
+    [Fact]
     public void OrderReturnUi_new_dialog_must_create_new_request_id()
     {
         var service = new StubService();
@@ -161,8 +208,8 @@ public sealed class OrderReturnUiTests
     [Fact]
     public void Quantity_editors_must_use_two_way_property_changed_binding()
     {
-        AssertEditableBinding(FindNamedElement("ReturnQuantityEditor"), "ReturnQuantity");
-        AssertEditableBinding(FindNamedElement("RestockQuantityEditor"), "RestockQuantity");
+        AssertEditableBinding(FindNamedElement("ReturnQuantityEditor"), "ReturnQuantityText");
+        AssertEditableBinding(FindNamedElement("RestockQuantityEditor"), "RestockQuantityText");
     }
 
     [Fact]
@@ -294,8 +341,8 @@ public sealed class OrderReturnUiTests
     [Fact]
     public void Editable_fields_must_remain_two_way()
     {
-        AssertEditableBinding(FindNamedElement("ReturnQuantityEditor"), "ReturnQuantity");
-        AssertEditableBinding(FindNamedElement("RestockQuantityEditor"), "RestockQuantity");
+        AssertEditableBinding(FindNamedElement("ReturnQuantityEditor"), "ReturnQuantityText");
+        AssertEditableBinding(FindNamedElement("RestockQuantityEditor"), "RestockQuantityText");
         AssertEditableBinding(FindNamedElement("ReasonTextBox"), "Reason");
         AssertEditableBinding(FindNamedElement("RefundMethodComboBox"), "RefundMethod", "SelectedItem");
         AssertEditableBinding(FindNamedElement("RefundReferenceTextBox"), "RefundReference");

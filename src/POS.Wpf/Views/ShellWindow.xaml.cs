@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using System.ComponentModel;
 using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.Authorization;
 using POS.Application.Authorization;
@@ -60,6 +61,8 @@ public partial class ShellWindow :
     private bool _userCardConfigured;
     private bool _permissionsConfigured;
     private bool _restoreWizardOpen;
+    private global::System.Windows.Controls.DataGridColumn?
+        _bulkSelectionColumn;
 
     public ShellWindow(
         ShellViewModel viewModel,
@@ -127,6 +130,12 @@ public partial class ShellWindow :
 
         DataContext =
             _viewModel;
+
+        _bulkSelectionColumn =
+            ProductInventoryGrid.Columns.FirstOrDefault();
+        _viewModel.PropertyChanged +=
+            OnViewModelPropertyChanged;
+        UpdateBulkSelectionColumn();
 
         StorageStatusNavigationButton.DataContext =
             _storageStatusViewModel;
@@ -853,6 +862,23 @@ public partial class ShellWindow :
             true;
     }
 
+    private void OnImportExportClick(
+        object sender,
+        global::System.Windows.RoutedEventArgs e)
+    {
+        if (sender is not
+            global::System.Windows.Controls.Button button ||
+            button.ContextMenu is null)
+        {
+            return;
+        }
+
+        button.ContextMenu.PlacementTarget =
+            button;
+        button.ContextMenu.IsOpen =
+            true;
+    }
+
     private void OnToggleProductArchiveClick(
         object sender,
         global::System.Windows.RoutedEventArgs e)
@@ -1072,6 +1098,9 @@ public partial class ShellWindow :
         object? sender,
         EventArgs e)
     {
+        _viewModel.PropertyChanged -=
+            OnViewModelPropertyChanged;
+
         Loaded -=
             OnWindowLoaded;
 
@@ -1095,6 +1124,36 @@ public partial class ShellWindow :
             _logoutButton =
                 null;
         }
+    }
+
+    private void OnViewModelPropertyChanged(
+        object? sender,
+        PropertyChangedEventArgs eventArgs)
+    {
+        if (eventArgs.PropertyName ==
+            nameof(ShellViewModel.IsBulkSelectionMode))
+        {
+            UpdateBulkSelectionColumn();
+        }
+    }
+
+    private void UpdateBulkSelectionColumn()
+    {
+        if (_bulkSelectionColumn is null)
+        {
+            return;
+        }
+
+        var width =
+            _viewModel.IsBulkSelectionMode
+                ? 68d
+                : 0d;
+        _bulkSelectionColumn.MinWidth =
+            width;
+        _bulkSelectionColumn.MaxWidth =
+            width;
+        _bulkSelectionColumn.Width =
+            new global::System.Windows.Controls.DataGridLength(width);
     }
 
     private static string GetRoleDisplayName(

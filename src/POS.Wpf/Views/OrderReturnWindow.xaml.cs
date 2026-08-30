@@ -30,7 +30,9 @@ public partial class OrderReturnWindow : global::System.Windows.Window
     private void OnContentRendered(object? sender, EventArgs eventArgs)
     {
         ReturnLinesGrid.UpdateLayout();
-        FindVisualChild<TextBox>(ReturnLinesGrid, "ReturnQuantityEditor")?.Focus();
+        var editor = FindVisualChild<TextBox>(ReturnLinesGrid, "ReturnQuantityEditor");
+        editor?.Focus();
+        editor?.SelectAll();
     }
 
     private static T? FindVisualChild<T>(

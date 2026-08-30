@@ -65,7 +65,6 @@ public sealed class ProductArchivingUiContractTests
             source,
             StringComparison.Ordinal);
         Assert.DoesNotContain("Content=\"⋮\"", source, StringComparison.Ordinal);
-        Assert.Contains("Text=\"&#xE7B8;\"", source, StringComparison.Ordinal);
         Assert.Contains("AdjustInventoryCommand", source, StringComparison.Ordinal);
         Assert.Contains("ViewInventoryHistoryCommand", source, StringComparison.Ordinal);
         Assert.Contains("ClearSelectedProductButton", source, StringComparison.Ordinal);
@@ -251,6 +250,26 @@ public sealed class ProductArchivingUiContractTests
         Assert.False(context.ViewModel.AdjustInventoryCommand.CanExecute(null));
         Assert.False(context.ViewModel.ToggleProductArchiveCommand.CanExecute(null));
         Assert.True(context.ViewModel.ViewInventoryHistoryCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task Bulk_mode_must_not_leave_single_product_commands_active()
+    {
+        var context = CreateContext();
+        context.ViewModel.SelectedProduct =
+            new ProductRowViewModel(CreateProduct(isArchived: false));
+
+        context.ViewModel.ToggleBulkSelectionCommand.Execute(null);
+        while (context.ViewModel.ToggleBulkSelectionCommand.IsExecuting)
+            await Task.Delay(1);
+
+        Assert.True(context.ViewModel.IsBulkSelectionMode);
+        Assert.False(context.ViewModel.ShowSingleProductContext);
+        Assert.False(context.ViewModel.EditProductCommand.CanExecute(null));
+        Assert.False(context.ViewModel.ToggleProductActiveCommand.CanExecute(null));
+        Assert.False(context.ViewModel.AdjustInventoryCommand.CanExecute(null));
+        Assert.False(context.ViewModel.ToggleProductArchiveCommand.CanExecute(null));
+        Assert.False(context.ViewModel.ClearSelectedProductCommand.CanExecute(null));
     }
 
     [Fact]

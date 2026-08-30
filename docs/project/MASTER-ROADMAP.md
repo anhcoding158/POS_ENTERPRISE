@@ -1,5 +1,11 @@
 # MASTER ROADMAP — POS ENTERPRISE RETAIL V1
 
+## Latest checkpoint position — R5.1–R5.3 nghiệm thu hotfix — 2026-08-30
+
+- Hotfix giới hạn đã nối lại ba entry point export/template qua dialog có resource đúng phạm vi, sửa text-editing state của nhập số trả hàng và tách command single-product khỏi tập chọn nhiều trong Product & Inventory. Không thay đổi transaction, stock movement, audit, RBAC, importer, archive hoặc schema.
+- Bằng chứng tự động hiện tại: focused Debug `58/58 PASS`, focused Release `185/185 PASS`, full normal-host Release `1432/1432 PASS`, failed/skipped `0/0`, Release build `0/0`; Official Quality Gate không dùng `-SkipEfCheck` PASS với vulnerability, local tool restore, EF pending-model và Git checks. Physical click/UIA/DPI và file-open/manual end-to-end vẫn pending.
+- R5.1 vẫn IN PROGRESS/manual acceptance pending; R5.2 IMPLEMENTED/AUTOMATED VERIFIED/MANUAL PENDING; R5.3 PARTIAL/AUTOMATED VERIFIED vì production label-printing pipeline chưa có. R4.2–R4.4 CLOSED/PRESERVED, R5.4 chưa bắt đầu và Development Freeze ACTIVE ngoài ngoại lệ hotfix.
+
 ## Latest checkpoint position — Inventory History type/date correction — 2026-08-30
 
 - The authorized History follow-up is complete at the read/presentation boundary: `CustomerReturn` is labeled and filterable independently from `Refund`, and the approved “30 ngày gần nhất” contract is 30 calendar days including today (`Today.AddDays(-29)` through today).

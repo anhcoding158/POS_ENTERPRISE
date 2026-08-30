@@ -1483,146 +1483,33 @@
                             </Button>
 
                             <Button
-                                Command="{Binding ImportProductsCommand}"
+                                x:Name="ImportExportButton"
+                                Click="OnImportExportClick"
                                 Style="{StaticResource SecondaryButtonStyle}"
-                                MinWidth="148"
+                                MinWidth="112"
                                 Margin="9,0,0,0"
-                                ToolTip="Đọc thử, mapping và nhập toàn bộ sản phẩm từ CSV/XLSX">
-
+                                ToolTip="Nhập sản phẩm, xuất dữ liệu hoặc tải mẫu">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock
-                                        Text="&#xE898;"
-                                        FontFamily="Segoe MDL2 Assets"
-                                        FontSize="13"
-                                        Margin="0,0,7,0"
-                                        VerticalAlignment="Center" />
-
-                                    <TextBlock
-                                        Text="Nhập CSV/Excel"
-                                        VerticalAlignment="Center" />
+                                    <TextBlock Text="&#xE898;" FontFamily="Segoe MDL2 Assets" FontSize="13" Margin="0,0,7,0" VerticalAlignment="Center" />
+                                    <TextBlock Text="Nhập / Xuất" VerticalAlignment="Center" />
+                                    <TextBlock Text="&#xE70D;" FontFamily="Segoe MDL2 Assets" FontSize="10" Margin="7,0,0,0" VerticalAlignment="Center" />
                                 </StackPanel>
-                            </Button>
-
-                            <Button
-                                Command="{Binding ExportProductsCommand}"
-                                Style="{StaticResource SecondaryButtonStyle}"
-                                MinWidth="104"
-                                Margin="9,0,0,0"
-                                ToolTip="Xuất danh sách, tồn kho hoặc lịch sử ra Excel/CSV">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="&#xE74E;" FontFamily="Segoe MDL2 Assets" FontSize="13" Margin="0,0,7,0" VerticalAlignment="Center" />
-                                    <TextBlock Text="Xuất file" VerticalAlignment="Center" />
-                                </StackPanel>
-                            </Button>
-
-                            <Button
-                                Command="{Binding ToggleBulkSelectionCommand}"
-                                Style="{StaticResource SecondaryButtonStyle}"
-                                MinWidth="108"
-                                Margin="9,0,0,0"
-                                Content="{Binding BulkSelectionModeText}"
-                                ToolTip="Chọn nhiều sản phẩm trên trang để cập nhật cùng lúc"
-                                AutomationProperties.Name="Chọn nhiều sản phẩm" />
-
-                            <Button
-                                Command="{Binding ApplyBulkOperationCommand}"
-                                Style="{StaticResource PrimaryButtonStyle}"
-                                MinWidth="145"
-                                Margin="9,0,0,0"
-                                Content="{Binding SelectedBulkProductCount,
-                                    StringFormat={}Thao tác đã chọn ({0:N0})}"
-                                Visibility="{Binding HasBulkSelection,
-                                    Converter={StaticResource BooleanToVisibilityConverter}}"
-                                ToolTip="Xem trước và áp dụng thay đổi cho các sản phẩm đã chọn"
-                                AutomationProperties.Name="Thao tác hàng loạt cho sản phẩm đã chọn" />
-
-                            <Button
-                                Command="{Binding EditProductCommand}"
-                                Style="{StaticResource SecondaryButtonStyle}"
-                                MinWidth="82"
-                                Margin="9,0,0,0">
-
-                                <StackPanel Orientation="Horizontal">
-
-                                    <TextBlock
-                                        Text="&#xE70F;"
-                                        FontFamily="Segoe MDL2 Assets"
-                                        FontSize="12"
-                                        Margin="0,0,6,0"
-                                        VerticalAlignment="Center" />
-
-                                    <TextBlock
-                                        Text="Sửa"
-                                        VerticalAlignment="Center" />
-                                </StackPanel>
-                            </Button>
-
-                            <Button
-                                x:Name="ToggleProductActiveButton"
-                                Content="{Binding ToggleProductButtonText}"
-                                Click="OnToggleProductActiveClick"
-                                IsEnabled="{Binding CanModifySelectedProduct}"
-                                Style="{StaticResource SecondaryButtonStyle}"
-                                MinWidth="104"
-                                Margin="9,0,0,0" />
-
-                            <Button
-                                x:Name="MoreProductActionsButton"
-                                Click="OnMoreProductActionsClick"
-                                Style="{StaticResource SecondaryButtonStyle}"
-                                MinWidth="154"
-                                Padding="12,0"
-                                Margin="9,0,0,0"
-                                ToolTip="Điều chỉnh tồn, xem lịch sử kho, lưu trữ hoặc khôi phục sản phẩm">
-
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock
-                                        Text="&#xE7B8;"
-                                        FontFamily="Segoe MDL2 Assets"
-                                        FontSize="13"
-                                        Margin="0,0,7,0"
-                                        VerticalAlignment="Center" />
-                                    <TextBlock Text="Kho &amp; lưu trữ" />
-                                    <TextBlock
-                                        Text="&#xE70D;"
-                                        FontFamily="Segoe MDL2 Assets"
-                                        FontSize="10"
-                                        Margin="7,0,0,0"
-                                        VerticalAlignment="Center" />
-                                </StackPanel>
-
                                 <Button.ContextMenu>
-
                                     <ContextMenu
                                         Placement="Bottom"
-                                        HorizontalOffset="-126"
                                         StaysOpen="False"
                                         DataContext="{Binding PlacementTarget.DataContext,
                                             RelativeSource={RelativeSource Self}}">
-
-                                        <MenuItem
-                                            x:Name="AdjustInventoryMenuItem"
-                                            Header="Điều chỉnh kho"
-                                            Command="{Binding AdjustInventoryCommand}"
-                                            ToolTip="{Binding InventoryActionHint}"
-                                            ToolTipService.ShowOnDisabled="True" />
-
-                                        <MenuItem
-                                            x:Name="InventoryHistoryMenuItem"
-                                            Header="Lịch sử kho"
-                                            Command="{Binding ViewInventoryHistoryCommand}"
-                                            ToolTip="{Binding InventoryHistoryActionHint}" />
-
-                                        <Separator />
-
-                                        <MenuItem
-                                            x:Name="ToggleProductArchiveMenuItem"
-                                            Header="{Binding ToggleProductArchiveButtonText}"
-                                            Click="OnToggleProductArchiveClick"
-                                            IsEnabled="{Binding HasSelectedProduct}" />
+                                        <MenuItem Header="Nhập CSV/Excel"
+                                                  Command="{Binding ImportProductsCommand}"
+                                                  ToolTip="Đọc thử, kiểm tra rồi nhập sản phẩm" />
+                                        <MenuItem Header="Xuất file"
+                                                  Command="{Binding ExportProductsCommand}"
+                                                  ToolTip="Xuất dữ liệu theo phạm vi và quyền hiện tại" />
                                     </ContextMenu>
                                 </Button.ContextMenu>
                             </Button>
+
                         </StackPanel>
                     </Grid>
 
@@ -1680,7 +1567,7 @@
 
                                 <WrapPanel
                                     Margin="0,4,0,0"
-                                    Visibility="{Binding HasSelectedProduct,
+                                    Visibility="{Binding ShowSingleProductContext,
                                         Converter={StaticResource BooleanToVisibilityConverter}}">
 
                                     <Border
@@ -1793,21 +1680,103 @@
                                 </WrapPanel>
                             </StackPanel>
 
-                            <Button
-                                x:Name="ClearSelectedProductButton"
-                                Grid.Column="2"
-                                Content="× Bỏ chọn"
-                                Command="{Binding ClearSelectedProductCommand}"
-                                Style="{StaticResource SecondaryButtonStyle}"
-                                Height="34"
-                                MinWidth="112"
-                                Margin="12,0,0,0"
-                                Padding="12,0"
-                                ToolTip="Bỏ chọn sản phẩm đang chọn"
-                                AutomationProperties.Name="Bỏ chọn sản phẩm đang chọn"
-                                ToolTipService.ShowOnDisabled="True"
-                                Visibility="{Binding HasSelectedProduct,
-                                    Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                <StackPanel Orientation="Horizontal"
+                                            Visibility="{Binding ShowSingleProductContext,
+                                                Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <Button
+                                        Command="{Binding EditProductCommand}"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Height="34"
+                                        MinWidth="70"
+                                        Padding="10,0"
+                                        Content="Sửa"
+                                        ToolTip="Sửa sản phẩm đang chọn" />
+                                    <Button
+                                        x:Name="ToggleProductActiveButton"
+                                        Content="{Binding ToggleProductButtonText}"
+                                        Click="OnToggleProductActiveClick"
+                                        IsEnabled="{Binding CanModifySelectedProduct}"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Height="34"
+                                        MinWidth="104"
+                                        Padding="10,0"
+                                        Margin="8,0,0,0"
+                                        ToolTip="Đổi trạng thái bán của sản phẩm đang chọn" />
+                                    <Button
+                                        x:Name="MoreProductActionsButton"
+                                        Click="OnMoreProductActionsClick"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Height="34"
+                                        MinWidth="132"
+                                        Padding="10,0"
+                                        Margin="8,0,0,0"
+                                        ToolTip="Điều chỉnh tồn, xem lịch sử kho, lưu trữ hoặc khôi phục sản phẩm">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="Kho &amp; lưu trữ" VerticalAlignment="Center" />
+                                            <TextBlock Text="&#xE70D;" FontFamily="Segoe MDL2 Assets" FontSize="10" Margin="7,0,0,0" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                        <Button.ContextMenu>
+                                            <ContextMenu
+                                                Placement="Bottom"
+                                                StaysOpen="False"
+                                                DataContext="{Binding PlacementTarget.DataContext,
+                                                    RelativeSource={RelativeSource Self}}">
+                                                <MenuItem
+                                                    x:Name="AdjustInventoryMenuItem"
+                                                    Header="Điều chỉnh kho"
+                                                    Command="{Binding AdjustInventoryCommand}"
+                                                    ToolTip="{Binding InventoryActionHint}"
+                                                    ToolTipService.ShowOnDisabled="True" />
+                                                <MenuItem
+                                                    x:Name="InventoryHistoryMenuItem"
+                                                    Header="Lịch sử kho"
+                                                    Command="{Binding ViewInventoryHistoryCommand}"
+                                                    ToolTip="{Binding InventoryHistoryActionHint}" />
+                                                <Separator />
+                                                <MenuItem
+                                                    x:Name="ToggleProductArchiveMenuItem"
+                                                    Header="{Binding ToggleProductArchiveButtonText}"
+                                                    Click="OnToggleProductArchiveClick"
+                                                    IsEnabled="{Binding HasSelectedProduct}" />
+                                            </ContextMenu>
+                                        </Button.ContextMenu>
+                                    </Button>
+                                    <Button
+                                        x:Name="ClearSelectedProductButton"
+                                        Content="× Bỏ chọn"
+                                        Command="{Binding ClearSelectedProductCommand}"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Height="34"
+                                        MinWidth="112"
+                                        Margin="8,0,0,0"
+                                        Padding="10,0"
+                                        ToolTip="Bỏ chọn sản phẩm đang chọn"
+                                        AutomationProperties.Name="Bỏ chọn sản phẩm đang chọn"
+                                        ToolTipService.ShowOnDisabled="True" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal"
+                                            Visibility="{Binding HasBulkSelection,
+                                                Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <TextBlock
+                                        Text="{Binding SelectedProductHint}"
+                                        Foreground="{StaticResource TextPrimaryBrush}"
+                                        FontSize="12"
+                                        FontWeight="SemiBold"
+                                        VerticalAlignment="Center"
+                                        Margin="12,0,10,0" />
+                                    <Button
+                                        Command="{Binding ApplyBulkOperationCommand}"
+                                        Style="{StaticResource PrimaryButtonStyle}"
+                                        Height="34"
+                                        MinWidth="142"
+                                        Padding="10,0"
+                                        Content="Thao tác hàng loạt"
+                                        ToolTip="Xem trước và áp dụng thay đổi cho các sản phẩm đã chọn"
+                                        AutomationProperties.Name="Thao tác hàng loạt cho sản phẩm đã chọn" />
+                                </StackPanel>
+                            </StackPanel>
 
                         </Grid>
                     </Border>
@@ -1957,6 +1926,15 @@
                                     Style="{StaticResource SecondaryButtonStyle}"
                                     MinWidth="88"
                                     Margin="9,0,0,0" />
+
+                                <Button
+                                    Command="{Binding ToggleBulkSelectionCommand}"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    MinWidth="108"
+                                    Margin="9,0,0,0"
+                                    Content="{Binding BulkSelectionModeText}"
+                                    ToolTip="Chọn nhiều sản phẩm trên trang để cập nhật cùng lúc"
+                                    AutomationProperties.Name="Chọn nhiều sản phẩm" />
                             </StackPanel>
 
                             <WrapPanel

@@ -547,6 +547,8 @@ public sealed class ShellViewModel :
             OnPropertyChanged(nameof(BulkSelectionModeText));
             OnPropertyChanged(nameof(HasBulkSelection));
             OnPropertyChanged(nameof(SelectedBulkProductCount));
+            OnPropertyChanged(nameof(ShowSingleProductContext));
+            OnPropertyChanged(nameof(SelectedProductHint));
             NotifyCommandStates();
         }
     }
@@ -560,8 +562,11 @@ public sealed class ShellViewModel :
     public bool HasBulkSelection =>
         IsBulkSelectionMode && SelectedBulkProductCount > 0;
 
+    public bool ShowSingleProductContext =>
+        HasSelectedProduct && !IsBulkSelectionMode;
+
     public bool CanModifySelectedProduct =>
-        SelectedProduct is
+        !IsBulkSelectionMode && SelectedProduct is
         {
             IsArchived: false
         };
@@ -585,6 +590,11 @@ public sealed class ShellViewModel :
         {
             var selectedProduct =
                 SelectedProduct;
+
+            if (IsBulkSelectionMode)
+            {
+                return $"Đã chọn {SelectedBulkProductCount:N0} sản phẩm trên trang hiện tại.";
+            }
 
             if (selectedProduct is null)
             {
@@ -1807,7 +1817,7 @@ public sealed class ShellViewModel :
 
     private bool CanEditSelectedProduct()
     {
-        return !IsLoading &&
+        return !IsLoading && !IsBulkSelectionMode &&
                SelectedProduct is
                {
                    IsArchived: false
@@ -1816,7 +1826,7 @@ public sealed class ShellViewModel :
 
     private bool CanAdjustSelectedProduct()
     {
-        return !IsLoading &&
+        return !IsLoading && !IsBulkSelectionMode &&
                SelectedProduct is
                {
                    TrackInventory: true,
@@ -1826,13 +1836,13 @@ public sealed class ShellViewModel :
 
     private bool CanClearSelectedProduct()
     {
-        return !IsLoading &&
+        return !IsLoading && !IsBulkSelectionMode &&
                SelectedProduct is not null;
     }
 
     private bool CanArchiveSelectedProduct()
     {
-        return !IsLoading &&
+        return !IsLoading && !IsBulkSelectionMode &&
                SelectedProduct is not null;
     }
 
@@ -1878,6 +1888,9 @@ public sealed class ShellViewModel :
     {
         OnPropertyChanged(
             nameof(HasSelectedProduct));
+
+        OnPropertyChanged(
+            nameof(ShowSingleProductContext));
 
         OnPropertyChanged(
             nameof(

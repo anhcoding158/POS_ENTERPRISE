@@ -252,6 +252,22 @@ public sealed class ShellSidebarInventoryHotfixTests
                 viewModel.InitializeAsync().GetAwaiter().GetResult();
                 Assert.NotEmpty(viewModel.Products);
                 var queryCount = viewModel.Products.Count;
+                Assert.Equal(0d, grid.Columns[0].Width.Value);
+
+                viewModel.ToggleBulkSelectionCommand.Execute(null);
+                while (viewModel.ToggleBulkSelectionCommand.IsExecuting)
+                    Thread.Sleep(1);
+                window.UpdateLayout();
+                Assert.True(viewModel.IsBulkSelectionMode);
+                Assert.Equal(68d, grid.Columns[0].Width.Value);
+
+                viewModel.ToggleBulkSelectionCommand.Execute(null);
+                while (viewModel.ToggleBulkSelectionCommand.IsExecuting)
+                    Thread.Sleep(1);
+                window.UpdateLayout();
+                Assert.False(viewModel.IsBulkSelectionMode);
+                Assert.Equal(0d, grid.Columns[0].Width.Value);
+
                 var productsContent = Assert.IsType<StackPanel>(productsButton.Content);
                 var productsLabel = productsContent.Children
                     .OfType<TextBlock>()

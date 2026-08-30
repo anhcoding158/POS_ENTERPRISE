@@ -1,5 +1,12 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R5.1–R5.3 nghiệm thu hotfix — 2026-08-30
+
+- Focused Debug: `58/58 PASS`; focused Release: `185/185 PASS`; failed/skipped `0/0`. Coverage includes Product/History export dialog composition with production App resources, Import template command delegation, return quantity edit/validation, Shell single-vs-bulk command guards and real bulk-selection column width.
+- Release solution build: `0` warnings, `0` errors. Full normal-host Release: `1432/1432 PASS`, failed/skipped `0/0`. This run added six regression tests over the accepted `1426/1426` baseline.
+- Official `scripts/Test-QualityGate.ps1` without `-SkipEfCheck`: PASS; vulnerability scan PASS, local tool restore PASS, EF pending-model PASS (“No changes have been made to the model since the last migration”) and Git checks PASS. No canonical/manual database, runtime export, credential, migration or package was used.
+- Physical WPF click-through, save-dialog/file-open verification, UIA and DPI visual acceptance remain manual pending; measure/arrange and STA construction are not claimed as physical acceptance. R5.3 remains partial because label printing infrastructure is absent.
+
 ## Inventory History type/date correction — 2026-08-30
 
 - Focused `InventoryHistoryUxTests`, Inventory contract and OrderReturn coverage: `116/116 PASS` in Debug and `116/116 PASS` in Release, failed/skipped `0/0`.

@@ -71,8 +71,8 @@ public sealed class OrderReturnViewModel : ViewModelBase, IDisposable
         ? "Mã giao dịch hoặc ghi chú đối soát"
         : "Không bắt buộc khi hoàn tiền mặt";
     public long TotalRefundAmount => Lines.Sum(line => line.PreviewRefundAmount);
-    public int TotalReturnQuantity => Lines.Sum(line => line.ReturnQuantity);
-    public int TotalRestockQuantity => Lines.Sum(line => line.RestockQuantity);
+    public int TotalReturnQuantity => Lines.Sum(line => Math.Max(0, line.ReturnQuantity));
+    public int TotalRestockQuantity => Lines.Sum(line => Math.Max(0, line.RestockQuantity));
     public bool HasNonRestockedQuantity =>
         TotalReturnQuantity > TotalRestockQuantity;
     public bool CanSubmit => !IsLoading && !IsSubmitting && !IsSuccessful &&

@@ -1,4 +1,5 @@
 using POS.Application.DTOs.Orders;
+using System.Globalization;
 
 namespace POS.Wpf.ViewModels;
 
@@ -7,6 +8,8 @@ public sealed class OrderReturnLineViewModel(ReturnableOrderLineDto line) :
 {
     private int _returnQuantity;
     private int _restockQuantity;
+    private string _returnQuantityText = string.Empty;
+    private string _restockQuantityText = string.Empty;
 
     public int OrderItemId => line.OrderItemId;
     public string ProductCode => line.ProductCode;
@@ -23,24 +26,66 @@ public sealed class OrderReturnLineViewModel(ReturnableOrderLineDto line) :
         get => _returnQuantity;
         set
         {
-            var constrainedValue = Math.Clamp(value, 0, RemainingQuantity);
-            if (SetProperty(ref _returnQuantity, constrainedValue))
+            if (SetProperty(ref _returnQuantity, value))
             {
-                if (_restockQuantity > constrainedValue)
-                    RestockQuantity = constrainedValue;
+                var text = value > 0
+                    ? value.ToString(CultureInfo.InvariantCulture)
+                    : string.Empty;
+                SetProperty(ref _returnQuantityText, text, nameof(ReturnQuantityText));
                 OnPropertyChanged(nameof(PreviewRefundAmount));
+                OnPropertyChanged(nameof(IsValid));
             }
+        }
+    }
+    public string ReturnQuantityText
+    {
+        get => _returnQuantityText;
+        set
+        {
+            value ??= string.Empty;
+            if (!SetProperty(ref _returnQuantityText, value)) return;
+            _returnQuantity = string.IsNullOrWhiteSpace(value)
+                ? 0
+                : int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var parsed)
+                    ? parsed
+                    : -1;
+            OnPropertyChanged(nameof(ReturnQuantity));
+            OnPropertyChanged(nameof(PreviewRefundAmount));
+            OnPropertyChanged(nameof(IsValid));
         }
     }
     public int RestockQuantity
     {
         get => _restockQuantity;
-        set => SetProperty(
-            ref _restockQuantity,
-            TrackInventory ? Math.Clamp(value, 0, ReturnQuantity) : 0);
+        set
+        {
+            var next = TrackInventory ? value : 0;
+            if (!SetProperty(ref _restockQuantity, next)) return;
+            var text = next > 0
+                ? next.ToString(CultureInfo.InvariantCulture)
+                : string.Empty;
+            SetProperty(ref _restockQuantityText, text, nameof(RestockQuantityText));
+            OnPropertyChanged(nameof(IsValid));
+        }
+    }
+    public string RestockQuantityText
+    {
+        get => _restockQuantityText;
+        set
+        {
+            value ??= string.Empty;
+            if (!SetProperty(ref _restockQuantityText, value)) return;
+            _restockQuantity = string.IsNullOrWhiteSpace(value)
+                ? 0
+                : int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var parsed)
+                    ? parsed
+                    : -1;
+            OnPropertyChanged(nameof(RestockQuantity));
+            OnPropertyChanged(nameof(IsValid));
+        }
     }
     public long PreviewRefundAmount =>
-        ReturnQuantity <= 0 || RemainingQuantity <= 0
+        ReturnQuantity <= 0 || ReturnQuantity > RemainingQuantity || RemainingQuantity <= 0
             ? 0
             : (long)((System.Numerics.BigInteger)RemainingRefundableAmount *
                 ReturnQuantity / RemainingQuantity);

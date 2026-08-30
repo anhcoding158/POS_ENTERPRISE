@@ -1,5 +1,11 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## R5.1–R5.3 nghiệm thu hotfix — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
+
+- Ba lỗi được tái hiện ở boundary UI: các dialog export/bulk được tạo độc lập nhưng tham chiếu `ShellCaptionTextStyle` khai báo cục bộ trong `ShellWindow`; editor trả hàng bind trực tiếp `int` với `PropertyChanged` nên thao tác xóa/gõ bị source cũ ghi ngược; Shell vẫn giữ `SelectedProduct` và single command active trong bulk mode.
+- Sửa tối thiểu: dùng `CaptionTextStyle` dùng chung đã tồn tại, thêm `ReturnQuantityText`/`RestockQuantityText` làm trạng thái nhập và chỉ chuyển sang số typed để service nhận; thêm guard/visibility/column-width presentation cho bulk mode. Không nới validation, permission, transaction, archive, inventory movement hay security.
+- Automated composition/behavior coverage mới và regression liên quan đạt `1432/1432 PASS` trên normal Windows Release, build `0/0`; physical dialog save/click/UIA/DPI và return click-through vẫn cần manual acceptance. R5.3 label printing vẫn blocked bởi thiếu renderer/printer pipeline production.
+
 ## Inventory History type/date correction — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
 
 - The History movement filter/display previously omitted the production `CustomerReturn` type and showed it as unknown; it now uses the business label “Khách trả hàng” without merging it with `Refund`.

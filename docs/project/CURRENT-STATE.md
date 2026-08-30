@@ -1,5 +1,14 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## R5.1–R5.3 nghiệm thu hotfix — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
+
+- Đã xử lý ba lỗi runtime/UI trong phạm vi nghiệm thu: `ProductExportWindow` và `BulkProductWindow` không còn phụ thuộc nhầm `ShellCaptionTextStyle` chỉ tồn tại trong `ShellWindow`; cả xuất sản phẩm, xuất History và tải mẫu dùng được cùng dialog resource production.
+- Ô nhập trả hàng dùng text editing state riêng, bắt đầu rỗng, cho phép xóa/gõ/paste hợp lệ mà không bị setter số nguyên đẩy giá trị cũ hoặc clamp ngầm; giá trị không hợp lệ/vượt số còn được trả không thể submit và không làm thay đổi transaction semantics.
+- Shell tách rõ single-product context với bulk mode: command đơn lẻ bị khóa khi đang chọn nhiều, thanh hiển thị tập đã chọn và thao tác hàng loạt, cột checkbox co về 0 ngoài bulk mode; Product/Inventory/History/Import flows và permission boundary hiện hữu được giữ nguyên.
+- Regression mới gồm dialog composition STA với resource production, download-template delegation, editor text/validation và Shell bulk command/column state. Focused Debug là `58/58 PASS`, focused Release là `185/185 PASS`; full normal-host Release là `1432/1432 PASS`, failed/skipped `0/0`; Release build là `0/0`. Official Quality Gate không dùng `-SkipEfCheck` đã PASS: vulnerability, local tool restore, EF pending-model và Git checks đều PASS.
+- CustomerReturn đã có mapping/label/filter riêng trong History và export; `RestockQuantity = 0` vẫn không tạo movement kho giả. Không sửa History query/write, Import Wizard engine, archive, category, launcher, database, migration, package hoặc R5.4.
+- R5.1 vẫn `IN PROGRESS`/manual acceptance pending; R5.2 automated verified/manual pending; R5.3 vẫn `PARTIAL` vì label printing pipeline production chưa tồn tại; R4.2–R4.4 `CLOSED/PRESERVED`, Development Freeze `ACTIVE` ngoài ngoại lệ này, R5.4 chưa bắt đầu.
+
 ## R5.3 — Bulk Operations — PARTIAL IMPLEMENTATION / AUTOMATED VERIFIED — 2026-08-30
 
 - Product list now has an explicit “Chọn nhiều” mode with page-scoped checkboxes and a single action entry that opens a real preview/confirm dialog. Supported operations are bulk price update, category change, active/inactive status and minimum-stock threshold; ordinary single-product selection and commands remain separate.

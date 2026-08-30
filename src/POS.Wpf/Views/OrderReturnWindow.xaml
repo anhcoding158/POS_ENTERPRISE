@@ -60,7 +60,7 @@
                         <DataTemplate>
                             <TextBox x:Name="ReturnQuantityEditor"
                                      Style="{StaticResource QuantityEditorStyle}"
-                                     Text="{Binding ReturnQuantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     Text="{Binding ReturnQuantityText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                      PreviewTextInput="OnQuantityPreviewTextInput"
                                      DataObject.Pasting="OnQuantityPasting"/>
                         </DataTemplate>
@@ -69,10 +69,10 @@
                 <DataGridTemplateColumn Header="Nhập lại kho" Width="105">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBox x:Name="RestockQuantityEditor"
+                             <TextBox x:Name="RestockQuantityEditor"
                                      Style="{StaticResource QuantityEditorStyle}"
                                      IsEnabled="{Binding TrackInventory, Mode=OneWay}"
-                                     Text="{Binding RestockQuantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     Text="{Binding RestockQuantityText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                      PreviewTextInput="OnQuantityPreviewTextInput"
                                      DataObject.Pasting="OnQuantityPasting"/>
                         </DataTemplate>
