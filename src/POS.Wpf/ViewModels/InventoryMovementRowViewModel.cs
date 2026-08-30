@@ -117,6 +117,9 @@ public sealed class InventoryMovementRowViewModel
             InventoryMovementType.Refund =>
                 "Hoàn hàng",
 
+            InventoryMovementType.CustomerReturn =>
+                "Khách trả hàng",
+
             InventoryMovementType.OpeningBalance =>
                 "Tồn đầu kỳ",
 

@@ -6,6 +6,7 @@ using POS.Application.Abstractions.Services;
 using POS.Application.DTOs.Inventory;
 using POS.Domain.Enums;
 using POS.Wpf.Commands;
+using POS.Wpf.Services;
 
 namespace POS.Wpf.ViewModels;
 
@@ -35,10 +36,11 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
 
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<InventoryHistoryViewModel> _logger;
+    private readonly IProductExportDialogService? _exportDialogService;
     private readonly IReadOnlyList<InventoryMovementFilterOption> _movementFilters;
     private readonly IReadOnlyList<InventoryReferenceFilterOption> _referenceFilters;
     private readonly IReadOnlyList<InventoryDateRangeOption> _dateRangeOptions;
-    private readonly DateTime _defaultFromDate = DateTime.Today.AddDays(-30);
+    private readonly DateTime _defaultFromDate = DateTime.Today.AddDays(-29);
     private readonly DateTime _defaultToDate = DateTime.Today;
     private readonly CancellationTokenSource _lifetimeCancellation = new();
 
@@ -72,10 +74,12 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
 
     public InventoryHistoryViewModel(
         IServiceScopeFactory scopeFactory,
-        ILogger<InventoryHistoryViewModel> logger)
+        ILogger<InventoryHistoryViewModel> logger,
+        IProductExportDialogService? exportDialogService = null)
     {
         _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _exportDialogService = exportDialogService;
 
         _movementFilters =
         [
@@ -86,6 +90,7 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
             new(InventoryMovementType.Stocktake, "Kiểm kê"),
             new(InventoryMovementType.Sale, "Bán hàng"),
             new(InventoryMovementType.Refund, "Hoàn hàng"),
+            new(InventoryMovementType.CustomerReturn, "Khách trả hàng"),
             new(InventoryMovementType.OpeningBalance, "Tồn đầu kỳ")
         ];
 
@@ -142,6 +147,10 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
             NextPageAsync,
             CanGoToNextPage,
             HandleCommandException);
+        ExportCommand = new AsyncRelayCommand(
+            ExportAsync,
+            CanExport,
+            HandleCommandException);
     }
 
     public ObservableCollection<InventoryMovementRowViewModel> Movements { get; } = [];
@@ -157,6 +166,7 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
     public AsyncRelayCommand ClearSelectionCommand { get; }
     public AsyncRelayCommand PreviousPageCommand { get; }
     public AsyncRelayCommand NextPageCommand { get; }
+    public AsyncRelayCommand ExportCommand { get; }
 
     public string ProductSearchTerm
     {
@@ -555,6 +565,27 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
         if (!await LoadMovementsAsync(false, "Đang tải trang tiếp theo...")) PageNumber = oldPage;
     }
 
+    private async Task ExportAsync()
+    {
+        if (_exportDialogService is null)
+        {
+            return;
+        }
+
+        if (!TryCreateSearchRequest(out var request, out var validationMessage))
+        {
+            if (!string.IsNullOrWhiteSpace(validationMessage))
+            {
+                ErrorMessage = validationMessage;
+                StatusMessage = "Hãy sửa khoảng ngày trước khi xuất.";
+            }
+
+            return;
+        }
+
+        await _exportDialogService.ShowAsync(historyFilters: request);
+    }
+
     private async Task DebouncedApplyAsync(CancellationTokenSource source)
     {
         try
@@ -817,6 +848,7 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
     }
 
     private bool CanLoad() => !_isLoading && !_disposed;
+    private bool CanExport() => CanLoad() && _exportDialogService is not null && IsValidDateRange;
     private bool CanClearFilters() => CanLoad() && HasActiveFilters;
     private bool CanGoToPreviousPage() => CanLoad() && PageNumber > 1;
     private bool CanGoToNextPage() => CanLoad() && PageNumber < TotalPages;
@@ -838,6 +870,7 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
         ClearSelectionCommand.NotifyCanExecuteChanged();
         PreviousPageCommand.NotifyCanExecuteChanged();
         NextPageCommand.NotifyCanExecuteChanged();
+        ExportCommand.NotifyCanExecuteChanged();
     }
 
     private void HandleCommandException(Exception exception)

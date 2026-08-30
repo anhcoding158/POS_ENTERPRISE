@@ -1,5 +1,11 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## Inventory History type/date correction — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
+
+- Inventory History now exposes `CustomerReturn` separately as “Khách trả hàng”, matching the existing customer-return stock movement written only when `RestockQuantity > 0`; legacy `Refund` remains distinct.
+- The default 30-day calendar range is now `Today.AddDays(-29)` through today, with the existing local-day-to-UTC query conversion preserved.
+- Focused History/Product/return coverage is `116/116 PASS` in Debug and Release. No enum, stock-write, database schema, or manual database was changed. Physical WPF acceptance remains pending; R5.1 is still in manual acceptance and R5.2 is not started.
+
 ## Selection and global Inventory History hotfix — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
 
 - The Product & Inventory selected-product rail now has a visible `× Bỏ chọn` command bound to the real `SelectedProduct`/DataGrid selection. It clears only selection, refreshes command guards and presentation, does not reload or mutate product/stock/archive data, and does not reselect the first row.

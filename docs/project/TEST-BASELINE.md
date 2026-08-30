@@ -1,5 +1,10 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## Inventory History type/date correction — 2026-08-30
+
+- Focused `InventoryHistoryUxTests`, Inventory contract and OrderReturn coverage: `116/116 PASS` in Debug and `116/116 PASS` in Release, failed/skipped `0/0`.
+- Added regression coverage for the inclusive 30-calendar-day default and independent `CustomerReturn` filter/display label. No database, migration, package or production write behavior changed.
+
 ## Selection and global Inventory History hotfix — 2026-08-30
 
 - Focused selection/navigation coverage: `28/28 PASS` in Debug and `28/28 PASS` in Release. Relevant Product/Inventory/Category/Import/RBAC/Shell Release coverage: `286/286 PASS`.

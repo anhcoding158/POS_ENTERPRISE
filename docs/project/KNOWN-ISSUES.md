@@ -1,5 +1,11 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## Inventory History type/date correction — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
+
+- The History movement filter/display previously omitted the production `CustomerReturn` type and showed it as unknown; it now uses the business label “Khách trả hàng” without merging it with `Refund`.
+- The default range previously began 31 calendar dates before today; it now begins 29 days before today, preserving the inclusive local-day boundary conversion. Focused Debug/Release is `116/116 PASS`.
+- Physical WPF/UIA/DPI verification remains a manual acceptance item. No canonical or persistent manual database was used.
+
 ## Selection and global Inventory History hotfix — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
 
 - The product rail previously had no user-facing way to clear the bound `SelectedProduct`, leaving product actions dependent on a selection that users could not explicitly remove. The new `ClearSelectedProductCommand` clears the binding-backed selection and notifies all dependent commands without a data reload or write.

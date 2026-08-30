@@ -1,5 +1,10 @@
 # MASTER ROADMAP — POS ENTERPRISE RETAIL V1
 
+## Latest checkpoint position — Inventory History type/date correction — 2026-08-30
+
+- The authorized History follow-up is complete at the read/presentation boundary: `CustomerReturn` is labeled and filterable independently from `Refund`, and the approved “30 ngày gần nhất” contract is 30 calendar days including today (`Today.AddDays(-29)` through today).
+- Debug/Release focused verification is `116/116 PASS`; no write workflow, enum values, schema, or other checkpoint was changed. R5.1 remains in manual acceptance; R5.2 is the next authorized checkpoint and is not started.
+
 ## Latest checkpoint position — Selection and global Inventory History hotfix — 2026-08-30
 
 - This authorized R5.1 manual-acceptance hotfix adds an explicit `× Bỏ chọn` action to the existing Product selection rail and decouples the single `Kho & lưu trữ → Lịch sử kho` route from the currently selected Product row. No stock write, archive behavior, inventory-history query/service, RBAC boundary, persistent manual profile or unrelated module changed.

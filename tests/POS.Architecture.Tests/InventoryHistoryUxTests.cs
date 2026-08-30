@@ -81,6 +81,52 @@ public sealed class InventoryHistoryUxTests
     }
 
     [Fact]
+    public async Task Default_thirty_day_range_is_thirty_calendar_days_including_today()
+    {
+        var service = new FakeInventoryService();
+        using var viewModel = CreateViewModel(service);
+
+        await viewModel.InitializeAsync(null);
+
+        var request = service.Requests.Last();
+        Assert.Equal(DateTime.Today.AddDays(-29), viewModel.FromDate!.Value.Date);
+        Assert.Equal(DateTime.Today, viewModel.ToDate!.Value.Date);
+        Assert.Equal(viewModel.FromDate.Value.Date, request.FromUtc!.Value.ToLocalTime().Date);
+        Assert.Equal(viewModel.ToDate.Value.Date, request.ToUtc!.Value.ToLocalTime().Date);
+    }
+
+    [Fact]
+    public void Customer_return_has_its_own_filter_and_display_label()
+    {
+        var service = new FakeInventoryService();
+        using var viewModel = CreateViewModel(service);
+
+        var option = Assert.Single(
+            viewModel.MovementFilters,
+            value => value.Value == InventoryMovementType.CustomerReturn);
+        Assert.Equal("Khách trả hàng", option.DisplayName);
+
+        var row = new InventoryMovementRowViewModel(
+            new InventoryMovementDto(
+                1,
+                1,
+                "RETURN-001",
+                "Sản phẩm trả hàng",
+                "Cái",
+                InventoryMovementType.CustomerReturn,
+                2,
+                1,
+                3,
+                "Khách trả hàng",
+                "ORDER_RETURN",
+                "OR-001",
+                7,
+                DateTimeOffset.UtcNow));
+
+        Assert.Equal("Khách trả hàng", row.MovementTypeText);
+    }
+
+    [Fact]
     public async Task Enter_applies_search_immediately_and_clear_search_runs_once()
     {
         var service = new FakeInventoryService();
