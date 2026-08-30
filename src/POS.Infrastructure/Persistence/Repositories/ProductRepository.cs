@@ -272,6 +272,66 @@ public sealed class ProductRepository :
             totalCount);
     }
 
+    public async Task<IReadOnlyList<Product>> ExportAsync(
+        string? searchTerm,
+        int? categoryId,
+        bool? isActive,
+        bool? isLowStock,
+        bool? isArchived,
+        int maximumRows,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maximumRows);
+
+        IQueryable<Product> query = _dbContext.Products.AsNoTracking();
+        var normalizedSearchTerm = NormalizeOptionalText(searchTerm);
+
+        if (normalizedSearchTerm is not null)
+        {
+            var pattern = BuildContainsPattern(normalizedSearchTerm);
+            query = query.Where(product =>
+                EF.Functions.Like(product.Code, pattern, LikeEscapeCharacter) ||
+                EF.Functions.Like(product.Name, pattern, LikeEscapeCharacter) ||
+                (product.Barcode != null && EF.Functions.Like(product.Barcode, pattern, LikeEscapeCharacter)));
+        }
+
+        if (categoryId.HasValue)
+        {
+            if (categoryId.Value <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(categoryId));
+            }
+
+            query = query.Where(product => product.CategoryId == categoryId.Value);
+        }
+
+        if (isActive.HasValue)
+        {
+            query = query.Where(product => product.IsActive == isActive.Value);
+        }
+
+        if (isArchived.HasValue)
+        {
+            query = query.Where(product => product.IsArchived == isArchived.Value);
+        }
+
+        if (isLowStock.HasValue)
+        {
+            query = isLowStock.Value
+                ? query.Where(product => product.TrackInventory && product.StockQuantity <= product.MinimumStock)
+                : query.Where(product => !product.TrackInventory || product.StockQuantity > product.MinimumStock);
+        }
+
+        return await query
+            .Include(product => product.Category)
+            .OrderByDescending(product => product.IsActive)
+            .ThenBy(product => product.Name)
+            .ThenBy(product => product.Code)
+            .ThenBy(product => product.Id)
+            .Take(maximumRows)
+            .ToListAsync(cancellationToken);
+    }
+
     public Task<bool> CodeExistsAsync(
         string code,
         int? excludeProductId = null,

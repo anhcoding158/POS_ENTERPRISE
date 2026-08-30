@@ -141,6 +141,34 @@ public sealed class InventoryMovementRepository :
                 aggregate.NeutralCount);
     }
 
+    public async Task<IReadOnlyList<InventoryMovement>> ExportAsync(
+        int? productId,
+        InventoryMovementType? movementType,
+        DateTimeOffset? fromUtc,
+        DateTimeOffset? toUtc,
+        string? referenceType,
+        string? productSearchTerm,
+        int maximumRows,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maximumRows);
+
+        var query = BuildSearchQuery(
+            productId,
+            movementType,
+            fromUtc,
+            toUtc,
+            referenceType,
+            productSearchTerm);
+
+        return await query
+            .Include(movement => movement.Product)
+            .OrderByDescending(movement => movement.OccurredAtUtc)
+            .ThenByDescending(movement => movement.Id)
+            .Take(maximumRows)
+            .ToListAsync(cancellationToken);
+    }
+
     private IQueryable<InventoryMovement> BuildSearchQuery(
         int? productId,
         InventoryMovementType? movementType,

@@ -68,6 +68,16 @@ public interface IProductRepository
         bool? isArchived,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<Product>> ExportAsync(
+        string? searchTerm,
+        int? categoryId,
+        bool? isActive,
+        bool? isLowStock,
+        bool? isArchived,
+        int maximumRows,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Repository chưa hỗ trợ xuất dữ liệu.");
+
     /// <summary>
     /// Kiểm tra mã sản phẩm đã tồn tại hay chưa.
     /// </summary>

@@ -671,3 +671,7 @@ If a gate fails in an authorized future checkpoint:
 ## 11. R0.5D execution statement
 
 R0.5D did not run restore, build, tests, Quality Gate, EF commands, migration, database operations, WPF or the application. Every PASS in this document is explicitly historical and tied to the accepted R0 baseline.
+- R5.2 Export — 2026-08-30
+
+- Focused Export tests pass `5/5` in Debug and Release. Coverage includes typed product/history/template contracts, production low-stock predicate forwarding, cost omission without ManageProducts, leading-zero barcode handling, CSV BOM/escaping/formula protection and readable formula-free XLSX output.
+- Complete in-progress normal-host verification is `1424/1424 PASS`, failed/skipped `0/0`; Release solution build is `0 warnings / 0 errors`; official Quality Gate, vulnerability scan and EF pending-model check pass. Physical export save/open and visual checks remain manual pending.

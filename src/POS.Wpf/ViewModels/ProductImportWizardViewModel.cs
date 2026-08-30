@@ -12,6 +12,7 @@ using POS.Application.DTOs.Categories;
 using POS.Application.DTOs.ProductImports;
 using POS.Application.ProductImports;
 using POS.Wpf.Commands;
+using POS.Wpf.Services;
 
 namespace POS.Wpf.ViewModels;
 
@@ -136,6 +137,7 @@ public sealed class ProductImportWizardViewModel : ViewModelBase, IDisposable
     private readonly IProductImportPreviewService _previewService;
     private readonly IPermissionService _permissionService;
     private readonly ILogger<ProductImportWizardViewModel> _logger;
+    private readonly IProductExportDialogService? _exportDialogService;
     private readonly ProductImportLimits _limits = new();
     private readonly SemaphoreSlim _operationGate = new(1, 1);
     private CancellationTokenSource? _operationCancellation;
@@ -161,12 +163,14 @@ public sealed class ProductImportWizardViewModel : ViewModelBase, IDisposable
         IServiceScopeFactory scopeFactory,
         IProductImportPreviewService previewService,
         IPermissionService permissionService,
-        ILogger<ProductImportWizardViewModel> logger)
+        ILogger<ProductImportWizardViewModel> logger,
+        IProductExportDialogService? exportDialogService = null)
     {
         _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
         _previewService = previewService ?? throw new ArgumentNullException(nameof(previewService));
         _permissionService = permissionService ?? throw new ArgumentNullException(nameof(permissionService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _exportDialogService = exportDialogService;
 
         DuplicatePolicies =
         [
@@ -186,6 +190,7 @@ public sealed class ProductImportWizardViewModel : ViewModelBase, IDisposable
         ToggleFullPreviewCommand = new AsyncRelayCommand(ToggleFullPreviewAsync, () => !IsBusy && HasPreview, HandleException);
         ToggleIssueDetailsCommand = new AsyncRelayCommand(ToggleIssueDetailsAsync, () => !IsBusy && HasIssues, HandleException);
         ViewProductsCommand = new AsyncRelayCommand(ViewProductsAsync, () => !IsBusy && HasImportResult && _result?.IsCommitted == true, HandleException);
+        DownloadTemplateCommand = new AsyncRelayCommand(DownloadTemplateAsync, () => !IsBusy && _exportDialogService is not null, HandleException);
     }
 
     public event Action<bool?>? RequestClose;
@@ -205,6 +210,7 @@ public sealed class ProductImportWizardViewModel : ViewModelBase, IDisposable
     public AsyncRelayCommand ToggleFullPreviewCommand { get; }
     public AsyncRelayCommand ToggleIssueDetailsCommand { get; }
     public AsyncRelayCommand ViewProductsCommand { get; }
+    public AsyncRelayCommand DownloadTemplateCommand { get; }
 
     public string? FilePath { get => _filePath; private set => SetProperty(ref _filePath, value); }
     public string FileName { get => _fileName; private set => SetProperty(ref _fileName, value); }
@@ -501,6 +507,12 @@ public sealed class ProductImportWizardViewModel : ViewModelBase, IDisposable
         await Task.CompletedTask;
     }
 
+    private async Task DownloadTemplateAsync()
+    {
+        if (_exportDialogService is not null)
+            await _exportDialogService.ShowTemplateAsync();
+    }
+
     private void ApplyPreview(ProductImportPreviewResult result)
     {
         _preview = result;
@@ -635,6 +647,7 @@ public sealed class ProductImportWizardViewModel : ViewModelBase, IDisposable
         ToggleFullPreviewCommand.NotifyCanExecuteChanged();
         ToggleIssueDetailsCommand.NotifyCanExecuteChanged();
         ViewProductsCommand.NotifyCanExecuteChanged();
+        DownloadTemplateCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(ShowChooseFileAction));
         OnPropertyChanged(nameof(ShowCheckAction));
         OnPropertyChanged(nameof(ShowImportAction));

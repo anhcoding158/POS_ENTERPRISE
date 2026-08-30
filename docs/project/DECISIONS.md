@@ -574,3 +574,7 @@ Mọi thay đổi kiến trúc hoặc roadmap sau khi register này tồn tại 
 | Deferred | 1 |
 | Superseded | 0 |
 | **Total** | **22** |
+- 2026-08-30 — R5.2 Export decisions
+
+- Export uses BCL ZIP/XML and text APIs already present in the solution; no package, migration or parallel report model was needed. XLSX uses typed text/numeric cells, freezes the header row and contains no formulas, macros or external links.
+- Export cost-price visibility follows the existing `ManageProducts` capability because the production permission catalog has no separate cost-view/export capability. Without that capability, cost columns are omitted from data, metadata and templates rather than inferred or leaked.

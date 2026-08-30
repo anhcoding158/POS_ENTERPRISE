@@ -36,6 +36,17 @@ public interface IInventoryMovementRepository
         string? productSearchTerm = null,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<InventoryMovement>> ExportAsync(
+        int? productId,
+        InventoryMovementType? movementType,
+        DateTimeOffset? fromUtc,
+        DateTimeOffset? toUtc,
+        string? referenceType,
+        string? productSearchTerm,
+        int maximumRows,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Repository chưa hỗ trợ xuất dữ liệu.");
+
     /// <summary>
     /// Thêm movement mới nhưng chưa lưu database.
     /// </summary>

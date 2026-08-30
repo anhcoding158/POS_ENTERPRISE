@@ -650,3 +650,8 @@ An issue may change to `Resolved` only when its closure criteria are met and the
 | Informational | 5 |
 
 The counts above were recounted directly from these 13 stable IDs: `POS-OPS-001`, `POS-OPS-002`, `POS-OPS-003`, `POS-VER-001`, `POS-VER-002`, `POS-VER-003`, `POS-VER-004`, `POS-VER-005`, `POS-ROAD-001`, `POS-ROAD-002`, `POS-ROAD-003`, `POS-ROAD-004`, `POS-ROAD-005`. There are no confirmed open runtime defects in this register.
+- R5.2 Export — IMPLEMENTED / AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
+
+- Export reports and the blank import template are implemented and covered by typed writer/service tests. Physical save-dialog, Excel-open and DPI visual checks remain manual; no claim of manual acceptance is made here.
+- CSV cannot carry cell types and spreadsheet applications may reinterpret long numeric-looking codes when opened. XLSX keeps ProductCode and Barcode as text cells; the UI/documentation should continue to recommend XLSX when preserving identifiers matters.
+- R5.3 label printing remains a separate dependency: the current repository has receipt printing but no production label renderer/printer pipeline.

@@ -1,5 +1,12 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## R5.2 — Export — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
+
+- Added permission-gated CSV/XLSX export for product catalog, current stock, low-stock products, archived products, Inventory History and the exact 11-field Product import template. Product and History exports use the existing database-side filters and bounded projections; export is read-only and does not inherit a selected row as an implicit scope.
+- CSV is UTF-8 BOM with quoting, newline/Unicode handling and formula-injection protection for untrusted text. XLSX is a real typed package with text code/barcode cells, numeric money/quantity cells, frozen header, filter and no formula/macro/external-link content. Output is written to an exact sibling temporary path and replaces the destination only after success.
+- Cost price is included only under the existing `ManageProducts` capability because the production permission catalog has no separate cost-view/export capability; otherwise the column is omitted. The import template is available from the Import Wizard and reuses `ProductImportSchemaCatalog` directly.
+- Focused Export coverage is `5/5 PASS` Debug and Release; normal-host full Release and Quality Gate after the complete in-progress diff are `1424/1424 PASS`, failed/skipped `0/0`, build `0/0`, vulnerability PASS and EF pending-model PASS. Physical WPF save-dialog and visual acceptance remain manual pending. R5.2 is implementation-complete/automated-verified but not manually closed; R5.3 remains in progress.
+
 ## Inventory History type/date correction — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
 
 - Inventory History now exposes `CustomerReturn` separately as “Khách trả hàng”, matching the existing customer-return stock movement written only when `RestockQuantity > 0`; legacy `Refund` remains distinct.

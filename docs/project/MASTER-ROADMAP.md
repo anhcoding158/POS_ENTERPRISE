@@ -432,3 +432,8 @@ Release 1.0 chỉ được thực hiện sau khi toàn bộ exit criteria R13 đ
 - Pilot PASS.
 
 Ước lượng gốc sau R0: **10–16 tuần**. Đây là estimate, không phải cam kết.
+- Latest checkpoint position — 2026-08-30 (R5.2 — Export — IMPLEMENTED / AUTOMATED VERIFIED / MANUAL PENDING)
+
+- R5.2 export now provides five approved read reports (Product catalog, current stock, low stock, archived products and Inventory History) plus the schema-derived blank Product import template in CSV/XLSX. It preserves production filtering, permission, ordering and CustomerReturn semantics; no database mutation, migration or new package was added.
+- File output is typed and bounded: UTF-8 BOM CSV and formula-safe, macro-free XLSX are written through an atomic temporary sibling path. Cost data is omitted when the existing `ManageProducts` capability is absent. Manual save/open and visual acceptance remain pending; R5.2 is not marked closed until the checkpoint workflow accepts those criteria.
+- R5.1A/B remain CLOSED/PRESERVED, R5.1C/D remain manual-acceptance pending, R5.3 is the active next implementation block, R5.4 and R5.2-adjacent features outside this scope are not started, and Development Freeze remains active outside authorized R5 work.

@@ -255,6 +255,7 @@
                             <Button Content="Xóa bộ lọc" Command="{Binding ClearFiltersCommand}" Style="{StaticResource HistoryActionButtonStyle}" Visibility="{Binding HasActiveFilters, Converter={StaticResource BooleanToVisibilityConverter}}" ToolTip="Về 30 ngày gần nhất và xem tất cả sản phẩm." />
                             <Button Grid.Column="2" Content="Làm mới" Command="{Binding RefreshCommand}" Style="{StaticResource HistoryActionButtonStyle}" ToolTip="Đọc lại dữ liệu theo đúng điều kiện đang xem." />
                         </Grid>
+                        <Button Content="Xuất file" Command="{Binding ExportCommand}" Style="{StaticResource HistoryActionButtonStyle}" HorizontalAlignment="Left" Margin="0,9,0,0" ToolTip="Xuất toàn bộ lịch sử theo điều kiện đang xem." />
                     </StackPanel>
                 </Grid>
             </Border>

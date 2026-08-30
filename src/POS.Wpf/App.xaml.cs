@@ -6,6 +6,7 @@ using System.IO;
 using POS.Application.Common;
 using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.Authorization;
+using POS.Application.Abstractions.Exports;
 using POS.Application.Abstractions.Payments;
 using POS.Application.Abstractions.ProductImports;
 using POS.Application.Abstractions.Services;
@@ -16,6 +17,7 @@ using POS.Infrastructure.Platform;
 using POS.Infrastructure.Persistence;
 using POS.Infrastructure.Logging;
 using POS.Infrastructure.Support;
+using POS.Infrastructure.Exports;
 using POS.Wpf.Services;
 using POS.Wpf.ViewModels;
 using POS.Wpf.Views;
@@ -924,6 +926,11 @@ public partial class App :
                 serviceProvider.GetRequiredService<ProductImportService>(),
                 serviceProvider.GetRequiredService<IPermissionService>()));
 
+        services.AddScoped<ProductExportService>();
+        services.AddScoped<IProductExportService>(serviceProvider =>
+            serviceProvider.GetRequiredService<ProductExportService>());
+        services.AddSingleton<IProductExportWriter, ProductExportFileWriter>();
+
         /*
          * Category service.
          */
@@ -1027,6 +1034,10 @@ public partial class App :
         services.AddSingleton<
             IProductImportDialogService,
             ProductImportDialogService>();
+
+        services.AddSingleton<
+            IProductExportDialogService,
+            ProductExportDialogService>();
 
         services.AddSingleton<
             ICategoryDialogService,
