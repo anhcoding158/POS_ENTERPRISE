@@ -151,6 +151,12 @@ public sealed class InventoryAdjustmentUxTests
             Task.FromResult(
                 Result.Failure<PagedResult<InventoryMovementDto>>(
                     new AppError("NOT_USED", "Not used.")));
+
+        public Task<Result<InventoryMovementSummaryDto>> GetHistorySummaryAsync(
+            InventorySearchRequest request,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(
+                Result.Success(new InventoryMovementSummaryDto(0, 0, 0, 0)));
     }
 
     private sealed class FakeProductService : IProductService

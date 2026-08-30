@@ -18,12 +18,13 @@ public interface IInventoryDialogService
     /// <summary>
     /// Mở lịch sử kho.
     ///
-    /// productId null:
+    /// productSearchTerm null:
     ///     mở lịch sử của toàn bộ sản phẩm.
     ///
-    /// productId có giá trị:
-    ///     ưu tiên lọc theo sản phẩm đó.
+    /// productSearchTerm có giá trị:
+    ///     mở với một tiêu chí sản phẩm hiển thị ngay trong ô tìm kiếm.
     /// </summary>
     Task ShowHistoryAsync(
-        int? productId = null);
+        string? productSearchTerm = null,
+        string? productDisplayText = null);
 }

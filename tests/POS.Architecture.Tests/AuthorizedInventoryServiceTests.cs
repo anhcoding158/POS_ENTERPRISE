@@ -277,5 +277,15 @@ public sealed class AuthorizedInventoryServiceTests
                         InventoryMovementDto>>(
                             InnerServiceError));
         }
+
+        public Task<Result<InventoryMovementSummaryDto>>
+            GetHistorySummaryAsync(
+                InventorySearchRequest request,
+                CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                Result.Failure<InventoryMovementSummaryDto>(
+                    InnerServiceError));
+        }
     }
 }

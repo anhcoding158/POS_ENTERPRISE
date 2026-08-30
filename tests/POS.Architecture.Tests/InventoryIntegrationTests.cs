@@ -635,6 +635,26 @@ public sealed class InventoryIntegrationTests
         Assert.Equal(
             "Lần 1",
             secondPage.Items[0].Reason);
+
+        var summary =
+            await repository.GetSummaryAsync(
+                productId,
+                movementType: null,
+                fromUtc: null,
+                toUtc: null,
+                referenceType: null);
+
+        Assert.Equal(
+            3,
+            summary.TotalCount);
+
+        Assert.Equal(
+            3,
+            summary.IncreaseCount);
+
+        Assert.Equal(
+            0,
+            summary.DecreaseCount);
     }
 
     private static InventoryService CreateService(

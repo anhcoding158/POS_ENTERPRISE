@@ -1,5 +1,12 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## Inventory History redesign — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
+
+- The confusing behavior came from the only existing open route carrying the selected product as a hidden `ProductId`, while the visible text search was a separate criterion. The redesigned route uses a single visible product search criterion and adds a permission-gated general Shell entry; reset/clear cannot retain a stale product scope or select the first product.
+- The history table, KPI cards and detail now share the applied database query state. The KPI cards count records/increase/decrease events across the full filtered result and do not sum quantities from different units. No inventory write or audit mutation is involved.
+- Normal-host full Release passed `1409/1409`; the Codex sandbox remains unable to pass the six known CurrentUser DPAPI/local-secure-storage failures (`1403/1409`), while the normal-host rerun of the three affected classes passed `12/12`. No security behavior was changed.
+- Physical click-through, UIA/accessibility and DPI checks remain pending because this environment exposes no inspectable top-level WPF HWND.
+
 ## Inventory History / Adjustment / Category UX hotfix — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
 
 - Inventory History đã trả về bố cục sidebar/workspace cũ nhưng giữ tìm kiếm trực tiếp theo tên, mã và barcode của hotfix trước.

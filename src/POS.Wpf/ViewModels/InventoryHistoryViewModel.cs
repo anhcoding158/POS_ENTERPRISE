@@ -17,6 +17,10 @@ public sealed record InventoryReferenceFilterOption(
     string? Value,
     string DisplayName);
 
+public sealed record InventoryDateRangeOption(
+    string Key,
+    string DisplayName);
+
 /// <summary>
 /// Điều phối một pipeline truy vấn duy nhất cho lịch sử tồn kho.
 /// WPF không truy cập Product/Inventory repository trực tiếp.
@@ -33,6 +37,7 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
     private readonly ILogger<InventoryHistoryViewModel> _logger;
     private readonly IReadOnlyList<InventoryMovementFilterOption> _movementFilters;
     private readonly IReadOnlyList<InventoryReferenceFilterOption> _referenceFilters;
+    private readonly IReadOnlyList<InventoryDateRangeOption> _dateRangeOptions;
     private readonly DateTime _defaultFromDate = DateTime.Today.AddDays(-30);
     private readonly DateTime _defaultToDate = DateTime.Today;
     private readonly CancellationTokenSource _lifetimeCancellation = new();
@@ -44,16 +49,20 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
     private bool _isLoading;
     private bool _disposed;
     private bool _suppressAutoApply;
-    private int? _productScopeId;
     private string _productSearchTerm = string.Empty;
+    private string? _initialProductSearchTerm;
+    private string? _initialProductDisplayText;
     private InventoryMovementFilterOption _selectedMovementFilter;
     private InventoryReferenceFilterOption _selectedReferenceFilter;
+    private InventoryDateRangeOption _selectedDateRangeOption;
     private DateTime? _fromDate;
     private DateTime? _toDate;
     private InventoryMovementRowViewModel? _selectedMovement;
     private int _pageNumber = 1;
     private int _totalPages = 1;
     private int _totalMovements;
+    private int _totalIncreases;
+    private int _totalDecreases;
     private int _increasesOnPage;
     private int _decreasesOnPage;
     private long _netChangeOnPage;
@@ -90,8 +99,17 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
             new("PRODUCT_IMPORT", "Nhập sản phẩm")
         ];
 
+        _dateRangeOptions =
+        [
+            new("today", "Hôm nay"),
+            new("7-days", "7 ngày gần nhất"),
+            new("30-days", "30 ngày gần nhất"),
+            new("custom", "Tùy chọn")
+        ];
+
         _selectedMovementFilter = _movementFilters[0];
         _selectedReferenceFilter = _referenceFilters[0];
+        _selectedDateRangeOption = _dateRangeOptions[2];
         _fromDate = _defaultFromDate;
         _toDate = _defaultToDate;
 
@@ -108,13 +126,13 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
             ClearFiltersAsync,
             CanClearFilters,
             HandleCommandException);
-        ClearProductScopeCommand = new AsyncRelayCommand(
-            ClearProductScopeAsync,
-            () => CanLoad() && HasProductScope,
-            HandleCommandException);
         ClearSearchCommand = new AsyncRelayCommand(
             ClearSearchAsync,
             () => CanLoad() && HasSearchTerm,
+            HandleCommandException);
+        ClearSelectionCommand = new AsyncRelayCommand(
+            ClearSelectionAsync,
+            () => SelectedMovement is not null,
             HandleCommandException);
         PreviousPageCommand = new AsyncRelayCommand(
             PreviousPageAsync,
@@ -129,13 +147,14 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
     public ObservableCollection<InventoryMovementRowViewModel> Movements { get; } = [];
     public IReadOnlyList<InventoryMovementFilterOption> MovementFilters => _movementFilters;
     public IReadOnlyList<InventoryReferenceFilterOption> ReferenceFilters => _referenceFilters;
+    public IReadOnlyList<InventoryDateRangeOption> DateRangeOptions => _dateRangeOptions;
 
     public AsyncRelayCommand ApplyFiltersCommand { get; }
     public AsyncRelayCommand SearchCommand { get; }
     public AsyncRelayCommand RefreshCommand { get; }
     public AsyncRelayCommand ClearFiltersCommand { get; }
-    public AsyncRelayCommand ClearProductScopeCommand { get; }
     public AsyncRelayCommand ClearSearchCommand { get; }
+    public AsyncRelayCommand ClearSelectionCommand { get; }
     public AsyncRelayCommand PreviousPageCommand { get; }
     public AsyncRelayCommand NextPageCommand { get; }
 
@@ -171,6 +190,24 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
         }
     }
 
+    public InventoryDateRangeOption SelectedDateRangeOption
+    {
+        get => _selectedDateRangeOption;
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            if (!SetProperty(ref _selectedDateRangeOption, value) ||
+                !_isInitialized ||
+                _suppressAutoApply ||
+                string.Equals(value.Key, "custom", StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _ = ApplyDateRangeAsync(value);
+        }
+    }
+
     public DateTime? FromDate
     {
         get => _fromDate;
@@ -180,6 +217,7 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
             {
                 OnPropertyChanged(nameof(HasDateRangeError));
                 OnPropertyChanged(nameof(DateRangeError));
+                SetCustomDateRangeOption();
                 OnFilterChanged();
             }
         }
@@ -194,6 +232,7 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
             {
                 OnPropertyChanged(nameof(HasDateRangeError));
                 OnPropertyChanged(nameof(DateRangeError));
+                SetCustomDateRangeOption();
                 OnFilterChanged();
             }
         }
@@ -210,6 +249,7 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
             OnPropertyChanged(nameof(SelectedMovementReason));
             OnPropertyChanged(nameof(SelectedMovementReference));
             OnPropertyChanged(nameof(SelectedMovementAuditText));
+            ClearSelectionCommand.NotifyCanExecuteChanged();
         }
     }
 
@@ -253,6 +293,26 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
         {
             if (!SetProperty(ref _totalMovements, value)) return;
             OnPropertyChanged(nameof(TotalMovementsText));
+        }
+    }
+
+    public int TotalIncreases
+    {
+        get => _totalIncreases;
+        private set
+        {
+            if (!SetProperty(ref _totalIncreases, value)) return;
+            OnPropertyChanged(nameof(TotalIncreasesText));
+        }
+    }
+
+    public int TotalDecreases
+    {
+        get => _totalDecreases;
+        private set
+        {
+            if (!SetProperty(ref _totalDecreases, value)) return;
+            OnPropertyChanged(nameof(TotalDecreasesText));
         }
     }
 
@@ -315,8 +375,15 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
     public bool HasMovements => Movements.Count > 0;
     public bool HasSelectedMovement => SelectedMovement is not null;
     public bool ShowEmptyState => !IsLoading && !HasError && !HasMovements;
-    public bool HasProductScope => _productScopeId.HasValue;
     public bool HasSearchTerm => !string.IsNullOrWhiteSpace(ProductSearchTerm);
+    public bool HasInitialProductContext =>
+        !string.IsNullOrWhiteSpace(_initialProductSearchTerm) &&
+        string.Equals(
+            ProductSearchTerm.Trim(),
+            _initialProductSearchTerm,
+            StringComparison.OrdinalIgnoreCase);
+    public string InitialProductContextText =>
+        _initialProductDisplayText ?? string.Empty;
     public bool HasDateRangeError => !IsValidDateRange;
     public string DateRangeError => HasDateRangeError
         ? "Ngày bắt đầu không được lớn hơn ngày kết thúc."
@@ -328,15 +395,19 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
         ToDate?.Date != _defaultToDate.Date;
     public bool HasActiveFilters =>
         !string.IsNullOrWhiteSpace(ProductSearchTerm) ||
-        HasProductScope ||
         HasAdditionalFilters;
-    public string FilterSummaryText => HasProductScope
-        ? "Đang giới hạn theo sản phẩm đã chọn từ màn trước."
-        : HasActiveFilters
-            ? "Đang áp dụng bộ lọc bổ sung."
-            : "Đang xem toàn bộ lịch sử trong khoảng ngày mặc định.";
+    public string DateRangeText =>
+        FromDate.HasValue && ToDate.HasValue
+            ? $"{FromDate.Value:dd/MM/yyyy} – {ToDate.Value:dd/MM/yyyy}"
+            : "Không giới hạn ngày";
+    public string FilterSummaryText =>
+        $"{(HasSearchTerm ? $"Sản phẩm: {ProductSearchTerm.Trim()}" : "Tất cả sản phẩm")} · " +
+        $"{DateRangeText} · {SelectedMovementFilter.DisplayName} · " +
+        SelectedReferenceFilter.DisplayName;
     public string PageText => $"Trang {PageNumber:N0} / {TotalPages:N0}";
     public string TotalMovementsText => TotalMovements.ToString("N0", VietnameseCulture);
+    public string TotalIncreasesText => TotalIncreases.ToString("N0", VietnameseCulture);
+    public string TotalDecreasesText => TotalDecreases.ToString("N0", VietnameseCulture);
     public string IncreasesOnPageText => IncreasesOnPage.ToString("N0", VietnameseCulture);
     public string DecreasesOnPageText => DecreasesOnPage.ToString("N0", VietnameseCulture);
     public string PageDirectionSummary => $"{IncreasesOnPageText} / {DecreasesOnPageText}";
@@ -344,8 +415,8 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
         ? $"+{NetChangeOnPage.ToString("N0", VietnameseCulture)}"
         : NetChangeOnPage.ToString("N0", VietnameseCulture);
     public string EmptyStateText => HasActiveFilters
-        ? "Không có lịch sử phù hợp với từ khóa và bộ lọc này."
-        : "Chưa có lịch sử tồn kho trong khoảng thời gian này. Không có lịch sử phù hợp với bộ lọc hiện tại.";
+        ? "Không có lịch sử phù hợp với điều kiện đang chọn."
+        : "Chưa có lịch sử tồn kho trong khoảng thời gian này.";
     public string SelectedMovementTitle => SelectedMovement is null
         ? "Chọn một thay đổi để xem chi tiết"
         : $"{SelectedMovement.MovementTypeText} • {SelectedMovement.ProductIdentityText}";
@@ -355,17 +426,27 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
         ? string.Empty
         : $"{SelectedMovement.OccurredAtText} • {SelectedMovement.PerformedByText}";
 
-    public async Task<bool> InitializeAsync(int? productId)
+    public async Task<bool> InitializeAsync(
+        string? initialProductSearchTerm = null,
+        string? initialProductDisplayText = null)
     {
         if (_isInitialized) return true;
-        if (productId is <= 0)
+
+        _initialProductSearchTerm = string.IsNullOrWhiteSpace(initialProductSearchTerm)
+            ? null
+            : initialProductSearchTerm.Trim();
+        _initialProductDisplayText = string.IsNullOrWhiteSpace(initialProductDisplayText)
+            ? _initialProductSearchTerm
+            : initialProductDisplayText.Trim();
+        if (_initialProductSearchTerm is not null)
         {
-            ErrorMessage = "Mã sản phẩm không hợp lệ.";
-            return false;
+            _productSearchTerm = _initialProductSearchTerm;
+            OnPropertyChanged(nameof(ProductSearchTerm));
+            OnPropertyChanged(nameof(HasSearchTerm));
+            OnPropertyChanged(nameof(HasInitialProductContext));
+            OnPropertyChanged(nameof(InitialProductContextText));
         }
 
-        _productScopeId = productId;
-        OnPropertyChanged(nameof(HasProductScope));
         OnPropertyChanged(nameof(FilterSummaryText));
         _isInitialized = true;
         return await LoadMovementsAsync(true, "Đang tải lịch sử tồn kho...");
@@ -396,8 +477,6 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
             SelectedReferenceFilter = _referenceFilters[0];
             FromDate = _defaultFromDate;
             ToDate = _defaultToDate;
-            _productScopeId = null;
-            OnPropertyChanged(nameof(HasProductScope));
             OnPropertyChanged(nameof(FilterSummaryText));
         }
         finally
@@ -405,16 +484,8 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
             _suppressAutoApply = false;
         }
 
+        NotifyFilterPresentation();
         await LoadMovementsAsync(true, "Đang tải lại lịch sử theo bộ lọc mặc định...");
-    }
-
-    private async Task ClearProductScopeAsync()
-    {
-        if (!HasProductScope) return;
-        _productScopeId = null;
-        OnPropertyChanged(nameof(HasProductScope));
-        OnPropertyChanged(nameof(FilterSummaryText));
-        await LoadMovementsAsync(true, "Đang cập nhật phạm vi lịch sử...");
     }
 
     private async Task ClearSearchAsync()
@@ -431,6 +502,40 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
             _suppressAutoApply = false;
         }
 
+        NotifyFilterPresentation();
+        await LoadMovementsAsync(true, "Đang cập nhật lịch sử tồn kho...");
+    }
+
+    private Task ClearSelectionAsync()
+    {
+        SelectedMovement = null;
+        return Task.CompletedTask;
+    }
+
+    private async Task ApplyDateRangeAsync(
+        InventoryDateRangeOption option)
+    {
+        if (_disposed || !_isInitialized) return;
+
+        CancelDebounce();
+        _suppressAutoApply = true;
+        try
+        {
+            var today = DateTime.Today;
+            (FromDate, ToDate) = option.Key switch
+            {
+                "today" => (today, today),
+                "7-days" => (today.AddDays(-6), today),
+                "30-days" => (_defaultFromDate, _defaultToDate),
+                _ => (FromDate, ToDate)
+            };
+        }
+        finally
+        {
+            _suppressAutoApply = false;
+        }
+
+        NotifyFilterPresentation();
         await LoadMovementsAsync(true, "Đang cập nhật lịch sử tồn kho...");
     }
 
@@ -522,6 +627,17 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
                 return false;
             }
 
+            var summaryResult = await inventoryService.GetHistorySummaryAsync(request!, token);
+            token.ThrowIfCancellationRequested();
+            if (version != Volatile.Read(ref _queryVersion)) return false;
+
+            if (summaryResult.IsFailure)
+            {
+                ErrorMessage = "Không thể tải thống kê lịch sử tồn kho. Vui lòng thử lại.";
+                StatusMessage = "Không thể tải dữ liệu lịch sử.";
+                return false;
+            }
+
             var page = result.Value;
             if (!resetPage && page.TotalPages > 0 && PageNumber > page.TotalPages)
             {
@@ -532,12 +648,20 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
                     return false;
                 }
 
-                page = (await inventoryService.SearchAsync(request!, token)).Value;
+                var correctedPageResult = await inventoryService.SearchAsync(request!, token);
+                if (correctedPageResult.IsFailure)
+                {
+                    ErrorMessage = "Không thể tải lịch sử tồn kho. Vui lòng thử lại.";
+                    StatusMessage = "Không thể tải dữ liệu lịch sử.";
+                    return false;
+                }
+
+                page = correctedPageResult.Value;
                 token.ThrowIfCancellationRequested();
                 if (version != Volatile.Read(ref _queryVersion)) return false;
             }
 
-            ApplyPage(page);
+            ApplyPage(page, summaryResult.Value);
             return true;
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
@@ -564,17 +688,21 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private void ApplyPage(POS.Application.Common.PagedResult<InventoryMovementDto> page)
+    private void ApplyPage(
+        POS.Application.Common.PagedResult<InventoryMovementDto> page,
+        InventoryMovementSummaryDto summary)
     {
         foreach (var movement in page.Items)
             Movements.Add(new InventoryMovementRowViewModel(movement));
 
         PageNumber = page.TotalPages == 0 ? 1 : page.PageNumber;
         TotalPages = Math.Max(1, page.TotalPages);
-        TotalMovements = page.TotalCount;
+        TotalMovements = summary.TotalCount;
         IncreasesOnPage = Movements.Count(row => row.IsIncrease);
         DecreasesOnPage = Movements.Count(row => row.IsDecrease);
         NetChangeOnPage = Movements.Sum(row => (long)row.QuantityDelta);
+        TotalIncreases = summary.IncreaseCount;
+        TotalDecreases = summary.DecreaseCount;
         OnPropertyChanged(nameof(HasMovements));
         OnPropertyChanged(nameof(ShowEmptyState));
         StatusMessage = Movements.Count == 0
@@ -585,12 +713,7 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
 
     private void OnFilterChanged()
     {
-        OnPropertyChanged(nameof(HasAdditionalFilters));
-        OnPropertyChanged(nameof(HasActiveFilters));
-        OnPropertyChanged(nameof(HasSearchTerm));
-        OnPropertyChanged(nameof(EmptyStateText));
-        OnPropertyChanged(nameof(FilterSummaryText));
-        NotifyCommandStates();
+        NotifyFilterPresentation();
         if (!_isInitialized || _suppressAutoApply || _disposed) return;
 
         ClearDisplayedResults();
@@ -600,11 +723,47 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
         _ = DebouncedApplyAsync(source);
     }
 
+    private void NotifyFilterPresentation()
+    {
+        OnPropertyChanged(nameof(HasAdditionalFilters));
+        OnPropertyChanged(nameof(HasActiveFilters));
+        OnPropertyChanged(nameof(HasSearchTerm));
+        OnPropertyChanged(nameof(HasInitialProductContext));
+        OnPropertyChanged(nameof(DateRangeText));
+        OnPropertyChanged(nameof(EmptyStateText));
+        OnPropertyChanged(nameof(FilterSummaryText));
+        NotifyCommandStates();
+    }
+
+    private void SetCustomDateRangeOption()
+    {
+        if (_suppressAutoApply ||
+            string.Equals(
+                _selectedDateRangeOption.Key,
+                "custom",
+                StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _suppressAutoApply = true;
+        try
+        {
+            SelectedDateRangeOption = _dateRangeOptions[3];
+        }
+        finally
+        {
+            _suppressAutoApply = false;
+        }
+    }
+
     private void ClearDisplayedResults()
     {
         Movements.Clear();
         SelectedMovement = null;
         TotalMovements = 0;
+        TotalIncreases = 0;
+        TotalDecreases = 0;
         IncreasesOnPage = 0;
         DecreasesOnPage = 0;
         NetChangeOnPage = 0;
@@ -625,7 +784,7 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
         try
         {
             request = new InventorySearchRequest(
-                productId: _productScopeId,
+                productId: null,
                 movementType: SelectedMovementFilter.Value,
                 fromUtc: FromDate.HasValue ? ConvertStartOfLocalDayToUtc(FromDate.Value) : null,
                 toUtc: ToDate.HasValue ? ConvertEndOfLocalDayToUtc(ToDate.Value) : null,
@@ -675,8 +834,8 @@ public sealed class InventoryHistoryViewModel : ViewModelBase, IDisposable
         ApplyFiltersCommand.NotifyCanExecuteChanged();
         RefreshCommand.NotifyCanExecuteChanged();
         ClearFiltersCommand.NotifyCanExecuteChanged();
-        ClearProductScopeCommand.NotifyCanExecuteChanged();
         ClearSearchCommand.NotifyCanExecuteChanged();
+        ClearSelectionCommand.NotifyCanExecuteChanged();
         PreviousPageCommand.NotifyCanExecuteChanged();
         NextPageCommand.NotifyCanExecuteChanged();
     }

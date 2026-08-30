@@ -613,6 +613,18 @@
                                                 Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                         </StackPanel>
                                     </Button>
+                                    <Button
+                                        x:Name="ShellInventoryHistoryNavigationButton"
+                                        Command="{Binding OpenInventoryHistoryCommand}"
+                                        IsEnabled="{Binding CanViewInventoryHistory}"
+                                        Visibility="{Binding CanViewInventoryHistory, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                        ToolTip="Xem lịch sử thay đổi tồn kho của tất cả sản phẩm"
+                                        AutomationProperties.AutomationId="ShellInventoryHistoryNavigationButton">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE9D2;" FontFamily="Segoe MDL2 Assets" FontSize="13" Width="24" VerticalAlignment="Center" />
+                                            <TextBlock Text="Lịch sử tồn kho" VerticalAlignment="Center" Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        </StackPanel>
+                                    </Button>
                                 </StackPanel>
                             </Expander>
 

@@ -71,17 +71,9 @@ public sealed class InventoryDialogService :
     }
 
     public async Task ShowHistoryAsync(
-        int? productId = null)
+        string? productSearchTerm = null,
+        string? productDisplayText = null)
     {
-        if (productId.HasValue &&
-            productId.Value <= 0)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(productId),
-                productId,
-                "Mã sản phẩm phải lớn hơn 0.");
-        }
-
         var viewModel =
             _serviceProvider
                 .GetRequiredService<
@@ -89,7 +81,8 @@ public sealed class InventoryDialogService :
 
         var initialized =
             await viewModel.InitializeAsync(
-                productId);
+                productSearchTerm,
+                productDisplayText);
 
         if (!initialized)
         {

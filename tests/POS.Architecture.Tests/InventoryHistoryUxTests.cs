@@ -24,11 +24,11 @@ public sealed class InventoryHistoryUxTests
                 "..", "..", "..", "..", "..",
                 "src", "POS.Wpf", "Views", "InventoryHistoryWindow.xaml"));
 
-        Assert.Contains("Tìm theo tên, mã sản phẩm hoặc mã vạch", source, StringComparison.Ordinal);
+        Assert.Contains("Tên, mã sản phẩm hoặc mã vạch", source, StringComparison.Ordinal);
         Assert.Contains("Text=\"Tìm sản phẩm\"", source, StringComparison.Ordinal);
-        Assert.Contains("<ColumnDefinition Width=\"300\"", source, StringComparison.Ordinal);
+        Assert.Contains("<ColumnDefinition Width=\"250\"", source, StringComparison.Ordinal);
         Assert.Contains("<UniformGrid Grid.Row=\"0\" Columns=\"3\"", source, StringComparison.Ordinal);
-        Assert.Contains("Command=\"{Binding ApplyFiltersCommand}\"", source, StringComparison.Ordinal);
+        Assert.Contains("Command=\"{Binding SearchCommand}\"", source, StringComparison.Ordinal);
         Assert.Contains("Xóa bộ lọc", source, StringComparison.Ordinal);
         Assert.Contains("Làm mới", source, StringComparison.Ordinal);
         Assert.DoesNotContain("Lọc lịch sử", source, StringComparison.Ordinal);
@@ -36,6 +36,7 @@ public sealed class InventoryHistoryUxTests
         Assert.DoesNotContain("Tải lại", source, StringComparison.Ordinal);
         Assert.DoesNotContain("AUDIT TRAIL", source, StringComparison.Ordinal);
         Assert.DoesNotContain("Movement có delta", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("Bỏ giới hạn sản phẩm", source, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -48,9 +49,12 @@ public sealed class InventoryHistoryUxTests
                 "src", "POS.Wpf", "Views", "InventoryHistoryWindow.xaml"));
 
         Assert.Contains("ScrollViewer.HorizontalScrollBarVisibility\" Value=\"Auto\"", source, StringComparison.Ordinal);
+        Assert.Contains("GridLinesVisibility\" Value=\"All\"", source, StringComparison.Ordinal);
+        Assert.Contains("HorizontalContentAlignment\" Value=\"Stretch\"", source, StringComparison.Ordinal);
         Assert.Contains("TextTrimming=\"CharacterEllipsis\"", source, StringComparison.Ordinal);
         Assert.Contains("ToolTip=\"{Binding ReferenceText}\"", source, StringComparison.Ordinal);
-        Assert.Contains("Chọn một thay đổi để xem chi tiết", source, StringComparison.Ordinal);
+        Assert.Contains("Đóng chi tiết", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("Đang giới hạn sản phẩm đã chọn", source, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -100,7 +104,7 @@ public sealed class InventoryHistoryUxTests
     {
         var service = new FakeInventoryService();
         using var viewModel = CreateViewModel(service);
-        await viewModel.InitializeAsync(42);
+        await viewModel.InitializeAsync("MILK-001", "Sữa tươi · MILK-001");
         service.Requests.Clear();
 
         viewModel.ClearFiltersCommand.Execute(null);
@@ -109,7 +113,31 @@ public sealed class InventoryHistoryUxTests
         var request = Assert.Single(service.Requests);
         Assert.Null(request.ProductId);
         Assert.Null(request.ProductSearchTerm);
-        Assert.False(viewModel.HasProductScope);
+        Assert.False(viewModel.HasInitialProductContext);
+    }
+
+    [Fact]
+    public async Task Product_navigation_uses_visible_search_criterion_without_product_id_scope()
+    {
+        var service = new FakeInventoryService();
+        using var viewModel = CreateViewModel(service);
+
+        await viewModel.InitializeAsync("MILK-001", "Sữa tươi · MILK-001");
+
+        var initialRequest = service.Requests.Last();
+        Assert.Null(initialRequest.ProductId);
+        Assert.Equal("MILK-001", initialRequest.ProductSearchTerm);
+        Assert.True(viewModel.HasInitialProductContext);
+        Assert.Contains("Sữa tươi · MILK-001", viewModel.InitialProductContextText, StringComparison.Ordinal);
+
+        service.Requests.Clear();
+        viewModel.ProductSearchTerm = "BREAD-002";
+        await Task.Delay(450);
+
+        var changedRequest = Assert.Single(service.Requests);
+        Assert.Null(changedRequest.ProductId);
+        Assert.Equal("BREAD-002", changedRequest.ProductSearchTerm);
+        Assert.False(viewModel.HasInitialProductContext);
     }
 
     [Fact]
@@ -209,7 +237,7 @@ public sealed class InventoryHistoryUxTests
         await WaitForCommandAsync(viewModel.ApplyFiltersCommand);
         Assert.False(viewModel.HasError);
         Assert.True(viewModel.ShowEmptyState);
-        Assert.Contains("Không có lịch sử phù hợp", viewModel.EmptyStateText, StringComparison.Ordinal);
+        Assert.Contains("Chưa có lịch sử tồn kho", viewModel.EmptyStateText, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -226,10 +254,12 @@ public sealed class InventoryHistoryUxTests
             var window = new InventoryHistoryWindow(viewModel);
             foreach (var size in new[]
             {
-                new Size(1920, 1080),
-                new Size(1366, 768),
-                new Size(1280, 720),
-                new Size(1000, 640)
+                 new Size(1920, 1080),
+                 new Size(1366, 768),
+                 new Size(1280, 720),
+                 new Size(1180, 720),
+                 new Size(1000, 620),
+                 new Size(1000, 640)
             })
             {
                 window.Measure(size);
@@ -308,6 +338,7 @@ public sealed class InventoryHistoryUxTests
     {
         public ConcurrentBag<InventorySearchRequest> Requests { get; } = [];
         public PagedResult<InventoryMovementDto> Page { get; init; } = SuccessPage(CreateMovement(1, "INIT-001", "Sản phẩm"));
+        public InventoryMovementSummaryDto Summary { get; init; } = new(1, 1, 0, 0);
         public Func<InventorySearchRequest, CancellationToken, Task<Result<PagedResult<InventoryMovementDto>>>>? SearchHandler { get; set; }
 
         public Task<Result<PagedResult<InventoryMovementDto>>> SearchAsync(InventorySearchRequest request, CancellationToken cancellationToken = default)
@@ -324,6 +355,11 @@ public sealed class InventoryHistoryUxTests
 
         public Task<Result<InventoryAdjustmentResultDto>> AdjustAsync(InventoryAdjustmentRequest request, CancellationToken cancellationToken = default) =>
             Task.FromResult(Result.Failure<InventoryAdjustmentResultDto>(new AppError("NOT_USED", "Not used.")));
+
+        public Task<Result<InventoryMovementSummaryDto>> GetHistorySummaryAsync(
+            InventorySearchRequest request,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(Result.Success(Summary));
     }
 
     private sealed class FakeScopeFactory : IServiceScopeFactory

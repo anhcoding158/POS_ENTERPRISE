@@ -1,5 +1,11 @@
 # MASTER ROADMAP — POS ENTERPRISE RETAIL V1
 
+## Latest checkpoint position — Inventory History redesign — 2026-08-30
+
+- This authorized Inventory History hotfix keeps the completed search/query behavior while replacing the confusing hidden-product-scope presentation with one visible product criterion and a general Shell entry. The screen now uses a compact filter sidebar, business-language summary cards, a spacious history table and on-demand detail without changing inventory writes, ledger, audit, RBAC or other modules.
+- Focused coverage is `21/21 PASS` in Debug and Release, relevant Release coverage is `90/90 PASS`, normal-host full Release is `1409/1409 PASS`, failed/skipped `0/0`, and Release build is `0/0`. The six sandbox DPAPI failures passed in normal-host verification; physical WPF/UIA/DPI acceptance remains pending.
+- R5.1 remains in manual acceptance and is not closed by this hotfix. R5.1A–R5.1D and R4.2–R4.4 remain preserved; R5.2 is NOT STARTED. Development Freeze remains ACTIVE outside this authorized Inventory History exception.
+
 ## Latest checkpoint position — Inventory History / Adjustment / Category UX hotfix — 2026-08-30
 
 - Authorized hotfix is limited to presentation/read-query behavior for Inventory History, empty quantity UX for manual stock adjustment, and category name ordering/display-order form removal. Product archiving/storage, Import Wizard and later checkpoints are unchanged.

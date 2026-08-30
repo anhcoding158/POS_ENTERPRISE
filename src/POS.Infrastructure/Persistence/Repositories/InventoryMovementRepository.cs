@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using POS.Application.Abstractions.Persistence;
 using POS.Application.Common;
+using POS.Application.DTOs.Inventory;
 using POS.Domain.Entities;
 using POS.Domain.Enums;
 
@@ -64,6 +65,90 @@ public sealed class InventoryMovementRepository :
                 pageNumber,
                 pageSize);
 
+        var query = BuildSearchQuery(
+            productId,
+            movementType,
+            fromUtc,
+            toUtc,
+            referenceType,
+            productSearchTerm);
+
+        var totalCount =
+            await query.CountAsync(
+                cancellationToken);
+
+        var items =
+            await query
+                .Include(
+                    movement =>
+                        movement.Product)
+                .OrderByDescending(
+                    movement =>
+                        movement.OccurredAtUtc)
+                .ThenByDescending(
+                    movement =>
+                        movement.Id)
+                .Skip(skip)
+                .Take(pageSize)
+                .ToListAsync(
+                    cancellationToken);
+
+        return new PagedResult<InventoryMovement>(
+            items,
+            pageNumber,
+            pageSize,
+            totalCount);
+    }
+
+    public async Task<InventoryMovementSummaryDto> GetSummaryAsync(
+        int? productId,
+        InventoryMovementType? movementType,
+        DateTimeOffset? fromUtc,
+        DateTimeOffset? toUtc,
+        string? referenceType,
+        string? productSearchTerm = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = BuildSearchQuery(
+            productId,
+            movementType,
+            fromUtc,
+            toUtc,
+            referenceType,
+            productSearchTerm);
+
+        var aggregate =
+            await query
+                .GroupBy(_ => 1)
+                .Select(group => new
+                {
+                    TotalCount = group.Count(),
+                    IncreaseCount = group.Count(
+                        movement => movement.QuantityDelta > 0),
+                    DecreaseCount = group.Count(
+                        movement => movement.QuantityDelta < 0),
+                    NeutralCount = group.Count(
+                        movement => movement.QuantityDelta == 0)
+                })
+                .SingleOrDefaultAsync(cancellationToken);
+
+        return aggregate is null
+            ? new InventoryMovementSummaryDto(0, 0, 0, 0)
+            : new InventoryMovementSummaryDto(
+                aggregate.TotalCount,
+                aggregate.IncreaseCount,
+                aggregate.DecreaseCount,
+                aggregate.NeutralCount);
+    }
+
+    private IQueryable<InventoryMovement> BuildSearchQuery(
+        int? productId,
+        InventoryMovementType? movementType,
+        DateTimeOffset? fromUtc,
+        DateTimeOffset? toUtc,
+        string? referenceType,
+        string? productSearchTerm)
+    {
         IQueryable<InventoryMovement> query =
             _dbContext
                 .InventoryMovements
@@ -80,9 +165,7 @@ public sealed class InventoryMovementRepository :
             }
 
             query = query.Where(
-                movement =>
-                    movement.ProductId ==
-                    productId.Value);
+                movement => movement.ProductId == productId.Value);
         }
 
         var normalizedProductSearchTerm =
@@ -113,10 +196,8 @@ public sealed class InventoryMovementRepository :
 
         if (movementType.HasValue)
         {
-            if (movementType.Value ==
-                    InventoryMovementType.Unknown ||
-                !Enum.IsDefined(
-                    movementType.Value))
+            if (movementType.Value == InventoryMovementType.Unknown ||
+                !Enum.IsDefined(movementType.Value))
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(movementType),
@@ -125,78 +206,32 @@ public sealed class InventoryMovementRepository :
             }
 
             query = query.Where(
-                movement =>
-                    movement.MovementType ==
-                    movementType.Value);
+                movement => movement.MovementType == movementType.Value);
         }
 
         if (fromUtc.HasValue)
         {
-            var normalizedFrom =
-                NormalizeUtc(
-                    fromUtc.Value,
-                    nameof(fromUtc));
-
+            var normalizedFrom = NormalizeUtc(fromUtc.Value, nameof(fromUtc));
             query = query.Where(
-                movement =>
-                    movement.OccurredAtUtc >=
-                    normalizedFrom);
+                movement => movement.OccurredAtUtc >= normalizedFrom);
         }
 
         if (toUtc.HasValue)
         {
-            var normalizedTo =
-                NormalizeUtc(
-                    toUtc.Value,
-                    nameof(toUtc));
-
+            var normalizedTo = NormalizeUtc(toUtc.Value, nameof(toUtc));
             query = query.Where(
-                movement =>
-                    movement.OccurredAtUtc <=
-                    normalizedTo);
+                movement => movement.OccurredAtUtc <= normalizedTo);
         }
 
-        var normalizedReferenceType =
-            NormalizeOptionalText(
-                referenceType);
-
+        var normalizedReferenceType = NormalizeOptionalText(referenceType);
         if (normalizedReferenceType is not null)
         {
-            normalizedReferenceType =
-                normalizedReferenceType
-                    .ToUpperInvariant();
-
+            normalizedReferenceType = normalizedReferenceType.ToUpperInvariant();
             query = query.Where(
-                movement =>
-                    movement.ReferenceType ==
-                    normalizedReferenceType);
+                movement => movement.ReferenceType == normalizedReferenceType);
         }
 
-        var totalCount =
-            await query.CountAsync(
-                cancellationToken);
-
-        var items =
-            await query
-                .Include(
-                    movement =>
-                        movement.Product)
-                .OrderByDescending(
-                    movement =>
-                        movement.OccurredAtUtc)
-                .ThenByDescending(
-                    movement =>
-                        movement.Id)
-                .Skip(skip)
-                .Take(pageSize)
-                .ToListAsync(
-                    cancellationToken);
-
-        return new PagedResult<InventoryMovement>(
-            items,
-            pageNumber,
-            pageSize,
-            totalCount);
+        return query;
     }
 
     public async Task AddAsync(

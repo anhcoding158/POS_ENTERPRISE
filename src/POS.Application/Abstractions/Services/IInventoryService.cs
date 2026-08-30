@@ -18,4 +18,8 @@ public interface IInventoryService
     Task<Result<PagedResult<InventoryMovementDto>>> SearchAsync(
         InventorySearchRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<Result<InventoryMovementSummaryDto>> GetHistorySummaryAsync(
+        InventorySearchRequest request,
+        CancellationToken cancellationToken = default);
 }

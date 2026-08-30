@@ -287,6 +287,12 @@ public sealed class ShellViewModel :
                 CanLoadProducts,
                 HandleCommandException);
 
+        OpenInventoryHistoryCommand =
+            new AsyncRelayCommand(
+                OpenInventoryHistoryAsync,
+                () => CanViewInventoryHistory,
+                HandleCommandException);
+
         OpenOrderHistoryCommand =
             new AsyncRelayCommand(
                 OpenOrderHistoryAsync,
@@ -369,6 +375,11 @@ public sealed class ShellViewModel :
     }
 
     public AsyncRelayCommand ViewInventoryHistoryCommand
+    {
+        get;
+    }
+
+    public AsyncRelayCommand OpenInventoryHistoryCommand
     {
         get;
     }
@@ -760,6 +771,10 @@ public sealed class ShellViewModel :
     public bool CanViewProducts =>
         _permissionService.HasPermission(
             SystemCapability.ViewProductCatalog);
+
+    public bool CanViewInventoryHistory =>
+        _permissionService.HasPermission(
+            SystemCapability.ViewInventoryHistory);
 
     public bool CanManageCategories =>
         _permissionService.HasPermission(
@@ -1255,8 +1270,12 @@ public sealed class ShellViewModel :
         var selectedProduct =
             SelectedProduct;
 
-        var productId =
-            selectedProduct?.Id;
+        var productCode =
+            selectedProduct?.Code;
+        var productDisplayText =
+            selectedProduct is null
+                ? null
+                : $"{selectedProduct.Name} · {selectedProduct.Code}";
 
         StatusMessage =
             selectedProduct is null
@@ -1266,13 +1285,23 @@ public sealed class ShellViewModel :
 
         await _inventoryDialogService
             .ShowHistoryAsync(
-                productId);
+                productCode,
+                productDisplayText);
 
         StatusMessage =
             selectedProduct is null
                 ? "Đã đóng màn hình lịch sử tồn kho."
                 : $"Đã đóng lịch sử kho của " +
                   $"'{selectedProduct.Name}'.";
+    }
+
+    private async Task OpenInventoryHistoryAsync()
+    {
+        StatusMessage = "Đang mở lịch sử tồn kho toàn bộ sản phẩm...";
+
+        await _inventoryDialogService.ShowHistoryAsync();
+
+        StatusMessage = "Đã đóng màn hình lịch sử tồn kho.";
     }
 
     private async Task ToggleProductActiveAsync()
@@ -1805,6 +1834,9 @@ public sealed class ShellViewModel :
             .NotifyCanExecuteChanged();
 
         ViewInventoryHistoryCommand
+            .NotifyCanExecuteChanged();
+
+        OpenInventoryHistoryCommand
             .NotifyCanExecuteChanged();
 
         OpenOrderHistoryCommand

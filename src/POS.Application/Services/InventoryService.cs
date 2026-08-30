@@ -224,6 +224,28 @@ public sealed class InventoryService : IInventoryService
         return Result.Success(resultPage);
     }
 
+    public async Task<Result<InventoryMovementSummaryDto>>
+        GetHistorySummaryAsync(
+            InventorySearchRequest request,
+            CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var summary =
+            await _movementRepository.GetSummaryAsync(
+                request.ProductId,
+                request.MovementType,
+                request.FromUtc,
+                request.ToUtc,
+                request.ReferenceType,
+                request.ProductSearchTerm,
+                cancellationToken);
+
+        return Result.Success(summary);
+    }
+
     private static void ApplyMovement(
         Product product,
         InventoryAdjustmentRequest request,

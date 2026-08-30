@@ -1,5 +1,12 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## Inventory History redesign — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
+
+- Inventory History now has one explicit product criterion: the general Shell entry opens all permitted products, while a product-context entry seeds the same visible search box with that product code/name. Editing or clearing the search replaces/removes the criterion; no hidden `ProductId`, red scope banner or separate “bỏ giới hạn” flow remains.
+- The screen keeps database-side name/code/barcode search, 300 ms debounce, Enter/small `Tìm`, latest-request-wins cancellation, valid-date checks, consistent reset/refresh/paging/detail states and permission/store boundaries. The compact dark sidebar and three summary cards use local styles; summary counts come from the same filtered query before paging and never add quantities across units.
+- Focused Inventory History/Product navigation coverage is `21/21 PASS` in Debug and `21/21 PASS` in Release; relevant Inventory/Product/RBAC/Shell/History Release coverage is `90/90 PASS`. Normal-host full Release is `1409/1409 PASS`, failed/skipped `0/0`; Release build is `0/0` warnings/errors. The sandbox run was `1403 PASS / 6 FAIL / 0 SKIP` only for the known CurrentUser DPAPI secure-storage tests; the normal-host rerun passed all 12 tests in those classes.
+- Physical WPF click/UIA and 100%/125%/150% DPI acceptance remain manual pending; automated WPF construction/measure/arrange covers `1920×1080`, `1366×768`, `1280×720`, `1180×720`, `1000×620`. Inventory write, ledger, audit, Employee, Import Wizard, Category and archive behavior were not changed. R5.1 remains manual acceptance, R5.2 is NOT STARTED and Development Freeze is ACTIVE outside this hotfix.
+
 ## Inventory History / Adjustment / Category UX hotfix — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
 
 - Inventory History giữ pipeline tìm kiếm database-side của `dc27148` nhưng trở lại bố cục cũ: sidebar bộ lọc gọn, KPI card, bảng, chi tiết và phân trang. `Tìm`, Enter và debounce dùng cùng query; `Xóa bộ lọc`/`Làm mới`, loading, empty, error, scope navigation và paging vẫn giữ semantics mới.

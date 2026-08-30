@@ -68,6 +68,8 @@ public sealed class ProductArchivingUiContractTests
         Assert.Contains("Text=\"&#xE7B8;\"", source, StringComparison.Ordinal);
         Assert.Contains("AdjustInventoryCommand", source, StringComparison.Ordinal);
         Assert.Contains("ViewInventoryHistoryCommand", source, StringComparison.Ordinal);
+        Assert.Contains("OpenInventoryHistoryCommand", source, StringComparison.Ordinal);
+        Assert.Contains("ShellInventoryHistoryNavigationButton", source, StringComparison.Ordinal);
         Assert.Contains("OnToggleProductArchiveClick", source, StringComparison.Ordinal);
     }
 
@@ -215,10 +217,28 @@ public sealed class ProductArchivingUiContractTests
                 .ToggleProductArchiveButtonText);
     }
 
+    [Fact]
+    public async Task Selected_product_history_uses_visible_code_search_without_hidden_id_scope()
+    {
+        var context = CreateContext();
+        context.ViewModel.SelectedProduct =
+            new ProductRowViewModel(CreateProduct(isArchived: false));
+
+        context.ViewModel.ViewInventoryHistoryCommand.Execute(null);
+        await WaitForHistoryAsync(context.ViewModel);
+
+        Assert.Equal("SP-017", context.InventoryDialog.LastHistorySearchTerm);
+        Assert.Equal(
+            "Sản phẩm kiểm thử · SP-017",
+            context.InventoryDialog.LastHistoryDisplayText);
+    }
+
     private static TestContext CreateContext()
     {
         var service =
             new FakeProductService();
+        var inventoryDialog =
+            new FakeInventoryDialogService();
 
         var services =
             new ServiceCollection()
@@ -232,14 +252,15 @@ public sealed class ProductArchivingUiContractTests
                     IServiceScopeFactory>(),
                 new FakeProductDialogService(),
                 new FakeCategoryDialogService(),
-                new FakeInventoryDialogService(),
+                inventoryDialog,
                 new FakeOrderHistoryWindowService(),
                 new AllowAllPermissionService(),
                 NullLogger<ShellViewModel>.Instance);
 
         return new TestContext(
             viewModel,
-            service);
+            service,
+            inventoryDialog);
     }
 
     private static string FindRepositoryRoot()
@@ -321,7 +342,8 @@ public sealed class ProductArchivingUiContractTests
 
     private sealed record TestContext(
         ShellViewModel ViewModel,
-        FakeProductService Service);
+        FakeProductService Service,
+        FakeInventoryDialogService InventoryDialog);
 
     private sealed class FakeProductService :
         IProductService
@@ -430,6 +452,10 @@ public sealed class ProductArchivingUiContractTests
     private sealed class FakeInventoryDialogService :
         IInventoryDialogService
     {
+        public string? LastHistorySearchTerm { get; private set; }
+
+        public string? LastHistoryDisplayText { get; private set; }
+
         public Task<bool> ShowAdjustmentAsync(
             int productId)
         {
@@ -437,9 +463,24 @@ public sealed class ProductArchivingUiContractTests
         }
 
         public Task ShowHistoryAsync(
-            int? productId = null)
+            string? productSearchTerm = null,
+            string? productDisplayText = null)
         {
+            LastHistorySearchTerm = productSearchTerm;
+            LastHistoryDisplayText = productDisplayText;
             return Task.CompletedTask;
         }
+    }
+
+    private static async Task WaitForHistoryAsync(ShellViewModel viewModel)
+    {
+        var timeout = DateTimeOffset.UtcNow.AddSeconds(5);
+        while (viewModel.ViewInventoryHistoryCommand.IsExecuting &&
+               DateTimeOffset.UtcNow < timeout)
+        {
+            await Task.Delay(10);
+        }
+
+        Assert.False(viewModel.ViewInventoryHistoryCommand.IsExecuting);
     }
 }

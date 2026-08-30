@@ -91,4 +91,25 @@ public sealed class AuthorizedInventoryService :
             request,
             cancellationToken);
     }
+
+    public Task<Result<InventoryMovementSummaryDto>>
+        GetHistorySummaryAsync(
+            InventorySearchRequest request,
+            CancellationToken cancellationToken = default)
+    {
+        var authorizationResult =
+            _permissionService.Authorize(
+                SystemCapability.ViewInventoryHistory);
+
+        if (authorizationResult.IsFailure)
+        {
+            return Task.FromResult(
+                Result.Failure<InventoryMovementSummaryDto>(
+                    authorizationResult.AppError));
+        }
+
+        return _innerService.GetHistorySummaryAsync(
+            request,
+            cancellationToken);
+    }
 }

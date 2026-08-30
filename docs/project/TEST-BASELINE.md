@@ -1,5 +1,12 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## Inventory History redesign — 2026-08-30
+
+- Focused Inventory History and product-navigation coverage: `21/21 PASS` in Debug and `21/21 PASS` in Release. Relevant Inventory/Product/RBAC/Shell/History Release coverage: `90/90 PASS`.
+- Release solution build: `0` warnings, `0` errors. Sandbox full Release: `1403 PASS / 6 FAIL / 0 SKIP`, with the six known CurrentUser DPAPI/local-secure-storage failures. Normal-host rerun of the three affected classes passed `12/12`; normal-host full Release passed `1409/1409`, failed/skipped `0/0`.
+- Coverage includes general-vs-product navigation, visible search replacing the prior product criterion, clear/reset/refresh semantics, database-side search and paging, latest-response-wins, invalid dates, empty/error/detail states, query-consistent KPI counts, local themed layout styles and WPF measure/arrange at `1920×1080`, `1366×768`, `1280×720`, `1180×720` and `1000×620`.
+- No canonical database, write workflow, ledger, audit mutation, package, migration or unrelated module was changed. Physical WPF click/UIA/DPI acceptance remains manual pending.
+
 ## Inventory History / Adjustment / Category UX hotfix — 2026-08-30
 
 - Focused Inventory History, manual adjustment and Category coverage: `44/44 PASS` in Debug and `44/44 PASS` in Release. Relevant Product/Inventory/Category/RBAC/Import Release coverage: `284/284 PASS`.

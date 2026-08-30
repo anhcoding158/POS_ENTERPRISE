@@ -1,4 +1,5 @@
 using POS.Application.Common;
+using POS.Application.DTOs.Inventory;
 using POS.Domain.Entities;
 using POS.Domain.Enums;
 
@@ -23,6 +24,15 @@ public interface IInventoryMovementRepository
         string? referenceType,
         int pageNumber,
         int pageSize,
+        string? productSearchTerm = null,
+        CancellationToken cancellationToken = default);
+
+    Task<InventoryMovementSummaryDto> GetSummaryAsync(
+        int? productId,
+        InventoryMovementType? movementType,
+        DateTimeOffset? fromUtc,
+        DateTimeOffset? toUtc,
+        string? referenceType,
         string? productSearchTerm = null,
         CancellationToken cancellationToken = default);
 

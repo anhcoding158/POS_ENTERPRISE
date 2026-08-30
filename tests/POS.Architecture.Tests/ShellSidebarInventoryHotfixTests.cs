@@ -394,7 +394,7 @@ public sealed class ShellSidebarInventoryHotfixTests
     private sealed class FakeInventoryDialogService : IInventoryDialogService
     {
         public Task<bool> ShowAdjustmentAsync(int productId) => Task.FromResult(false);
-        public Task ShowHistoryAsync(int? productId = null) => Task.CompletedTask;
+        public Task ShowHistoryAsync(string? productSearchTerm = null, string? productDisplayText = null) => Task.CompletedTask;
     }
 
     private sealed class FakeOrderHistoryWindowService : IOrderHistoryWindowService

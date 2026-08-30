@@ -1000,7 +1000,7 @@ public sealed class OrderHistoryUiContractTests
         public Task<bool> ShowAdjustmentAsync(int productId) =>
             Task.FromResult(false);
 
-        public Task ShowHistoryAsync(int? productId = null) =>
+        public Task ShowHistoryAsync(string? productSearchTerm = null, string? productDisplayText = null) =>
             Task.CompletedTask;
     }
 
