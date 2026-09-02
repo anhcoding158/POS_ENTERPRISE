@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using POS.Application.Abstractions.DateTime;
 using POS.Application.Abstractions.Orders;
 using POS.Application.Abstractions.Printing;
+using POS.Application.Abstractions.StoreSetup;
 using POS.Application.Common;
 using POS.Application.DTOs.Authentication;
 using POS.Application.DTOs.Checkout;
@@ -18,6 +19,7 @@ using POS.Infrastructure.Authentication;
 using POS.Infrastructure.Persistence;
 using POS.Infrastructure.Persistence.Repositories;
 using POS.Infrastructure.Printing;
+using POS.Infrastructure.StoreSetup;
 using Xunit;
 
 namespace POS.Architecture.Tests;
@@ -34,6 +36,10 @@ namespace POS.Architecture.Tests;
 /// </summary>
 public sealed class CheckoutReceiptIntegrationTests
 {
+    private static readonly byte[] ReceiptLogoFixturePng =
+        Convert.FromBase64String(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
+
     private static readonly DateTimeOffset
         UtcNow =
             new(
@@ -277,6 +283,94 @@ public sealed class CheckoutReceiptIntegrationTests
         Assert.Equal(
             8,
             remainingStock);
+    }
+
+    [Fact]
+    public async Task
+        Checkout_must_capture_persisted_managed_logo_in_receipt_snapshot()
+    {
+        await using var database =
+            await CheckoutReceiptTestDatabase.CreateAsync();
+
+        var seed = await database.SeedAsync(stockQuantity: 10);
+        var root = Path.Combine(
+            Path.GetTempPath(),
+            "pos-checkout-receipt-logo-" + Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(root, "fixture.db");
+
+        try
+        {
+            Directory.CreateDirectory(root);
+            var paths = new StoreSettingsPathProvider(
+                DatabaseRuntimeGuard.IsolatedTestMode,
+                databasePath,
+                root);
+            var settingsStore = new JsonStoreSettingsStore(
+                paths,
+                new POS.Application.Validation.StoreSettingsValidator());
+            var logoService = new ManagedLogoService(paths);
+            var sourcePath = Path.Combine(root, "source-logo.png");
+            await File.WriteAllBytesAsync(sourcePath, ReceiptLogoFixturePng);
+
+            var assetName = await logoService.ImportAsync(sourcePath);
+            File.Delete(sourcePath);
+
+            var save = await settingsStore.SaveAsync(
+                StoreSettingsDefaults.Create(
+                    paths.EffectiveDatabaseDirectory,
+                    paths.DefaultBackupDirectory) with
+                {
+                    StoreName = "MiniMart",
+                    Address = "Địa chỉ cửa hàng",
+                    Hotline = "0999 888 999",
+                    LogoAssetName = assetName
+                },
+                settingsStore.Current.Version);
+
+            Assert.True(save.IsSuccess);
+            Assert.Equal(assetName, settingsStore.Current.LogoAssetName);
+
+            var storeProvider = new ReceiptStoreSnapshotProvider(
+                settingsStore,
+                logoService);
+
+            int orderId;
+            await using (var context = database.CreateContext())
+            {
+                var service = CreateService(
+                    context,
+                    seed,
+                    orderCode: "HD-RECEIPT-LOGO-0001",
+                    storeProvider);
+
+                var result = await service.CheckoutAsync(
+                    CreateRequest(seed.ProductId),
+                    TestContext.Current.CancellationToken);
+
+                Assert.True(result.IsSuccess, result.AppError.ToString());
+                orderId = result.Value.OrderId;
+                Assert.True(result.Value.ReceiptSnapshot!.Store.HasLogo);
+            }
+
+            await using (var verificationContext = database.CreateContext())
+            {
+                var persisted = await new OrderReceiptSnapshotRepository(
+                    verificationContext).GetByOrderIdAsync(
+                        orderId,
+                        TestContext.Current.CancellationToken);
+
+                Assert.NotNull(persisted);
+                var receipt = new ReceiptSnapshotJsonSerializer()
+                    .Deserialize(persisted!.PayloadJson);
+                Assert.True(receipt.Store.HasLogo);
+                Assert.Equal("image/png", receipt.Store.LogoMimeType);
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
     }
 
     [Fact]

@@ -180,8 +180,59 @@ public interface IStoreSettingsStore
 public interface IStoreSettingsLogoService
 {
     Task<string> ImportAsync(string sourcePath, CancellationToken cancellationToken = default);
+    Task<bool> IsSameContentAsync(
+        string sourcePath,
+        string? assetName,
+        CancellationToken cancellationToken = default);
     Task RemoveAsync(string? assetName, CancellationToken cancellationToken = default);
     string? GetManagedPath(string? assetName);
+}
+
+/// <summary>
+/// Nội dung logo đã được đọc từ kho quản lý tại boundary tạo snapshot.
+/// Không chứa đường dẫn file sống để receipt có thể tự chứa và bất biến.
+/// </summary>
+public sealed class StoreLogoContent
+{
+    public const int MaximumBytes = 512 * 1024;
+
+    public StoreLogoContent(
+        IEnumerable<byte> bytes,
+        string mimeType)
+    {
+        ArgumentNullException.ThrowIfNull(bytes);
+
+        var copy = bytes.ToArray();
+        if (copy.Length is <= 0 or > MaximumBytes)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(bytes),
+                "Nội dung logo vượt giới hạn snapshot.");
+        }
+
+        if (string.IsNullOrWhiteSpace(mimeType))
+        {
+            throw new ArgumentException(
+                "MIME type của logo không được để trống.",
+                nameof(mimeType));
+        }
+
+        Bytes = Array.AsReadOnly(copy);
+        MimeType = mimeType.Trim().ToLowerInvariant();
+    }
+
+    public IReadOnlyList<byte> Bytes { get; }
+
+    public string MimeType { get; }
+}
+
+/// <summary>
+/// Đọc logo đã quản lý thành nội dung bounded để nhúng vào receipt snapshot.
+/// Việc đọc chỉ xảy ra khi tạo receipt mới, không phải lúc preview/reprint.
+/// </summary>
+public interface IStoreSettingsLogoContentProvider
+{
+    StoreLogoContent? TryRead(string? assetName);
 }
 
 public enum PrinterTestStatus

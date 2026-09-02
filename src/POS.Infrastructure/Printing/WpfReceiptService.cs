@@ -288,7 +288,8 @@ public sealed class WpfReceiptService :
 
         var document =
             ReceiptDocumentBuilder.Build(
-                request);
+                request,
+                _logger);
 
         ConfigureDocumentPage(
             document,

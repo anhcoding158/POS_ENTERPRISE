@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using POS.Application.Abstractions.Printing;
 using POS.Application.Abstractions.StoreSetup;
@@ -47,12 +48,14 @@ public sealed class ReceiptPreviewService :
         _paperSize;
 
     private readonly IStoreSettingsStore? _settingsStore;
+    private readonly ILogger<ReceiptPreviewService>? _logger;
 
     public ReceiptPreviewService(
         ReceiptDocumentBuilder documentBuilder,
         IReceiptService receiptService,
         IOptions<ReceiptPrinterOptions> printerOptions,
-        IStoreSettingsStore? settingsStore = null)
+        IStoreSettingsStore? settingsStore = null,
+        ILogger<ReceiptPreviewService>? logger = null)
     {
         _documentBuilder =
             documentBuilder ??
@@ -65,6 +68,7 @@ public sealed class ReceiptPreviewService :
                 nameof(receiptService));
 
         _settingsStore = settingsStore;
+        _logger = logger;
 
         if (_settingsStore is not null)
         {
@@ -157,7 +161,8 @@ public sealed class ReceiptPreviewService :
                 _documentBuilder,
                 _receiptService,
                 _printerName,
-                _paperSize);
+                _paperSize,
+                _logger);
 
         if (owner is not null &&
             !ReferenceEquals(

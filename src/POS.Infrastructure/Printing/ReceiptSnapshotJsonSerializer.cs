@@ -1,4 +1,6 @@
 using POS.Application.Abstractions.Printing;
+using Microsoft.Extensions.Logging;
+using POS.Application.Common;
 using POS.Application.DTOs.Printing;
 using POS.Domain.Enums;
 using System.IO;
@@ -20,6 +22,14 @@ namespace POS.Infrastructure.Printing;
 public sealed class ReceiptSnapshotJsonSerializer :
     IReceiptSnapshotSerializer
 {
+    private readonly ILogger<ReceiptSnapshotJsonSerializer>? _logger;
+
+    public ReceiptSnapshotJsonSerializer(
+        ILogger<ReceiptSnapshotJsonSerializer>? logger = null)
+    {
+        _logger = logger;
+    }
+
     private const string
         ContractName =
             "POS.Enterprise.ReceiptSnapshot";
@@ -63,9 +73,16 @@ public sealed class ReceiptSnapshotJsonSerializer :
             MapToPayload(
                 snapshot);
 
-        return JsonSerializer.Serialize(
+        var json = JsonSerializer.Serialize(
             payload,
             SerializerOptions);
+
+        LogRoundTrip(
+            "ReceiptSnapshot.Serialize",
+            snapshot.Store.HasLogo,
+            snapshot.Store.LogoBytes?.Count ?? 0);
+
+        return json;
     }
 
     public ReceiptRequest Deserialize(
@@ -93,8 +110,15 @@ public sealed class ReceiptSnapshotJsonSerializer :
                     "JSON snapshot không chứa dữ liệu.");
             }
 
-            return MapFromPayload(
+            var snapshot = MapFromPayload(
                 payload);
+
+            LogRoundTrip(
+                "ReceiptSnapshot.Deserialize",
+                snapshot.Store.HasLogo,
+                snapshot.Store.LogoBytes?.Count ?? 0);
+
+            return snapshot;
         }
         catch (InvalidDataException)
         {
@@ -129,6 +153,26 @@ public sealed class ReceiptSnapshotJsonSerializer :
         }
     }
 
+    private void LogRoundTrip(
+        string stage,
+        bool logoPresent,
+        int embeddedLogoByteCount)
+    {
+        if (_logger is null)
+        {
+            return;
+        }
+
+        PosLog.Information(
+            _logger,
+            "{Stage}: " +
+            "LogoPresent={LogoPresent}; " +
+            "EmbeddedLogoByteCount={EmbeddedLogoByteCount}",
+            stage,
+            logoPresent,
+            embeddedLogoByteCount);
+    }
+
     private static ReceiptSnapshotPayload
         MapToPayload(
             ReceiptRequest snapshot)
@@ -158,7 +202,18 @@ public sealed class ReceiptSnapshotJsonSerializer :
                         snapshot.Store.FooterMessage,
 
                     IsConfigured:
-                        snapshot.Store.IsConfigured),
+                        snapshot.Store.IsConfigured,
+
+                    LogoBase64:
+                        snapshot.Store.HasLogo
+                            ? Convert.ToBase64String(
+                                snapshot.Store.LogoBytes!.ToArray())
+                            : null,
+
+                    LogoMimeType:
+                        snapshot.Store.HasLogo
+                            ? snapshot.Store.LogoMimeType
+                            : null),
 
             CopyKind:
                 (int)snapshot.CopyKind,
@@ -434,6 +489,11 @@ public sealed class ReceiptSnapshotJsonSerializer :
                 .Unconfigured;
         }
 
+        var logoBytes =
+            TryDecodeLogo(
+                payload.LogoBase64,
+                payload.LogoMimeType);
+
         return new ReceiptStoreSnapshotDto(
             name:
                 payload.Name,
@@ -448,8 +508,46 @@ public sealed class ReceiptSnapshotJsonSerializer :
                 payload.TaxCode,
 
             footerMessage:
-                payload.FooterMessage);
+                payload.FooterMessage,
+
+            logoBytes:
+                logoBytes,
+
+            logoMimeType:
+                logoBytes is null
+                    ? null
+                    : payload.LogoMimeType);
     }
+
+    private static byte[]? TryDecodeLogo(
+        string? base64,
+        string? mimeType)
+    {
+        if (string.IsNullOrWhiteSpace(base64) ||
+            !IsSupportedLogoMimeType(mimeType) ||
+            base64.Length > 4 * ((ReceiptStoreSnapshotDto.MaximumEmbeddedLogoBytes + 2) / 3) + 4)
+        {
+            return null;
+        }
+
+        try
+        {
+            var bytes = Convert.FromBase64String(base64);
+            return bytes.Length is > 0 and <= ReceiptStoreSnapshotDto.MaximumEmbeddedLogoBytes
+                ? bytes
+                : null;
+        }
+        catch (FormatException)
+        {
+            return null;
+        }
+    }
+
+    private static bool IsSupportedLogoMimeType(string? mimeType) =>
+        mimeType is not null &&
+        (string.Equals(mimeType, "image/png", StringComparison.OrdinalIgnoreCase) ||
+         string.Equals(mimeType, "image/jpeg", StringComparison.OrdinalIgnoreCase) ||
+         string.Equals(mimeType, "image/bmp", StringComparison.OrdinalIgnoreCase));
 
     private static ReceiptLineDto
         MapLineFromPayload(
@@ -584,7 +682,9 @@ public sealed class ReceiptSnapshotJsonSerializer :
         string? Phone,
         string? TaxCode,
         string? FooterMessage,
-        bool IsConfigured);
+        bool IsConfigured,
+        string? LogoBase64 = null,
+        string? LogoMimeType = null);
 
     private sealed record ReceiptLinePayload(
         int OrderItemId,

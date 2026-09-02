@@ -1,4 +1,6 @@
+using Microsoft.Extensions.Logging;
 using POS.Application.Abstractions.Printing;
+using POS.Application.Common;
 using POS.Application.DTOs.Printing;
 using POS.Domain.Enums;
 using POS.Infrastructure.Printing;
@@ -41,13 +43,15 @@ public partial class ReceiptPreviewWindow :
     private bool _isPrinting;
     private bool _hasPrintedSuccessfully;
     private bool _isClosed;
+    private readonly ILogger? _logger;
 
     public ReceiptPreviewWindow(
         ReceiptRequest request,
         ReceiptDocumentBuilder documentBuilder,
         IReceiptService receiptService,
         string printerName,
-        string paperSize)
+        string paperSize,
+        ILogger? logger = null)
     {
         _request =
             request ??
@@ -83,6 +87,7 @@ public partial class ReceiptPreviewWindow :
 
         _paperSize =
             paperSize.Trim();
+        _logger = logger;
 
         if (!_request.Store.IsConfigured)
         {
@@ -104,7 +109,18 @@ public partial class ReceiptPreviewWindow :
 
         ReceiptViewer.Document =
             ReceiptDocumentBuilder.Build(
-                _request);
+                _request,
+                _logger);
+
+        if (_logger is not null)
+        {
+            PosLog.Information(
+                _logger,
+                "ReceiptPreview: StoreHasLogo={StoreHasLogo}; " +
+                "EmbeddedLogoByteCount={EmbeddedLogoByteCount}",
+                _request.Store.HasLogo,
+                _request.Store.LogoBytes?.Count ?? 0);
+        }
 
         ApplyReceiptSummary();
 

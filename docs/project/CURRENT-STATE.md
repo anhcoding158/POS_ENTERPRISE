@@ -632,3 +632,11 @@ Architecture audit chi tiết, gồm service map, transaction map và business i
 ## 11. Closeout note
 
 R1 remains Closed at `b9e382550e2e4abcf7a93ed6c5352322dc967668`. R2.1 and R2.2 are COMPLETE/CLOSED with the distinct acceptance provenance recorded above. R2.3 is IN PROGRESS; R2.3A/B/C have automated verification PASS, while R2.3C manual acceptance and R2.3D remain outstanding.
+
+## Receipt logo rendering — IMPLEMENTED / USER-ACCEPTED PREVIEW — 2026-09-02
+
+- Root cause was the managed-logo reader rejecting valid normalized PNG output above the 512 KiB receipt-snapshot limit; Store Settings preview could still show the source path, while `ReceiptStoreSnapshotProvider` returned no embedded payload and the renderer correctly fell back to `PE`.
+- The production path now shares one managed-logo singleton, captures bounded PNG bytes at new-receipt snapshot time, round-trips the optional payload through the existing receipt JSON, and renders a centered, aspect-preserving logo in the K80 brand cell. Legacy/no-logo/corrupt snapshots continue to use `PE`; reprints do not read live Store Settings.
+- User manually confirmed the latest Release preview displays the configured logo in place of `PE` with acceptable alignment. PDF/physical-printer and reprint confirmation remain a manual follow-up boundary unless separately evidenced.
+- Receipt focused Release verification is `55/55 PASS`; the dedicated receipt-logo suite is `10/10 PASS`; the latest full sandbox Release run is `1541 PASS / 6 FAIL / 0 SKIP`. The six failures remain the known DPAPI/VietQR/Remembered Login test-host limitation. A new normal-profile official Gate is still required for this source after the local commit; the older `1514/1514` Gate does not cover this receipt change.
+- No migration, receipt-history rewrite, manual-database access, DPAPI change or secure-storage change was made. This is a separate logical change: `Receipt logo rendering`.

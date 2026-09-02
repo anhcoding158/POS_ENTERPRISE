@@ -1436,6 +1436,14 @@ public sealed class CheckoutService :
          */
         if (_receiptStoreSnapshotProvider is null)
         {
+            global::POS.Application.Common.PosLog.Warning(
+                _logger,
+                "Checkout.ReceiptSnapshot: " +
+                "ProviderRuntimeType=Unavailable; " +
+                "ManagedLogoResolved=false; " +
+                "EmbeddedLogoByteCount=0; " +
+                "FallbackReason=ReceiptStoreSnapshotProviderUnavailable");
+
             return ReceiptSnapshotFactory.Create(
                 checkoutResult:
                     checkoutResult,
@@ -1447,6 +1455,19 @@ public sealed class CheckoutService :
         var storeSnapshot =
             _receiptStoreSnapshotProvider
                 .GetCurrentSnapshot();
+
+        global::POS.Application.Common.PosLog.Information(
+            _logger,
+            "Checkout.ReceiptSnapshot: " +
+            "ProviderRuntimeType={ProviderRuntimeType}; " +
+            "ManagedLogoResolved={ManagedLogoResolved}; " +
+            "EmbeddedLogoByteCount={EmbeddedLogoByteCount}; " +
+            "FallbackReason={FallbackReason}",
+            _receiptStoreSnapshotProvider.GetType().FullName ??
+                _receiptStoreSnapshotProvider.GetType().Name,
+            storeSnapshot.HasLogo,
+            storeSnapshot.LogoBytes?.Count ?? 0,
+            storeSnapshot.HasLogo ? "None" : "ProviderReturnedNoLogo");
 
         return ReceiptSnapshotFactory.Create(
             checkoutResult:

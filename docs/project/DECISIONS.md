@@ -637,3 +637,11 @@ Mọi thay đổi kiến trúc hoặc roadmap sau khi register này tồn tại 
 - Bulk operations use the existing `ManageProducts` capability and existing domain methods. Preview captures `Product.Id` plus `UpdatedAtUtc`, and commit rechecks the snapshot inside the existing EF transaction; no parallel permission or product model was introduced.
 - Bulk non-stock changes reuse the existing valid `SecurityAuditAction.EmployeeUpdated` value with a sanitized allowlisted summary because the audit action constraint is limited to existing values. No inventory movement is created for price, category, status or minimum-stock changes.
 - Label printing is not faked or coupled to receipt printing. The repository currently has no production label renderer/printer pipeline, so that dependency remains open for the later authorized printing checkpoint.
+
+## DEC-058 — Receipt logos are immutable snapshot content
+
+- **Status:** Implemented locally on `2026-09-02`; user accepted the Release preview, with final PDF/physical-printer/reprint acceptance pending.
+- **Decision:** Resolve the persisted managed logo only when creating a new receipt snapshot, normalize it to bounded PNG bytes, and carry the self-contained payload through the existing JSON snapshot. Preview, print and reprint must consume that snapshot; they must not read live Store Settings.
+- **Fallback:** Legacy, missing or undecodable logo payloads render the existing `PE` monogram. Invalid logo content must not fail checkout.
+- **Evidence:** `ReceiptStoreSnapshotProvider`, `ManagedLogoService`, `ReceiptSnapshotJsonSerializer`, `ReceiptDocumentBuilder`, production composition tests and user Release preview evidence on 2026-09-02. No migration, manual database access or historical backfill was used.
+- **Scope:** Separate logical change `Receipt logo rendering`; Employee/Audit/Store Settings changes remain separate working-tree scope.

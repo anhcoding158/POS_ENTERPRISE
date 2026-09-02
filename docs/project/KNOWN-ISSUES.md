@@ -812,3 +812,9 @@ The counts above were recounted directly from these 16 stable IDs: `POS-OPS-001`
 
 - Bulk price/category/status/minimum-stock changes are available only for the explicitly selected rows on the current page and require preview/confirmation. “Select all filtered results” is intentionally deferred until a bounded immutable selection snapshot exists.
 - Bulk label printing is blocked by the absence of a production label renderer/printer pipeline. Existing receipt printing is not silently reused; R5.3 is not closed while printing remains unresolved.
+
+## Receipt logo rendering verification boundary — 2026-09-02
+
+- The configured logo now appears in the user-accepted Release receipt preview and replaces the `PE` fallback. Automated coverage proves snapshot capture, bounded PNG normalization, JSON round-trip, renderer fallback and production composition; PDF/physical printer and reprint still require the user’s final manual check.
+- The six sandbox failures are unchanged DPAPI/VietQR/Remembered Login profile limitations. They were not fixed or bypassed in the receipt work; the normal interactive profile must run the official Quality Gate again.
+- No manual database was accessed and no historical receipt was backfilled or rewritten.

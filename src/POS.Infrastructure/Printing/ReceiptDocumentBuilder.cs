@@ -1,9 +1,14 @@
 ﻿using POS.Application.DTOs.Printing;
+using Microsoft.Extensions.Logging;
+using POS.Application.Common;
 using POS.Domain.Enums;
 using System.Globalization;
+using System.IO;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace POS.Infrastructure.Printing;
 
@@ -126,7 +131,8 @@ public sealed class ReceiptDocumentBuilder
     /// Dựng tài liệu hóa đơn K80 từ snapshot đã chốt.
     /// </summary>
     public static FlowDocument Build(
-        ReceiptRequest request)
+        ReceiptRequest request,
+        ILogger? logger = null)
     {
         ArgumentNullException.ThrowIfNull(
             request);
@@ -143,7 +149,8 @@ public sealed class ReceiptDocumentBuilder
 
         AddBrandHeader(
             document,
-            request);
+            request,
+            logger);
 
         AddHorizontalRule(
             document,
@@ -240,7 +247,8 @@ public sealed class ReceiptDocumentBuilder
 
     private static void AddBrandHeader(
         FlowDocument document,
-        ReceiptRequest request)
+        ReceiptRequest request,
+        ILogger? logger)
     {
         var table =
             new Table
@@ -448,7 +456,10 @@ public sealed class ReceiptDocumentBuilder
         }
 
         row.Cells.Add(
-            monogramCell);
+            CreateBrandCell(
+                request.Store,
+                monogramCell,
+                logger));
 
         row.Cells.Add(
             informationCell);
@@ -458,6 +469,132 @@ public sealed class ReceiptDocumentBuilder
 
         document.Blocks.Add(
             table);
+    }
+
+    private static TableCell CreateBrandCell(
+        ReceiptStoreSnapshotDto store,
+        TableCell fallbackCell,
+        ILogger? logger)
+    {
+        if (!TryCreateLogoImage(store, out var image, logger))
+        {
+            return fallbackCell;
+        }
+
+        var paragraph =
+            new Paragraph
+            {
+                Margin = new Thickness(0),
+                TextAlignment = TextAlignment.Center,
+                LineHeight = 58,
+                LineStackingStrategy = LineStackingStrategy.BlockLineHeight
+            };
+
+        var inlineImage =
+            new InlineUIContainer(image)
+            {
+                BaselineAlignment = BaselineAlignment.Center
+            };
+
+        paragraph.Inlines.Add(
+            inlineImage);
+
+        return new TableCell(paragraph)
+        {
+            Padding = new Thickness(5, 4, 5, 4),
+            BorderBrush = ReceiptGoldBrush,
+            BorderThickness = new Thickness(1),
+            Tag = "Receipt.BrandLogo"
+        };
+    }
+
+    private static bool TryCreateLogoImage(
+        ReceiptStoreSnapshotDto store,
+        out Image image,
+        ILogger? logger)
+    {
+        image = null!;
+
+        if (!store.HasLogo)
+        {
+            LogRenderDecision(
+                logger,
+                "MonogramFallback",
+                "SnapshotHasNoLogo");
+            return false;
+        }
+
+        try
+        {
+            using var stream =
+                new MemoryStream(
+                    store.LogoBytes!.ToArray(),
+                    writable: false);
+
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.StreamSource = stream;
+            bitmap.EndInit();
+
+            if (bitmap.PixelWidth <= 0 || bitmap.PixelHeight <= 0)
+            {
+                return false;
+            }
+
+            if (bitmap.CanFreeze)
+            {
+                bitmap.Freeze();
+            }
+
+            image = new Image
+            {
+                Source = bitmap,
+                Width = 72,
+                Height = 52,
+                Stretch = Stretch.Uniform,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Tag = "Receipt.BrandLogoImage"
+            };
+
+            LogRenderDecision(
+                logger,
+                "ConfiguredLogo",
+                "None");
+
+            return true;
+        }
+        catch (Exception exception) when (
+            exception is IOException or
+            NotSupportedException or
+            ArgumentException or
+            InvalidOperationException or
+            FileFormatException)
+        {
+            LogRenderDecision(
+                logger,
+                "MonogramFallback",
+                "LogoDecodeFailed");
+            return false;
+        }
+    }
+
+    private static void LogRenderDecision(
+        ILogger? logger,
+        string decision,
+        string reason)
+    {
+        if (logger is null)
+        {
+            return;
+        }
+
+        PosLog.Information(
+            logger,
+            "ReceiptRenderer: Decision={Decision}; Reason={Reason}",
+            decision,
+            reason);
     }
 
     private static void AddReceiptTitle(

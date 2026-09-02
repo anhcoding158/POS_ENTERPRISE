@@ -795,3 +795,10 @@ R0.5D did not run restore, build, tests, Quality Gate, EF commands, migration, d
 
 - Focused bulk service tests pass `4/4` in Debug and Release. They cover permission denial before product reads, stale preview rejection, price commit with one audit summary and minimum-stock update without current-stock mutation.
 - Full normal-host Release is `1426/1426 PASS`, failed/skipped `0/0`; Release build is `0 warnings / 0 errors`; official Quality Gate, vulnerability and EF pending-model checks pass after the stabilized source revision. Bulk UI/manual interaction and label-printer hardware are not verified here.
+
+## Receipt logo rendering verification — 2026-09-02
+
+- Dedicated receipt-logo suite: `10/10 PASS` in Release, including managed-logo read/release, bounded normalization, immutable snapshot, legacy fallback, renderer image/fallback, and reprint snapshot preservation.
+- Focused Release receipt/store/checkout/preview regression: `55/55 PASS`; fresh Release apphost build: `0 warning / 0 error`.
+- Latest full Release sandbox verification: `1541 PASS / 6 FAIL / 0 SKIP / 1547`; the six failures are the known DPAPI/VietQR/Remembered Login test-host limitation, not a receipt failure. Vulnerability scan had no vulnerable package result; EF pending-model and `git diff --check` passed.
+- User manual evidence confirms the latest Release preview shows the configured logo in the new receipt. PDF, physical printer and reprint remain explicitly pending until the user completes them. The prior normal-profile `1514/1514` Gate is not inherited for this receipt source.

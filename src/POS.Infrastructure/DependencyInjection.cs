@@ -124,7 +124,13 @@ public static class DependencyInjection
         services.AddSingleton<IStoreSettingsValidator, POS.Application.Validation.StoreSettingsValidator>();
         services.AddSingleton<IStoreSettingsStore, JsonStoreSettingsStore>();
         services.AddSingleton<IStoreSettingsReadinessEvaluator, StoreSettingsReadinessEvaluator>();
-        services.AddSingleton<IStoreSettingsLogoService, ManagedLogoService>();
+        services.AddSingleton<ManagedLogoService>();
+        services.AddSingleton<IStoreSettingsLogoService>(
+            serviceProvider =>
+                serviceProvider.GetRequiredService<ManagedLogoService>());
+        services.AddSingleton<IStoreSettingsLogoContentProvider>(
+            serviceProvider =>
+                serviceProvider.GetRequiredService<ManagedLogoService>());
         services.AddSingleton<IPrinterTestService, PrinterTestService>();
         services.AddSingleton<IStoreSettingsQrPreviewService, StoreSettingsQrPreviewService>();
         services.TryAddSingleton<IBackupCoordinator, BackupCoordinator>();
@@ -283,7 +289,9 @@ public static class DependencyInjection
             IReceiptStoreSnapshotProvider>(serviceProvider =>
                 new ReceiptStoreSnapshotProvider(
                     serviceProvider.GetRequiredService<IStoreSettingsStore>(),
-                    serviceProvider.GetRequiredService<IOptions<ReceiptStoreOptions>>()));
+                    serviceProvider.GetRequiredService<IStoreSettingsLogoContentProvider>(),
+                    serviceProvider.GetRequiredService<IOptions<ReceiptStoreOptions>>(),
+                    serviceProvider.GetRequiredService<ILogger<ReceiptStoreSnapshotProvider>>()));
 
         services.AddSingleton<
             ReceiptDocumentBuilder>();

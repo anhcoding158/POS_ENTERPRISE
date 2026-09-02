@@ -9,6 +9,7 @@ using POS.Application.Abstractions.Authorization;
 using POS.Application.Abstractions.Exports;
 using POS.Application.Abstractions.Payments;
 using POS.Application.Abstractions.ProductImports;
+using POS.Application.Abstractions.Printing;
 using POS.Application.Abstractions.Services;
 using POS.Application.Services;
 using POS.Infrastructure;
@@ -983,8 +984,12 @@ public partial class App :
          * Mọi nơi resolve ICheckoutService đều nhận
          * AuthorizedCheckoutService để enforce UseCheckout.
          */
-        services.AddScoped<
-            CheckoutService>();
+        services.AddScoped<CheckoutService>(serviceProvider =>
+            global::Microsoft.Extensions.DependencyInjection
+                .ActivatorUtilities.CreateInstance<CheckoutService>(
+                    serviceProvider,
+                    serviceProvider.GetRequiredService<
+                        IReceiptStoreSnapshotProvider>()));
 
         services.AddScoped<
             PaymentIntentService>();

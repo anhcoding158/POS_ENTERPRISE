@@ -23,6 +23,8 @@ public enum ReceiptCopyKind
 /// </summary>
 public sealed class ReceiptStoreSnapshotDto
 {
+    public const int MaximumEmbeddedLogoBytes = 512 * 1024;
+
     private const int MaximumNameLength = 160;
     private const int MaximumAddressLength = 320;
     private const int MaximumPhoneLength = 40;
@@ -35,7 +37,9 @@ public sealed class ReceiptStoreSnapshotDto
         string? phone,
         string? taxCode,
         string? footerMessage,
-        bool isConfigured)
+        bool isConfigured,
+        IReadOnlyList<byte>? logoBytes = null,
+        string? logoMimeType = null)
     {
         Name = name;
         Address = address;
@@ -43,6 +47,28 @@ public sealed class ReceiptStoreSnapshotDto
         TaxCode = taxCode;
         FooterMessage = footerMessage;
         IsConfigured = isConfigured;
+
+        if (logoBytes is null || logoBytes.Count == 0)
+        {
+            return;
+        }
+
+        if (logoBytes.Count > MaximumEmbeddedLogoBytes)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(logoBytes),
+                "Logo trong receipt snapshot vượt giới hạn.");
+        }
+
+        if (string.IsNullOrWhiteSpace(logoMimeType))
+        {
+            throw new ArgumentException(
+                "MIME type của logo không được để trống.",
+                nameof(logoMimeType));
+        }
+
+        LogoBytes = Array.AsReadOnly(logoBytes.ToArray());
+        LogoMimeType = logoMimeType.Trim().ToLowerInvariant();
     }
 
     public ReceiptStoreSnapshotDto(
@@ -50,7 +76,9 @@ public sealed class ReceiptStoreSnapshotDto
         string? address = null,
         string? phone = null,
         string? taxCode = null,
-        string? footerMessage = null)
+        string? footerMessage = null,
+        IReadOnlyList<byte>? logoBytes = null,
+        string? logoMimeType = null)
         : this(
             name:
                 NormalizeRequiredText(
@@ -83,7 +111,13 @@ public sealed class ReceiptStoreSnapshotDto
                     MaximumFooterLength),
 
             isConfigured:
-                true)
+                true,
+
+            logoBytes:
+                logoBytes,
+
+            logoMimeType:
+                logoMimeType)
     {
     }
 
@@ -128,6 +162,14 @@ public sealed class ReceiptStoreSnapshotDto
     public string? FooterMessage { get; }
 
     public bool IsConfigured { get; }
+
+    public IReadOnlyList<byte>? LogoBytes { get; }
+
+    public string? LogoMimeType { get; }
+
+    public bool HasLogo =>
+        LogoBytes is { Count: > 0 } &&
+        !string.IsNullOrWhiteSpace(LogoMimeType);
 
     private static string NormalizeRequiredText(
         string? value,
