@@ -1,28 +1,202 @@
 <Window x:Class="POS.Wpf.Views.BulkProductWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Thao tác hàng loạt" Width="920" Height="680"
-        MinWidth="720" MinHeight="520" WindowStartupLocation="CenterOwner"
-        Background="{StaticResource AppBackgroundBrush}">
-    <Grid Margin="24">
-        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-        <StackPanel><DockPanel><TextBlock Text="Thao tác hàng loạt" Style="{StaticResource PageTitleTextStyle}"/><TextBlock Text="{Binding SelectionText}" Style="{StaticResource SecondaryTextStyle}" VerticalAlignment="Bottom" Margin="18,0,0,4"/></DockPanel><TextBlock Text="Kiểm tra thông tin hiện tại, nhập thay đổi và xem trước khi lưu." Style="{StaticResource SecondaryTextStyle}" Margin="0,5,0,0"/></StackPanel>
-        <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,18,0,14">
-            <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="180"/><ColumnDefinition Width="*"/><ColumnDefinition Width="180"/></Grid.ColumnDefinitions>
-                <StackPanel><TextBlock Text="Thao tác" Style="{StaticResource CaptionTextStyle}"/><ComboBox ItemsSource="{Binding Operations}" SelectedItem="{Binding SelectedOperation}" DisplayMemberPath="DisplayName" Height="40" Padding="10,4"/></StackPanel>
-                <StackPanel Grid.Column="1" Margin="18,0"><TextBlock Text="Thông tin cần nhập" Style="{StaticResource CaptionTextStyle}"/><TextBlock Text="{Binding OperationDescription}" TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,8,0,0"/>
-                    <Grid Margin="0,12,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                        <StackPanel Visibility="{Binding IsPriceOperation, Converter={StaticResource BooleanToVisibilityConverter}}"><TextBlock Text="Giá bán mới (đ)"/><TextBox Text="{Binding SalePriceText, UpdateSourceTrigger=PropertyChanged}" Height="38" Margin="0,4,8,0"/></StackPanel>
-                        <StackPanel Grid.Column="1" Visibility="{Binding IsPriceOperation, Converter={StaticResource BooleanToVisibilityConverter}}"><TextBlock Text="Giá vốn mới (đ)"/><TextBox Text="{Binding CostPriceText, UpdateSourceTrigger=PropertyChanged}" Height="38" Margin="0,4,0,0"/></StackPanel>
-                        <StackPanel Visibility="{Binding IsCategoryOperation, Converter={StaticResource BooleanToVisibilityConverter}}"><TextBlock Text="Danh mục đích"/><ComboBox ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}" DisplayMemberPath="Name" Height="38" Margin="0,4,0,0"/></StackPanel>
-                        <StackPanel Visibility="{Binding IsStatusOperation, Converter={StaticResource BooleanToVisibilityConverter}}"><TextBlock Text="Trạng thái bán mới"/><ComboBox x:Name="StatusOperationComboBox" ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding SelectedStatus, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" DisplayMemberPath="DisplayName" Height="38" Margin="0,4,0,0"/></StackPanel>
-                        <StackPanel Visibility="{Binding IsMinimumStockOperation, Converter={StaticResource BooleanToVisibilityConverter}}"><TextBlock Text="Ngưỡng cảnh báo tồn mới"/><TextBox Text="{Binding MinimumStockText, UpdateSourceTrigger=PropertyChanged}" Height="38" Margin="0,4,0,0"/><TextBlock Text="Chỉ đổi ngưỡng cảnh báo, không đổi tồn thực tế." TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,4,0,0"/></StackPanel>
-                    </Grid>
+        xmlns:behaviors="clr-namespace:POS.Wpf.Behaviors"
+        xmlns:services="clr-namespace:POS.Wpf.Services"
+        Title="Thao tác hàng loạt"
+        Width="1160"
+        Height="760"
+        MinWidth="840"
+        MinHeight="620"
+        ResizeMode="CanResizeWithGrip"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource AppBackgroundBrush}"
+        FontFamily="Segoe UI"
+        FontSize="13">
+    <Window.InputBindings>
+        <KeyBinding Key="Escape" Command="{Binding CloseCommand}" />
+    </Window.InputBindings>
+
+    <Window.Resources>
+        <Style x:Key="BulkInputTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource SearchTextBoxStyle}">
+            <Setter Property="Height" Value="42" />
+            <Setter Property="MaxWidth" Value="230" />
+        </Style>
+        <Style x:Key="BulkInputComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Height" Value="42" />
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderStrongBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="FontFamily" Value="Segoe UI" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+        <Style x:Key="BulkResultBadgeStyle" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource SurfaceMutedBrush}" />
+            <Setter Property="Padding" Value="9,3" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding WillChange}" Value="True">
+                    <Setter Property="Background" Value="{StaticResource SuccessSoftBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsPreviewStale}" Value="True">
+                    <Setter Property="Background" Value="{StaticResource WarningSoftBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding HasError}" Value="True">
+                    <Setter Property="Background" Value="{StaticResource DangerSoftBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="BulkResultTextStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding WillChange}" Value="True">
+                    <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsPreviewStale}" Value="True">
+                    <Setter Property="Foreground" Value="{StaticResource WarningBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding HasError}" Value="True">
+                    <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="22">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid AutomationProperties.AutomationId="BulkProductHeader">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="Thao tác hàng loạt" Style="{StaticResource PageTitleTextStyle}" />
+                <TextBlock Text="Thiết lập thay đổi, kiểm tra rồi xác nhận lưu." Style="{StaticResource SecondaryTextStyle}" Margin="0,4,0,0" />
+            </StackPanel>
+            <Border Grid.Column="1" Background="{StaticResource AccentSoftBrush}" BorderBrush="{StaticResource AccentBrush}" BorderThickness="1" CornerRadius="12" Padding="12,6" VerticalAlignment="Center" ToolTip="{Binding SelectionText}">
+                <TextBlock Text="{Binding SelectionText}" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold" />
+            </Border>
+        </Grid>
+
+        <Grid Grid.Row="1" Margin="0,14,0,14">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Border Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="10" Padding="14,12">
+                <StackPanel>
+                    <WrapPanel Orientation="Horizontal">
+                        <StackPanel Width="210" Margin="0,0,18,0">
+                            <TextBlock Text="Thao tác" Style="{StaticResource CaptionTextStyle}" />
+                            <ComboBox x:Name="BulkOperationSelector" ItemsSource="{Binding Operations}" SelectedItem="{Binding SelectedOperation, Mode=TwoWay}" DisplayMemberPath="DisplayName" Style="{StaticResource BulkInputComboBoxStyle}" Margin="0,6,0,0" AutomationProperties.AutomationId="BulkOperationSelector" />
+                        </StackPanel>
+                        <StackPanel Width="205" Margin="0,0,18,0" Visibility="{Binding IsPriceOperation, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock Text="Giá bán mới (₫)" Style="{StaticResource CaptionTextStyle}" />
+                            <TextBox x:Name="BulkSalePriceInput" Text="{Binding SalePriceText, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource BulkInputTextBoxStyle}" Margin="0,6,0,0" behaviors:NumericInputBehavior.Mode="{x:Static services:NumericInputMode.MoneyVnd}" AutomationProperties.AutomationId="BulkSalePriceInput" />
+                        </StackPanel>
+                        <StackPanel Width="205" Margin="0,0,18,0" Visibility="{Binding IsPriceOperation, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock Text="Giá vốn mới (₫)" Style="{StaticResource CaptionTextStyle}" />
+                            <TextBox x:Name="BulkCostPriceInput" Text="{Binding CostPriceText, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource BulkInputTextBoxStyle}" Margin="0,6,0,0" behaviors:NumericInputBehavior.Mode="{x:Static services:NumericInputMode.MoneyVnd}" AutomationProperties.AutomationId="BulkCostPriceInput" />
+                        </StackPanel>
+                        <StackPanel Width="320" Margin="0,0,18,0" Visibility="{Binding IsCategoryOperation, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock Text="Danh mục đích" Style="{StaticResource CaptionTextStyle}" />
+                            <ComboBox x:Name="BulkCategorySelector" ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory, Mode=TwoWay}" DisplayMemberPath="Name" Style="{StaticResource BulkInputComboBoxStyle}" Margin="0,6,0,0" ToolTip="{Binding SelectedCategory.Name}" AutomationProperties.AutomationId="BulkCategorySelector" />
+                        </StackPanel>
+                        <StackPanel Width="220" Margin="0,0,18,0" Visibility="{Binding IsStatusOperation, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock Text="Trạng thái bán mới" Style="{StaticResource CaptionTextStyle}" />
+                            <ComboBox x:Name="StatusOperationComboBox" ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding SelectedStatus, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" DisplayMemberPath="DisplayName" Style="{StaticResource BulkInputComboBoxStyle}" Margin="0,6,0,0" AutomationProperties.AutomationId="BulkStatusSelector" />
+                        </StackPanel>
+                        <StackPanel Width="180" Margin="0,0,18,0" Visibility="{Binding IsMinimumStockOperation, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock Text="Ngưỡng cảnh báo tồn mới" Style="{StaticResource CaptionTextStyle}" />
+                            <TextBox x:Name="BulkMinimumStockInput" Text="{Binding MinimumStockText, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource BulkInputTextBoxStyle}" Width="150" MaxWidth="150" Margin="0,6,0,0" AutomationProperties.AutomationId="BulkMinimumStockInput" />
+                        </StackPanel>
+                    </WrapPanel>
+                    <TextBlock Text="{Binding OperationDescription}" Style="{StaticResource SecondaryTextStyle}" TextWrapping="Wrap" Margin="0,10,0,0" MaxWidth="760" />
                 </StackPanel>
-                <StackPanel Grid.Column="2"><TextBlock Text="Phạm vi" Style="{StaticResource CaptionTextStyle}"/><TextBlock Text="{Binding SelectionText}" TextWrapping="Wrap" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,8,0,0"/></StackPanel>
+            </Border>
+
+            <Grid Grid.Row="1" Margin="0,14,0,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="Đối chiếu thay đổi" Style="{StaticResource SectionTitleTextStyle}" />
+                        <TextBlock Text="Thông tin hiện tại lấy từ tập sản phẩm đã chọn." Style="{StaticResource SecondaryTextStyle}" Margin="0,3,0,0" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="{Binding PreviewSummaryText}" Style="{StaticResource CaptionTextStyle}" VerticalAlignment="Center" />
+                </Grid>
+
+                <DataGrid x:Name="BulkPreviewGrid" Grid.Row="1" ItemsSource="{Binding PreviewRows}" Style="{StaticResource ModernDataGridStyle}" AutoGenerateColumns="False" IsReadOnly="True" RowHeight="48" MinRowHeight="48" Margin="0,10,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" AutomationProperties.AutomationId="BulkPreviewGrid">
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="Sản phẩm" Width="2.2*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding ProductName}" TextTrimming="CharacterEllipsis" ToolTip="{Binding ProductName}" />
+                                        <TextBlock Text="{Binding ProductCode}" Foreground="{StaticResource TextMutedBrush}" FontSize="11" TextTrimming="CharacterEllipsis" ToolTip="{Binding ProductCode}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="Hiện tại" Width="2*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding BeforeValue}" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding BeforeValue}" VerticalAlignment="Center" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="Sau thay đổi" Width="2*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding AfterValue}" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding AfterValue}" VerticalAlignment="Center" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="Kết quả" Width="1.35*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource BulkResultBadgeStyle}" HorizontalAlignment="Left">
+                                        <TextBlock Text="{Binding ResultText}" Style="{StaticResource BulkResultTextStyle}" TextTrimming="CharacterEllipsis" ToolTip="{Binding ResultText}" />
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </Grid>
+
+        <Border Grid.Row="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="0,14,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding StatusSummaryText}" Style="{StaticResource SecondaryTextStyle}" TextWrapping="Wrap" VerticalAlignment="Center" MaxWidth="520" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button x:Name="BulkCloseButton" Content="Đóng" Command="{Binding CloseCommand}" Style="{StaticResource SecondaryButtonStyle}" MinWidth="84" AutomationProperties.AutomationId="BulkCloseButton" />
+                    <Button x:Name="BulkPreviewButton" Content="Xem trước" Command="{Binding PreviewCommand}" Style="{StaticResource SecondaryButtonStyle}" MinWidth="110" Margin="8,0,0,0" AutomationProperties.AutomationId="BulkPreviewButton" />
+                    <Button x:Name="BulkConfirmButton" Content="Xác nhận lưu" Command="{Binding ConfirmCommand}" Style="{StaticResource PrimaryButtonStyle}" MinWidth="126" Margin="8,0,0,0" AutomationProperties.AutomationId="BulkConfirmButton" />
+                    <Button x:Name="BulkCancelButton" Content="Hủy tác vụ" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryButtonStyle}" MinWidth="100" Margin="8,0,0,0" Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}" AutomationProperties.AutomationId="BulkCancelButton" />
+                </StackPanel>
             </Grid>
         </Border>
-        <Grid Grid.Row="2"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions><StackPanel Orientation="Horizontal"><TextBlock Text="{Binding PreviewHeading}" Style="{StaticResource SectionTitleTextStyle}"/><TextBlock Text="{Binding SummaryText}" Foreground="{StaticResource TextSecondaryBrush}" Margin="14,3,0,0"/></StackPanel><DataGrid Grid.Row="1" ItemsSource="{Binding PreviewRows}" Style="{StaticResource ModernDataGridStyle}" Margin="0,10,0,0" AutoGenerateColumns="False" IsReadOnly="True"><DataGrid.Columns><DataGridTextColumn Header="Sản phẩm" Binding="{Binding ProductName}" Width="2*"/><DataGridTextColumn Header="Mã" Binding="{Binding ProductCode}" Width="120"/><DataGridTextColumn Header="Hiện tại" Binding="{Binding BeforeValue}" Width="2*"/><DataGridTextColumn Header="Đề xuất" Binding="{Binding AfterValue}" Width="2*"/><DataGridTextColumn Header="Trạng thái" Binding="{Binding ResultText}" Width="1.5*"/></DataGrid.Columns></DataGrid></Grid>
-        <Grid Grid.Row="3" Margin="0,16,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"/><TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap" Margin="0,4,0,0"/></StackPanel><StackPanel Grid.Column="1" Orientation="Horizontal"><Button Content="Hủy tác vụ" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryButtonStyle}" MinWidth="92"/><Button Content="Xem trước thay đổi" Command="{Binding PreviewCommand}" Style="{StaticResource SecondaryButtonStyle}" MinWidth="140" Margin="8,0,0,0"/><Button Content="Xác nhận lưu" Command="{Binding ConfirmCommand}" Style="{StaticResource PrimaryButtonStyle}" MinWidth="125" Margin="8,0,0,0"/><Button Content="Đóng cửa sổ" Command="{Binding CloseCommand}" Style="{StaticResource SecondaryButtonStyle}" MinWidth="105" Margin="8,0,0,0"/></StackPanel></Grid>
     </Grid>
 </Window>

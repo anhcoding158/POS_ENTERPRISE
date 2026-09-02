@@ -1,5 +1,12 @@
 # MASTER ROADMAP — POS ENTERPRISE RETAIL V1
 
+## Bulk UX V2 + Numeric Entry closeout — 2026-09-02
+
+- Bulk UX V2 and Numeric Entry are `ACCEPTED / COMMITTED LOCALLY` after user physical acceptance and the user-run normal interactive Quality Gate: `1514/1514 PASS`, `0 failed`, `0 skipped`, exit code `0`.
+- The closeout preserves Bulk selection/preview/commit/audit/persistence invariants and Product Editor stock semantics, including conditional negative opening stock. No migration, Activity Log, DPAPI, VietQR, Remembered Login or unrelated numeric screen was changed.
+- The six historical sandbox secure-storage failures remain a resolved environmental test-host limitation and are not used to overwrite the normal-profile Gate result. IME, undo/redo and complete DPI matrix remain pending where not evidenced.
+- The next authorized workstream is Employee Account creation and management. Keep its implementation unstaged/uncommitted for user acceptance; do not begin R6 and do not push.
+
 ## Activity Log stabilization closeout — 2026-09-02
 
 - Activity Log audit semantics and presentation correction is implemented: Bulk price/category/status/minimum-stock operations now have distinct persisted action codes, strict legacy read compatibility, friendly product targets and Vietnamese result labels. The writer root cause was confirmed and employee audit actions remain unchanged.

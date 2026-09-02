@@ -5,6 +5,7 @@ using POS.Application.Abstractions.Services;
 using POS.Application.DTOs.Categories;
 using POS.Application.DTOs.Products;
 using POS.Wpf.Commands;
+using POS.Wpf.Services;
 
 namespace POS.Wpf.ViewModels;
 
@@ -19,30 +20,34 @@ public sealed class BulkProductPreviewRowViewModel
 {
     private static readonly CultureInfo VietnameseCulture = CultureInfo.GetCultureInfo("vi-VN");
 
-    public BulkProductPreviewRowViewModel(ProductRowViewModel row, BulkProductOperationType operation)
+    public BulkProductPreviewRowViewModel(ProductRowViewModel row, BulkProductOperationType operation, bool isPreviewStale = false)
     {
         ProductCode = row.Code;
         ProductName = row.Name;
         BeforeValue = operation switch
         {
-            BulkProductOperationType.SetPrices => $"Bán {row.SalePrice:N0} ₫ · Vốn {row.CostPrice:N0} ₫",
+            BulkProductOperationType.SetPrices => $"Giá bán: {NumericInputFormatter.Format(row.SalePrice, NumericInputMode.MoneyVnd)} đ{Environment.NewLine}Giá vốn: {NumericInputFormatter.Format(row.CostPrice, NumericInputMode.MoneyVnd)} đ",
             BulkProductOperationType.SetCategory => row.CategoryName,
             BulkProductOperationType.SetActiveState => row.StatusText,
             BulkProductOperationType.SetMinimumStock => $"{row.MinimumStock.ToString("N0", VietnameseCulture)} · tồn thực tế {row.StockDisplay}",
             _ => "—"
         };
         AfterValue = "—";
-        ResultText = "Chưa có bản xem trước";
+        ResultText = isPreviewStale ? "Cần xem trước lại" : "Chưa xem trước";
+        WillChange = false;
+        IsPreviewStale = isPreviewStale;
     }
 
     public BulkProductPreviewRowViewModel(BulkProductPreviewRow row)
     {
         ProductCode = row.ProductCode;
         ProductName = row.ProductName;
-        BeforeValue = row.BeforeValue;
-        AfterValue = row.AfterValue;
+        BeforeValue = FormatDisplayValue(row.BeforeValue);
+        AfterValue = FormatDisplayValue(row.AfterValue);
         ResultText = row.ErrorMessage ?? (row.WillChange ? "Sẽ thay đổi" : "Không đổi");
         HasError = row.ErrorMessage is not null;
+        WillChange = row.WillChange;
+        IsPreviewStale = false;
     }
 
     public string ProductCode { get; }
@@ -51,6 +56,11 @@ public sealed class BulkProductPreviewRowViewModel
     public string AfterValue { get; }
     public string ResultText { get; }
     public bool HasError { get; }
+    public bool WillChange { get; }
+    public bool IsPreviewStale { get; }
+
+    private static string FormatDisplayValue(string value) =>
+        value.Replace(" · ", Environment.NewLine, StringComparison.Ordinal);
 }
 
 public sealed class BulkProductViewModel : ViewModelBase, IDisposable
@@ -66,8 +76,10 @@ public sealed class BulkProductViewModel : ViewModelBase, IDisposable
     private string _minimumStockText = string.Empty;
     private BulkProductStatusOption? _selectedStatus;
     private bool _isBusy;
-    private string _statusMessage = "Kiểm tra trước để xem thay đổi dự kiến.";
+    private string _statusMessage = "Chưa xem trước";
     private string _errorMessage = string.Empty;
+    private bool _isPreviewStale;
+    private bool _hasPreviewBeenRun;
 
     public BulkProductViewModel(
         IReadOnlyList<ProductRowViewModel> selectedProducts,
@@ -104,14 +116,41 @@ public sealed class BulkProductViewModel : ViewModelBase, IDisposable
     public AsyncRelayCommand CloseCommand { get; }
     public int SelectedCount => _selectedProducts.Count;
     public bool IsBusy { get => _isBusy; private set { if (SetProperty(ref _isBusy, value)) NotifyCommands(); } }
-    public string StatusMessage { get => _statusMessage; private set => SetProperty(ref _statusMessage, value); }
-    public string ErrorMessage { get => _errorMessage; private set => SetProperty(ref _errorMessage, value); }
+    public string StatusMessage
+    {
+        get => _statusMessage;
+        private set
+        {
+            if (SetProperty(ref _statusMessage, value))
+                OnPropertyChanged(nameof(StatusSummaryText));
+        }
+    }
+    public string ErrorMessage
+    {
+        get => _errorMessage;
+        private set
+        {
+            if (SetProperty(ref _errorMessage, value))
+                OnPropertyChanged(nameof(StatusSummaryText));
+        }
+    }
     public bool HasPreview => _preview is not null;
+    public bool IsPreviewStale => _isPreviewStale;
     public bool HasErrors => _preview?.Errors.Count > 0;
+    public string ChangedSummaryText => _preview is null ? string.Empty : $"{_preview.ChangeCount:N0} sẽ thay đổi";
+    public string NoOpSummaryText => _preview is null ? string.Empty : $"{_preview.NoOpCount:N0} không đổi";
+    public string PreviewSummaryText => _preview is null
+        ? $"{SelectedCount:N0} sản phẩm"
+        : $"{_preview.ChangeCount:N0} sẽ thay đổi • {_preview.NoOpCount:N0} không đổi";
+    public bool HasChanges => _preview?.ChangeCount > 0;
+    public string PreviewPromptText => IsPreviewStale
+        ? "Thiết lập đã thay đổi — cần xem trước lại."
+        : "Chưa xem trước";
+    public string StatusSummaryText => string.IsNullOrWhiteSpace(ErrorMessage) ? StatusMessage : ErrorMessage;
     public string SummaryText => _preview is null
         ? "Chưa có bản xem trước."
         : $"Sẽ thay đổi {_preview.ChangeCount:N0} sản phẩm; {_preview.NoOpCount:N0} sản phẩm không cần đổi.";
-    public string SelectionText => $"Đã chọn {_selectedProducts.Count:N0} sản phẩm trên trang hiện tại.";
+    public string SelectionText => $"{_selectedProducts.Count:N0} sản phẩm đã chọn";
     public string OperationDescription => _selectedOperation.Description;
     public string PreviewHeading => _preview is null ? "Sản phẩm đã chọn và thay đổi dự kiến" : "Xem trước thay đổi";
     public bool IsPriceOperation => SelectedOperation.Operation == BulkProductOperationType.SetPrices;
@@ -121,7 +160,7 @@ public sealed class BulkProductViewModel : ViewModelBase, IDisposable
     public BulkProductOperationOption SelectedOperation
     {
         get => _selectedOperation;
-        set { ArgumentNullException.ThrowIfNull(value); if (!SetProperty(ref _selectedOperation, value)) return; InvalidatePreview(); OnPropertyChanged(nameof(OperationDescription)); }
+        set { ArgumentNullException.ThrowIfNull(value); if (!SetProperty(ref _selectedOperation, value)) return; InvalidatePreview(markStale: false); OnPropertyChanged(nameof(OperationDescription)); }
     }
     public CategoryOptionDto? SelectedCategory
     {
@@ -218,22 +257,74 @@ public sealed class BulkProductViewModel : ViewModelBase, IDisposable
 
     private void ApplyPreview(BulkProductPreview preview)
     {
-        _preview = preview; PreviewRows.Clear();
+        _preview = preview; _isPreviewStale = false; _hasPreviewBeenRun = true; PreviewRows.Clear();
         foreach (var row in preview.Rows) PreviewRows.Add(new BulkProductPreviewRowViewModel(row));
-        StatusMessage = !preview.CanConfirm ? "Có vấn đề cần xử lý trước khi lưu." : preview.ChangeCount == 0 ? "Đã kiểm tra: không có sản phẩm nào cần đổi; chưa có gì được lưu." : "Đã kiểm tra. Hãy xem lại rồi xác nhận lưu.";
+        StatusMessage = !preview.CanConfirm
+            ? "Có vấn đề cần xử lý trước khi lưu."
+            : preview.ChangeCount == 0
+                ? "Không có sản phẩm cần thay đổi."
+                : $"Đã kiểm tra {preview.Rows.Count:N0} sản phẩm.";
         OnPropertyChanged(string.Empty); NotifyCommands();
     }
 
-    private void InvalidatePreview() { _preview = null; LoadReferenceRows(); OnPropertyChanged(nameof(HasPreview)); OnPropertyChanged(nameof(SummaryText)); OnPropertyChanged(nameof(PreviewHeading)); OnPropertyChanged(nameof(IsPriceOperation)); OnPropertyChanged(nameof(IsCategoryOperation)); OnPropertyChanged(nameof(IsStatusOperation)); OnPropertyChanged(nameof(IsMinimumStockOperation)); ConfirmCommand.NotifyCanExecuteChanged(); }
+    private void InvalidatePreview(bool markStale = true)
+    {
+        _preview = null;
+        _isPreviewStale = markStale && _hasPreviewBeenRun;
+        StatusMessage = "Thiết lập đã thay đổi — cần xem trước lại.";
+        LoadReferenceRows();
+        OnPropertyChanged(nameof(HasPreview));
+        OnPropertyChanged(nameof(IsPreviewStale));
+        OnPropertyChanged(nameof(PreviewPromptText));
+        OnPropertyChanged(nameof(HasChanges));
+        OnPropertyChanged(nameof(ChangedSummaryText));
+        OnPropertyChanged(nameof(NoOpSummaryText));
+        OnPropertyChanged(nameof(PreviewSummaryText));
+        OnPropertyChanged(nameof(SummaryText));
+        OnPropertyChanged(nameof(PreviewHeading));
+        OnPropertyChanged(nameof(IsPriceOperation));
+        OnPropertyChanged(nameof(IsCategoryOperation));
+        OnPropertyChanged(nameof(IsStatusOperation));
+        OnPropertyChanged(nameof(IsMinimumStockOperation));
+        ConfirmCommand.NotifyCanExecuteChanged();
+    }
     private void LoadReferenceRows()
     {
         PreviewRows.Clear();
         foreach (var row in _selectedProducts)
-            PreviewRows.Add(new BulkProductPreviewRowViewModel(row, SelectedOperation.Operation));
+            PreviewRows.Add(new BulkProductPreviewRowViewModel(row, SelectedOperation.Operation, _isPreviewStale));
     }
-    private static bool TryParseLong(string value, out long result) => long.TryParse(value.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out result) && result >= 0;
-    private static bool TryParseInt(string value, out int result) => int.TryParse(value.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out result) && result >= 0;
-    private void NotifyCommands() { PreviewCommand.NotifyCanExecuteChanged(); ConfirmCommand.NotifyCanExecuteChanged(); CancelCommand.NotifyCanExecuteChanged(); CloseCommand.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(HasPreview)); OnPropertyChanged(nameof(HasErrors)); OnPropertyChanged(nameof(SummaryText)); }
+    private static bool TryParseLong(string value, out long result) =>
+        NumericInputFormatter.TryParse(
+            value,
+            NumericInputMode.MoneyVnd,
+            out result);
+
+    private static bool TryParseInt(string value, out int result)
+    {
+        result = 0;
+
+        return NumericInputFormatter.TryParse(
+                   value,
+                   NumericInputMode.NonNegativeInteger,
+                   out var parsed) &&
+               parsed <= int.MaxValue &&
+               (result = (int)parsed) >= 0;
+    }
+    private void NotifyCommands()
+    {
+        PreviewCommand.NotifyCanExecuteChanged();
+        ConfirmCommand.NotifyCanExecuteChanged();
+        CancelCommand.NotifyCanExecuteChanged();
+        CloseCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(HasPreview));
+        OnPropertyChanged(nameof(HasErrors));
+        OnPropertyChanged(nameof(HasChanges));
+        OnPropertyChanged(nameof(ChangedSummaryText));
+        OnPropertyChanged(nameof(NoOpSummaryText));
+        OnPropertyChanged(nameof(PreviewSummaryText));
+        OnPropertyChanged(nameof(SummaryText));
+    }
     private void HandleException(Exception exception)
     {
         Trace.TraceError(

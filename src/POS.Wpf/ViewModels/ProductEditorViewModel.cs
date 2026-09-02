@@ -10,6 +10,7 @@ using POS.Application.DTOs.Categories;
 using POS.Application.DTOs.Products;
 using POS.Domain.Constants;
 using POS.Wpf.Commands;
+using POS.Wpf.Services;
 
 namespace POS.Wpf.ViewModels;
 
@@ -78,16 +79,16 @@ public sealed class ProductEditorViewModel :
         string.Empty;
 
     private string _costPriceText =
-        "0";
+        string.Empty;
 
     private string _salePriceText =
-        "0";
+        string.Empty;
 
     private string _initialStockQuantityText =
-        "0";
+        string.Empty;
 
     private string _minimumStockText =
-        "0";
+        string.Empty;
 
     private int _currentStockQuantity;
 
@@ -290,7 +291,7 @@ public sealed class ProductEditorViewModel :
                     "Không tạo lịch sử tồn đầu kỳ.";
             }
 
-            if (!TryParseInteger(
+            if (!TryParseInitialStock(
                     InitialStockQuantityText,
                     out var quantity))
             {
@@ -734,7 +735,7 @@ public sealed class ProductEditorViewModel :
                     out var salePrice))
             {
                 return
-                    "Nhập giá để xem lợi nhuận";
+                    "—";
             }
 
             long profit;
@@ -936,14 +937,14 @@ public sealed class ProductEditorViewModel :
                 UnitName = "Cái";
                 ImagePath = string.Empty;
 
-                CostPriceText = "0";
-                SalePriceText = "0";
+                CostPriceText = string.Empty;
+                SalePriceText = string.Empty;
 
                 InitialStockQuantityText =
-                    "0";
+                    string.Empty;
 
                 MinimumStockText =
-                    "0";
+                    string.Empty;
 
                 TrackInventory = true;
                 AllowNegativeStock = false;
@@ -1033,7 +1034,7 @@ public sealed class ProductEditorViewModel :
 
         if (!IsEditMode &&
             TrackInventory &&
-            !TryParseInteger(
+            !TryParseInitialStock(
                 InitialStockQuantityText,
                 out initialStock))
         {
@@ -1273,23 +1274,27 @@ public sealed class ProductEditorViewModel :
                 string.Empty;
 
             CostPriceText =
-                product.CostPrice.ToString(
-                    CultureInfo.InvariantCulture);
+                NumericInputFormatter.Format(
+                    product.CostPrice,
+                    NumericInputMode.MoneyVnd);
 
             SalePriceText =
-                product.SalePrice.ToString(
-                    CultureInfo.InvariantCulture);
+                NumericInputFormatter.Format(
+                    product.SalePrice,
+                    NumericInputMode.MoneyVnd);
 
             CurrentStockQuantity =
                 product.StockQuantity;
 
             InitialStockQuantityText =
-                product.StockQuantity.ToString(
-                    CultureInfo.InvariantCulture);
+                NumericInputFormatter.Format(
+                    product.StockQuantity,
+                    NumericInputMode.SignedInteger);
 
             MinimumStockText =
-                product.MinimumStock.ToString(
-                    CultureInfo.InvariantCulture);
+                NumericInputFormatter.Format(
+                    product.MinimumStock,
+                    NumericInputMode.NonNegativeInteger);
 
             TrackInventory =
                 product.TrackInventory;
@@ -1531,7 +1536,7 @@ public sealed class ProductEditorViewModel :
             return;
         }
 
-        if (!TryParseInteger(
+        if (!TryParseInitialStock(
                 InitialStockQuantityText,
                 out var value))
         {
@@ -1895,14 +1900,9 @@ public sealed class ProductEditorViewModel :
         string? text,
         out long value)
     {
-        var normalized =
-            NormalizeNumericText(
-                text);
-
-        return long.TryParse(
-            normalized,
-            NumberStyles.Integer,
-            CultureInfo.InvariantCulture,
+        return NumericInputFormatter.TryParse(
+            text,
+            NumericInputMode.MoneyVnd,
             out value);
     }
 
@@ -1910,43 +1910,29 @@ public sealed class ProductEditorViewModel :
         string? text,
         out int value)
     {
-        var normalized =
-            NormalizeNumericText(
-                text);
+        value = 0;
 
-        return int.TryParse(
-            normalized,
-            NumberStyles.Integer,
-            CultureInfo.InvariantCulture,
-            out value);
+        return NumericInputFormatter.TryParse(
+                   text,
+                   NumericInputMode.NonNegativeInteger,
+                   out var parsed) &&
+               parsed <= int.MaxValue &&
+               (value = (int)parsed) >= 0;
     }
 
-    private static string NormalizeNumericText(
-        string? text)
+    private static bool TryParseInitialStock(
+        string? text,
+        out int value)
     {
-        return
-            (text ?? string.Empty)
-                .Trim()
-                .Replace(
-                    ".",
-                    string.Empty,
-                    StringComparison.Ordinal)
-                .Replace(
-                    ",",
-                    string.Empty,
-                    StringComparison.Ordinal)
-                .Replace(
-                    " ",
-                    string.Empty,
-                    StringComparison.Ordinal)
-                .Replace(
-                    "₫",
-                    string.Empty,
-                    StringComparison.Ordinal)
-                .Replace(
-                    "đ",
-                    string.Empty,
-                    StringComparison.OrdinalIgnoreCase);
+        value = 0;
+
+        return NumericInputFormatter.TryParse(
+                   text,
+                   NumericInputMode.SignedInteger,
+                   out var parsed) &&
+               parsed <= int.MaxValue &&
+               parsed >= int.MinValue &&
+               (value = (int)parsed) == parsed;
     }
 
     private static string FormatMoney(

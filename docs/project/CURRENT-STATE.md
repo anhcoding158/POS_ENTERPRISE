@@ -1,5 +1,14 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## Bulk UX V2 + Numeric Entry checkpoint — ACCEPTED / QUALITY GATE PASS / 2026-09-02
+
+- User physical acceptance confirmed the Bulk V2 layout and numeric entry behavior: grouped VND/count input remains editable through separators, Product Editor and Bulk price fields format consistently, profit preview remains correct, and Bulk preview/request values remain numeric and exact.
+- The approved Numeric Entry fix separates digit editing from canonical display and strict final parsing. Routed STA production-control regressions cover insert, backspace, delete, selection replacement, paste, binding update and signed opening-stock behavior; no migration or database contract changed.
+- Bulk price preview uses explicit `vi-VN` formatting in both the WPF reference projection and the Application preview description, so prices display as `35.000 đ` and persisted numeric values remain unchanged.
+- User-run official `scripts/Test-QualityGate.ps1` on a normal interactive Windows profile on 2026-09-02, without `-SkipEfCheck`, passed: `1514/1514 PASS`, `0 failed`, `0 skipped`, exit code `0`; restore, Debug build, vulnerability, EF pending-model and Git checks also passed. This is the authoritative current-source Gate evidence, not a Codex sandbox run.
+- Historical sandbox verification remains recorded separately as six DPAPI/VietQR/Remembered Login failures caused by the test-host profile environment; it is a resolved environmental limitation and not a production defect. IME, undo/redo and full DPI matrix remain outside the automated/manual evidence recorded for this checkpoint.
+- This checkpoint is committed locally before Employee Account work. Employee Account is the next authorized uncommitted workstream; R6+ remains `HOLD`.
+
 ## Activity Log checkpoint — ACCEPTED / QUALITY GATE PASS / COMMITTED LOCALLY — 2026-09-02
 
 - Root cause đã được xác minh ở writer: `BulkProductOperationService` ghi cứng `SecurityAuditAction.EmployeeUpdated` vì CHECK audit cũ chỉ cho phép action `1..10`; repository/projection và WPF switch không tự đổi sai action này.

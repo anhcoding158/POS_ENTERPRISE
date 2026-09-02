@@ -1,5 +1,14 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-056 — Bulk/Numeric Entry uses a digit edit model with explicit Vietnamese display culture
+
+- **Status:** Accepted and committed locally for the 2026-09-02 Bulk UX V2 + Numeric Entry checkpoint; not pushed.
+- **Decision:** Handle keyboard insert/backspace/delete and selection changes against digits and caret digit positions, then format canonical text. Keep strict parsing for complete paste, preview and command boundaries; do not strict-parse WPF transient display text.
+- **Presentation:** Use explicit `vi-VN` `N0` formatting for MoneyVnd and integer display. Bulk price preview uses `35.000 đ`; the numeric request/domain value remains the original integer and no global culture is changed.
+- **Security/business boundary:** Preserve `AllowNegativeStock` for signed opening stock, existing validation, preview invalidation, persistence, permission, concurrency, transaction and audit contracts. No migration or manual database access is introduced.
+- **Evidence:** User-run normal interactive Quality Gate without `-SkipEfCheck` passed at `1514/1514`, `0 failed`, `0 skipped`, exit `0`. Focused routed production-control and Bulk/Product regressions passed; physical IME, undo/redo and full DPI evidence remain bounded as documented.
+- **Scope:** The decision covers the reusable WPF numeric behavior/edit engine, Product Editor numeric fields and Bulk price presentation only. Other numeric screens remain outside scope.
+
 ## DEC-055 — Post-R5 Activity Log uses dedicated Bulk actions and strict read compatibility
 
 - **Status:** Accepted and committed locally for the post-R5 Activity Log stabilization on `2026-09-02`; not pushed.

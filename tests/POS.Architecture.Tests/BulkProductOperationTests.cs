@@ -55,6 +55,27 @@ public sealed class BulkProductOperationTests
     }
 
     [Fact]
+    public async Task Price_preview_uses_vietnamese_grouping_independent_of_current_culture()
+    {
+        var product = NewProduct(5, "SP-005", 10000, 35000);
+        var service = CreateService(
+            new FakeProductRepository(product),
+            new FakeAuditRepository(),
+            new FakeUnitOfWork());
+
+        var result = await service.PreviewAsync(new(
+            BulkProductOperationType.SetPrices,
+            [new(1, product.UpdatedAtUtc)],
+            CostPrice: 10000,
+            SalePrice: 35000));
+
+        Assert.True(result.IsSuccess);
+        var row = Assert.Single(result.Value.Rows);
+        Assert.Equal("Giá vốn 10.000 · Giá bán 35.000", row.BeforeValue);
+        Assert.Equal("Giá vốn 10.000 · Giá bán 35.000", row.AfterValue);
+    }
+
+    [Fact]
     public async Task Bulk_minimum_stock_never_mutates_current_stock()
     {
         var product = NewProduct(2, "SP-002", 100, 200, stock: 12);

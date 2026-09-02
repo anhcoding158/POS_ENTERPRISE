@@ -1,5 +1,14 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## Bulk UX V2 + Numeric Entry accepted baseline — 2026-09-02
+
+- Evidence source: user-run official `scripts/Test-QualityGate.ps1` on a normal interactive Windows profile, without `-SkipEfCheck`.
+- Total tests: `1514`; passed: `1514`; failed: `0`; skipped: `0`; exit code: `0`.
+- Restore: PASS. Debug solution build: PASS. Vulnerability scan: PASS with no vulnerable packages. EF pending-model: PASS with no model changes. Git whitespace/checks: PASS. Official result: `QUALITY GATE PASSED`.
+- User manual evidence: Bulk UX V2 and Product Editor numeric entry were accepted, including grouped VND/count input, editable separator transitions, correct profit preview and Bulk price preview/request behavior.
+- Codex Release verification on the sandbox host was `1508 PASS / 6 FAIL / 0 SKIP`; the six failures were the retained DPAPI/VietQR/Remembered Login environmental limitation and are not substituted for the normal-profile Gate above.
+- Remaining manual boundary: IME, undo/redo and complete DPI visual verification were not claimed by this checkpoint.
+
 ## Activity Log accepted baseline — 2026-09-02
 
 - Fresh Release solution/application/test build: PASS, `0 warning / 0 error`.

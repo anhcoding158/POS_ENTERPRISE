@@ -22,6 +22,7 @@ public sealed class BulkProductOperationService : IBulkProductOperationService
     private const int MaximumSelection = 500;
     private const string BusinessArea = "Sản phẩm";
     private const string TargetType = "Sản phẩm";
+    private static readonly CultureInfo VietnameseCulture = CultureInfo.GetCultureInfo("vi-VN");
 
     private readonly IProductRepository _products;
     private readonly ICategoryRepository _categories;
@@ -203,7 +204,7 @@ public sealed class BulkProductOperationService : IBulkProductOperationService
 
     private static (string Before, string After, string? Error) Describe(Product product, BulkProductOperationRequest request, Category? category) => request.Operation switch
     {
-        BulkProductOperationType.SetPrices => ($"Giá vốn {product.CostPrice:N0} · Giá bán {product.SalePrice:N0}", $"Giá vốn {request.CostPrice!.Value:N0} · Giá bán {request.SalePrice!.Value:N0}", null),
+        BulkProductOperationType.SetPrices => ($"Giá vốn {product.CostPrice.ToString("N0", VietnameseCulture)} · Giá bán {product.SalePrice.ToString("N0", VietnameseCulture)}", $"Giá vốn {request.CostPrice!.Value.ToString("N0", VietnameseCulture)} · Giá bán {request.SalePrice!.Value.ToString("N0", VietnameseCulture)}", null),
         BulkProductOperationType.SetCategory => (product.Category?.Name ?? product.CategoryId.ToString(CultureInfo.InvariantCulture), category!.Name, null),
         BulkProductOperationType.SetActiveState => (product.IsActive ? "Đang bán" : "Ngừng bán", request.IsActive!.Value ? "Đang bán" : "Ngừng bán", null),
         BulkProductOperationType.SetMinimumStock => (product.MinimumStock.ToString(CultureInfo.InvariantCulture), request.MinimumStock!.Value.ToString(CultureInfo.InvariantCulture), null),

@@ -1,5 +1,12 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## Bulk UX V2 + Numeric Entry checkpoint — 2026-09-02
+
+- The grouped numeric-input regression is resolved. The behavior now edits a digit model before formatting, so typing/backspace/delete does not strict-parse transient strings such as `1.5000` or `1.50` and roll back valid user edits.
+- User-run normal interactive Quality Gate passed at `1514/1514`, `0 failed`, `0 skipped`, exit code `0`. This supersedes no historical sandbox evidence; the six DPAPI/VietQR/Remembered Login failures remain documented as an environmental test-host limitation, not a production secure-storage defect.
+- IME/composition, undo/redo and complete 100%/125%/150% DPI verification remain manual follow-up boundaries where not directly evidenced. No Activity Log, DPAPI, VietQR, Remembered Login or schema change was made.
+- Employee Account creation/management is the next authorized checkpoint and remains uncommitted pending user acceptance.
+
 ## Activity Log checkpoint — 2026-09-02
 
 - The Activity Log correction is accepted by the user on the normal interactive Windows profile. Root cause was confirmed in `BulkProductOperationService`: all four Bulk operations persisted `EmployeeUpdated` because the previous audit CHECK allowed only actions `1..10`. New writes use dedicated product-Bulk action codes and the read resolver provides strict compatibility mapping for qualifying legacy rows; historical audit rows are not rewritten, deleted or migrated for text changes.
