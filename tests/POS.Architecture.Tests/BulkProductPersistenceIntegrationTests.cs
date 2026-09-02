@@ -5,6 +5,7 @@ using POS.Application.Abstractions.DateTime;
 using POS.Application.Abstractions.Persistence;
 using POS.Application.Authorization;
 using POS.Application.Common;
+using POS.Application.DTOs.Audit;
 using POS.Application.DTOs.Authentication;
 using POS.Application.DTOs.Products;
 using POS.Application.Services;
@@ -156,6 +157,63 @@ public sealed class BulkProductPersistenceIntegrationTests
                 Assert.Equal("2", summary.ChangedCount);
                 Assert.DoesNotContain("BULK-A", summary.SerializedChanges, StringComparison.Ordinal);
             });
+            Assert.Equal(
+                new[]
+                {
+                    SecurityAuditAction.BulkProductPricesUpdated,
+                    SecurityAuditAction.BulkProductCategoryChanged,
+                    SecurityAuditAction.BulkProductActiveStateChanged,
+                    SecurityAuditAction.BulkProductMinimumStockChanged
+                },
+                final.AuditSummaries.Select(summary => summary.Action));
+            Assert.All(final.AuditSummaries, summary =>
+            {
+                Assert.Equal("Sản phẩm", summary.BusinessArea);
+                Assert.StartsWith("Batch ", summary.TargetDisplayName, StringComparison.Ordinal);
+                Assert.NotEqual(SecurityAuditAction.EmployeeUpdated, summary.Action);
+            });
+
+            await using (var queryContext = CreateContext(databasePath))
+            {
+                var query = await new SecurityAuditQueryRepository(queryContext).SearchAsync(
+                    new AuditSearchRequest(BusinessArea: "Sản phẩm"));
+                Assert.Equal(4, query.TotalCount);
+                Assert.All(query.Items, item =>
+                {
+                    Assert.NotEqual(SecurityAuditAction.EmployeeUpdated, item.Action);
+                    Assert.Equal("Thành công", item.ResultText);
+                    Assert.Equal("2 sản phẩm", item.Target);
+                });
+            }
+
+            var legacyOperationId = Guid.NewGuid();
+            await using (var legacyContext = CreateContext(databasePath))
+            {
+                legacyContext.SecurityAuditEvents.Add(new SecurityAuditEvent(
+                    adminUserId, null, null, SecurityAuditAction.EmployeeUpdated, "Success", legacyOperationId, OperationTime,
+                    "Portable Administrator", $"Batch {legacyOperationId:N}",
+                    AuditPresentationResolver.LegacyBulkBusinessArea,
+                    AuditPresentationResolver.LegacyBulkTargetType,
+                    "Không xác định",
+                    [new SecurityAuditChange("operation", null, nameof(BulkProductOperationType.SetPrices)), new SecurityAuditChange("requested_count", null, "2")]));
+                await legacyContext.SaveChangesAsync();
+            }
+
+            await using (var compatibilityContext = CreateContext(databasePath))
+            {
+                var repository = new SecurityAuditQueryRepository(compatibilityContext);
+                var legacyPrices = await repository.SearchAsync(new AuditSearchRequest(Action: SecurityAuditAction.BulkProductPricesUpdated));
+                Assert.Equal(2, legacyPrices.TotalCount);
+                Assert.All(legacyPrices.Items, item => Assert.Equal(SecurityAuditAction.BulkProductPricesUpdated, item.Action));
+                var employeeUpdates = await repository.SearchAsync(new AuditSearchRequest(Action: SecurityAuditAction.EmployeeUpdated));
+                Assert.Empty(employeeUpdates.Items);
+                var details = await repository.GetDetailsAsync(
+                    (await compatibilityContext.SecurityAuditEvents.SingleAsync(audit => audit.OperationId == legacyOperationId)).Id);
+                Assert.NotNull(details);
+                Assert.Equal("2 sản phẩm", details.Target);
+                Assert.Equal(legacyOperationId, details.OperationId);
+                Assert.Equal($"Batch {legacyOperationId:N}", details.TechnicalTarget);
+            }
         }
         finally
         {
@@ -251,9 +309,12 @@ public sealed class BulkProductPersistenceIntegrationTests
         var audits = await context.SecurityAuditEvents
             .AsNoTracking()
             .OrderBy(audit => audit.CreatedAtUtc)
-            .Select(audit => new AuditSummary(
-                audit.BeforeValuesJson,
-                audit.AfterValuesJson))
+                .Select(audit => new AuditSummary(
+                    audit.Action,
+                    audit.BusinessArea,
+                    audit.TargetDisplayNameSnapshot,
+                    audit.BeforeValuesJson,
+                    audit.AfterValuesJson))
             .ToArrayAsync();
         return new DatabaseSnapshot(
             products,
@@ -280,6 +341,9 @@ public sealed class BulkProductPersistenceIntegrationTests
         bool IsActive);
 
     private sealed record AuditSummary(
+        SecurityAuditAction Action,
+        string BusinessArea,
+        string TargetDisplayName,
         string SerializedChanges,
         string AfterValuesJson)
     {

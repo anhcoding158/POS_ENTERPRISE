@@ -2,7 +2,10 @@ using Microsoft.EntityFrameworkCore;
 using POS.Application.Abstractions.Persistence;
 using POS.Application.Common;
 using POS.Application.DTOs.Audit;
+using POS.Application.DTOs.Products;
+using POS.Application.Services;
 using POS.Domain.Entities;
+using POS.Domain.Enums;
 
 namespace POS.Infrastructure.Persistence.Repositories;
 
@@ -35,37 +38,60 @@ public sealed class SecurityAuditQueryRepository : ISecurityAuditQueryRepository
     {
         if (request.FromUtc.HasValue) query = query.Where(audit => audit.CreatedAtUtc >= request.FromUtc.Value);
         if (request.ToUtc.HasValue) query = query.Where(audit => audit.CreatedAtUtc <= request.ToUtc.Value);
-        if (request.Action.HasValue) query = query.Where(audit => audit.Action == request.Action.Value);
+        if (request.Action.HasValue)
+        {
+            var action = request.Action.Value;
+            if (action == SecurityAuditAction.EmployeeUpdated)
+                query = query.Where(audit => audit.Action == action && !(audit.TargetEmployeeId == null && audit.TargetUserId == null && audit.BusinessArea == AuditPresentationResolver.LegacyBulkBusinessArea && audit.TargetType == AuditPresentationResolver.LegacyBulkTargetType && audit.TargetDisplayNameSnapshot.StartsWith("Batch ") && audit.BeforeValuesJson.Contains("\"FieldKey\":\"operation\"")));
+            else if (action is >= SecurityAuditAction.BulkProductPricesUpdated and <= SecurityAuditAction.BulkProductOperation)
+            {
+                var operation = action switch
+                {
+                    SecurityAuditAction.BulkProductPricesUpdated => nameof(BulkProductOperationType.SetPrices),
+                    SecurityAuditAction.BulkProductCategoryChanged => nameof(BulkProductOperationType.SetCategory),
+                    SecurityAuditAction.BulkProductActiveStateChanged => nameof(BulkProductOperationType.SetActiveState),
+                    SecurityAuditAction.BulkProductMinimumStockChanged => nameof(BulkProductOperationType.SetMinimumStock),
+                    _ => string.Empty
+                };
+                query = action == SecurityAuditAction.BulkProductOperation
+                    ? query.Where(audit => audit.Action == action || (audit.Action == SecurityAuditAction.EmployeeUpdated && audit.TargetEmployeeId == null && audit.TargetUserId == null && audit.BusinessArea == AuditPresentationResolver.LegacyBulkBusinessArea && audit.TargetType == AuditPresentationResolver.LegacyBulkTargetType && audit.TargetDisplayNameSnapshot.StartsWith("Batch ") && audit.BeforeValuesJson.Contains("\"FieldKey\":\"operation\"") && !audit.BeforeValuesJson.Contains("\"AfterValue\":\"SetPrices\"") && !audit.BeforeValuesJson.Contains("\"AfterValue\":\"SetCategory\"") && !audit.BeforeValuesJson.Contains("\"AfterValue\":\"SetActiveState\"") && !audit.BeforeValuesJson.Contains("\"AfterValue\":\"SetMinimumStock\"")))
+                    : query.Where(audit => audit.Action == action || (audit.Action == SecurityAuditAction.EmployeeUpdated && audit.TargetEmployeeId == null && audit.TargetUserId == null && audit.BusinessArea == AuditPresentationResolver.LegacyBulkBusinessArea && audit.TargetType == AuditPresentationResolver.LegacyBulkTargetType && audit.TargetDisplayNameSnapshot.StartsWith("Batch ") && audit.BeforeValuesJson.Contains("\"FieldKey\":\"operation\"") && audit.BeforeValuesJson.Contains($"\"AfterValue\":\"{operation}\"")));
+            }
+            else
+                query = query.Where(audit => audit.Action == action);
+        }
         if (!string.IsNullOrWhiteSpace(request.Result)) query = query.Where(audit => audit.Result == request.Result.Trim());
-        if (!string.IsNullOrWhiteSpace(request.BusinessArea)) query = query.Where(audit => audit.BusinessArea == request.BusinessArea.Trim());
+        if (!string.IsNullOrWhiteSpace(request.BusinessArea))
+        {
+            var businessArea = request.BusinessArea.Trim();
+            query = businessArea == AuditPresentationResolver.BulkBusinessArea
+                ? query.Where(audit => audit.BusinessArea == businessArea || audit.BusinessArea == AuditPresentationResolver.LegacyBulkBusinessArea)
+                : query.Where(audit => audit.BusinessArea == businessArea);
+        }
         if (!string.IsNullOrWhiteSpace(request.Actor)) query = query.Where(audit => audit.ActorDisplayNameSnapshot.Contains(request.Actor.Trim()));
         if (!string.IsNullOrWhiteSpace(request.Target)) query = query.Where(audit => audit.TargetDisplayNameSnapshot.Contains(request.Target.Trim()));
         return query;
     }
 
     private static AuditListItemDto MapList(SecurityAuditEvent audit) =>
-        new(audit.Id, audit.CreatedAtUtc, Actor(audit), audit.Action,
-            string.IsNullOrWhiteSpace(audit.BusinessArea) ? "Nhân viên và tài khoản" : audit.BusinessArea,
-            Target(audit), audit.Result,
+        new(audit.Id, audit.CreatedAtUtc, Actor(audit), AuditPresentationResolver.ResolveAction(audit),
+            AuditPresentationResolver.ResolveBusinessArea(audit), AuditPresentationResolver.ResolveTarget(audit), audit.Result,
             string.IsNullOrWhiteSpace(audit.TerminalId) ? "Không xác định" : audit.TerminalId,
-            audit.OperationId);
+            audit.OperationId) { TechnicalTarget = AuditPresentationResolver.TechnicalTarget(audit) };
 
     private static AuditDetailsDto MapDetails(SecurityAuditEvent audit) =>
-        new(audit.Id, audit.CreatedAtUtc, Actor(audit), audit.Action,
-            string.IsNullOrWhiteSpace(audit.BusinessArea) ? "Nhân viên và tài khoản" : audit.BusinessArea,
-            Target(audit), audit.Result,
+        new(audit.Id, audit.CreatedAtUtc, Actor(audit), AuditPresentationResolver.ResolveAction(audit),
+            AuditPresentationResolver.ResolveBusinessArea(audit), AuditPresentationResolver.ResolveTarget(audit), audit.Result,
             string.IsNullOrWhiteSpace(audit.TerminalId) ? "Không xác định" : audit.TerminalId,
             audit.OperationId,
             SecurityAuditChangeSet.Deserialize(audit.BeforeValuesJson).Select(change => new AuditChangeDto(change.FieldKey, change.BeforeValue, change.AfterValue)).ToArray())
         {
-            TargetType = string.IsNullOrWhiteSpace(audit.TargetType) ? "Không xác định" : audit.TargetType
+            TargetType = AuditPresentationResolver.ResolveTargetType(audit),
+            TechnicalTarget = AuditPresentationResolver.TechnicalTarget(audit)
         };
 
     private static string Actor(SecurityAuditEvent audit) =>
         string.IsNullOrWhiteSpace(audit.ActorDisplayNameSnapshot) ? (audit.ActorUserId.HasValue ? $"Người dùng #{audit.ActorUserId}" : "Không xác định") : audit.ActorDisplayNameSnapshot;
-
-    private static string Target(SecurityAuditEvent audit) =>
-        string.IsNullOrWhiteSpace(audit.TargetDisplayNameSnapshot) ? (audit.TargetEmployeeId.HasValue ? $"Nhân viên #{audit.TargetEmployeeId}" : audit.TargetUserId.HasValue ? $"Tài khoản #{audit.TargetUserId}" : "Không xác định") : audit.TargetDisplayNameSnapshot;
 
     private static void ValidatePaging(int pageNumber, int pageSize)
     {

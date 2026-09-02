@@ -20,7 +20,8 @@ namespace POS.Application.Services;
 public sealed class BulkProductOperationService : IBulkProductOperationService
 {
     private const int MaximumSelection = 500;
-    private const string BusinessArea = "Sản phẩm và thao tác hàng loạt";
+    private const string BusinessArea = "Sản phẩm";
+    private const string TargetType = "Sản phẩm";
 
     private readonly IProductRepository _products;
     private readonly ICategoryRepository _categories;
@@ -144,8 +145,8 @@ public sealed class BulkProductOperationService : IBulkProductOperationService
             if (changed > 0)
             {
                 var audit = new SecurityAuditEvent(
-                    _currentUser.UserId, null, null, SecurityAuditAction.EmployeeUpdated, "Success", operationId, _clock.UtcNow,
-                    _currentUser.FullName, $"Batch {operationId:N}", BusinessArea, "Product bulk operation", "Không xác định",
+                    _currentUser.UserId, null, null, ActionFor(preview.Request.Operation), "Success", operationId, _clock.UtcNow,
+                    _currentUser.FullName, $"Batch {operationId:N}", BusinessArea, TargetType, "Không xác định",
                     [
                         new SecurityAuditChange("operation", null, preview.Request.Operation.ToString()),
                         new SecurityAuditChange("requested_count", null, preview.Request.Selection.Count.ToString(CultureInfo.InvariantCulture)),
@@ -241,4 +242,13 @@ public sealed class BulkProductOperationService : IBulkProductOperationService
 
     private static BulkProductOperationResult Failed(Guid operationId, int count, string message) =>
         new(operationId, false, count, 0, 0, [new AppError(ErrorCodes.General.Validation, message)]);
+
+    private static SecurityAuditAction ActionFor(BulkProductOperationType operation) => operation switch
+    {
+        BulkProductOperationType.SetPrices => SecurityAuditAction.BulkProductPricesUpdated,
+        BulkProductOperationType.SetCategory => SecurityAuditAction.BulkProductCategoryChanged,
+        BulkProductOperationType.SetActiveState => SecurityAuditAction.BulkProductActiveStateChanged,
+        BulkProductOperationType.SetMinimumStock => SecurityAuditAction.BulkProductMinimumStockChanged,
+        _ => throw new DomainException("SECURITY_AUDIT.INVALID_ACTION", "Hành động hàng loạt không hợp lệ.")
+    };
 }

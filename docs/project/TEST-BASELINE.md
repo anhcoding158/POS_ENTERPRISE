@@ -1,5 +1,13 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## Activity Log accepted baseline — 2026-09-02
+
+- Fresh Release solution/application/test build: PASS, `0 warning / 0 error`.
+- Focused Activity Log/Bulk/persistence/UI regression: `12/12 PASS`, failed/skipped `0/0`.
+- Full Release from the changed source: `1450 PASS / 6 FAIL / 0 SKIP / 1456`; the six failures are the known RememberedLogin/VietQR DPAPI failures under the Codex sandbox host, not Activity Log tests.
+- Vulnerability scan: PASS, no vulnerable packages. Local tool restore: PASS. EF pending-model: PASS, no pending model changes. `git diff --check`: PASS.
+- User-run official `scripts\\Test-QualityGate.ps1` without `-SkipEfCheck` under a normal interactive Windows profile passed the current Activity Log source: total `1456`, passed `1456`, failed `0`, skipped `0`; official result `QUALITY GATE PASSED`. The snapshot CRLF warning did not fail the Gate and no repository-wide line-ending normalization was performed.
+
 ## R5.3–R5.4 accepted closeout baseline — 2026-09-02
 
 - Evidence source: user-run official `scripts/Test-QualityGate.ps1` without `-SkipEfCheck` under a normal interactive Windows profile on 2026-09-02. This baseline is not a Codex sandbox rerun.

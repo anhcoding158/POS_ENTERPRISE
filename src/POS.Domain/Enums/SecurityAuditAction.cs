@@ -11,5 +11,10 @@ public enum SecurityAuditAction
     AccountLocked = 7,
     AccountUnlocked = 8,
     RoleChanged = 9,
-    ForcedPasswordChangeCompleted = 10
+    ForcedPasswordChangeCompleted = 10,
+    BulkProductPricesUpdated = 11,
+    BulkProductCategoryChanged = 12,
+    BulkProductActiveStateChanged = 13,
+    BulkProductMinimumStockChanged = 14,
+    BulkProductOperation = 15
 }

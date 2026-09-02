@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using POS.Application.Common;
 using POS.Application.Abstractions.Services;
 using POS.Application.DTOs.Audit;
+using POS.Application.Services;
 using POS.Domain.Enums;
 using POS.Wpf.Commands;
 
@@ -16,31 +17,21 @@ public sealed class AuditLogRowViewModel
     {
         Id = dto.Id; OccurredAtUtc = dto.OccurredAtUtc; Actor = dto.Actor; Action = dto.Action;
         BusinessArea = dto.BusinessArea; Target = dto.Target; Result = dto.Result; TerminalId = dto.TerminalId; OperationId = dto.OperationId;
+        TechnicalTarget = dto.TechnicalTarget;
     }
     public int Id { get; }
     public DateTimeOffset OccurredAtUtc { get; }
     public string LocalTimeText => OccurredAtUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss", CultureInfo.GetCultureInfo("vi-VN"));
     public string Actor { get; }
     public SecurityAuditAction Action { get; }
-    public string ActionText => Action switch
-    {
-        SecurityAuditAction.EmployeeCreated => "Tạo nhân viên",
-        SecurityAuditAction.EmployeeUpdated => "Cập nhật nhân viên",
-        SecurityAuditAction.EmployeeDeactivated => "Ngừng hoạt động nhân viên",
-        SecurityAuditAction.EmployeeReactivated => "Kích hoạt lại nhân viên",
-        SecurityAuditAction.AccountCreated => "Tạo tài khoản",
-        SecurityAuditAction.PasswordReset => "Đặt lại mật khẩu",
-        SecurityAuditAction.AccountLocked => "Khóa tài khoản",
-        SecurityAuditAction.AccountUnlocked => "Mở khóa tài khoản",
-        SecurityAuditAction.RoleChanged => "Thay đổi vai trò",
-        SecurityAuditAction.ForcedPasswordChangeCompleted => "Hoàn tất đổi mật khẩu",
-        _ => "Hoạt động hệ thống"
-    };
+    public string ActionText => AuditPresentationResolver.ActionText(Action);
     public string BusinessArea { get; }
     public string Target { get; }
     public string Result { get; }
+    public string ResultText => AuditPresentationResolver.ResultText(Result);
     public string TerminalId { get; }
     public Guid OperationId { get; }
+    public string TechnicalTarget { get; }
 }
 
 public sealed class AuditActionOption(SecurityAuditAction? action, string displayName)
@@ -315,7 +306,7 @@ public sealed class AuditLogViewModel : ViewModelBase, IDisposable
         var local = DateTime.SpecifyKind(value.Value.Date.AddDays(endOfDay ? 1 : 0).AddTicks(endOfDay ? -1 : 0), DateTimeKind.Unspecified);
         return new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(local, TimeZoneInfo.Local));
     }
-    private static string ActionText(SecurityAuditAction action) => new AuditLogRowViewModel(new AuditListItemDto(0, default, string.Empty, action, string.Empty, string.Empty, string.Empty, string.Empty, Guid.Empty)).ActionText;
+    private static string ActionText(SecurityAuditAction action) => AuditPresentationResolver.ActionText(action);
 
     public void Dispose()
     {

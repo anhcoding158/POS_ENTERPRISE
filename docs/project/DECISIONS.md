@@ -1,5 +1,15 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-055 — Post-R5 Activity Log uses dedicated Bulk actions and strict read compatibility
+
+- **Status:** Accepted and committed locally for the post-R5 Activity Log stabilization on `2026-09-02`; not pushed.
+- **Root cause:** `BulkProductOperationService` persisted `EmployeeUpdated` for all four product Bulk operations because the audit CHECK constraint accepted only actions `1..10`; neither query projection nor WPF presentation caused the original classification.
+- **Decision:** Add dedicated action codes for Bulk prices/category/status/minimum-stock, extend the constraint through a forward-only migration, and keep employee/account action codes unchanged. New Bulk events persist `BusinessArea="Sản phẩm"`, a friendly target projection is derived from allowlisted count metadata, and Batch/correlation identifiers remain technical detail.
+- **Compatibility:** Read mapping may classify an old row only when its exact legacy Bulk signature includes the old business area, target type, Batch target, no employee/user target and an allowlisted operation field. No audit row is rewritten, deleted or updated; ambiguous legacy data remains neutral/generic.
+- **Presentation:** Centralize action/result labels in the Application resolver and keep the Activity Log list compact with grouped details and collapsed technical metadata. Filter compatibility excludes qualifying legacy Bulk rows from the employee-update filter and includes them for their known Bulk action.
+- **Evidence:** User-run normal interactive Quality Gate without `-SkipEfCheck` passed the current source at `1456/1456`; user opened Activity Log and confirmed it works well. The six sandbox DPAPI failures remain an environmental host limitation, not a production defect.
+- **Scope:** No Audit schema beyond the action CHECK migration, no Employee Account UI, Shell/sidebar, Label Printing, DPAPI, VietQR, inventory or export change. R6+ remains `HOLD`.
+
 ## DEC-054 — R5.3–R5.4 closeout accepts normal-profile Gate and holds stabilization
 
 - **Status:** Accepted for the 2026-09-02 local checkpoint closeout; no push in this turn.

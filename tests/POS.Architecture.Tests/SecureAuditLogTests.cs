@@ -43,6 +43,30 @@ public sealed class SecureAuditLogTests
     }
 
     [Fact]
+    public void Audit_presentation_resolves_bulk_rows_without_reclassifying_real_employee_updates()
+    {
+        var operationId = Guid.NewGuid();
+        var legacyBulk = new SecurityAuditEvent(
+            1, null, null, SecurityAuditAction.EmployeeUpdated, "Success", operationId, DateTimeOffset.UtcNow,
+            "Quản trị viên", $"Batch {operationId:N}", AuditPresentationResolver.LegacyBulkBusinessArea,
+            AuditPresentationResolver.LegacyBulkTargetType, "Không xác định",
+            [new SecurityAuditChange("operation", null, "SetPrices"), new SecurityAuditChange("requested_count", null, "2")]);
+        var employeeUpdate = new SecurityAuditEvent(
+            1, 2, null, SecurityAuditAction.EmployeeUpdated, "Success", Guid.NewGuid(), DateTimeOffset.UtcNow,
+            "Quản trị viên", "Nhân viên kho", "Nhân viên và tài khoản", "Nhân viên", "Không xác định", null);
+
+        Assert.Equal(SecurityAuditAction.BulkProductPricesUpdated, AuditPresentationResolver.ResolveAction(legacyBulk));
+        Assert.Equal("Cập nhật giá hàng loạt", AuditPresentationResolver.ActionText(AuditPresentationResolver.ResolveAction(legacyBulk)));
+        Assert.Equal("Sản phẩm", AuditPresentationResolver.ResolveBusinessArea(legacyBulk));
+        Assert.Equal("2 sản phẩm", AuditPresentationResolver.ResolveTarget(legacyBulk));
+        Assert.Equal($"Batch {operationId:N}", AuditPresentationResolver.TechnicalTarget(legacyBulk));
+        Assert.Equal(SecurityAuditAction.EmployeeUpdated, AuditPresentationResolver.ResolveAction(employeeUpdate));
+        Assert.Equal("Cập nhật nhân viên", AuditPresentationResolver.ActionText(employeeUpdate.Action));
+        Assert.Equal("Thành công", AuditPresentationResolver.ResultText("Success"));
+        Assert.Equal("Thất bại", AuditPresentationResolver.ResultText("Failed"));
+    }
+
+    [Fact]
     public async Task Audit_query_service_requires_typed_view_permission()
     {
         var repository = new FakeAuditQueryRepository();

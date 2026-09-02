@@ -1,5 +1,12 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## Activity Log checkpoint — 2026-09-02
+
+- The Activity Log correction is accepted by the user on the normal interactive Windows profile. Root cause was confirmed in `BulkProductOperationService`: all four Bulk operations persisted `EmployeeUpdated` because the previous audit CHECK allowed only actions `1..10`. New writes use dedicated product-Bulk action codes and the read resolver provides strict compatibility mapping for qualifying legacy rows; historical audit rows are not rewritten, deleted or migrated for text changes.
+- Activity Log presentation now uses a responsive filter grid, action/business hierarchy, friendly product target, result localization/badges, ellipsis/tooltips, grouped details and collapsed technical metadata. The user opened the interface and confirmed it works well.
+- Six historical DPAPI secure-storage failures are resolved as an environmental test-host limitation under `desktop-f0pkjb1\\codexsandboxoffline`; normal interactive Windows profile passed all secure-storage tests. No production DPAPI defect is established and no secure-storage code was changed.
+- Physical label printer, scanner readback, real-device mm calibration, complete 100%/125%/150% DPI and unperformed Print to PDF save/overwrite/cancel scenarios remain pending. Employee Account creation/management and R6+ remain deferred/HOLD.
+
 ## R5.3–R5.4 closeout review — 2026-09-02
 
 - User-run normal interactive Windows profile Quality Gate passed at `1455/1455`, `0 failed`, `0 skipped`, with `-SkipEfCheck` omitted. The Codex sandbox Gate was not rerun in this closeout.

@@ -47,6 +47,10 @@ public sealed class BulkProductOperationTests
         Assert.Equal(150, product.CostPrice);
         Assert.Equal(300, product.SalePrice);
         Assert.Single(audit.Events);
+        Assert.Equal(SecurityAuditAction.BulkProductPricesUpdated, audit.Events[0].Action);
+        Assert.Equal("Sản phẩm", audit.Events[0].BusinessArea);
+        Assert.Equal("Sản phẩm", audit.Events[0].TargetType);
+        Assert.StartsWith("Batch ", audit.Events[0].TargetDisplayNameSnapshot, StringComparison.Ordinal);
         Assert.True(unitOfWork.Transaction.WasCommitted);
     }
 

@@ -1,5 +1,6 @@
 using System.Globalization;
 using POS.Domain.Enums;
+using POS.Application.Services;
 
 namespace POS.Application.DTOs.Audit;
 
@@ -25,7 +26,12 @@ public sealed record AuditListItemDto(
     string Target,
     string Result,
     string TerminalId,
-    Guid OperationId);
+    Guid OperationId)
+{
+    public string ActionText => AuditPresentationResolver.ActionText(Action);
+    public string ResultText => AuditPresentationResolver.ResultText(Result);
+    public string TechnicalTarget { get; init; } = string.Empty;
+}
 
 public sealed record AuditDetailsDto(
     int Id,
@@ -40,20 +46,16 @@ public sealed record AuditDetailsDto(
     IReadOnlyList<AuditChangeDto> Changes)
 {
     public string TargetType { get; init; } = string.Empty;
+    public string TechnicalTarget { get; init; } = string.Empty;
     public string LocalTimeText => OccurredAtUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture);
+    public string ActionText => AuditPresentationResolver.ActionText(Action);
+    public string ResultText => AuditPresentationResolver.ResultText(Result);
+    public string OperationText => ChangeValue("operation") ?? "—";
+    public string RequestedCountText => ChangeValue("requested_count") ?? "—";
+    public string ChangedCountText => ChangeValue("changed_count") ?? "—";
+    public string NoOpCountText => ChangeValue("no_op_count") ?? "—";
+    public bool HasTechnicalTarget => !string.IsNullOrWhiteSpace(TechnicalTarget);
 
-    public string ActionText => Action switch
-    {
-        SecurityAuditAction.EmployeeCreated => "Tạo nhân viên",
-        SecurityAuditAction.EmployeeUpdated => "Cập nhật nhân viên",
-        SecurityAuditAction.EmployeeDeactivated => "Ngừng hoạt động nhân viên",
-        SecurityAuditAction.EmployeeReactivated => "Kích hoạt lại nhân viên",
-        SecurityAuditAction.AccountCreated => "Tạo tài khoản",
-        SecurityAuditAction.RoleChanged => "Thay đổi vai trò",
-        SecurityAuditAction.AccountLocked => "Khóa tài khoản",
-        SecurityAuditAction.AccountUnlocked => "Mở khóa tài khoản",
-        SecurityAuditAction.PasswordReset => "Đặt lại mật khẩu",
-        SecurityAuditAction.ForcedPasswordChangeCompleted => "Hoàn tất đổi mật khẩu bắt buộc",
-        _ => "Hoạt động không xác định"
-    };
+    private string? ChangeValue(string fieldKey) =>
+        Changes.FirstOrDefault(change => change.FieldKey == fieldKey)?.AfterValue;
 }

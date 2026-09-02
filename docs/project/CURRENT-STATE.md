@@ -1,5 +1,14 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## Activity Log checkpoint — ACCEPTED / QUALITY GATE PASS / COMMITTED LOCALLY — 2026-09-02
+
+- Root cause đã được xác minh ở writer: `BulkProductOperationService` ghi cứng `SecurityAuditAction.EmployeeUpdated` vì CHECK audit cũ chỉ cho phép action `1..10`; repository/projection và WPF switch không tự đổi sai action này.
+- Bốn thao tác Bulk hiện ghi action riêng `11..14`, business area `Sản phẩm`, target kỹ thuật Batch được giữ trong audit nhưng projection hiển thị đối tượng thân thiện như `2 sản phẩm`. Migration forward-only mở CHECK lên `1..15`; không rewrite/delete audit lịch sử.
+- Compatibility reader chỉ nhận diện legacy Bulk khi đồng thời khớp business area cũ, target type, Batch target, không có employee/user target và có metadata operation; audit nhân viên thật tiếp tục giữ `Cập nhật nhân viên`. `Success`/`Failed` được Việt hóa ở resolver dùng chung.
+- Activity Log đã dùng filter grid co giãn, bảng chính gọn với cột Hoạt động (action + business badge), ellipsis/tooltip, result badge, chi tiết phân nhóm và technical Expander mặc định đóng. Không sửa Shell/sidebar, Employee Account hoặc Bulk pipeline ngoài audit contract.
+- Focused Release Activity/Bulk/persistence/UI: `12/12 PASS`; fresh Release solution build và test build: `0 warning / 0 error`. Full Release source verification: `1450 PASS / 6 FAIL / 0 SKIP / 1456`; sáu failure là DPAPI sandbox environmental limitation cũ.
+- Vulnerability scan, local tool restore, EF pending-model và diff whitespace đều PASS. User-run official Quality Gate on the current source under a normal interactive Windows profile, without `-SkipEfCheck`, passed on 2026-09-02: `1456/1456 PASS`, `0 failed`, `0 skipped`; the user also opened Activity Log and confirmed it works well. The snapshot CRLF warning was non-failing; no repository-wide line-ending normalization was performed.
+
 ## R5.3–R5.4 checkpoint closeout — ACCEPTED / QUALITY GATE PASS / COMMITTED LOCALLY — 2026-09-02
 
 - User-run official `scripts/Test-QualityGate.ps1` without `-SkipEfCheck` passed under a normal interactive Windows profile on 2026-09-02: `1455/1455 PASS`, `0 failed`, `0 skipped`, exit code `0`; restore, Release build (`0 warning / 0 error`), vulnerability scan, EF pending-model check and Git whitespace checks passed. This is user-supplied normal-profile evidence; the Gate was not rerun in the Codex sandbox.

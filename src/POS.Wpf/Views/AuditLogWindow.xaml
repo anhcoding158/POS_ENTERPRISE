@@ -77,44 +77,54 @@
                     AutomationProperties.AutomationId="AuditRefreshButton" />
         </Grid>
 
-        <Border Grid.Row="1" Style="{StaticResource CardStyle}" Padding="12" Margin="0,20,0,16">
-            <WrapPanel>
-                <StackPanel Margin="0,0,10,0">
+        <Border Grid.Row="1" Style="{StaticResource CardStyle}" Padding="14" Margin="0,20,0,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.1*" />
+                    <ColumnDefinition Width="1.1*" />
+                    <ColumnDefinition Width="1.3*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,10">
                     <TextBlock Text="Từ ngày" Style="{StaticResource AuditLabelStyle}" />
                     <DatePicker SelectedDate="{Binding FromDate}" Width="140"
-                                AutomationProperties.AutomationId="AuditFromDate" />
+                                 AutomationProperties.AutomationId="AuditFromDate" HorizontalAlignment="Stretch" />
                 </StackPanel>
-                <StackPanel Margin="0,0,10,0">
+                <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,10,10">
                     <TextBlock Text="Đến ngày" Style="{StaticResource AuditLabelStyle}" />
                     <DatePicker SelectedDate="{Binding ToDate}" Width="140"
-                                AutomationProperties.AutomationId="AuditToDate" />
+                                 AutomationProperties.AutomationId="AuditToDate" HorizontalAlignment="Stretch" />
                 </StackPanel>
-                <StackPanel Margin="0,0,10,0">
+                <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,10">
                     <TextBlock Text="Người thực hiện" Style="{StaticResource AuditLabelStyle}" />
-                    <TextBox Text="{Binding ActorFilter, UpdateSourceTrigger=PropertyChanged}" Width="160"
+                    <TextBox Text="{Binding ActorFilter, UpdateSourceTrigger=PropertyChanged}"
                              AutomationProperties.AutomationId="AuditActorFilter" />
                 </StackPanel>
-                <StackPanel Margin="0,0,10,0">
+                <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,0">
                     <TextBlock Text="Nghiệp vụ" Style="{StaticResource AuditLabelStyle}" />
-                    <TextBox Text="{Binding BusinessAreaFilter, UpdateSourceTrigger=PropertyChanged}" Width="170"
+                    <TextBox Text="{Binding BusinessAreaFilter, UpdateSourceTrigger=PropertyChanged}"
                              AutomationProperties.AutomationId="AuditBusinessAreaFilter" />
                 </StackPanel>
-                <StackPanel Margin="0,0,10,0">
+                <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,10,0">
                     <TextBlock Text="Hành động" Style="{StaticResource AuditLabelStyle}" />
                     <ComboBox ItemsSource="{Binding ActionOptions}" DisplayMemberPath="DisplayName"
-                              SelectedItem="{Binding SelectedAction}" Width="180"
+                              SelectedItem="{Binding SelectedAction}"
                               Style="{StaticResource AuditComboBoxStyle}"
                               AutomationProperties.AutomationId="AuditActionFilter" />
                 </StackPanel>
+                <StackPanel Grid.Row="1" Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
                  <Button Content="Tìm kiếm" Command="{Binding SearchCommand}" IsDefault="True"
-                         VerticalAlignment="Bottom" Margin="0,0,10,1"
+                         Margin="0,0,10,0"
                          Style="{StaticResource PrimaryButtonStyle}"
                          AutomationProperties.AutomationId="AuditSearchButton" />
-                 <Button Content="Xóa bộ lọc" Command="{Binding ClearFiltersCommand}"
-                        VerticalAlignment="Bottom" Margin="0,0,0,1"
+                  <Button Content="Xóa bộ lọc" Command="{Binding ClearFiltersCommand}"
                         Style="{StaticResource SecondaryButtonStyle}"
-                        AutomationProperties.AutomationId="AuditClearFiltersButton" />
-            </WrapPanel>
+                         AutomationProperties.AutomationId="AuditClearFiltersButton" />
+                </StackPanel>
+            </Grid>
         </Border>
 
         <Grid Grid.Row="2">
@@ -145,11 +155,32 @@
                               ScrollViewer.HorizontalScrollBarVisibility="Auto">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Thời gian" Binding="{Binding LocalTimeText}" Width="145" MinWidth="135" />
-                            <DataGridTextColumn Header="Người thực hiện" Binding="{Binding Actor}" Width="1.2*" MinWidth="120" />
-                            <DataGridTextColumn Header="Hành động" Binding="{Binding ActionText}" Width="1.25*" MinWidth="130" />
-                            <DataGridTextColumn Header="Đối tượng" Binding="{Binding Target}" Width="1.1*" MinWidth="110" />
-                            <DataGridTextColumn Header="Nghiệp vụ" Binding="{Binding BusinessArea}" Width="1*" MinWidth="100" />
-                            <DataGridTextColumn Header="Kết quả" Binding="{Binding Result}" Width="90" MinWidth="80" />
+                            <DataGridTemplateColumn Header="Người thực hiện" Width="1.1*" MinWidth="110">
+                                <DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding Actor}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Actor}" Margin="4,0" /></DataTemplate></DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Hoạt động" Width="1.55*" MinWidth="170">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="4,2" ToolTip="{Binding ActionText}">
+                                            <TextBlock Text="{Binding ActionText}" TextTrimming="CharacterEllipsis" FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding BusinessArea}" TextTrimming="CharacterEllipsis" Style="{StaticResource SecondaryTextStyle}" FontSize="11" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Đối tượng" Width="1.1*" MinWidth="110">
+                                <DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding Target}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Target}" Margin="4,0" /></DataTemplate></DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Kết quả" Width="95" MinWidth="88">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border CornerRadius="10" Padding="8,3" HorizontalAlignment="Left" ToolTip="{Binding ResultText}">
+                                            <Border.Style><Style TargetType="Border"><Setter Property="Background" Value="{StaticResource SuccessSoftBrush}" /><Style.Triggers><DataTrigger Binding="{Binding Result}" Value="Failed"><Setter Property="Background" Value="{StaticResource DangerSoftBrush}" /></DataTrigger></Style.Triggers></Style></Border.Style>
+                                            <TextBlock Text="{Binding ResultText}" FontSize="11" FontWeight="SemiBold"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="{StaticResource SuccessBrush}" /><Style.Triggers><DataTrigger Binding="{Binding Result}" Value="Failed"><Setter Property="Foreground" Value="{StaticResource DangerBrush}" /></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                             <DataGridTextColumn Header="Máy/Quầy" Binding="{Binding TerminalId}" Width="105" MinWidth="95" />
                         </DataGrid.Columns>
                     </DataGrid>
@@ -189,45 +220,51 @@
                     <Border Style="{StaticResource AuditNoSelectionVisibilityStyle}" Padding="18">
                         <TextBlock Text="Chọn một hoạt động để xem chi tiết" TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="17" FontWeight="SemiBold" />
                     </Border>
-                    <ScrollViewer Style="{StaticResource AuditDetailsVisibilityStyle}" VerticalScrollBarVisibility="Auto">
+                    <ScrollViewer Style="{StaticResource AuditDetailsVisibilityStyle}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <StackPanel DataContext="{Binding Details}">
-                        <TextBlock Text="Chi tiết hoạt động" Style="{StaticResource SectionTitleTextStyle}" />
-                        <TextBlock Text="{Binding LocalTimeText, StringFormat='Giờ địa phương: {0}'}"
-                                   Style="{StaticResource SecondaryTextStyle}" Margin="0,12,0,0" />
-                        <TextBlock Text="{Binding OccurredAtUtc, StringFormat='UTC: {0:dd/MM/yyyy HH:mm:ss}'}"
-                                   Style="{StaticResource SecondaryTextStyle}" Margin="0,2,0,0" />
-                        <TextBlock Text="Người thực hiện" Style="{StaticResource AuditLabelStyle}" Margin="0,16,0,0" />
-                        <TextBlock Text="{Binding Actor}" Style="{StaticResource AuditValueStyle}" />
-                        <TextBlock Text="Hành động" Style="{StaticResource AuditLabelStyle}" Margin="0,12,0,0" />
-                        <TextBlock Text="{Binding ActionText}" Style="{StaticResource AuditValueStyle}" />
-                        <TextBlock Text="Đối tượng" Style="{StaticResource AuditLabelStyle}" Margin="0,12,0,0" />
-                        <TextBlock Text="{Binding Target}" Style="{StaticResource AuditValueStyle}" TextWrapping="Wrap" />
-                        <TextBlock Text="Loại đối tượng" Style="{StaticResource AuditLabelStyle}" Margin="0,12,0,0" />
-                        <TextBlock Text="{Binding TargetType}" Style="{StaticResource AuditValueStyle}" />
-                        <TextBlock Text="Máy/Quầy" Style="{StaticResource AuditLabelStyle}" Margin="0,12,0,0" />
-                        <TextBlock Text="{Binding TerminalId}" Style="{StaticResource AuditValueStyle}" />
-                        <TextBlock Text="Thay đổi an toàn" Style="{StaticResource SectionTitleTextStyle}" Margin="0,20,0,8" />
-                        <DataGrid ItemsSource="{Binding Changes}" AutoGenerateColumns="False" HeadersVisibility="Column"
-                                  CanUserAddRows="False" IsReadOnly="True" Height="160">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Trường thay đổi" Binding="{Binding FieldKey}" Width="*" />
-                                <DataGridTextColumn Header="Trước" Binding="{Binding BeforeValue}" Width="*" />
-                                <DataGridTextColumn Header="Sau" Binding="{Binding AfterValue}" Width="*" />
-                            </DataGrid.Columns>
-                        </DataGrid>
-                        <TextBlock Text="Không có dữ liệu thay đổi chi tiết cho sự kiện này."
-                                   TextWrapping="Wrap" Margin="0,10,0,0">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock" BasedOn="{StaticResource SecondaryTextStyle}">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Changes.Count}" Value="0">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
+                            <TextBlock Text="Chi tiết hoạt động" Style="{StaticResource SectionTitleTextStyle}" />
+                            <TextBlock Text="Tóm tắt" Style="{StaticResource AuditLabelStyle}" Margin="0,16,0,6" />
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="1.3*" /><ColumnDefinition Width="1*" /><ColumnDefinition Width="1.2*" /></Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,8,0"><TextBlock Text="Hành động" Style="{StaticResource AuditLabelStyle}" /><TextBlock Text="{Binding ActionText}" Style="{StaticResource AuditValueStyle}" TextTrimming="CharacterEllipsis" ToolTip="{Binding ActionText}" /></StackPanel>
+                                <StackPanel Grid.Column="1" Margin="0,0,8,0"><TextBlock Text="Kết quả" Style="{StaticResource AuditLabelStyle}" /><Border CornerRadius="10" Padding="8,3" HorizontalAlignment="Left"><Border.Style><Style TargetType="Border"><Setter Property="Background" Value="{StaticResource SuccessSoftBrush}" /><Style.Triggers><DataTrigger Binding="{Binding Result}" Value="Failed"><Setter Property="Background" Value="{StaticResource DangerSoftBrush}" /></DataTrigger></Style.Triggers></Style></Border.Style><TextBlock Text="{Binding ResultText}" FontWeight="SemiBold"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="{StaticResource SuccessBrush}" /><Style.Triggers><DataTrigger Binding="{Binding Result}" Value="Failed"><Setter Property="Foreground" Value="{StaticResource DangerBrush}" /></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></Border></StackPanel>
+                                <StackPanel Grid.Column="2"><TextBlock Text="Nghiệp vụ" Style="{StaticResource AuditLabelStyle}" /><TextBlock Text="{Binding BusinessArea}" Style="{StaticResource AuditValueStyle}" TextTrimming="CharacterEllipsis" ToolTip="{Binding BusinessArea}" /></StackPanel>
+                            </Grid>
+                            <TextBlock Text="Thực hiện" Style="{StaticResource AuditLabelStyle}" Margin="0,16,0,6" />
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="1.2*" /><ColumnDefinition Width="1.5*" /><ColumnDefinition Width="1*" /></Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,8,0"><TextBlock Text="Người thực hiện" Style="{StaticResource AuditLabelStyle}" /><TextBlock Text="{Binding Actor}" Style="{StaticResource AuditValueStyle}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Actor}" /></StackPanel>
+                                <StackPanel Grid.Column="1" Margin="0,0,8,0"><TextBlock Text="Giờ địa phương" Style="{StaticResource AuditLabelStyle}" /><TextBlock Text="{Binding LocalTimeText}" Style="{StaticResource AuditValueStyle}" /><TextBlock Text="{Binding OccurredAtUtc, StringFormat='UTC: {0:dd/MM/yyyy HH:mm:ss}'}" Style="{StaticResource SecondaryTextStyle}" /></StackPanel>
+                                <StackPanel Grid.Column="2"><TextBlock Text="Máy/Quầy" Style="{StaticResource AuditLabelStyle}" /><TextBlock Text="{Binding TerminalId}" Style="{StaticResource AuditValueStyle}" TextTrimming="CharacterEllipsis" ToolTip="{Binding TerminalId}" /></StackPanel>
+                            </Grid>
+                            <TextBlock Text="Đối tượng" Style="{StaticResource AuditLabelStyle}" Margin="0,16,0,6" />
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="1.5*" /><ColumnDefinition Width="1*" /></Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,8,0"><TextBlock Text="Tên/mô tả" Style="{StaticResource AuditLabelStyle}" /><TextBlock Text="{Binding Target}" Style="{StaticResource AuditValueStyle}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Target}" /></StackPanel>
+                                <StackPanel Grid.Column="1"><TextBlock Text="Loại đối tượng" Style="{StaticResource AuditLabelStyle}" /><TextBlock Text="{Binding TargetType}" Style="{StaticResource AuditValueStyle}" TextTrimming="CharacterEllipsis" ToolTip="{Binding TargetType}" /></StackPanel>
+                            </Grid>
+                            <TextBlock Text="Tóm tắt thay đổi" Style="{StaticResource AuditLabelStyle}" Margin="0,16,0,6" />
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="1.2*" /><ColumnDefinition Width="1*" /><ColumnDefinition Width="1*" /><ColumnDefinition Width="1*" /></Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,6,0"><TextBlock Text="Thao tác" Style="{StaticResource AuditLabelStyle}" /><TextBlock Text="{Binding OperationText}" Style="{StaticResource AuditValueStyle}" TextTrimming="CharacterEllipsis" /></StackPanel>
+                                <StackPanel Grid.Column="1" Margin="0,0,6,0"><TextBlock Text="Yêu cầu" Style="{StaticResource AuditLabelStyle}" /><TextBlock Text="{Binding RequestedCountText}" Style="{StaticResource AuditValueStyle}" /></StackPanel>
+                                <StackPanel Grid.Column="2" Margin="0,0,6,0"><TextBlock Text="Đã đổi" Style="{StaticResource AuditLabelStyle}" /><TextBlock Text="{Binding ChangedCountText}" Style="{StaticResource AuditValueStyle}" /></StackPanel>
+                                <StackPanel Grid.Column="3"><TextBlock Text="Không đổi" Style="{StaticResource AuditLabelStyle}" /><TextBlock Text="{Binding NoOpCountText}" Style="{StaticResource AuditValueStyle}" /></StackPanel>
+                            </Grid>
+                            <TextBlock Text="Trường thay đổi" Style="{StaticResource AuditLabelStyle}" Margin="0,16,0,6" />
+                            <DataGrid ItemsSource="{Binding Changes}" AutoGenerateColumns="False" HeadersVisibility="Column" CanUserAddRows="False" IsReadOnly="True" MinHeight="65" MaxHeight="180" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Trường" Binding="{Binding FieldKey}" Width="1.1*" />
+                                    <DataGridTextColumn Header="Trước" Binding="{Binding BeforeValue}" Width="1*" />
+                                    <DataGridTextColumn Header="Sau" Binding="{Binding AfterValue}" Width="1*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <TextBlock Text="Không có dữ liệu thay đổi chi tiết cho sự kiện này." TextWrapping="Wrap" Margin="0,10,0,0">
+                                <TextBlock.Style><Style TargetType="TextBlock" BasedOn="{StaticResource SecondaryTextStyle}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding Changes.Count}" Value="0"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+                            </TextBlock>
+                            <Expander Header="Chi tiết kỹ thuật" IsExpanded="False" Margin="0,16,0,0">
+                                <StackPanel Margin="4,8,4,0"><TextBlock Text="{Binding OperationId, StringFormat='Correlation/Operation ID: {0}'}" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}" /><TextBlock Text="{Binding TechnicalTarget, StringFormat='Target kỹ thuật: {0}'}" TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}" Visibility="{Binding HasTechnicalTarget, Converter={StaticResource BooleanToVisibilityConverter}}" /></StackPanel>
+                            </Expander>
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>

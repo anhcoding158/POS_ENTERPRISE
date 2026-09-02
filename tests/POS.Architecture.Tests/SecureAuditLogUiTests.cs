@@ -54,6 +54,8 @@ public sealed class SecureAuditLogUiTests
                 Assert.True(global::System.Windows.Controls.VirtualizingPanel.GetIsVirtualizing(auditList));
                 Assert.Contains(auditList.Columns, column => Equals(column.Header, "Người thực hiện"));
                 Assert.Contains(auditList.Columns, column => Equals(column.Header, "Thời gian"));
+                Assert.Contains(auditList.Columns, column => Equals(column.Header, "Hoạt động"));
+                Assert.DoesNotContain(auditList.Columns, column => Equals(column.Header, "Nghiệp vụ"));
                 var searchButton = FindVisualDescendants<global::System.Windows.Controls.Button>(window)
                     .Single(button => AutomationProperties.GetAutomationId(button) == "AuditSearchButton");
                 Assert.Same(viewModel.SearchCommand, searchButton.Command);

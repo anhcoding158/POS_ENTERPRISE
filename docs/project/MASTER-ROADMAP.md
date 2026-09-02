@@ -1,5 +1,12 @@
 # MASTER ROADMAP — POS ENTERPRISE RETAIL V1
 
+## Activity Log stabilization closeout — 2026-09-02
+
+- Activity Log audit semantics and presentation correction is implemented: Bulk price/category/status/minimum-stock operations now have distinct persisted action codes, strict legacy read compatibility, friendly product targets and Vietnamese result labels. The writer root cause was confirmed and employee audit actions remain unchanged.
+- The Activity Log UI now uses a responsive filter card, compact action/business presentation, ellipsis/tooltips, result badges, grouped detail sections and a collapsed technical metadata section. No Shell/sidebar, Employee Account, Label Printing or unrelated inventory/export flow was changed.
+- Focused changed-source verification is `12/12 PASS`; fresh Release build is `0 warning / 0 error`; full sandbox Release is `1450 PASS / 6 FAIL / 0 SKIP / 1456`, with only the historical DPAPI host limitation failing. The user-run normal interactive Quality Gate for this current source passed at `1456/1456`, and the user confirmed the Activity Log interface works well.
+- R5.3 audit semantic correctness is accepted and committed locally. R5.4 physical printer/scanner/calibration/DPI/PDF acceptance remains deferred. R6+ remains `HOLD`; next product work is Bulk UX closeout, followed by Employee Account creation/management.
+
 ## Latest checkpoint position — R5.3–R5.4 closeout — 2026-09-02
 
 - R5.3 is `ACCEPTED / COMMITTED LOCALLY` for engineering, persistence and manual core acceptance. User evidence covers partial selection → Bulk, “Ngừng bán” preview/status, and isolated SQLite persistence/readback proving only selected products change while stock and InventoryMovement do not. Audit correctness remains open pending Activity Log semantic/action tracing.
