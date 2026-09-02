@@ -1045,6 +1045,10 @@ public partial class App :
             BulkProductDialogService>();
 
         services.AddSingleton<
+            ILabelPrintDialogService,
+            LabelPrintDialogService>();
+
+        services.AddSingleton<
             ICategoryDialogService,
             CategoryDialogService>();
 

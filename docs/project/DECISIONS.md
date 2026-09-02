@@ -1,5 +1,34 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-054 — R5.3–R5.4 closeout accepts normal-profile Gate and holds stabilization
+
+- **Status:** Accepted for the 2026-09-02 local checkpoint closeout; no push in this turn.
+- **Decision:** Accept the user-run official Quality Gate without `-SkipEfCheck` under a normal interactive Windows profile as the authoritative current result: `1455/1455 PASS`, `0 failed`, `0 skipped`, exit code `0`. Do not rerun the full Gate in the Codex sandbox and overwrite this evidence with its known host limitation.
+- **Acceptance boundary:** R5.3 engineering/persistence/manual core and R5.4 implementation/manual UI are accepted at the stated scope. Physical label printer, scanner readback, real-device calibration, full DPI matrix and unperformed Print to PDF save/overwrite/cancel scenarios remain deferred. R5.3 audit correctness is not fully accepted while the Activity Log mismatch is open.
+- **Stabilization queue:** Trace Activity Log semantic/action mapping first, improve its dense layout, then address Employee Account creation/management and other user-review issues. R6+ remains `HOLD`; no audit, localization, Employee Account or Bulk correction is made in this closeout.
+
+## DEC-053 — R5.4 label UX uses debounced automatic preview
+
+- **Status:** Accepted for the 2026-09-01 R5.4 UX closeout; physical UI/DPI/printer acceptance remains pending.
+- **Decision:** Remove the manual preview action. Dimension, alignment, preset and quantity changes invalidate the previous job immediately, then rebuild through one 300 ms dispatcher debounce with cancellation and a monotonically increasing revision guard.
+- **Presentation:** Use one compact preview message, one global footer status, inline row validation with one multi-row summary, an explicit invalid empty state and `In tem` while invalid/updating. Keep `In thử 1 tem` inside the collapsed calibration group and keep it non-closing.
+- **Scope:** Do not rewrite label rendering, barcode encoding, paginator, printer abstraction, selection, product/stock invariants or the existing DPAPI/VietQR/Remembered Login boundaries.
+
+## DEC-052 — R5.4 production label window requires control-level binding verification
+
+- **Status:** Accepted for the 2026-09-01 R5.4 UI hotfix; physical recheck remains pending.
+- **Decision:** Treat a materialized production `LabelPrintWindow` as the verification boundary. Tests must resolve actual named buttons/ComboBox/status bindings and invoke controls through `ButtonAutomationPeer`/dispatcher rather than only calling ViewModel methods. Command failures, cancel and busy state must remain visible to the user.
+- **Lifecycle:** The window subscribes to and removes `RequestClose`/preview events at the window lifecycle boundary. `DialogResult=true` is reserved for successful real print; normal Close/Esc returns cancel, and non-modal harnesses close without throwing.
+- **Presentation:** Use a same-type preset selection projection, explicit `In N tem` text, separate preview/status layout and constrained wrapping footer with scroll padding. Existing renderer, printer abstraction, selection contract, product/stock invariants and R5.3/Bulk/Shell/Export behavior are preserved.
+
+## DEC-051 — R5.4 uses one vector label renderer and replaceable printer boundary
+
+- **Status:** Accepted for R5.4 implementation on `2026-09-01`; physical printer/scanner/calibration and DPI acceptance remain pending.
+- **Decision:** Use an immutable `LabelJobSnapshot` and one `LabelDocumentBuilder`/`DocumentPaginator` for preview, one-label test dispatch and real dispatch. Encode the stored Barcode as runtime Code 128 geometry/bit matrix, preserve quiet zone, and keep ProductCode as a separate field. ProductCode is never silently substituted for a missing/invalid Barcode.
+- **Media:** Support standard `50×30 mm`, `60×40 mm` and validated custom dimensions/offsets/margins through the tested mm↔DIP utility. R5.4 contract is one label per printer media page; it does not introduce an A4 designer or multi-label sheet engine.
+- **Boundary:** Keep printer discovery/PrintTicket/dispatch in Infrastructure behind Application interfaces; use recording fakes in automated tests. Store only template, printer and alignment preferences in non-sensitive JSON under the existing settings root. Do not add DPAPI, database schema, new inventory concepts or a parallel audit log.
+- **Scope:** Add Product/Inventory entry points and WPF dialog/preview only. Selection is exact checked IDs in multi-select mode or the one contextual row; Bulk’s two-product threshold, product/stock/inventory invariants and existing Export/Shell flows remain unchanged. R6 and Audit/Employee correction work remain held.
+
 ## DEC-050 — R5.1–R5.3 UX callers receive typed export completion
 
 - **Status:** Accepted for the 2026-08-30 A/B/C hotfix; physical save-dialog/file-open acceptance remains pending.
@@ -575,11 +604,11 @@ Mọi thay đổi kiến trúc hoặc roadmap sau khi register này tồn tại 
 
 | Status | Count |
 |---|---:|
-| Observed and Accepted | 14 |
+| Observed and Accepted | 15 |
 | Policy | 7 |
 | Deferred | 1 |
 | Superseded | 0 |
-| **Total** | **22** |
+| **Total** | **23** |
 - 2026-08-30 — R5.2 Export decisions
 
 - Export uses BCL ZIP/XML and text APIs already present in the solution; no package, migration or parallel report model was needed. XLSX uses typed text/numeric cells, freezes the header row and contains no formulas, macros or external links.

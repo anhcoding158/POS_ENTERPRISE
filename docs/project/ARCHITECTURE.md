@@ -1,5 +1,24 @@
 # ARCHITECTURE — POS ENTERPRISE RETAIL V1
 
+## R5.4 UX closeout boundary — 2026-09-01
+
+- `LabelPrintWindow` keeps one preview source of truth but schedules input changes through `DispatcherLabelPreviewDebounceScheduler` at 300 ms. Each replacement cancels the prior registration and increments a revision; only the latest dispatcher callback can rebuild the snapshot/paginator.
+- Invalidation clears the immutable job and preview visual before validation. The window derives empty-state/pagination/print-button visibility from `IsPreviewValid`; validation text stays with the product rows and only a multi-row summary is shown once. Footer status is reserved for window-level printer/print events.
+- Printer refresh remains an Infrastructure catalog operation behind the existing interface. The small adjacent control and calibration Expander are presentation changes; `ILabelPrintDispatcher`, vector barcode, mm conversion and print lifecycle remain unchanged.
+
+## R5.4 production label-window control boundary — 2026-09-01
+
+- `LabelPrintWindow` sets its ViewModel as `DataContext`, binds action buttons to initialized `AsyncRelayCommand` properties and subscribes `RequestClose` before display. Modal callers receive `DialogResult`; harness/non-modal display uses `Close()` fallback, and all event subscriptions are removed on `Closed`.
+- Preset display uses a same-type `SelectedTemplateOption` projection over `LabelTemplate` items, while the ViewModel retains offsets/custom values. Footer action space is a constrained wrapping panel; the product `ScrollViewer` owns bottom padding so the fixed footer cannot hide editable rows.
+- Refresh and preview remain ViewModel operations: catalog discovery updates the observable printer collection and status; preview rebuild raises `PreviewChanged`, causing the window to render through the existing `LabelDocumentBuilder`. No second renderer or database/UI access was introduced.
+
+## R5.4 label printing boundary — 2026-09-01
+
+- The label flow is `LabelJobSnapshot → LabelDocumentBuilder/LabelDocumentPaginator → ILabelPrintDispatcher`. Product/Inventory WPF supplies a bounded, deduplicated selection; the Application snapshot fixes product fields and one print date for the complete job. Preview, test print and real print consume the same snapshot/layout pipeline.
+- `LabelDocumentBuilder` renders Code 128 from a runtime `BitMatrix` into WPF vector drawing with reserved quiet zone; no bitmap/screenshot template is embedded. `MillimetreConverter` is the single mm↔DIP conversion utility. Infrastructure owns `System.Printing`; Domain/Application remain free of WPF/printer-driver types.
+- `ILabelPrinterCatalog`, `ILabelPrintDispatcher` and `ILabelPrintingService` are replaceable boundaries. WPF uses the Windows catalog/dispatcher; automated tests use fake catalog/recording dispatcher. Non-sensitive recent label settings use a separate atomic JSON file under the existing Store Settings root and do not use DPAPI or the database.
+- R5.4 deliberately does not add audit actions or redesign Audit Log. Until the existing audit contract is extended in a later stabilization pass, print success/test/failure is surfaced to the dialog only and no parallel audit system is introduced.
+
 ## Inventory/category/adjustment UX hotfix boundary — 2026-08-30
 
 - Inventory History presentation is again a local legacy-style sidebar/workspace layout over the existing typed query ViewModel; database-side product search, cancellation/latest-response-wins and read-only behavior are preserved.

@@ -1,5 +1,52 @@
 # MASTER ROADMAP — POS ENTERPRISE RETAIL V1
 
+## Latest checkpoint position — R5.3–R5.4 closeout — 2026-09-02
+
+- R5.3 is `ACCEPTED / COMMITTED LOCALLY` for engineering, persistence and manual core acceptance. User evidence covers partial selection → Bulk, “Ngừng bán” preview/status, and isolated SQLite persistence/readback proving only selected products change while stock and InventoryMovement do not. Audit correctness remains open pending Activity Log semantic/action tracing.
+- R5.4 is `ACCEPTED / COMMITTED LOCALLY` for implementation and manual UI acceptance. The user confirmed automatic preview, compact footer, consolidated validation, size adjustment and test print inside the calibration group. Physical printer, scanner readback, real-device calibration, full 100%/125%/150% DPI and unperformed Print to PDF save/overwrite/cancel scenarios remain deferred.
+- User-run official `scripts/Test-QualityGate.ps1` without `-SkipEfCheck` passed under a normal interactive Windows profile on 2026-09-02: `1455/1455 PASS`, `0 failed`, `0 skipped`, exit `0`; restore, build (`0/0`), vulnerability, EF pending-model and Git checks passed. The Codex sandbox Gate was not rerun after this evidence; historical six DPAPI failures remain documented as a resolved environmental test-host limitation.
+- R6+ remains `HOLD` by Product Owner decision. Post-R5 stabilization queue: Activity Log semantic/action mapping, Activity Log UX/layout, Employee Account creation/management, then other user-review issues. No new roadmap ID is introduced.
+
+## Historical checkpoint record — R5.4 UX closeout — 2026-09-01
+
+- R5.4 label UX closeout is `IMPLEMENTED / AUTOMATED CONTROL VERIFIED / MANUAL RECHECK PENDING`: footer is reduced to `Đóng`/`In N tem`, preview is automatic with cancellable 300 ms debounce, invalid state is empty/no pagination/`In tem`, validation is consolidated, refresh is compact, and calibration/test print is retained in a collapsed group.
+- Evidence: fresh Release solution/WPF/test builds with `UseAppHost=true` `0/0`; focused production R5.4 + Shell/Product regression `28/28 PASS`; full Release `1449 PASS / 6 FAIL / 0 SKIP`; vulnerability, EF pending-model and diff-check PASS. Official Gate without `-SkipEfCheck` is NOT PASS because it stops at the same six DPAPI secure-storage failures.
+- Historical R5.3 status before normal-profile closeout: implemented/persistence-verified with its existing user evidence and sandbox DPAPI limitation. The accepted normal-profile Gate and current R5.3/R5.4 status are recorded in the closeout section above. R6, Audit Log and Employee Account work remain HOLD; no new roadmap ID is introduced.
+
+## Historical checkpoint record — R5.4 UI hotfix — 2026-09-01
+
+- Production `LabelPrintWindow` đã được hotfix ở đúng control boundary: DataContext/command bindings, RequestClose/Close/Esc lifecycle, preset projection, refresh feedback, preview rebuild feedback, `In N tem`, printer disappearance/error handling và footer/scroll layout. `R5.4` hiện `IMPLEMENTED / AUTOMATED VERIFIED / MANUAL RECHECK PENDING`.
+- Bằng chứng lượt này: fresh Release solution/WPF/test build `0/0` với `UseAppHost=true`; production-control + R5.4/Shell/Product focused `26/26 PASS`; full Release `1447 PASS / 6 FAIL / 0 SKIP`; vulnerability riêng PASS; EF pending-model PASS; `git diff --check` PASS. Sáu lỗi là secure-storage DPAPI cũ; Official Quality Gate không `-SkipEfCheck` dừng ở test stage với exit `1`, nên Gate NOT PASS.
+- R5.3 vẫn được ghi là hoàn thiện triển khai và persistence/readback với user evidence chính; blocker DPAPI giữ nguyên, cần xác minh trên normal interactive Windows profile. Không sửa DPAPI, profile, credential, VietQR hoặc Remembered Login trong hotfix này.
+- R6 trở đi HOLD theo quyết định ngày 01/09/2026. Sau R5.4, dừng chờ người dùng nghiệm thu lại năm thao tác UI/in thử; lượt ổn định/correction sau đó ưu tiên Nhật ký hoạt động, tạo/quản lý Tài khoản nhân viên và lỗi UI/contract. Không đặt các mục này Completed và không tạo roadmap ID mới.
+
+## Historical checkpoint record — R5 Bulk verification — 2026-08-31
+
+- User evidence now accepts the previously failing individual-row selection → Bulk opening path and the supplied Ngừng bán preview/readback display only. This does not close all R5 manual acceptance criteria.
+- Historical R5.3 Bulk evidence: isolated SQLite persist/readback for B/C versus untouched A across price, category, active state and minimum-stock. The sandbox full Release was `1430 PASS / 6 FAIL / 0 SKIP` because of CurrentUser DPAPI tests; the later normal-profile closeout passed `1455/1455`.
+- At that historical point, R5.3 remained open for final acceptance and R5.4 was not started. The current closeout above supersedes that position for R5.3–R5.4; remaining hardware/DPI and Activity Log stabilization boundaries are explicitly retained.
+- Exact next permitted checkpoint remains **R5.3 — Bulk Operations** (continue closeout only): bounded current-page selection, preview/confirmation for price/category/status/minimum-stock, permission/concurrency/transaction/audit/no-stock-write invariants, required focused/full/Gate evidence and approved manual acceptance. Prerequisites are the current source/diff and user-selected scope retained, with the secure-storage Gate blocker resolved or explicitly dispositioned; completion requires all R5.3 exit evidence and no claim of PASS for unrun physical/DPI criteria.
+
+## Historical checkpoint record — R5 Bulk row selection — 2026-08-31
+
+- Individual production row checkbox changes now publish immediately to the Shell selection source; partial selection opens Bulk at the existing minimum of two and retains only checked IDs.
+- Focused verification is complete; full Release/Quality Gate remain not-pass due six secure-storage tests, and physical/manual acceptance remains required.
+
+## Historical checkpoint record — R5 Bulk selection/preview binding — 2026-08-31
+
+- Bulk selection threshold and production status binding are implemented and focused-verified. No-op preview is non-writable at the UI command guard; no stock or unrelated workflow changed.
+- Full Release and Official Quality Gate remain not-pass because of six DPAPI secure-storage failures; physical UI/DPI and manual persistence acceptance remain required.
+
+## Historical checkpoint record — R5 Bulk reference snapshot — 2026-08-31
+
+- Bulk now opens with a read-only reference snapshot for every selected product and reuses the same table for current values and validated preview results. Export, History, returns and R5.4 remain unchanged.
+- Automated focused verification is complete; final Release/Quality Gate and manual desktop/DPI acceptance remain required before checkpoint closeout.
+
+## Historical checkpoint record — R5 hotfix — 2026-08-31
+
+- Authorized implementation is complete for Bulk form progressive disclosure and export result timing. R5.1/R5.2/R5.3 remain manual-pending/partial as previously recorded; R5.4 has not started.
+- Next evidence is physical manual acceptance of Bulk at normal/maximized/DPI sizes and all Save dialog outcomes, followed by full Release and Official Quality Gate.
+
 ## Latest checkpoint position — R5.1–R5.3 hotfix A/B/C — 2026-08-30
 
 - Hotfix đã nối chọn nhiều từ Product & Inventory UI tới dialog preview/confirm thật bằng tập checkbox theo trang, bổ sung header select-all và hướng dẫn trạng thái chưa chọn; không fallback sang `SelectedProduct`, không thay đổi stock/movement và giữ nguyên bốn bulk operations hiện có.
@@ -164,15 +211,15 @@ Bản cài đầu tiên đủ an toàn cho một cửa hàng bán lẻ, một ch
 | R2 | Closed |
 | R3 | In Progress — R3.1 Closed / Committed / Pushed |
 | R4 | Not Started |
-| R5 | Not Started |
-| R6 | Not Started |
-| R7 | Not Started |
-| R8 | Not Started |
-| R9 | Not Started |
-| R10 | Not Started |
-| R11 | Not Started |
-| R12 | Not Started |
-| R13 | Not Started |
+| R5 | R5.3–R5.4 Accepted / Committed Locally; other R5 acceptance remains scoped separately |
+| R6 | HOLD — Product Owner decision |
+| R7 | HOLD — Product Owner decision |
+| R8 | HOLD — Product Owner decision |
+| R9 | HOLD — Product Owner decision |
+| R10 | HOLD — Product Owner decision |
+| R11 | HOLD — Product Owner decision |
+| R12 | HOLD — Product Owner decision |
+| R13 | HOLD — Product Owner decision |
 
 Không đánh dấu stage hoàn thành chỉ vì một phần tính năng đã tồn tại. Controlled Discount đã có nhưng R8 vẫn Not Started vì còn line discount, coupon, voucher và Promotion Engine. Return đã có nhưng R9 vẫn Not Started vì còn immutable return receipt, Cashbook Lite và Daily Close. Receipt printing đã có nhưng R11 vẫn Not Started vì hardware acceptance thực tế chưa hoàn thành. R1 đã Closed tại `b9e382550e2e4abcf7a93ed6c5352322dc967668`; R2 đang In Progress overall, R2.1 đã COMPLETE và R2.2 là checkpoint tiếp theo nhưng chưa bắt đầu.
 

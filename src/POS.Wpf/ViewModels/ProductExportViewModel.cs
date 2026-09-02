@@ -60,6 +60,7 @@ public sealed class ProductExportViewModel : ViewModelBase, IDisposable
     }
 
     public event Action<bool?>? RequestClose;
+    public global::System.Windows.Window? DialogOwner { get; set; }
     public ProductExportDialogResult? DialogResult
     {
         get => _dialogResult;
@@ -132,6 +133,7 @@ public sealed class ProductExportViewModel : ViewModelBase, IDisposable
                 destinationPath,
                 result.Value.RowCount,
                 StatusMessage);
+            RequestClose?.Invoke(true);
             return true;
         }
         catch (OperationCanceledException)
@@ -181,7 +183,7 @@ public sealed class ProductExportViewModel : ViewModelBase, IDisposable
             AddExtension = true,
             OverwritePrompt = true
         };
-        if (dialog.ShowDialog(global::System.Windows.Application.Current?.MainWindow) == true)
+        if (dialog.ShowDialog(DialogOwner ?? global::System.Windows.Application.Current?.MainWindow) == true)
         {
             await ExportAsync(dialog.FileName);
         }

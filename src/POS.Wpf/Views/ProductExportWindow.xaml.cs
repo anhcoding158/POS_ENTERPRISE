@@ -12,6 +12,7 @@ public partial class ProductExportWindow : global::System.Windows.Window
         _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
         InitializeComponent();
         DataContext = _viewModel;
+        _viewModel.DialogOwner = this;
         _viewModel.RequestClose += OnRequestClose;
         Closing += OnClosing;
         Closed += OnClosed;

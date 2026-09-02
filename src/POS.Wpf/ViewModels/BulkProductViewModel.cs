@@ -13,8 +13,28 @@ public sealed record BulkProductOperationOption(
     string DisplayName,
     string Description);
 
+public sealed record BulkProductStatusOption(bool Value, string DisplayName);
+
 public sealed class BulkProductPreviewRowViewModel
 {
+    private static readonly CultureInfo VietnameseCulture = CultureInfo.GetCultureInfo("vi-VN");
+
+    public BulkProductPreviewRowViewModel(ProductRowViewModel row, BulkProductOperationType operation)
+    {
+        ProductCode = row.Code;
+        ProductName = row.Name;
+        BeforeValue = operation switch
+        {
+            BulkProductOperationType.SetPrices => $"Bán {row.SalePrice:N0} ₫ · Vốn {row.CostPrice:N0} ₫",
+            BulkProductOperationType.SetCategory => row.CategoryName,
+            BulkProductOperationType.SetActiveState => row.StatusText,
+            BulkProductOperationType.SetMinimumStock => $"{row.MinimumStock.ToString("N0", VietnameseCulture)} · tồn thực tế {row.StockDisplay}",
+            _ => "—"
+        };
+        AfterValue = "—";
+        ResultText = "Chưa có bản xem trước";
+    }
+
     public BulkProductPreviewRowViewModel(BulkProductPreviewRow row)
     {
         ProductCode = row.ProductCode;
@@ -44,7 +64,7 @@ public sealed class BulkProductViewModel : ViewModelBase, IDisposable
     private string _salePriceText = string.Empty;
     private string _costPriceText = string.Empty;
     private string _minimumStockText = string.Empty;
-    private bool _isActive = true;
+    private BulkProductStatusOption? _selectedStatus;
     private bool _isBusy;
     private string _statusMessage = "Kiểm tra trước để xem thay đổi dự kiến.";
     private string _errorMessage = string.Empty;
@@ -65,15 +85,18 @@ public sealed class BulkProductViewModel : ViewModelBase, IDisposable
             new(BulkProductOperationType.SetMinimumStock, "Đặt tồn tối thiểu", "Chỉ đổi ngưỡng cảnh báo, không đổi tồn thực tế.")
         ];
         _selectedOperation = Operations[0];
+        StatusOptions = [new(true, "Đang bán"), new(false, "Ngừng bán")];
         PreviewCommand = new AsyncRelayCommand(PreviewAsync, () => !IsBusy, HandleException);
-        ConfirmCommand = new AsyncRelayCommand(ConfirmAsync, () => !IsBusy && _preview?.CanConfirm == true, HandleException);
+        ConfirmCommand = new AsyncRelayCommand(ConfirmAsync, () => !IsBusy && _preview?.CanConfirm == true && _preview.ChangeCount > 0, HandleException);
         CancelCommand = new AsyncRelayCommand(CancelAsync, () => IsBusy, HandleException);
         CloseCommand = new AsyncRelayCommand(CloseAsync, () => !IsBusy, HandleException);
+        LoadReferenceRows();
     }
 
     public event Action<bool?>? RequestClose;
     public IReadOnlyList<BulkProductOperationOption> Operations { get; }
     public IReadOnlyList<CategoryOptionDto> Categories { get; }
+    public IReadOnlyList<BulkProductStatusOption> StatusOptions { get; }
     public ObservableCollection<BulkProductPreviewRowViewModel> PreviewRows { get; } = [];
     public AsyncRelayCommand PreviewCommand { get; }
     public AsyncRelayCommand ConfirmCommand { get; }
@@ -90,6 +113,11 @@ public sealed class BulkProductViewModel : ViewModelBase, IDisposable
         : $"Sẽ thay đổi {_preview.ChangeCount:N0} sản phẩm; {_preview.NoOpCount:N0} sản phẩm không cần đổi.";
     public string SelectionText => $"Đã chọn {_selectedProducts.Count:N0} sản phẩm trên trang hiện tại.";
     public string OperationDescription => _selectedOperation.Description;
+    public string PreviewHeading => _preview is null ? "Sản phẩm đã chọn và thay đổi dự kiến" : "Xem trước thay đổi";
+    public bool IsPriceOperation => SelectedOperation.Operation == BulkProductOperationType.SetPrices;
+    public bool IsCategoryOperation => SelectedOperation.Operation == BulkProductOperationType.SetCategory;
+    public bool IsStatusOperation => SelectedOperation.Operation == BulkProductOperationType.SetActiveState;
+    public bool IsMinimumStockOperation => SelectedOperation.Operation == BulkProductOperationType.SetMinimumStock;
     public BulkProductOperationOption SelectedOperation
     {
         get => _selectedOperation;
@@ -103,7 +131,12 @@ public sealed class BulkProductViewModel : ViewModelBase, IDisposable
     public string SalePriceText { get => _salePriceText; set { if (SetProperty(ref _salePriceText, value)) InvalidatePreview(); } }
     public string CostPriceText { get => _costPriceText; set { if (SetProperty(ref _costPriceText, value)) InvalidatePreview(); } }
     public string MinimumStockText { get => _minimumStockText; set { if (SetProperty(ref _minimumStockText, value)) InvalidatePreview(); } }
-    public bool IsActive { get => _isActive; set { if (SetProperty(ref _isActive, value)) InvalidatePreview(); } }
+    public BulkProductStatusOption? SelectedStatus { get => _selectedStatus; set { if (SetProperty(ref _selectedStatus, value)) InvalidatePreview(); } }
+    public bool IsActive
+    {
+        get => SelectedStatus?.Value ?? true;
+        set => SelectedStatus = StatusOptions.First(option => option.Value == value);
+    }
 
     private async Task PreviewAsync()
     {
@@ -173,7 +206,10 @@ public sealed class BulkProductViewModel : ViewModelBase, IDisposable
             request = request with { CategoryId = SelectedCategory.Id };
         }
         else if (SelectedOperation.Operation == BulkProductOperationType.SetActiveState)
-            request = request with { IsActive = IsActive };
+        {
+            if (SelectedStatus is null) { error = "Chọn trạng thái bán mới."; return false; }
+            request = request with { IsActive = SelectedStatus.Value };
+        }
         else if (!TryParseInt(MinimumStockText, out var minimumStock))
         { error = "Nhập tồn tối thiểu là số nguyên không âm."; return false; }
         else request = request with { MinimumStock = minimumStock };
@@ -184,11 +220,17 @@ public sealed class BulkProductViewModel : ViewModelBase, IDisposable
     {
         _preview = preview; PreviewRows.Clear();
         foreach (var row in preview.Rows) PreviewRows.Add(new BulkProductPreviewRowViewModel(row));
-        StatusMessage = preview.CanConfirm ? "Đã kiểm tra. Hãy xem lại rồi xác nhận." : "Có vấn đề cần xử lý trước khi lưu.";
+        StatusMessage = !preview.CanConfirm ? "Có vấn đề cần xử lý trước khi lưu." : preview.ChangeCount == 0 ? "Đã kiểm tra: không có sản phẩm nào cần đổi; chưa có gì được lưu." : "Đã kiểm tra. Hãy xem lại rồi xác nhận lưu.";
         OnPropertyChanged(string.Empty); NotifyCommands();
     }
 
-    private void InvalidatePreview() { _preview = null; PreviewRows.Clear(); OnPropertyChanged(nameof(HasPreview)); OnPropertyChanged(nameof(SummaryText)); ConfirmCommand.NotifyCanExecuteChanged(); }
+    private void InvalidatePreview() { _preview = null; LoadReferenceRows(); OnPropertyChanged(nameof(HasPreview)); OnPropertyChanged(nameof(SummaryText)); OnPropertyChanged(nameof(PreviewHeading)); OnPropertyChanged(nameof(IsPriceOperation)); OnPropertyChanged(nameof(IsCategoryOperation)); OnPropertyChanged(nameof(IsStatusOperation)); OnPropertyChanged(nameof(IsMinimumStockOperation)); ConfirmCommand.NotifyCanExecuteChanged(); }
+    private void LoadReferenceRows()
+    {
+        PreviewRows.Clear();
+        foreach (var row in _selectedProducts)
+            PreviewRows.Add(new BulkProductPreviewRowViewModel(row, SelectedOperation.Operation));
+    }
     private static bool TryParseLong(string value, out long result) => long.TryParse(value.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out result) && result >= 0;
     private static bool TryParseInt(string value, out int result) => int.TryParse(value.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out result) && result >= 0;
     private void NotifyCommands() { PreviewCommand.NotifyCanExecuteChanged(); ConfirmCommand.NotifyCanExecuteChanged(); CancelCommand.NotifyCanExecuteChanged(); CloseCommand.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(HasPreview)); OnPropertyChanged(nameof(HasErrors)); OnPropertyChanged(nameof(SummaryText)); }

@@ -6,6 +6,7 @@ using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
+using System.Windows.Media;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -65,6 +66,8 @@ public sealed class ShellSidebarInventoryHotfixTests
         Assert.Contains("ScrollViewer.HorizontalScrollBarVisibility=\"Auto\"", shellText, StringComparison.Ordinal);
         Assert.Contains("Cấu hình VietQR", vietQrText, StringComparison.Ordinal);
         Assert.Contains("Màn hình VietQR", vietQrText, StringComparison.Ordinal);
+        Assert.Contains("In mã vạch / tem giá…", shellText, StringComparison.Ordinal);
+        Assert.Contains(nameof(ShellViewModel.PrintProductLabelsCommand), shellText, StringComparison.Ordinal);
 
         var footer = document.Descendants(presentation + "StackPanel")
             .Single(element => (string?)element.Attribute(x + "Name") == "ShellStatusFooter");
@@ -222,6 +225,7 @@ public sealed class ShellSidebarInventoryHotfixTests
 
                 var window = scope.ServiceProvider.GetRequiredService<ShellWindow>();
                 var viewModel = Assert.IsType<ShellViewModel>(window.DataContext);
+                window.Show();
 
                 window.WindowState = WindowState.Normal;
                 window.Width = 1366;
@@ -271,10 +275,24 @@ public sealed class ShellSidebarInventoryHotfixTests
                 Assert.Equal(Visibility.Visible, bulkContextText.Visibility);
                 Assert.Equal(nameof(ShellViewModel.SelectedProductHint),
                     BindingOperations.GetBinding(bulkContextText, TextBlock.TextProperty)?.Path.Path);
-                Assert.Contains("Tích chọn sản phẩm", viewModel.SelectedProductHint, StringComparison.Ordinal);
+                Assert.Contains("Đã chọn 0 sản phẩm — chọn thêm ít nhất 2 sản phẩm", viewModel.SelectedProductHint, StringComparison.Ordinal);
                 Assert.False(viewModel.ApplyBulkOperationCommand.CanExecute(null));
                 Assert.True(exitBulkSelectionButton.IsVisible || exitBulkSelectionButton.Visibility == Visibility.Visible);
                 Assert.NotNull(grid.Columns[0].HeaderTemplate);
+
+                var firstRow = Assert.IsType<DataGridRow>(grid.ItemContainerGenerator.ContainerFromIndex(0));
+                var secondRow = Assert.IsType<DataGridRow>(grid.ItemContainerGenerator.ContainerFromIndex(1));
+                var firstCheckBox = FindVisualChildren<CheckBox>(firstRow).Single();
+                var secondCheckBox = FindVisualChildren<CheckBox>(secondRow).Single();
+                firstCheckBox.IsChecked = true;
+                secondCheckBox.IsChecked = true;
+                window.Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.DataBind, new Action(() => { }));
+                Assert.True(viewModel.Products[0].IsBulkSelected);
+                Assert.True(viewModel.Products[1].IsBulkSelected);
+                Assert.Equal(2, viewModel.SelectedBulkProductCount);
+                Assert.Null(viewModel.BulkPageSelectionState);
+                Assert.True(bulkOperationButton.IsEnabled);
+                Assert.Contains("Đã chọn 2 sản phẩm", bulkContextText.Text, StringComparison.Ordinal);
 
                 viewModel.ToggleBulkPageSelectionCommand.Execute(null);
                 while (viewModel.ToggleBulkPageSelectionCommand.IsExecuting)
@@ -371,6 +389,41 @@ public sealed class ShellSidebarInventoryHotfixTests
         Assert.Equal([1, 2], bulkDialog.SelectedIds);
     }
 
+    [Fact]
+    public async Task Label_command_uses_single_selection_or_exact_checked_set_and_keeps_bulk_threshold_independent()
+    {
+        using var services = new ServiceCollection().BuildServiceProvider();
+        var labels = new RecordingLabelDialogService();
+        var viewModel = new ShellViewModel(
+            services.GetRequiredService<IServiceScopeFactory>(),
+            new FakeProductDialogService(),
+            new CountingCategoryDialogService(),
+            new FakeInventoryDialogService(),
+            new FakeOrderHistoryWindowService(),
+            new AllowAllPermissionService(),
+            NullLogger<ShellViewModel>.Instance,
+            labelPrintDialogService: labels);
+
+        viewModel.Products.Add(new ProductRowViewModel(CreateProductRow(1, "P001")));
+        viewModel.Products.Add(new ProductRowViewModel(CreateProductRow(2, "P002")));
+        viewModel.Products.Add(new ProductRowViewModel(CreateProductRow(3, "P003")));
+        viewModel.SelectedProduct = viewModel.Products[1];
+
+        Assert.True(viewModel.PrintProductLabelsCommand.CanExecute(null));
+        viewModel.PrintProductLabelsCommand.Execute(null);
+        await WaitForIdleAsync(viewModel.PrintProductLabelsCommand);
+        Assert.Equal([2], labels.SelectedIds);
+
+        viewModel.ToggleBulkSelectionCommand.Execute(null);
+        await WaitForIdleAsync(viewModel.ToggleBulkSelectionCommand);
+        viewModel.Products[0].IsBulkSelected = true;
+        viewModel.Products[2].IsBulkSelected = true;
+        Assert.True(viewModel.PrintProductLabelsCommand.CanExecute(null));
+        viewModel.PrintProductLabelsCommand.Execute(null);
+        await WaitForIdleAsync(viewModel.PrintProductLabelsCommand);
+        Assert.Equal([1, 3], labels.SelectedIds);
+    }
+
     private static ProductListItemDto CreateProductRow(int id, string code) =>
         new(
             id,
@@ -421,6 +474,19 @@ public sealed class ShellSidebarInventoryHotfixTests
                 BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?
             .GetValue(window) as T ??
             throw new InvalidOperationException($"Missing initialized WPF field: {name}.");
+    }
+
+    private static IEnumerable<T> FindVisualChildren<T>(DependencyObject root)
+        where T : DependencyObject
+    {
+        for (var index = 0; index < VisualTreeHelper.GetChildrenCount(root); index++)
+        {
+            var child = VisualTreeHelper.GetChild(root, index);
+            if (child is T typed)
+                yield return typed;
+            foreach (var descendant in FindVisualChildren<T>(child))
+                yield return descendant;
+        }
     }
 
     private static Task RunOnStaAsync(Func<Task> action)
@@ -502,6 +568,17 @@ public sealed class ShellSidebarInventoryHotfixTests
     }
 
     private sealed class RecordingBulkDialogService : IBulkProductDialogService
+    {
+        public IReadOnlyList<int> SelectedIds { get; private set; } = [];
+
+        public Task<bool> ShowAsync(IReadOnlyList<ProductRowViewModel> selectedProducts)
+        {
+            SelectedIds = selectedProducts.Select(product => product.Id).ToArray();
+            return Task.FromResult(false);
+        }
+    }
+
+    private sealed class RecordingLabelDialogService : ILabelPrintDialogService
     {
         public IReadOnlyList<int> SelectedIds { get; private set; } = [];
 

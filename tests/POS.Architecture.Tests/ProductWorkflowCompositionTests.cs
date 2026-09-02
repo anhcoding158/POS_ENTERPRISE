@@ -52,9 +52,56 @@ public sealed class ProductWorkflowCompositionTests
             var window = new BulkProductWindow(viewModel);
             try
             {
+                window.Show();
                 window.Measure(new global::System.Windows.Size(920, 680));
                 window.Arrange(new global::System.Windows.Rect(0, 0, 920, 680));
                 window.UpdateLayout();
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void Bulk_status_production_combobox_updates_typed_preview_request_for_both_values()
+    {
+        RunOnSta(() =>
+        {
+            EnsureApplication();
+            var row = new ProductRowViewModel(new ProductListItemDto(
+                1, 2, "Đồ uống", "SP001", null, "Sữa", "Hộp",
+                10, 20, 10, 3, 5, true, false, true, false, true));
+            var service = new CapturingBulkProductOperationService();
+            using var viewModel = new BulkProductViewModel(
+                [row], service, [new CategoryOptionDto(2, "Đồ uống", 0)]);
+            viewModel.SelectedOperation = viewModel.Operations.Single(option => option.Operation == BulkProductOperationType.SetActiveState);
+            var window = new BulkProductWindow(viewModel);
+            try
+            {
+                window.Show();
+                window.Measure(new global::System.Windows.Size(920, 680));
+                window.Arrange(new global::System.Windows.Rect(0, 0, 920, 680));
+                window.UpdateLayout();
+                window.Dispatcher.Invoke(global::System.Windows.Threading.DispatcherPriority.DataBind, new Action(() => { }));
+                var combo = (global::System.Windows.Controls.ComboBox)window.FindName("StatusOperationComboBox")!;
+
+                Assert.Equal(2, combo.Items.Count);
+                viewModel.PreviewCommand.Execute(null);
+                Assert.Null(service.LastRequest);
+                Assert.Equal("Chọn trạng thái bán mới.", viewModel.ErrorMessage);
+                combo.SelectedIndex = 1;
+                combo.GetBindingExpression(global::System.Windows.Controls.Primitives.Selector.SelectedItemProperty)!.UpdateSource();
+                Assert.False(viewModel.SelectedStatus!.Value);
+                viewModel.PreviewCommand.Execute(null);
+                Assert.False(service.LastRequest!.IsActive);
+
+                combo.SelectedIndex = 0;
+                combo.GetBindingExpression(global::System.Windows.Controls.Primitives.Selector.SelectedItemProperty)!.UpdateSource();
+                Assert.True(viewModel.SelectedStatus!.Value);
+                viewModel.PreviewCommand.Execute(null);
+                Assert.True(service.LastRequest!.IsActive);
             }
             finally
             {
@@ -159,5 +206,19 @@ public sealed class ProductWorkflowCompositionTests
             BulkProductPreview preview,
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
+    }
+
+    private sealed class CapturingBulkProductOperationService : IBulkProductOperationService
+    {
+        public BulkProductOperationRequest? LastRequest { get; private set; }
+
+        public Task<Result<BulkProductPreview>> PreviewAsync(BulkProductOperationRequest request, CancellationToken cancellationToken = default)
+        {
+            LastRequest = request;
+            return Task.FromResult(Result.Success(new BulkProductPreview(Guid.NewGuid(), request, [], 1, 0, true, [])));
+        }
+
+        public Task<Result<BulkProductOperationResult>> CommitAsync(BulkProductPreview preview, CancellationToken cancellationToken = default) =>
+            Task.FromResult(Result.Success(new BulkProductOperationResult(preview.PreviewId, true, preview.Request.Selection.Count, 1, 0, [])));
     }
 }

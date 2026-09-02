@@ -7,6 +7,7 @@ namespace POS.Infrastructure.StoreSetup;
 public sealed class StoreSettingsPathProvider
 {
     public const string SettingsFileName = "store-settings.json";
+    public const string LabelSettingsFileName = "label-print-settings.json";
     public const string LogoDirectoryName = "store-logos";
 
     public StoreSettingsPathProvider(string? runtimeMode, string? configuredDatabasePath, string applicationBaseDirectory)
@@ -16,6 +17,7 @@ public sealed class StoreSettingsPathProvider
         var root = isolated ? databaseDirectory : ResolveProductionRoot();
         Root = Normalize(root);
         SettingsPath = Path.Combine(Root, SettingsFileName);
+        LabelSettingsPath = Path.Combine(Root, LabelSettingsFileName);
         LogoRoot = Path.Combine(Root, LogoDirectoryName);
         EffectiveDatabaseDirectory = Normalize(databaseDirectory);
         DefaultBackupDirectory = isolated
@@ -28,6 +30,7 @@ public sealed class StoreSettingsPathProvider
     public const string AutomaticBackupDirectoryName = "automatic-backups";
     public string Root { get; }
     public string SettingsPath { get; }
+    public string LabelSettingsPath { get; }
     public string LogoRoot { get; }
     public string EffectiveDatabaseDirectory { get; }
     public string DefaultBackupDirectory { get; }

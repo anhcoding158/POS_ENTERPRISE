@@ -1,5 +1,70 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## R5.3–R5.4 closeout review — 2026-09-02
+
+- User-run normal interactive Windows profile Quality Gate passed at `1455/1455`, `0 failed`, `0 skipped`, with `-SkipEfCheck` omitted. The Codex sandbox Gate was not rerun in this closeout.
+- The six earlier DPAPI secure-storage failures are retained below as historical evidence and are now resolved as an environmental test-host limitation. No production DPAPI defect was established and no secure-storage production code was changed.
+- R5.3 engineering/persistence/manual core acceptance and R5.4 implementation/manual UI acceptance are recorded. Physical printer, scanner readback, real-device calibration, full DPI matrix and unperformed Print to PDF save/overwrite/cancel scenarios remain pending.
+- Activity Log audit-label mismatch and dense-layout issues are newly recorded below. No Audit writer, schema, Activity Log UI, localization mapping, Employee Account or Bulk pipeline change is included in this checkpoint.
+
+## R5.4 UX closeout verification boundary — 2026-09-01
+
+- Auto-preview and compact production controls are verified by the real STA `LabelPrintWindow` harness: `28/28 PASS`. The test uses a deterministic manual debounce scheduler; no UI-thread sleep or physical print is used.
+- Invalid quantity clears the old preview and page state, hides pagination and shows `In tem`; valid quantity restores preview and `In N tem`. Validation is inline per row with one multi-row summary. Physical visual/DPI confirmation remains for the user.
+- The printer capability warning is user-facing and does not use the word `capability`; it remains a warning because incomplete driver metadata does not prove that printing will fail. PDF save-dialog ownership, physical printer/scanner/calibration and DPI checks remain pending.
+- Historical sandbox result: `1449 PASS / 6 FAIL / 0 SKIP`; the same two RememberedLogin and four VietQR DPAPI secure-storage failures are retained as resolved environmental test-host limitation evidence. No DPAPI/profile/credential/VietQR/RememberedLogin change was made.
+
+## R5.4 UI hotfix verification boundary — 2026-09-01
+
+- Production-control STA harness now verifies real `LabelPrintWindow` command bindings and ButtonAutomationPeer invocation: `26/26 PASS` with refresh, preview, Close/Esc, test print, real print, preset, error/cancel and footer hit-test coverage. The user must still re-run the five actions on the fresh Release binary because automated WPF is not physical click/UIA/DPI acceptance.
+- Real `Microsoft Print to PDF` output/save-dialog ownership and cancel behavior, physical label printer spool acceptance, scanner readback, label media calibration and 100/125/150% DPI visual checks remain pending. Automated tests never send a physical job.
+- The six secure-storage failures are unchanged historical DPAPI CurrentUser/profile evidence under the sandbox; no DPAPI/profile/credential/VietQR/RememberedLogin change was made. The subsequent normal interactive profile verification passed the official Quality Gate.
+
+## R5.4 — Physical label-print acceptance boundary — 2026-09-01
+
+- Renderer, paginator, preview, fake dispatcher, quantity, template/mm validation and production WPF composition are automated-verified. Chưa có nghiệm thu máy in tem vật lý, scanner readback, media calibration hoặc click/UIA ở DPI 100/125/150%; không tuyên bố đã in vật lý.
+- Nếu Windows không trả máy in hoặc driver không trả capability đầy đủ, preview vẫn dùng được và lệnh in bị khóa/dispatcher trả lỗi phân loại; việc chọn máy in biến mất không tự fallback sang máy khác. In thử vật lý chỉ thực hiện khi người dùng chủ động chọn máy và xác nhận.
+- Audit thành công/thử/lỗi chưa được nối vì audit hiện hữu chưa có contract cho job in tem; không tạo hệ thống log song song trong R5.4. Đây là gap của lượt ổn định sau R5.4, không phải lý do để ghi audit thành công giả.
+- Settings tem gần nhất được lưu bằng JSON không nhạy cảm trong settings root; không đọc/ghi/reset manual/canonical database và không dùng DPAPI.
+
+## R5.4 / R5.3 verification status — 2026-09-01
+
+- Historical sandbox full suite: `1442 PASS / 6 FAIL / 0 SKIP / 1448`; sáu failure là 2 RememberedLogin + 4 VietQR secure-storage dưới tài khoản sandbox với cùng DPAPI CurrentUser/profile-not-loaded evidence. Không sửa DPAPI, profile, credential, VietQR hoặc Remembered Login.
+- Historical sandbox Quality Gate stopped at automated tests; vulnerability scan và EF pending-model riêng PASS. Normal interactive Windows profile verification later passed the full workflow at `1455/1455`.
+
+## R5 Bulk verification boundary — 2026-08-31
+
+- Automated Bulk persistence/readback is now covered by `BulkProductPersistenceIntegrationTests.Selected_B_and_C_preview_commit_and_readback_preserve_A_and_inventory` on an owned TEMP SQLite fixture. It verifies B/C through all four metadata operations using fresh contexts after commit; A remains unchanged, stock and inventory-movement count remain unchanged, and aggregate audit summaries report requested/changed count 2. It does not use the manual or canonical database.
+- User manual evidence is limited to selection/tick riêng → mở Bulk and the supplied Ngừng bán preview/readback screenshot. Codex has not performed physical click/UIA or 100/125/150% DPI acceptance; no broader manual PASS is recorded.
+- Current host fails `ProtectedData.Protect(..., DataProtectionScope.CurrentUser)` before any store file write with `System.Security.Cryptography.CryptographicException`, HResult `0x80131501`, message that the user profile may not be loaded for the current thread/user context. The six affected tests therefore fail at their existing success assertions: 2 RememberedLogin and 4 VietQR store/pipeline tests. This is an environment/host-profile blocker evidenced by a direct ephemeral probe, not a confirmed production secure-storage defect; no DPAPI/profile/credential change was made.
+- Historical full Release and Official Quality Gate were `1430 PASS / 6 FAIL / 0 SKIP` under the sandbox host. The user-run normal interactive profile workflow later passed at `1455/1455`; this resolves the environment limitation without changing tests or secure-storage behavior.
+
+## POS-VER-008 — Bulk row-selection physical acceptance pending
+
+- Production checkbox binding regression passes in the WPF harness for partial selection and parent UI updates. Isolated fixture persistence/readback now passes through the real Bulk service and fresh contexts; manual click/Space, reload/filter/page lifecycle and DPI acceptance remain pending; no user database was used.
+
+## POS-VER-007 update — 2026-08-31
+
+- Production WPF binding regression now passes for no-selection/true/false and repeated selection changes. Physical desktop click-through and DPI acceptance remain unperformed; isolated fixture persist/readback passes, while no user fixture was opened for automated verification. The six full-suite DPAPI secure-storage failures remain outside this Bulk scope and block the official gate.
+
+## POS-VER-007 update — 2026-08-31
+
+- Selection threshold and typed status validation are source/build verified. A production-control WPF binding regression for the status ComboBox, partial selection click-through and persist/readback is still not automated or manually closed.
+
+## POS-VER-007 — Physical status ComboBox acceptance pending
+
+- Typed status state and false/no-selection validation are implemented and covered by the production-window STA binding harness; physical WPF binding/click-through for both directions and mixed/no-op sets still requires manual acceptance.
+
+## POS-VER-006 verification update — 2026-08-31
+
+- Current Bulk snapshot source is build-verified and focused-tested. Full Release and Official Quality Gate remain open because six unrelated DPAPI secure-storage tests fail in this environment.
+
+## POS-VER-006 — R5 Bulk/export physical acceptance remains pending
+
+- Status: Open verification gap; no confirmed product defect after source hotfix.
+- Scope: physical WPF Bulk layout at 100/125/150% DPI and Save dialog new-file/overwrite/cancel/failure flows.
+- Evidence: Release WPF build succeeded and focused Bulk/ProductExport tests passed `7/7`; full build was blocked by a locked test DLL.
+
 ## R5.1–R5.3 hotfix A/B/C — 2026-08-30
 
 - Automated composition/behavior verification đạt `29/29 PASS` Debug và Release; normal-host full Release đạt `1434/1434 PASS`, build `0/0`, Quality Gate/vulnerability/EF checks PASS. Bulk UI đã có đường vào thật và export/template caller đã nhận kết quả typed.
@@ -505,6 +570,68 @@ Severity describes supported impact, not roadmap priority. Insufficient evidence
 - Last verified time: `2026-08-01` latest R0.5E exporter execution; former value intentionally not retained.
 - Notes: this is a source/export security verification gap, not a claim of production exposure.
 
+### POS-VER-009 — Sandbox DPAPI secure-storage failures were an environmental test-host limitation
+
+- Stable ID: `POS-VER-009`.
+- Title: Sandbox DPAPI secure-storage failures were an environmental test-host limitation.
+- Classification: Known Operational Limitation.
+- Status: Resolved.
+- Severity: Medium.
+- Affected area: normal-profile versus Codex sandbox execution of existing RememberedLogin and VietQR secure-storage tests.
+- Evidence: user-run official `scripts/Test-QualityGate.ps1` without `-SkipEfCheck` under a normal interactive Windows profile on `2026-09-02`, with `1455/1455 PASS`, `0 failed`, `0 skipped`, exit code `0`; prior sandbox runs recorded six DPAPI failures and are retained above as historical evidence.
+- Observed or known condition: the six failures occurred only under the sandbox test host; no production secure-storage failure was established.
+- Expected condition or intended boundary: secure-storage behavior is evaluated under an interactive Windows profile with the user profile loaded; the sandbox limitation must not be treated as a production defect.
+- User/business impact: sandbox-only verification was initially blocked, but the accepted normal-profile Quality Gate is now green.
+- Workaround or recovery behavior: run the unchanged tests and Quality Gate under the approved normal interactive Windows profile.
+- Related invariant/decision/roadmap checkpoint: `INV-SECURITY-001`, `INV-SECURITY-002`; R5.3–R5.4 closeout.
+- Owner checkpoint: R5.3–R5.4 closeout.
+- Closure criteria: normal-profile full suite and official Gate pass without changing secure-storage production code, tests or assertions. Met by the user-supplied `1455/1455` result on `2026-09-02`.
+- Revalidation trigger: change to secure-storage code/tests, Windows profile/host contract or Quality Gate script.
+- Last verified base: R5.3–R5.4 closeout working tree; accepted evidence time `2026-09-02`.
+- Notes: resolved environmental test-host limitation; not evidence of a production DPAPI defect.
+
+### POS-VER-010 — Activity Log Bulk audit action label mismatch requires semantic tracing
+
+- Stable ID: `POS-VER-010`.
+- Title: Activity Log Bulk audit action label mismatch requires semantic tracing.
+- Classification: Verification Gap.
+- Status: Open.
+- Severity: Medium.
+- Affected area: Activity Log audit-row semantic/action presentation for Bulk Product operations.
+- Evidence: user physical UI observation on `2026-09-02`: rows with `Nghiệp vụ = Sản phẩm và thao tác hàng loạt` display `Hành động = Cập nhật nhân viên`.
+- Observed or known condition: Bulk Product audit rows appear with an action label that may not match the displayed business area.
+- Expected condition or intended boundary: persisted event contract, action code and localized/presentation mapping must resolve to the correct semantic label for the operation.
+- User/business impact: Activity Log readers may misunderstand what operation occurred; R5.3 audit correctness is not fully accepted until this is traced.
+- Trigger or reproduction precondition: inspect affected Activity Log rows after Bulk Product operations; no root cause is concluded by this record.
+- Workaround or recovery behavior: none; preserve the evidence and investigate before changing data or labels.
+- Related invariant/decision/roadmap checkpoint: audit invariants; R5.3; post-R5 stabilization.
+- Owner checkpoint: post-R5 stabilization queue.
+- Closure criteria: trace persisted event contract through audit writer, action code and localization/presentation mapping, determine root cause, add targeted regression evidence and apply an authorized correction if required.
+- Revalidation trigger: any change to audit writer, audit action enum/constraint, localization mapping, Activity Log query or Bulk audit contract.
+- Last verified time: `2026-09-02` user physical observation.
+- Notes: do not modify Audit writer, database/schema, Activity Log XAML/ViewModel, localization mapping, Employee Account or Bulk pipeline in this closeout.
+
+### POS-VER-011 — Activity Log table/detail layout is visually dense
+
+- Stable ID: `POS-VER-011`.
+- Title: Activity Log table/detail layout is visually dense.
+- Classification: Verification Gap.
+- Status: Open.
+- Severity: Low.
+- Affected area: Activity Log table/detail presentation and long target/operation text.
+- Evidence: user physical UI observation on `2026-09-02`: the layout is wide and text is spread horizontally; long values such as `Batch ...` and business names crowd columns; `Success` is not sufficiently user-friendly.
+- Observed or known condition: long target and operation text lacks compact hierarchy, wrapping/truncation and friendly presentation.
+- Expected condition or intended boundary: Activity Log should remain readable at the supported layout while preserving full detail through an appropriate compact presentation.
+- User/business impact: operators must scan a dense table and may have difficulty identifying the important event fields.
+- Trigger or reproduction precondition: open Activity Log with long Bulk Product targets/operation names.
+- Workaround or recovery behavior: none recorded; retain full values until a presentation correction is authorized.
+- Related invariant/decision/roadmap checkpoint: R4.4 Activity Log; post-R5 stabilization.
+- Owner checkpoint: post-R5 stabilization queue.
+- Closure criteria: authorized UX correction demonstrates readable compact layout, friendly labels and preserved full-detail access with targeted automated/manual evidence.
+- Revalidation trigger: Activity Log XAML/ViewModel, localization or audit-detail presentation change.
+- Last verified time: `2026-09-02` user physical observation.
+- Notes: no Activity Log XAML/ViewModel or localization mapping change is included in this closeout.
+
 ### POS-ROAD-001 — R1 CI runtime is partially verified; repository closeout and later subcheckpoints remain
 
 - Stable ID: `POS-ROAD-001`.
@@ -643,17 +770,17 @@ An issue may change to `Resolved` only when its closure criteria are met and the
 
 | Dimension | Value |
 |---|---:|
-| Total records | 13 |
+| Total records | 16 |
 | Confirmed Defect | 0 |
-| Known Operational Limitation | 3 |
-| Verification Gap | 6 |
+| Known Operational Limitation | 4 |
+| Verification Gap | 8 |
 | Deferred Roadmap Capability | 4 |
 | Resolved Historical Issue | 0 |
-| Open | 2 |
+| Open | 4 |
 | Monitoring | 3 |
 | In Progress | 1 |
 | Deferred | 4 |
-| Resolved | 1 |
+| Resolved | 2 |
 | Not Revalidated | 2 |
 | Critical | 0 |
 | High | 0 |
@@ -661,7 +788,7 @@ An issue may change to `Resolved` only when its closure criteria are met and the
 | Low | 1 |
 | Informational | 5 |
 
-The counts above were recounted directly from these 13 stable IDs: `POS-OPS-001`, `POS-OPS-002`, `POS-OPS-003`, `POS-VER-001`, `POS-VER-002`, `POS-VER-003`, `POS-VER-004`, `POS-VER-005`, `POS-ROAD-001`, `POS-ROAD-002`, `POS-ROAD-003`, `POS-ROAD-004`, `POS-ROAD-005`. There are no confirmed open runtime defects in this register.
+The counts above were recounted directly from these 16 stable IDs: `POS-OPS-001`, `POS-OPS-002`, `POS-OPS-003`, `POS-VER-001`, `POS-VER-002`, `POS-VER-003`, `POS-VER-004`, `POS-VER-005`, `POS-VER-009`, `POS-VER-010`, `POS-VER-011`, `POS-ROAD-001`, `POS-ROAD-002`, `POS-ROAD-003`, `POS-ROAD-004`, `POS-ROAD-005`. There are no confirmed open runtime defects in this register.
 - R5.2 Export — IMPLEMENTED / AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
 
 - Export reports and the blank import template are implemented and covered by typed writer/service tests. Physical save-dialog, Excel-open and DPI visual checks remain manual; no claim of manual acceptance is made here.

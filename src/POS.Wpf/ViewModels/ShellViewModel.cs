@@ -63,6 +63,9 @@ public sealed class ShellViewModel :
     private readonly IBulkProductDialogService?
         _bulkProductDialogService;
 
+    private readonly ILabelPrintDialogService?
+        _labelPrintDialogService;
+
     private readonly ICategoryManagementDialogService
         _categoryManagementDialogService;
 
@@ -135,7 +138,8 @@ public sealed class ShellViewModel :
         ICurrentUserService? currentUserService = null,
         IProductImportDialogService? productImportDialogService = null,
         IProductExportDialogService? productExportDialogService = null,
-        IBulkProductDialogService? bulkProductDialogService = null)
+        IBulkProductDialogService? bulkProductDialogService = null,
+        ILabelPrintDialogService? labelPrintDialogService = null)
     {
         _scopeFactory =
             scopeFactory ??
@@ -155,6 +159,9 @@ public sealed class ShellViewModel :
 
         _bulkProductDialogService =
             bulkProductDialogService;
+
+        _labelPrintDialogService =
+            labelPrintDialogService;
 
         _categoryManagementDialogService =
             categoryManagementDialogService ??
@@ -292,6 +299,12 @@ public sealed class ShellViewModel :
                 CanApplyBulkOperation,
                 HandleCommandException);
 
+        PrintProductLabelsCommand =
+            new AsyncRelayCommand(
+                PrintProductLabelsAsync,
+                CanPrintProductLabels,
+                HandleCommandException);
+
         OpenCategoryManagementCommand =
             new AsyncRelayCommand(
                 OpenCategoryManagementAsync,
@@ -403,6 +416,8 @@ public sealed class ShellViewModel :
     public AsyncRelayCommand ToggleBulkPageSelectionCommand { get; }
 
     public AsyncRelayCommand ApplyBulkOperationCommand { get; }
+
+    public AsyncRelayCommand PrintProductLabelsCommand { get; }
 
     public AsyncRelayCommand
         OpenCategoryManagementCommand
@@ -621,10 +636,10 @@ public sealed class ShellViewModel :
 
             if (IsBulkSelectionMode)
             {
-                if (SelectedBulkProductCount == 0)
+                if (SelectedBulkProductCount < 2)
                 {
                     return
-                        "Tích chọn sản phẩm bên dưới, sau đó chọn thao tác hàng loạt.";
+                        $"Đã chọn {SelectedBulkProductCount:N0} sản phẩm — chọn thêm ít nhất {2 - SelectedBulkProductCount} sản phẩm.";
                 }
 
                 return $"Đã chọn {SelectedBulkProductCount:N0} sản phẩm trên trang hiện tại.";
@@ -1239,9 +1254,9 @@ public sealed class ShellViewModel :
         var selected = Products
             .Where(row => row.IsBulkSelected)
             .ToArray();
-        if (selected.Length == 0)
+        if (selected.Length < 2)
         {
-            StatusMessage = "Chọn ít nhất một sản phẩm trên trang hiện tại.";
+            StatusMessage = "Chọn ít nhất 2 sản phẩm trên trang hiện tại.";
             return;
         }
 
@@ -1258,9 +1273,48 @@ public sealed class ShellViewModel :
     private bool CanApplyBulkOperation()
     {
         return IsBulkSelectionMode &&
-               HasBulkSelection &&
+               SelectedBulkProductCount >= 2 &&
                !IsLoading &&
                _bulkProductDialogService is not null;
+    }
+
+    private async Task PrintProductLabelsAsync()
+    {
+        if (_labelPrintDialogService is null || !CanPrintProductLabels())
+        {
+            return;
+        }
+
+        var targets = IsBulkSelectionMode
+            ? Products.Where(row => row.IsBulkSelected).DistinctBy(row => row.Id).ToArray()
+            : SelectedProduct is null
+                ? Array.Empty<ProductRowViewModel>()
+                : [SelectedProduct];
+
+        if (targets.Length == 0)
+        {
+            StatusMessage = "Chọn ít nhất một sản phẩm để in tem.";
+            return;
+        }
+
+        var printed = await _labelPrintDialogService.ShowAsync(targets);
+        if (printed)
+        {
+            StatusMessage = $"Đã gửi job in tem cho {targets.Length:N0} sản phẩm.";
+        }
+    }
+
+    private bool CanPrintProductLabels()
+    {
+        if (_labelPrintDialogService is null || IsLoading ||
+            !_permissionService.HasPermission(SystemCapability.ManageProducts))
+        {
+            return false;
+        }
+
+        return IsBulkSelectionMode
+            ? SelectedBulkProductCount >= 1
+            : SelectedProduct is not null;
     }
 
     private Task NavigateToOverviewAsync()
@@ -2017,6 +2071,9 @@ public sealed class ShellViewModel :
             .NotifyCanExecuteChanged();
 
         ApplyBulkOperationCommand
+            .NotifyCanExecuteChanged();
+
+        PrintProductLabelsCommand
             .NotifyCanExecuteChanged();
 
         OpenCategoryManagementCommand

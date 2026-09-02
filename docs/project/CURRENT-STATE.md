@@ -1,5 +1,90 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## R5.3–R5.4 checkpoint closeout — ACCEPTED / QUALITY GATE PASS / COMMITTED LOCALLY — 2026-09-02
+
+- User-run official `scripts/Test-QualityGate.ps1` without `-SkipEfCheck` passed under a normal interactive Windows profile on 2026-09-02: `1455/1455 PASS`, `0 failed`, `0 skipped`, exit code `0`; restore, Release build (`0 warning / 0 error`), vulnerability scan, EF pending-model check and Git whitespace checks passed. This is user-supplied normal-profile evidence; the Gate was not rerun in the Codex sandbox.
+- R5.3 acceptance is complete for engineering, persistence and the accepted manual core: individual selection opens Bulk; “Ngừng bán” preview and post-confirm status are correct; the isolated SQLite fixture proves only selected products change, while stock and InventoryMovement remain unchanged. Audit correctness is not fully accepted because the Activity Log action-label mismatch is recorded as an open stabilization issue.
+- R5.4 implementation and manual UI acceptance are complete: the user confirmed the post-closeout label UI, automatic preview, compact footer, non-repetitive validation, dimension adjustment and test print inside the calibration section. Physical label printer, scanner readback, real-device mm calibration, complete 100%/125%/150% DPI matrix and any unperformed Print to PDF save/overwrite/cancel flow remain pending/deferred.
+- R6 and later work remain `HOLD` under the Product Owner decision. Post-R5 stabilization queue: trace the Activity Log semantic/action mapping, improve Activity Log layout, then address Employee Account creation/management and other user-review issues.
+
+## R5.4 UX closeout implementation record — auto preview / compact label window — 2026-09-01
+
+- Production `LabelPrintWindow` now has only `Đóng` and `In N tem` in the footer. Printer refresh is a compact adjacent control; `In thử 1 tem` remains available inside the collapsed `Căn chỉnh máy in` group, where X/Y and inner margin are edited.
+- Manual preview update was removed. Template, dimensions, alignment and quantity changes invalidate the old job immediately and schedule one 300 ms dispatcher debounce; a cancellable registration and revision check prevent stale rebuilds. The existing vector renderer/paginator/dispatcher pipeline was not rewritten.
+- Invalid input clears the job, preview visual, page index/count and print total; production UI shows `Nhập thông tin hợp lệ để xem tem.`, hides pagination and uses `In tem`. Quantity errors remain inline; multiple invalid rows receive one summary only. Valid preview uses the compact `{N} tem • ngày in dd/MM/yyyy` message.
+- Production STA/control tests now materialize the real window and verify the reduced footer, removed manual-preview control, auto quantity rebuild, latest-input debounce, invalid empty state/no `1 / 0`, consolidated validation, printer refresh, collapsed calibration group, test-print retention and binding trace. Focused R5.4 + Shell/Product regression: `28/28 PASS` in Debug and Release.
+- Historical sandbox verification before normal-profile recheck: `1449 PASS / 6 FAIL / 0 SKIP / 1455`; the six secure-storage failures are retained as resolved environmental test-host limitation evidence. The later user-run normal interactive Quality Gate is the accepted `1455/1455 PASS` closeout evidence above; no production DPAPI defect was established.
+- Physical label printer, scanner, calibration, complete DPI matrix and any unperformed PDF/save-dialog scenarios remain pending. R6/Audit/Employee work remains HOLD.
+
+## R5.4 UI hotfix implementation record — production controls/binding — 2026-09-01
+
+- User physical evidence confirmed preview/vector barcode/mm editing worked while the five action paths appeared inert. Source trace found `LabelPrintWindow` had no `RequestClose` subscription, preset `SelectedItem` compared a persisted snapshot record against different preset records, preview/refresh had no visible action status, and the primary button bound directly to the numeric total.
+- Hotfix wires `RequestClose` to modal `DialogResult`/non-modal `Close()` fallback and unsubscribes on `Closed`; successful real print clears busy before close, while Cancel/Esc uses the normal cancel result. Refresh now deduplicates printer identities, preserves an existing queue, clears a disappeared queue without fallback, reports unchanged/changed/error status and updates the observable ComboBox. Preview reports a timestamped rebuild result.
+- Production XAML now projects `SelectedTemplateOption` to the actual preset item, has explicit named/automation controls, displays `In N tem`, separates preview heading/status, replaces technical copy with user guidance, uses a wrapping footer and left-scroll bottom padding. Error/cancel/spool status remains visible and the window stays open on failure.
+- Added STA control harnesses that materialize `LabelPrintWindow`, assert active command/content/status/preset bindings, invoke `ButtonAutomationPeer` with dispatcher pumping, verify refresh additions/removal/unchanged/error, preview update, test/real print counts, cancel/error, Close/Esc and hit-test visibility. Focused R5.4 + Shell/Product regression is now `26/26 PASS` in Debug and Release.
+- Historical sandbox verification before normal-profile recheck: `1447 PASS / 6 FAIL / 0 SKIP / 1453`; the six DPAPI failures are retained as resolved environmental test-host limitation evidence. The accepted normal interactive Quality Gate result is recorded in the closeout section above.
+- Physical user recheck of hardware, DPI and any unperformed PDF save flow remains pending. R6/Audit/Employee work remains HOLD.
+
+## R5.4 — In mã vạch và tem giá — IMPLEMENTED / AUTOMATED VERIFIED / MANUAL PENDING — 2026-09-01
+
+- R5.4 đã được triển khai từ chọn sản phẩm → snapshot bất biến → cấu hình template → preview → in thử/in thật qua cùng `LabelDocumentBuilder`/`LabelDocumentPaginator`. Renderer sinh barcode Code 128 dạng `BitMatrix` và vẽ thanh vector runtime; không dùng ảnh tem/barcode raster cố định, không in giá vốn.
+- Product và Inventory mở mục `Nhập / Xuất → In mã vạch / tem giá…`; menu contextual của một dòng chỉ truyền đúng dòng đó. Chế độ chọn nhiều truyền đúng tập checkbox đã tick, loại trùng Product ID, ngưỡng in là từ 1 sản phẩm và không thay đổi ngưỡng Bulk từ 2.
+- Đã hỗ trợ preset `50×30 mm`, `60×40 mm`, template tùy chỉnh; width/height, X/Y offset, inner margin đều dùng utility mm↔DIP có test tolerance. Lưu template, máy in và căn chỉnh gần nhất bằng JSON không nhạy cảm `label-print-settings.json` trong settings root hiện hữu; không dùng DPAPI/SQLite.
+- Printer catalog/dispatcher là abstraction thay thế được trong test; preview hoạt động khi không có máy in, còn in bị khóa với lý do rõ. In thử gửi đúng 1 tem; in thật gửi đúng tổng tem; test không gửi máy in vật lý. Không có audit song song mới trong R5.4 vì audit hiện hữu chưa có contract vận hành phù hợp; gap giữ cho lượt ổn định sau R5.4.
+- Fresh Release solution/WPF/test build với `UseAppHost=true`: `0 warning / 0 error`. Focused R5.4 + Shell/Product composition: `20/20 PASS`; riêng `LabelPrintingTests`: `11/11 PASS`. Full Release hiện tại: `1442 PASS / 6 FAIL / 0 SKIP / 1448`.
+- Historical sandbox Quality Gate attempt without `-SkipEfCheck`: restore/build passed, then the six secure-storage tests failed at the test stage with exit code `1`; this retained evidence is now classified as a resolved environmental test-host limitation. The normal interactive profile Gate passed as recorded above.
+- Historical R5.3 status before normal-profile closeout: triển khai kỹ thuật và persistence/readback đã hoàn thành, user evidence chính đã có; sandbox secure-storage limitation still required normal interactive verification at that time. The accepted `1455/1455` normal-profile Gate and current R5.3/R5.4 status are recorded above. R6 trở đi HOLD theo quyết định Product Owner ngày 01/09/2026; post-R5 stabilization starts with Activity Log and Employee Account review.
+
+## R5 Bulk verification closeout evidence — 2026-08-31
+
+- Người dùng đã xác nhận physical/manual scope giới hạn: tick riêng sản phẩm và mở Bulk hiện ổn; ảnh người dùng cho thấy preview “Ngừng bán” đúng và danh sách sau đó hiển thị Ngừng bán. Đây là user evidence, không phải Codex physical click/UIA acceptance và không mở rộng thành nghiệm thu đủ bốn operation/DPI.
+- Bổ sung `BulkProductPersistenceIntegrationTests.Selected_B_and_C_preview_commit_and_readback_preserve_A_and_inventory`: fixture SQLite file cô lập được migrate, seed A/B/C, chọn đúng B/C, chạy service thật qua preview → transaction commit → context mới; cả giá, danh mục, trạng thái và ngưỡng tồn đều readback đúng trên B/C, A giữ nguyên, tồn thực tế/movement không đổi, audit summary chỉ ghi requested/changed count 2.
+- Fresh Release solution build từ working tree hiện tại với `UseAppHost=true`: `0 warning / 0 error`. Focused production Shell/DataGrid + Bulk status binding + persistence group: `16/16 PASS` sau build, dùng `--no-build` chỉ sau build đó. Full Release: `1430 PASS / 6 FAIL / 0 SKIP / 1436`.
+- Sáu failure mới nhất vẫn chỉ là secure-storage: `RememberedLoginStoreTests` 2 test (`Save_load_and_delete_must_roundtrip`, `Protected_file_must_not_contain_plain_fingerprint`); VietQR 4 test (3 `VietQrRecipientMetadataStoreTests`, 1 `StoredVietQrPipelineTests`). Probe DPAPI ephemeral không đọc store thật, dưới host hiện tại trả `CryptographicException`, HResult `0x80131501`, thông báo profile người dùng chưa được load; chưa đủ bằng chứng để sửa production secure-storage.
+ - Historical sandbox `scripts/Test-QualityGate.ps1` run without `-SkipEfCheck`: restore PASS, Debug build `0/0`, automated tests `1430 PASS / 6 FAIL / 0 SKIP`, stopped at step 3 with exit code 1; this is retained as resolved environmental test-host limitation evidence. Binary Release bàn giao xác minh tại `src/POS.Wpf/bin/Release/net10.0-windows/POS.Enterprise.exe` cùng managed DLL/runtime output. Physical UI/DPI và Save-dialog manual vẫn pending.
+
+## R5 Bulk row-selection hotfix — 2026-08-31
+
+- Root cause: row checkbox binding did not explicitly push `IsChecked` changes at property-change time; Select All used a separate parent command, so its count path worked while individual row interaction could leave the parent stale. Added `UpdateSourceTrigger=PropertyChanged` to the production row checkbox binding.
+- Added production Shell/DataGrid regression: materialized row checkboxes tick two rows without Select All and verifies row source state, count `2`, indeterminate header state, bound text, enabled Bulk button and exact target set. Shell/Bulk/status focused group is `15/15 PASS`.
+ - Historical sandbox full Release is `1429 PASS / 6 FAIL / 0 SKIP`; the same six DPAPI secure-storage failures are retained as resolved environmental test-host limitation evidence. Physical click/UIA/DPI and manual fixture persist/readback remain unperformed.
+
+## R5 Bulk selection/preview binding hotfix — 2026-08-31
+
+- Production Bulk status ComboBox now binds `StatusOptions` directly to nullable `SelectedStatus`; no `SelectedValue`, `Tag` or independent validation state remains in XAML. STA production-window regression covers no selection, `false` and `true` request values and repeated switching.
+- Bulk entry/count/command now use the same checked-row source and require at least two selected rows. The existing Shell selection regression and production control regression pass together at `15/15`.
+- No-op preview is valid but confirm is disabled; failed/invalid preview does not retain the success message. Existing service transaction/concurrency/audit boundaries are unchanged.
+- Historical sandbox full Release: `1429 PASS / 6 FAIL / 0 SKIP` (DPAPI secure-storage tests); the corresponding Gate attempt stopped at that test stage. This is retained as resolved environmental test-host limitation evidence. Launcher apphost and managed outputs exist at the standard Release path.
+
+## R5 Bulk selection/status follow-up — 2026-08-31
+
+- Bulk entry now requires at least 2 checked rows; count text and command guard use the same selected-row source. One selected row is explicitly reported as needing one more product.
+- Status state now has typed nullable `SelectedStatus` and validation for true/false/no-selection. Release solution build regenerated application and test outputs; focused Bulk tests are `6/6 PASS`.
+- Full Release and Official Quality Gate were not rerun after this follow-up; the previous current-source run had `1428/1434` with six DPAPI secure-storage failures. Physical WPF binding/click-through remains pending.
+
+## R5 Bulk status binding follow-up — 2026-08-31
+
+- Root cause traced to the status ComboBox using `SelectedValue`/`ComboBoxItem.Tag` against a non-null `bool` VM state. Added typed `BulkProductStatusOption`, nullable `SelectedStatus`, and explicit validation so `false` means Ngừng bán and cannot be confused with no selection; compatibility `IsActive` remains.
+- WPF Release build passed with `UseAppHost=false`; focused existing Bulk tests passed `6/6`. A new physical WPF binding regression is not yet claimed. The historical sandbox Gate limitation and normal apphost lock are retained as prior-run context; the current normal-profile Gate is PASS above.
+
+## R5 Bulk snapshot verification — 2026-08-31
+
+- Release solution build from current working tree: PASS, `0 warning/0 error`; application executable and test DLL were regenerated. Focused Bulk/Export regression: `11/11 PASS`.
+- Historical sandbox full Release: `1428 PASS / 6 FAIL / 0 SKIP`; failures were the known environment-dependent DPAPI secure-storage tests (VietQR and RememberedLogin), not Bulk. The corresponding Gate attempt stopped at automated tests; later normal-profile verification passed.
+- Fresh runnable binary: `src/POS.Wpf/bin/Release/net10.0-windows/POS.Enterprise.exe`. Physical UI/DPI acceptance remains pending.
+
+## R5 hotfix — Bulk reference snapshot — IMPLEMENTED / AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-31
+
+- Bulk reuses the already authorized, selected-page `ProductRowViewModel` snapshot to populate the existing table on open; it does not call preview with fake values or access the database from WPF.
+- The table shows current price/category/status/minimum-stock plus real stock/unit context, then replaces rows with the service preview result after validation. Input/operation changes reload the reference presentation and invalidate only the old proposal.
+- Focused Bulk tests passed `6/6` from the existing Release test binary. WPF compilation completed but copying the executable was blocked by the running POS process; full Release and Official Quality Gate remain pending.
+
+## R5 hotfix — Bulk form/export close feedback — IMPLEMENTED / AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-31
+
+- BulkProductWindow now shows only fields for the selected operation, with persistent Vietnamese labels/units and separate cancel/close actions; the existing selection, permission, concurrency, transaction and audit pipeline is unchanged.
+- ProductExportWindow now owns the Save dialog and closes after the writer completes successfully, allowing the three existing callers to show their result after the modal closes.
+- Release WPF build succeeded. Focused Bulk/ProductExport tests: `7/7 PASS`; full solution build was blocked only by a locked `POS.Architecture.Tests.dll`. Physical click/UIA/DPI and real Save dialog/file scenarios remain manual pending.
+
 ## R5.1–R5.3 hotfix A/B/C — AUTOMATED VERIFIED / MANUAL PENDING — 2026-08-30
 
 - Đã hoàn thiện ba điểm UX/hành vi: Product & Inventory có chế độ chọn nhiều với checkbox chọn toàn bộ trang, hướng dẫn khi chưa tick và đường vào dialog bulk thật; các command đơn lẻ bị tách khỏi bulk target. Bốn thao tác hiện có vẫn đi qua preview, permission, concurrency, transaction và audit hiện hữu.

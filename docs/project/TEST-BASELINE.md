@@ -1,5 +1,90 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R5.3–R5.4 accepted closeout baseline — 2026-09-02
+
+- Evidence source: user-run official `scripts/Test-QualityGate.ps1` without `-SkipEfCheck` under a normal interactive Windows profile on 2026-09-02. This baseline is not a Codex sandbox rerun.
+- Total tests: `1455`; passed: `1455`; failed: `0`; skipped: `0`.
+- Release build: PASS, `0 warning / 0 error`.
+- Vulnerability scan: PASS, no vulnerable packages. EF pending-model check: PASS, no pending model changes. Quality Gate: PASS, exit code `0`.
+- The six earlier DPAPI sandbox failures remain in historical records and are classified as a resolved environmental test-host limitation; they are not evidence of a production secure-storage defect.
+- Manual acceptance recorded separately: R5.3 engineering/persistence/manual core accepted; R5.4 implementation/manual UI accepted. Physical label printer, scanner readback, real-device calibration, full 100%/125%/150% DPI and any unperformed Print to PDF save/overwrite/cancel scenarios remain pending.
+
+## Historical R5.4 UX closeout — production auto-preview and compact controls — 2026-09-01
+
+- Fresh Release solution rebuild, explicit WPF Release rebuild and test-project Release rebuild with `UseAppHost=true`: PASS, `0 warning / 0 error`.
+- Focused Release `LabelPrintingTests|ShellSidebarInventoryHotfixTests|ProductWorkflowCompositionTests`: `28/28 PASS`, failed/skipped `0/0`. The production harness verifies the real reduced footer, no manual preview button, 300 ms deterministic debounce, stale-input rejection, invalid empty state, no `1 / 0`/`In 0 tem`, validation consolidation, printer refresh, calibration Expander and test-print lifecycle.
+- Full Release after closeout: `1449 PASS / 6 FAIL / 0 SKIP / 1455`; failures remain only the known RememberedLogin/VietQR DPAPI secure-storage tests.
+- Historical sandbox Quality Gate attempt without `-SkipEfCheck`: restore/build passed, then the six DPAPI secure-storage tests failed at the test stage with exit `1`. This is retained as resolved environmental test-host limitation evidence; the accepted normal-profile Gate baseline is recorded above.
+- Fresh Release apphost: `src/POS.Wpf/bin/Release/net10.0-windows/POS.Enterprise.exe`. No physical printer/PDF dialog/scanner/manual database was used; physical UI/DPI and printer acceptance remain pending.
+
+## R5.4 UI hotfix — production control verification — 2026-09-01
+
+- Fresh Release solution rebuild, explicit WPF Release rebuild and test-project Release rebuild with `UseAppHost=true`: PASS, `0 warning / 0 error`.
+- Production-control focused Release group `LabelPrintingTests|ShellSidebarInventoryHotfixTests|ProductWorkflowCompositionTests`: `26/26 PASS`, failed/skipped `0/0`. The group materializes production `LabelPrintWindow`, checks active binding expressions and invokes actual named buttons through `ButtonAutomationPeer` plus dispatcher pump.
+- Coverage includes printer refresh changed/unchanged/disappeared/error paths, preview rebuild feedback, Close/Esc lifecycle, test/real/cancel/error print paths, exact 1/3 counts, primary content `In N tem`, preset switching, status/content bindings and footer hit-test visibility.
+- Full Release after hotfix: `1447 PASS / 6 FAIL / 0 SKIP / 1453`; failures remain only the 2 RememberedLogin and 4 VietQR DPAPI secure-storage tests.
+- Official `scripts/Test-QualityGate.ps1` without `-SkipEfCheck`: restore/build PASS, test stage `1447 PASS / 6 FAIL / 0 SKIP`, exit `1`, Gate NOT PASS. Separate vulnerability scan: PASS/no vulnerable packages; EF pending-model: PASS/no model changes; `git diff --check`: PASS.
+- No physical printer/PDF save dialog/scanner/manual database was used. Fresh Release apphost is at `src/POS.Wpf/bin/Release/net10.0-windows/POS.Enterprise.exe`; physical UI/DPI and printer acceptance remain pending.
+
+## R5.4 — In mã vạch và tem giá — 2026-09-01
+
+- Fresh Release solution rebuild: `dotnet build POS.Enterprise.slnx --configuration Release -t:Rebuild --no-restore -m:1 -nr:false -p:BuildInParallel=false -p:UseAppHost=true` — PASS, `0 warning / 0 error`.
+- Fresh Release WPF rebuild với `UseAppHost=true` — PASS, `0 warning / 0 error`; fresh Release test-project rebuild với `UseAppHost=true` — PASS, `0 warning / 0 error`. Apphost `src/POS.Wpf/bin/Release/net10.0-windows/POS.Enterprise.exe` và managed output tồn tại.
+- Focused Release `LabelPrintingTests|ShellSidebarInventoryHotfixTests|ProductWorkflowCompositionTests`: `20/20 PASS`, failed/skipped `0/0`; riêng LabelPrintingTests sau bổ sung settings fixture: `11/11 PASS`. Full Release: `1442 PASS / 6 FAIL / 0 SKIP / 1448`; sáu failure là secure-storage DPAPI tests hiện hữu.
+- Official `scripts/Test-QualityGate.ps1` không `-SkipEfCheck`: restore PASS, build PASS, automated tests `1442 PASS / 6 FAIL / 0 SKIP`, dừng bước 3 exit `1`; Gate NOT PASS, vulnerability/EF/Git stages của script không được đánh dấu PASS.
+- Chạy riêng sau đó: `dotnet list POS.Enterprise.slnx package --vulnerable --include-transitive` PASS, tất cả project không có vulnerable package; `dotnet ef migrations has-pending-model-changes ...` PASS, “No changes have been made to the model since the last migration”; `git diff --check` PASS.
+- Automated fixtures không gửi lệnh tới printer vật lý và settings test dùng TEMP path, không đọc/ghi/reset `C:\Users\pc\AppData\Local\POS Enterprise\ManualAcceptance\pos-enterprise-manual.db`. Physical UI/DPI, printer/scanner readback và calibration còn pending.
+
+## R5 Bulk current verification — 2026-08-31
+
+- New isolated persistence regression: `BulkProductPersistenceIntegrationTests.Selected_B_and_C_preview_commit_and_readback_preserve_A_and_inventory` — `1/1 PASS`. It uses migrated TEMP SQLite with A/B/C, targets only B/C, runs real Bulk service preview/commit for price, category, active state and minimum-stock, and readbacks each result through a new context. A, stock quantities and inventory movements are unchanged; four aggregate audit records each report requested/changed count `2`.
+- Fresh Release build: `dotnet build POS.Enterprise.slnx --configuration Release --no-restore -p:UseAppHost=true` — PASS, `0 warning / 0 error`. Focused production control/selection/status/persistence group after that build — `16/16 PASS`, `0 failed / 0 skipped`, with `--no-build`.
+- Full Release command in this execution: `dotnet test POS.Enterprise.slnx --configuration Release --no-build` — `1430 PASS / 6 FAIL / 0 SKIP / 1436`. Failures: 2 `RememberedLoginStoreTests` and 4 VietQR secure-storage tests, all failing existing save-success assertions.
+- Official Quality Gate command without `-SkipEfCheck` — restore PASS; Debug build `0 warning / 0 error`; automated tests `1430 PASS / 6 FAIL / 0 SKIP`; script stopped at step 3, exit code `1`. Vulnerability, EF pending-model and later Git checks were not reached by the script and are not marked PASS.
+- Direct ephemeral `CurrentUser` DPAPI probe (temporary diagnostic removed after capture) produced `CryptographicException`, HResult `0x80131501`, profile-not-loaded message. It did not access the user secure store. Physical WPF/UIA/DPI and real manual save-dialog acceptance remain pending.
+
+## R5 Bulk row-selection hotfix — 2026-08-31
+
+- Fresh Release app/test build: PASS, `0 warning/0 error`.
+- Production Shell/DataGrid checkbox + Bulk/status focused regression: `15/15 PASS`, failed/skipped `0/0`.
+- Full Release: `1429/1435 PASS`, `6 FAIL`, `0 SKIP`; Official Quality Gate NOT PASS at automated tests for DPAPI secure-storage failures. `git diff --check`: PASS.
+
+## R5 Bulk selection/preview binding hotfix — 2026-08-31
+
+- Fresh Release solution/app/test build: PASS, `0 warning/0 error`.
+- Focused production WPF binding + Bulk/Shell regression: `15/15 PASS`, failed/skipped `0/0`.
+- Full Release: `1429/1435 PASS`, `6 FAIL`, `0 SKIP`; failures are DPAPI secure-storage tests. Official Quality Gate is NOT PASS at automated tests. `git diff --check`: PASS.
+
+## R5 Bulk selection/status follow-up — 2026-08-31
+
+- Release solution build: PASS, `0 warning/0 error`; apphost, managed app DLL and test DLL exist in Release output.
+- Focused Bulk tests: `6/6 PASS`; `git diff --check`: PASS.
+- Full Release and Official Quality Gate were not rerun after this source change; physical WPF binding/UI/DPI remains pending.
+
+## R5 Bulk status binding follow-up — 2026-08-31
+
+- WPF Release build: PASS with `UseAppHost=false`, `0 warning/0 error`.
+- Existing focused Bulk tests: `6/6 PASS`; no fresh WPF control-binding harness was added in this follow-up.
+- Full Release/Official Quality Gate are not PASS; prior environment DPAPI failures remain documented.
+
+## R5 Bulk snapshot verification — 2026-08-31
+
+- Release solution build: PASS, `0 warning/0 error`; application and test outputs regenerated from current source.
+- Focused Bulk/Export: `11/11 PASS`. Full Release: `1428/1434 PASS`, `6 FAIL`, `0 SKIP`; all failures are DPAPI secure-storage environment tests.
+- Official Quality Gate: NOT PASS; stopped at automated tests with `1428/1434`. `git diff --check`: PASS.
+
+## R5 Bulk reference snapshot — 2026-08-31
+
+- Focused `BulkProductUiTests|BulkProductOperationTests`: `6/6 PASS`, failed/skipped `0/0`.
+- `git diff --check`: PASS. WPF compilation reached output generation; final executable copy failed because `POS.Enterprise.exe` is held by the running POS process.
+- Full Release suite, Official Quality Gate and physical UI/DPI acceptance remain pending.
+
+## R5 hotfix — 2026-08-31
+
+- Release WPF production build: PASS; solution build could not overwrite a locked `POS.Architecture.Tests.dll`.
+- Focused `BulkProductUiTests|ProductExportTests`: `7/7 PASS`, failed/skipped `0/0`.
+- `git diff --check`: PASS. Official Quality Gate, full Release, and physical UI/save-dialog/DPI acceptance remain pending.
+
 ## R5.1–R5.3 hotfix A/B/C — 2026-08-30
 
 - Focused A/B/C Debug `29/29 PASS`; focused A/B/C Release `29/29 PASS`; failed/skipped `0/0`. Coverage includes real production-resource Shell composition, sidebar History binding and duplicate-route removal, bulk mode guidance/select-all/checked-row target behavior, four operation exposure, typed export result after writer completion and Import Wizard success feedback.

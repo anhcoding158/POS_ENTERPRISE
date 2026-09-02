@@ -1520,6 +1520,10 @@
                                         <MenuItem Header="Xuất file"
                                                   Command="{Binding ExportProductsCommand}"
                                                   ToolTip="Xuất dữ liệu theo phạm vi và quyền hiện tại" />
+                                        <Separator />
+                                        <MenuItem Header="In mã vạch / tem giá…"
+                                                  Command="{Binding PrintProductLabelsCommand}"
+                                                  ToolTip="In tem cho sản phẩm đang chọn hoặc tập đã tick" />
                                     </ContextMenu>
                                 </Button.ContextMenu>
                             </Button>
@@ -1741,6 +1745,11 @@
                                                     Header="Điều chỉnh kho"
                                                     Command="{Binding AdjustInventoryCommand}"
                                                     ToolTip="{Binding InventoryActionHint}"
+                                                    ToolTipService.ShowOnDisabled="True" />
+                                                <MenuItem
+                                                    Header="In mã vạch / tem giá…"
+                                                    Command="{Binding PrintProductLabelsCommand}"
+                                                    ToolTip="In đúng sản phẩm đang chọn"
                                                     ToolTipService.ShowOnDisabled="True" />
                                                 <Separator />
                                                 <MenuItem
@@ -2141,7 +2150,7 @@
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <CheckBox
-                                                IsChecked="{Binding IsBulkSelected, Mode=TwoWay}"
+                                                IsChecked="{Binding IsBulkSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                 Visibility="{Binding DataContext.IsBulkSelectionMode,
                                                     RelativeSource={RelativeSource AncestorType={x:Type DataGrid}},
                                                     Converter={StaticResource BooleanToVisibilityConverter}}"

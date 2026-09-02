@@ -1,5 +1,20 @@
 # BUSINESS INVARIANTS — POS ENTERPRISE RETAIL V1
 
+## INV-LABEL-001 — Label jobs are immutable, exact and non-mutating
+
+- **Statement:** A label job snapshots the selected Product ID, ProductCode, name, sale price, original Barcode, active state, quantity and one print date. Duplicate Product IDs are removed; multi-select uses only checked IDs; preview/test/real print preserve the same stable product/label order. Printing never changes Product, price, Barcode, status, stock, InventoryMovement or archive state.
+- **Enforcement:** `LabelJobSnapshot`, `LabelPrintViewModel`, `LabelDocumentBuilder`/`LabelDocumentPaginator` and recording-dispatcher tests.
+
+## INV-LABEL-002 — Barcode source and validity are explicit
+
+- **Statement:** Stored Barcode is the only barcode source in R5.4. Missing, non-ASCII or otherwise invalid Barcode blocks that product’s job and identifies the affected row; ProductCode remains separately displayed and is not an implicit fallback. Code 128 is encoded at runtime with quiet zone and bounded vector geometry.
+- **Enforcement:** `LabelBarcodeValidator`, `LabelBarcodeEncoder`, vector render tests and row-level validation tests.
+
+## INV-LABEL-003 — Physical print is permissioned, bounded and replaceable
+
+- **Statement:** Printing requires `ManageProducts`, valid template/mm values, positive quantities, a currently available selected printer and a current preview. Test print dispatches exactly one label; real print dispatches the job total; unavailable/cancelled/invalid-ticket/spool failures cannot report success. Automated tests never target a physical printer.
+- **Enforcement:** WPF command guards, `ILabelPrinterCatalog`/`ILabelPrintDispatcher`, `WpfLabelPrintingService`, fake printer/dispatcher tests and production composition tests.
+
 ## INV-EMPLOYEE-001 — Employee identity is retained and account linkage is optional
 
 - **Statement:** Employee is the business person/history record; a login User is optional and at most one account may be linked. No normal Employee delete action exists, and historical orders/receipts/audits remain readable after deactivation.

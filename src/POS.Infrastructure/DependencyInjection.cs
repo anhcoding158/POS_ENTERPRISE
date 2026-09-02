@@ -289,6 +289,10 @@ public static class DependencyInjection
             ReceiptDocumentBuilder>();
 
         services.AddSingleton<IReceiptService, WpfReceiptService>();
+        services.AddSingleton<ILabelPrinterCatalog, WpfLabelPrinterCatalog>();
+        services.AddSingleton<ILabelPrintSettingsStore, JsonLabelPrintSettingsStore>();
+        services.AddSingleton<ILabelPrintDispatcher, WpfLabelPrintDispatcher>();
+        services.AddSingleton<ILabelPrintingService, WpfLabelPrintingService>();
 
         /*
          * Service VietQR cũ được giữ để không phá
