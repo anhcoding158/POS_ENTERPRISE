@@ -186,7 +186,7 @@ public sealed class ProductImportService : IProductImportService
                 _currentUser.UserId,
                 null,
                 null,
-                SecurityAuditAction.EmployeeUpdated,
+                SecurityAuditAction.BulkProductOperation,
                 "Success",
                 batchId,
                 now,

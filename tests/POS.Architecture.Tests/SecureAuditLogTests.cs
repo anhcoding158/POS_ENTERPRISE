@@ -60,6 +60,18 @@ public sealed class SecureAuditLogTests
         Assert.Equal("Sản phẩm", AuditPresentationResolver.ResolveBusinessArea(legacyBulk));
         Assert.Equal("2 sản phẩm", AuditPresentationResolver.ResolveTarget(legacyBulk));
         Assert.Equal($"Batch {operationId:N}", AuditPresentationResolver.TechnicalTarget(legacyBulk));
+
+        var legacyImport = new SecurityAuditEvent(
+            1, null, null, SecurityAuditAction.EmployeeUpdated, "Success", Guid.NewGuid(), DateTimeOffset.UtcNow,
+            "Quản trị viên", "Batch import-001", AuditPresentationResolver.ProductImportBusinessArea,
+            AuditPresentationResolver.ProductImportTargetType, "Không xác định",
+            [new SecurityAuditChange("created_count", null, "3")]);
+        Assert.Equal(SecurityAuditAction.BulkProductOperation, AuditPresentationResolver.ResolveAction(legacyImport));
+        Assert.Equal("Nhập dữ liệu sản phẩm", AuditPresentationResolver.ActionText(
+            AuditPresentationResolver.ResolveAction(legacyImport),
+            AuditPresentationResolver.ProductImportBusinessArea,
+            "Lô nhập sản phẩm"));
+        Assert.Equal("Lô nhập sản phẩm", AuditPresentationResolver.ResolveTargetType(legacyImport));
         Assert.Equal(SecurityAuditAction.EmployeeUpdated, AuditPresentationResolver.ResolveAction(employeeUpdate));
         Assert.Equal("Cập nhật nhân viên", AuditPresentationResolver.ActionText(employeeUpdate.Action));
         Assert.Equal("Thành công", AuditPresentationResolver.ResultText("Success"));

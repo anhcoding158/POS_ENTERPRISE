@@ -28,8 +28,9 @@ public sealed record AuditListItemDto(
     string TerminalId,
     Guid OperationId)
 {
-    public string ActionText => AuditPresentationResolver.ActionText(Action);
+    public string ActionText => AuditPresentationResolver.ActionText(Action, BusinessArea, TargetType);
     public string ResultText => AuditPresentationResolver.ResultText(Result);
+    public string TargetType { get; init; } = string.Empty;
     public string TechnicalTarget { get; init; } = string.Empty;
 }
 
@@ -48,7 +49,7 @@ public sealed record AuditDetailsDto(
     public string TargetType { get; init; } = string.Empty;
     public string TechnicalTarget { get; init; } = string.Empty;
     public string LocalTimeText => OccurredAtUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture);
-    public string ActionText => AuditPresentationResolver.ActionText(Action);
+    public string ActionText => AuditPresentationResolver.ActionText(Action, BusinessArea, TargetType);
     public string ResultText => AuditPresentationResolver.ResultText(Result);
     public string OperationText => ChangeValue("operation") ?? "—";
     public string RequestedCountText => ChangeValue("requested_count") ?? "—";

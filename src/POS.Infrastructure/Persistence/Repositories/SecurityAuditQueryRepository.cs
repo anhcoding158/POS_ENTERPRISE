@@ -77,7 +77,11 @@ public sealed class SecurityAuditQueryRepository : ISecurityAuditQueryRepository
         new(audit.Id, audit.CreatedAtUtc, Actor(audit), AuditPresentationResolver.ResolveAction(audit),
             AuditPresentationResolver.ResolveBusinessArea(audit), AuditPresentationResolver.ResolveTarget(audit), audit.Result,
             string.IsNullOrWhiteSpace(audit.TerminalId) ? "Không xác định" : audit.TerminalId,
-            audit.OperationId) { TechnicalTarget = AuditPresentationResolver.TechnicalTarget(audit) };
+            audit.OperationId)
+        {
+            TargetType = AuditPresentationResolver.ResolveTargetType(audit),
+            TechnicalTarget = AuditPresentationResolver.TechnicalTarget(audit)
+        };
 
     private static AuditDetailsDto MapDetails(SecurityAuditEvent audit) =>
         new(audit.Id, audit.CreatedAtUtc, Actor(audit), AuditPresentationResolver.ResolveAction(audit),

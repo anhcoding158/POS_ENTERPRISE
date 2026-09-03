@@ -15,6 +15,12 @@ namespace POS.Architecture.Tests;
 
 public sealed class SecureAuditLogUiTests
 {
+    private static readonly string[] ExpectedFilterTabOrder =
+    [
+        "AuditBusinessAreaFilter", "AuditActionFilter", "AuditActorFilter",
+        "AuditSearchButton", "AuditClearFiltersButton"
+    ];
+
     [Fact]
     public async Task Audit_window_constructs_and_lays_out_at_supported_sizes()
     {
@@ -59,8 +65,117 @@ public sealed class SecureAuditLogUiTests
                 var searchButton = FindVisualDescendants<global::System.Windows.Controls.Button>(window)
                     .Single(button => AutomationProperties.GetAutomationId(button) == "AuditSearchButton");
                 Assert.Same(viewModel.SearchCommand, searchButton.Command);
+                var fromDate = FindVisualDescendants<global::System.Windows.Controls.DatePicker>(window)
+                    .Single(picker => AutomationProperties.GetAutomationId(picker) == "AuditFromDate");
+                var toDate = FindVisualDescendants<global::System.Windows.Controls.DatePicker>(window)
+                    .Single(picker => AutomationProperties.GetAutomationId(picker) == "AuditToDate");
+                Assert.Equal(global::System.Windows.Controls.DatePickerFormat.Short, fromDate.SelectedDateFormat);
+                Assert.Equal(global::System.Windows.Controls.DatePickerFormat.Short, toDate.SelectedDateFormat);
+                Assert.Equal("vi-vn", fromDate.Language.IetfLanguageTag, ignoreCase: true);
+                Assert.Equal("vi-vn", toDate.Language.IetfLanguageTag, ignoreCase: true);
+                Assert.Equal(0, fromDate.TabIndex);
+                Assert.Equal(1, toDate.TabIndex);
+                var filterInputs = FindVisualDescendants<global::System.Windows.Controls.Control>(window)
+                    .Where(control => AutomationProperties.GetAutomationId(control) is "AuditBusinessAreaFilter" or "AuditActionFilter" or "AuditActorFilter" or "AuditSearchButton" or "AuditClearFiltersButton")
+                    .OrderBy(control => control.TabIndex)
+                    .Select(control => AutomationProperties.GetAutomationId(control))
+                    .ToArray();
+                Assert.Equal(ExpectedFilterTabOrder, filterInputs);
                 Assert.Contains(FindVisualDescendants<global::System.Windows.Controls.TextBlock>(window),
-                    textBlock => textBlock.Text == "Chọn một hoạt động để xem chi tiết");
+                    textBlock => textBlock.Text == "Chọn một hoạt động để xem chi tiết.");
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public async Task Audit_detail_uses_read_only_change_rows_and_preserves_activity_context()
+    {
+        await RunOnStaAsync(() =>
+        {
+            if (global::System.Windows.Application.Current is null)
+            {
+                var application = new App();
+                application.InitializeComponent();
+                application.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            }
+
+            var occurred = new DateTimeOffset(2026, 9, 2, 8, 27, 47, TimeSpan.Zero);
+            var item = new AuditListItemDto(7, occurred, "Admin POS", SecurityAuditAction.RoleChanged,
+                "Nhân viên và tài khoản", "Nguyễn Văn C", "Success", "TERM-ISOLATED", Guid.NewGuid());
+            var details = new AuditDetailsDto(item.Id, item.OccurredAtUtc, item.Actor, item.Action, item.BusinessArea,
+                item.Target, item.Result, item.TerminalId, item.OperationId,
+                [new AuditChangeDto("Vai trò", "Quản lý", "Nhân viên kho")]);
+
+            using var provider = new ServiceCollection()
+                .AddSingleton<IAuditLogService>(new DetailAuditLogService(item, details))
+                .BuildServiceProvider();
+            var viewModel = new AuditLogViewModel(provider.GetRequiredService<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>());
+            var window = new AuditLogWindow(viewModel);
+            window.Show();
+            try
+            {
+                viewModel.InitializeAsync().GetAwaiter().GetResult();
+                window.UpdateLayout();
+                Assert.NotNull(viewModel.Details);
+                Assert.Contains(FindVisualDescendants<global::System.Windows.Controls.TextBlock>(window), text => text.Text == "Thay đổi vai trò");
+                Assert.Contains(FindVisualDescendants<global::System.Windows.Controls.TextBlock>(window), text => text.Text == "Thành công");
+                Assert.Equal("✓", FindVisualDescendants<global::System.Windows.Controls.TextBlock>(window).Single(text => text.Name == "AuditDetailResultIcon").Text);
+                Assert.DoesNotContain(FindVisualDescendants<global::System.Windows.Controls.TextBlock>(window), text => text.Visibility == Visibility.Visible && text.Text == "Sự kiện này không có thống kê thay đổi.");
+                Assert.DoesNotContain(FindVisualDescendants<global::System.Windows.Controls.TextBlock>(window), text => text.Visibility == Visibility.Visible && text.Text == "Sự kiện này không có trường dữ liệu thay đổi.");
+                Assert.DoesNotContain(FindVisualDescendants<global::System.Windows.Controls.DataGrid>(window), grid => grid != FindVisualDescendants<global::System.Windows.Controls.DataGrid>(window).Single(candidate => AutomationProperties.GetAutomationId(candidate) == "AuditList"));
+                Assert.Contains(FindVisualDescendants<global::System.Windows.Controls.TextBlock>(window), text => text.Text == "Vai trò");
+                Assert.Contains(FindVisualDescendants<global::System.Windows.Controls.TextBlock>(window), text => text.Text == "Quản lý");
+                Assert.Contains(FindVisualDescendants<global::System.Windows.Controls.TextBlock>(window), text => text.Text == "Nhân viên kho");
+                var technical = FindVisualDescendants<global::System.Windows.Controls.Expander>(window).Single(expander => expander.Header?.ToString() == "Chi tiết kỹ thuật");
+                Assert.False(technical.IsExpanded);
+                technical.IsExpanded = true;
+                window.UpdateLayout();
+                Assert.True(technical.IsExpanded);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public async Task Failed_audit_detail_uses_failure_icon_and_empty_changes_have_one_empty_state()
+    {
+        await RunOnStaAsync(() =>
+        {
+            if (global::System.Windows.Application.Current is null)
+            {
+                var application = new App();
+                application.InitializeComponent();
+                application.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            }
+
+            var occurred = new DateTimeOffset(2026, 9, 2, 8, 27, 47, TimeSpan.Zero);
+            var item = new AuditListItemDto(8, occurred, "Không xác định", SecurityAuditAction.LoginFailed,
+                "Nhân viên và tài khoản", "Tài khoản người dùng", "Failed", "TERM-ISOLATED", Guid.NewGuid());
+            var details = new AuditDetailsDto(item.Id, item.OccurredAtUtc, item.Actor, item.Action, item.BusinessArea,
+                item.Target, item.Result, item.TerminalId, item.OperationId, []);
+            using var provider = new ServiceCollection()
+                .AddSingleton<IAuditLogService>(new DetailAuditLogService(item, details))
+                .BuildServiceProvider();
+            var viewModel = new AuditLogViewModel(provider.GetRequiredService<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>());
+            var window = new AuditLogWindow(viewModel);
+            window.Show();
+            try
+            {
+                viewModel.InitializeAsync().GetAwaiter().GetResult();
+                window.UpdateLayout();
+                var textBlocks = FindVisualDescendants<global::System.Windows.Controls.TextBlock>(window).ToArray();
+                Assert.Equal("✕", textBlocks.Single(text => text.Name == "AuditDetailResultIcon").Text);
+                Assert.Contains(textBlocks, text => text.Text == "Thất bại");
+                Assert.DoesNotContain(textBlocks, text => text.Text == "✓");
+                Assert.DoesNotContain(textBlocks, text => text.Visibility == Visibility.Visible && text.Text == "Sự kiện này không có thống kê thay đổi.");
+                Assert.Single(textBlocks, text => text.Visibility == Visibility.Visible && text.Text == "Sự kiện này không có trường dữ liệu thay đổi.");
             }
             finally
             {
@@ -180,6 +295,15 @@ public sealed class SecureAuditLogUiTests
             CancellationToken cancellationToken = default) =>
             Task.FromResult(Result.Failure<AuditDetailsDto>(
                 new AppError(ErrorCodes.General.NotFound, "Không tìm thấy hoạt động.")));
+    }
+
+    private sealed class DetailAuditLogService(AuditListItemDto item, AuditDetailsDto details) : IAuditLogService
+    {
+        public Task<Result<PagedResult<AuditListItemDto>>> SearchAsync(AuditSearchRequest request, CancellationToken cancellationToken = default) =>
+            Task.FromResult(Result.Success(new PagedResult<AuditListItemDto>([item], request.PageNumber, request.PageSize, 1)));
+
+        public Task<Result<AuditDetailsDto>> GetDetailsAsync(int auditId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(Result.Success(details));
     }
 
     private static Task<object?> RunOnStaAsync(Action action)

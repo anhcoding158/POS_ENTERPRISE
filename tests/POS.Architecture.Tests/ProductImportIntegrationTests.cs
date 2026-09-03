@@ -72,10 +72,16 @@ public sealed class ProductImportIntegrationTests
         Assert.Equal(InventoryMovementType.OpeningBalance, movement.MovementType);
         Assert.Equal(12, movement.QuantityAfter);
         var audit = await verify.SecurityAuditEvents.SingleAsync(a => a.OperationId == result.BatchId);
-        Assert.Equal(SecurityAuditAction.EmployeeUpdated, audit.Action);
+        Assert.Equal(SecurityAuditAction.BulkProductOperation, audit.Action);
         Assert.Equal("Sản phẩm và nhập dữ liệu", audit.BusinessArea);
         Assert.Contains("created_count", audit.AfterValuesJson, StringComparison.Ordinal);
         Assert.DoesNotContain(file, audit.AfterValuesJson, StringComparison.OrdinalIgnoreCase);
+
+        var details = await new SecurityAuditQueryRepository(verify).GetDetailsAsync(audit.Id);
+        Assert.NotNull(details);
+        Assert.Equal("Nhập dữ liệu sản phẩm", details.ActionText);
+        Assert.Equal("Lô nhập sản phẩm", details.TargetType);
+        Assert.Equal("Batch " + result.BatchId.ToString("N"), details.TechnicalTarget);
     }
 
     [Fact]
