@@ -144,6 +144,13 @@ public sealed class UserConfiguration :
                 NullableDateTimeOffsetConverter)
             .HasColumnType("INTEGER");
 
+        builder.Property(
+                user =>
+                    user.LastFailedLoginAtUtc)
+            .HasConversion(
+                NullableDateTimeOffsetConverter)
+            .HasColumnType("INTEGER");
+
         /*
          * Username chuẩn hóa là nguồn sự thật
          * để chống trùng tên đăng nhập.

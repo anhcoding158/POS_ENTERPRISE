@@ -17,6 +17,9 @@ public static class BusinessRules
         public const int FullNameMaxLength = 150;
 
         public const int FailedLoginLimit = 5;
+
+        public static readonly TimeSpan FailedLoginLockDuration =
+            TimeSpan.FromMinutes(15);
     }
 
     public static class Employees

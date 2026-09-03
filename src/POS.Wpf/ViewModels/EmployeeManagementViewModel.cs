@@ -22,6 +22,37 @@ public sealed record RoleFilterOption(string DisplayName, Role? Value)
 }
 public sealed record PermissionGroupViewModel(string DisplayName, IReadOnlyList<string> Permissions);
 
+public sealed class EmployeeAccountSuccessEventArgs : EventArgs
+{
+    public EmployeeAccountSuccessEventArgs(string title, string username, string employeeName, string? employeeCode = null, string? employeeStatus = null)
+    {
+        Title = title;
+        Username = username;
+        EmployeeName = employeeName;
+        EmployeeCode = employeeCode;
+        EmployeeStatus = employeeStatus;
+    }
+
+    public string Title { get; }
+    public string Username { get; }
+    public string EmployeeName { get; }
+    public string? EmployeeCode { get; }
+    public string? EmployeeStatus { get; }
+    public bool IsCreate => Title.Contains("Tạo", StringComparison.Ordinal);
+    public bool IsEmployeeCreate => !string.IsNullOrWhiteSpace(EmployeeCode);
+}
+
+public sealed class EmployeeOperationToastEventArgs(string message) : EventArgs
+{
+    public string Message { get; } = message;
+}
+
+public sealed class EmployeeOperationErrorEventArgs(string title, string message) : EventArgs
+{
+    public string Title { get; } = title;
+    public string Message { get; } = message;
+}
+
 public sealed class EmployeeRowViewModel
 {
     private static readonly CultureInfo VietnameseCulture = CultureInfo.GetCultureInfo("vi-VN");
@@ -38,6 +69,7 @@ public sealed class EmployeeRowViewModel
         Role = dto.Role;
         LastSuccessfulLoginUtc = dto.LastSuccessfulLoginUtc;
         FailedLoginAttempts = dto.FailedLoginAttempts;
+        LastFailedLoginUtc = dto.LastFailedLoginUtc;
         UpdatedAtUtc = dto.UpdatedAtUtc;
     }
 
@@ -57,7 +89,16 @@ public sealed class EmployeeRowViewModel
         AccountStatus.Active => "Đang hoạt động",
         AccountStatus.Locked => "Đã khóa",
         AccountStatus.Disabled => "Đã vô hiệu hóa",
-        AccountStatus.ForcePasswordChange => "Chờ đổi mật khẩu",
+        AccountStatus.ForcePasswordChange => "Chờ nhân viên đổi mật khẩu lần đầu",
+        _ => "Không xác định"
+    };
+    public string AccountTableStatusText => AccountStatus switch
+    {
+        AccountStatus.NoAccount => "Chưa có tài khoản",
+        AccountStatus.Active => "Đang hoạt động",
+        AccountStatus.Locked => "Đã khóa",
+        AccountStatus.Disabled => "Đã vô hiệu hóa",
+        AccountStatus.ForcePasswordChange => "Chờ đổi lần đầu",
         _ => "Không xác định"
     };
     public Role? Role { get; }
@@ -65,6 +106,7 @@ public sealed class EmployeeRowViewModel
     public DateTimeOffset? LastSuccessfulLoginUtc { get; }
     public string LastLoginText => LastSuccessfulLoginUtc is null ? "Chưa đăng nhập" : LastSuccessfulLoginUtc.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm", VietnameseCulture);
     public int FailedLoginAttempts { get; }
+    public DateTimeOffset? LastFailedLoginUtc { get; }
     public string FailedLoginText => FailedLoginAttempts.ToString("N0", VietnameseCulture);
     public DateTimeOffset UpdatedAtUtc { get; }
 
@@ -117,6 +159,7 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
     private int _activeEmployees;
     private int _accountsNeedingAttention;
     private int _selectedDetailTabIndex;
+    private bool _lastLoadSucceeded;
 
     public EmployeeManagementViewModel(IServiceScopeFactory scopeFactory, IPermissionService permissionService, ILogger<EmployeeManagementViewModel> logger)
     {
@@ -128,14 +171,14 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
             new("Tất cả nhân viên", null), new("Đang làm việc", EmployeeStatus.Active), new("Ngừng hoạt động", EmployeeStatus.Inactive)]);
         AccountFilters = new ObservableCollection<AccountFilterOption>([
             new("Tất cả tài khoản", null), new("Chưa có tài khoản", AccountStatus.NoAccount), new("Đang hoạt động", AccountStatus.Active),
-            new("Đang bị khóa", AccountStatus.Locked), new("Đã vô hiệu hóa", AccountStatus.Disabled), new("Chờ đổi mật khẩu", AccountStatus.ForcePasswordChange)]);
+            new("Đang bị khóa", AccountStatus.Locked), new("Đã vô hiệu hóa", AccountStatus.Disabled), new("Chờ nhân viên đổi mật khẩu lần đầu", AccountStatus.ForcePasswordChange)]);
         RoleOptions = new ObservableCollection<RoleOption>([
             new("Quản trị viên", Role.Administrator), new("Quản lý", Role.Manager), new("Thu ngân", Role.Cashier), new("Nhân viên kho", Role.InventoryStaff)]);
         RoleFilterOptions = new ObservableCollection<RoleFilterOption>([
             new("Tất cả vai trò", null), new("Quản trị viên", Role.Administrator), new("Quản lý", Role.Manager), new("Thu ngân", Role.Cashier), new("Nhân viên kho", Role.InventoryStaff)]);
         PageSizeOptions = new ObservableCollection<int>([10, 20, 50]);
 
-        _selectedEmployeeFilter = EmployeeFilters[0];
+        _selectedEmployeeFilter = EmployeeFilters[1];
         _selectedAccountFilter = AccountFilters[0];
         _selectedRole = RoleOptions[2];
         _selectedRoleFilter = RoleFilterOptions[0];
@@ -156,6 +199,7 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
         ResetPasswordCommand = new AsyncRelayCommand(ResetPasswordAsync, () => CanLoad() && CanResetPasswords && HasAccount, HandleException);
         ToggleLockCommand = new AsyncRelayCommand(ToggleLockAsync, () => CanLoad() && CanLockAccounts && HasAccount, HandleException);
         ToggleActiveCommand = new AsyncRelayCommand(ToggleActiveAsync, () => CanLoad() && CanManageEmployees && HasSelection, HandleException);
+        ToggleAccountActiveCommand = new AsyncRelayCommand(ToggleAccountActiveAsync, () => CanLoad() && CanManageAccounts && HasAccount && CanToggleAccountActive, HandleException);
         ChangeRoleCommand = new AsyncRelayCommand(ChangeRoleAsync, () => CanLoad() && CanAssignRoles && HasAccount, HandleException);
     }
 
@@ -182,7 +226,11 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
     public AsyncRelayCommand ResetPasswordCommand { get; }
     public AsyncRelayCommand ToggleLockCommand { get; }
     public AsyncRelayCommand ToggleActiveCommand { get; }
+    public AsyncRelayCommand ToggleAccountActiveCommand { get; }
     public AsyncRelayCommand ChangeRoleCommand { get; }
+    public event EventHandler<EmployeeAccountSuccessEventArgs>? AccountSuccessRequested;
+    public event EventHandler<EmployeeOperationToastEventArgs>? ToastRequested;
+    public event EventHandler<EmployeeOperationErrorEventArgs>? ErrorNotificationRequested;
 
     public string SearchTerm { get => _searchTerm; set { if (SetProperty(ref _searchTerm, value ?? string.Empty)) NotifyFilterState(); } }
     public EmployeeFilterOption SelectedEmployeeFilter { get => _selectedEmployeeFilter; set { if (SetProperty(ref _selectedEmployeeFilter, value ?? EmployeeFilters[0])) NotifyFilterState(); } }
@@ -196,7 +244,7 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
     public bool IsCreateMode { get => _isCreateMode; private set { if (SetProperty(ref _isCreateMode, value)) { OnPropertyChanged(nameof(EditorTitle)); OnPropertyChanged(nameof(HasDetail)); NotifyCommands(); } } }
     public bool IsEditing { get => _isEditing; private set { if (SetProperty(ref _isEditing, value)) { OnPropertyChanged(nameof(IsReadOnly)); NotifyCommands(); } } }
     public bool IsReadOnly => !IsEditing;
-    public bool IsCreatingAccount { get => _isCreatingAccount; private set { if (SetProperty(ref _isCreatingAccount, value)) { OnPropertyChanged(nameof(ShowAccountEditor)); NotifyCommands(); } } }
+    public bool IsCreatingAccount { get => _isCreatingAccount; private set { if (SetProperty(ref _isCreatingAccount, value)) { OnPropertyChanged(nameof(ShowAccountEditor)); OnPropertyChanged(nameof(ShowBeginCreateAccount)); NotifyCommands(); } } }
     public bool HasSelection => _details is not null;
     public bool HasDetail => IsCreateMode || SelectedEmployee is not null;
     public bool HasDetailContent => IsCreateMode || HasSelection;
@@ -221,6 +269,7 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
     public string Username { get => _username; set { if (SetProperty(ref _username, value ?? string.Empty)) MarkDirty(); } }
     public bool CreateAccount { get => _createAccount; set { if (SetProperty(ref _createAccount, value)) { MarkDirty(); OnPropertyChanged(nameof(ShowAccountEditor)); } } }
     public bool ShowAccountEditor => IsCreatingAccount || (IsCreateMode && CreateAccount);
+    public bool ShowBeginCreateAccount => HasSelection && !HasAccount && !IsCreatingAccount;
     public RoleOption SelectedRole { get => _selectedRole; set { if (SetProperty(ref _selectedRole, value ?? RoleOptions[2]) && (IsCreateMode || IsCreatingAccount)) MarkDirty(); } }
     public string StatusMessage { get => _statusMessage; private set { if (SetProperty(ref _statusMessage, value)) OnPropertyChanged(nameof(IsStatusVisible)); } }
     public bool IsStatusError { get => _isStatusError; private set => SetProperty(ref _isStatusError, value); }
@@ -239,11 +288,15 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
     public string AccountStatusText => _details?.AccountStatus switch
     {
         AccountStatus.NoAccount => "Chưa có tài khoản", AccountStatus.Active => "Đang hoạt động", AccountStatus.Locked => "Đã khóa",
-        AccountStatus.Disabled => "Đã vô hiệu hóa", AccountStatus.ForcePasswordChange => "Chờ đổi mật khẩu", _ => "—"
+        AccountStatus.Disabled => "Đã vô hiệu hóa", AccountStatus.ForcePasswordChange => "Chờ nhân viên đổi mật khẩu lần đầu", _ => "—"
     };
+    public string ResetPasswordButtonText => _details?.AccountStatus == AccountStatus.ForcePasswordChange
+        ? "Tạo lại mật khẩu tạm thời…"
+        : "Đặt lại mật khẩu…";
     public string EmployeeStatusText => _details?.EmployeeStatus == EmployeeStatus.Active ? "Đang làm việc" : "Ngừng hoạt động";
     public string LastLoginText => _details?.LastSuccessfulLoginUtc is null ? "Chưa đăng nhập" : _details.LastSuccessfulLoginUtc.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm", CultureInfo.GetCultureInfo("vi-VN"));
     public string FailedLoginText => $"{(_details?.FailedLoginAttempts ?? 0).ToString("N0", CultureInfo.GetCultureInfo("vi-VN"))} lần";
+    public string LastFailedLoginText => _details?.LastFailedLoginUtc is null ? "Chưa có" : _details.LastFailedLoginUtc.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm", CultureInfo.GetCultureInfo("vi-VN"));
     public string ForcePasswordChangeText => _details?.ForcePasswordChange == true ? "Đang yêu cầu đổi mật khẩu" : "Không yêu cầu đổi mật khẩu";
     public string EffectivePermissionsText => PermissionGroups.Count == 0
         ? "Chưa có"
@@ -251,8 +304,14 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
     public string RoleText => _details?.Role is Role role ? RolePermissionPolicy.GetRoleDisplayName(role) : "Chưa có vai trò";
     public string UsernameText => _details?.Username ?? "Chưa có tài khoản";
     public string SelectedInitials => _details is null ? "NV" : GetInitials(_details.FullName);
-    public string ToggleActiveText => _details?.EmployeeStatus == EmployeeStatus.Active ? "Ngừng hoạt động" : "Kích hoạt lại";
-    public string ToggleLockText => _details?.IsManuallyLocked == true ? "Mở khóa tài khoản" : "Khóa tài khoản";
+    public string ToggleActiveText => _details?.EmployeeStatus == EmployeeStatus.Active ? "Ngừng hoạt động…" : "Kích hoạt lại nhân viên…";
+    public string ToggleLockText => _details?.AccountStatus == AccountStatus.Locked ? "Mở khóa tài khoản" : "Khóa tài khoản";
+    public string ToggleAccountActiveText => _details?.AccountStatus == AccountStatus.Disabled ? "Kích hoạt lại tài khoản…" : "Vô hiệu hóa tài khoản…";
+    public bool ShowLockAction => HasAccount && _details?.AccountStatus != AccountStatus.Disabled;
+    public bool ShowAccountActiveAction => HasAccount && _details?.AccountStatus != AccountStatus.Locked;
+    public bool CanToggleAccountActive => ShowAccountActiveAction && !(_details?.AccountStatus == AccountStatus.Disabled && _details.EmployeeStatus != EmployeeStatus.Active);
+    public bool ShowAccountActiveHint => _details?.AccountStatus == AccountStatus.Disabled && _details.EmployeeStatus != EmployeeStatus.Active;
+    public string AccountActiveActionHint => ShowAccountActiveHint ? "Hãy kích hoạt lại nhân viên trước." : "Thay đổi trạng thái đăng nhập của tài khoản; lịch sử hoạt động vẫn được giữ nguyên.";
     public bool CanManageEmployees => _permissionService.HasPermission(SystemCapability.ManageEmployees);
     public bool CanManageAccounts => _permissionService.HasPermission(SystemCapability.ManageAccounts);
     public bool CanResetPasswords => _permissionService.HasPermission(SystemCapability.ResetPasswords);
@@ -263,6 +322,11 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
     public async Task ApplyFiltersAsync() => await LoadAsync(resetPage: true);
     public void SetAccountPassword(string? password) => _accountPassword = password ?? string.Empty;
     public void SetResetPassword(string? password) => _resetPassword = password ?? string.Empty;
+    public async Task ResetPasswordWithValueAsync(string password)
+    {
+        _resetPassword = password ?? string.Empty;
+        await ResetPasswordAsync();
+    }
 
     public async Task SelectEmployeeAsync(int employeeId)
     {
@@ -281,6 +345,7 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
         _loadCancellation?.Dispose();
         _loadCancellation = new CancellationTokenSource();
         var token = _loadCancellation.Token;
+        _lastLoadSucceeded = false;
         IsBusy = true; IsLoaded = false; IsStatusError = false; StatusMessage = "Đang tải danh sách nhân viên...";
         try
         {
@@ -314,15 +379,22 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
             var nextSelection = Employees.FirstOrDefault(employee => employee.Id == oldSelectedId) ?? Employees.FirstOrDefault();
             IsCreateMode = false; IsEditing = false; IsCreatingAccount = false; _details = null; PermissionGroups.Clear(); NotifyDetailState();
             SelectedEmployee = nextSelection;
-            if (nextSelection is not null) await LoadSelectedAsync(nextSelection.Id);
-            else StatusMessage = string.Empty;
+            var detailLoaded = true;
+            if (nextSelection is not null)
+                detailLoaded = await LoadSelectedAsync(nextSelection.Id);
+            if (detailLoaded)
+            {
+                StatusMessage = string.Empty;
+                IsStatusError = false;
+            }
+            _lastLoadSucceeded = detailLoaded;
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-        catch (Exception exception) { HandleException(exception); }
+        catch (Exception exception) { _lastLoadSucceeded = false; HandleException(exception); }
         finally { if (!token.IsCancellationRequested) IsBusy = false; }
     }
 
-    private async Task LoadSelectedAsync(int employeeId)
+    private async Task<bool> LoadSelectedAsync(int employeeId)
     {
         _detailCancellation?.Cancel(); _detailCancellation?.Dispose(); _detailCancellation = new CancellationTokenSource();
         var token = _detailCancellation.Token;
@@ -332,11 +404,12 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
             await using var scope = _scopeFactory.CreateAsyncScope();
             var result = await scope.ServiceProvider.GetRequiredService<IEmployeeAccountService>().GetAsync(employeeId, token);
             token.ThrowIfCancellationRequested();
-            if (result.IsFailure) { ShowError(result.AppError.Message); return; }
+            if (result.IsFailure) { ShowError(result.AppError.Message); return false; }
             _details = result.Value; IsCreateMode = false; IsEditing = false; IsCreatingAccount = false; AssignDetails(result.Value); NotifyDetailState();
+            return true;
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-        catch (Exception exception) { HandleException(exception); }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { return false; }
+        catch (Exception exception) { HandleException(exception); return false; }
         finally { if (!token.IsCancellationRequested) IsDetailBusy = false; }
     }
 
@@ -413,7 +486,13 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
                 SelectedAccountFilter = AccountFilters[0];
                 SelectedRoleFilter = RoleFilterOptions[0];
             }
-            ShowSuccess("Thông tin nhân viên đã được lưu."); await LoadAsync(preferredSelectionId: savedId, allowWhenBusy: true);
+            await RefreshAfterMutationAsync(savedId, wasCreate ? null : $"Đã cập nhật hồ sơ {result.Value.FullName}.");
+            if (wasCreate && !continueToAccount)
+            {
+                AccountSuccessRequested?.Invoke(this, new EmployeeAccountSuccessEventArgs(
+                    "Tạo nhân viên thành công", string.Empty, result.Value.FullName, result.Value.EmployeeCode,
+                    result.Value.EmployeeStatus == EmployeeStatus.Active ? "Đang làm việc" : "Ngừng hoạt động"));
+            }
             if (continueToAccount && HasSelection && !HasAccount)
             {
                 IsCreatingAccount = true;
@@ -437,8 +516,12 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
                 EmployeeId = _details.Id, ExpectedUpdatedAtUtc = _details.UpdatedAtUtc, Username = Username, TemporaryPassword = _accountPassword, Role = SelectedRole.Value
             });
             if (result.IsFailure) { ShowError(result.AppError.Message); return; }
-            _details = result.Value; AssignDetails(result.Value); IsCreatingAccount = false; ShowSuccess("Tài khoản đã được tạo và yêu cầu đổi mật khẩu lần đầu.");
-            await LoadAsync(preferredSelectionId: result.Value.Id, allowWhenBusy: true);
+            var successUsername = result.Value.Username ?? Username;
+            var successEmployeeName = result.Value.FullName;
+            _accountPassword = string.Empty;
+            _details = result.Value; AssignDetails(result.Value); IsCreatingAccount = false;
+            await RefreshAfterMutationAsync(result.Value.Id, null);
+            AccountSuccessRequested?.Invoke(this, new EmployeeAccountSuccessEventArgs("Tạo tài khoản thành công", successUsername, successEmployeeName));
         }
         catch (Exception exception) { HandleException(exception); }
         finally { IsBusy = false; }
@@ -455,10 +538,13 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
                 EmployeeId = _details.Id, ExpectedUpdatedAtUtc = _details.UpdatedAtUtc, TemporaryPassword = _resetPassword
             });
             if (result.IsFailure) { ShowError(result.AppError.Message); return; }
-            _resetPassword = string.Empty; ShowSuccess("Mật khẩu tạm thời đã được đặt lại; tài khoản phải đổi mật khẩu khi đăng nhập."); await LoadAsync(preferredSelectionId: _details.Id, allowWhenBusy: true);
+            var successUsername = _details.Username ?? Username;
+            var successEmployeeName = _details.FullName;
+            await RefreshAfterMutationAsync(_details.Id, null);
+            AccountSuccessRequested?.Invoke(this, new EmployeeAccountSuccessEventArgs("Đặt lại mật khẩu thành công", successUsername, successEmployeeName));
         }
         catch (Exception exception) { HandleException(exception); }
-        finally { IsBusy = false; }
+        finally { _resetPassword = string.Empty; IsBusy = false; }
     }
 
     private async Task ToggleLockAsync()
@@ -466,13 +552,13 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
         if (_details is null) return; IsBusy = true;
         try
         {
-            await using var scope = _scopeFactory.CreateAsyncScope(); var wasLocked = _details.IsManuallyLocked;
+            await using var scope = _scopeFactory.CreateAsyncScope(); var wasLocked = _details.AccountStatus == AccountStatus.Locked;
             var result = await scope.ServiceProvider.GetRequiredService<IEmployeeAccountService>().SetAccountLockAsync(new SetAccountLockRequest
             {
                 EmployeeId = _details.Id, ExpectedUpdatedAtUtc = _details.UpdatedAtUtc, Locked = !wasLocked
             });
-            if (result.IsFailure) { ShowError(result.AppError.Message); return; }
-            ShowSuccess(wasLocked ? "Tài khoản đã được mở khóa." : "Tài khoản đã được khóa."); await LoadAsync(preferredSelectionId: _details.Id, allowWhenBusy: true);
+            if (result.IsFailure) { ShowError(result.AppError.Message, notifyUser: true); return; }
+            await RefreshAfterMutationAsync(_details.Id, wasLocked ? $"Đã mở khóa tài khoản {_details.Username}." : $"Đã khóa tài khoản {_details.Username}.");
         }
         catch (Exception exception) { HandleException(exception); }
         finally { IsBusy = false; }
@@ -488,8 +574,8 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
             {
                 EmployeeId = _details.Id, ExpectedUpdatedAtUtc = _details.UpdatedAtUtc, Active = active
             });
-            if (result.IsFailure) { ShowError(result.AppError.Message); return; }
-            ShowSuccess(active ? "Nhân viên đã được kích hoạt." : "Nhân viên đã ngừng hoạt động; tài khoản đã bị vô hiệu hóa."); await LoadAsync(preferredSelectionId: _details.Id, allowWhenBusy: true);
+            if (result.IsFailure) { ShowError(result.AppError.Message, notifyUser: true); return; }
+            await RefreshAfterMutationAsync(_details.Id, active ? $"Đã kích hoạt lại nhân viên {_details.FullName}." : $"Đã ngừng hoạt động nhân viên {_details.FullName}.");
         }
         catch (Exception exception) { HandleException(exception); }
         finally { IsBusy = false; }
@@ -505,11 +591,45 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
             {
                 EmployeeId = _details.Id, ExpectedUpdatedAtUtc = _details.UpdatedAtUtc, Role = SelectedRole.Value
             });
-            if (result.IsFailure) { ShowError(result.AppError.Message); return; }
-            ShowSuccess("Vai trò tài khoản đã được cập nhật."); await LoadAsync(preferredSelectionId: _details.Id, allowWhenBusy: true);
+            if (result.IsFailure) { ShowError(result.AppError.Message, notifyUser: true); return; }
+            await RefreshAfterMutationAsync(_details.Id, $"Đã thay đổi vai trò của {_details.FullName}.");
         }
         catch (Exception exception) { HandleException(exception); }
         finally { IsBusy = false; }
+    }
+
+    private async Task ToggleAccountActiveAsync()
+    {
+        if (_details is null || !CanToggleAccountActive) return;
+        IsBusy = true;
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var activate = _details.AccountStatus == AccountStatus.Disabled;
+            var result = await scope.ServiceProvider.GetRequiredService<IEmployeeAccountService>().SetAccountActiveAsync(new SetAccountActiveRequest
+            {
+                EmployeeId = _details.Id, ExpectedUpdatedAtUtc = _details.UpdatedAtUtc, Active = activate
+            });
+            if (result.IsFailure) { ShowError(result.AppError.Message, notifyUser: true); return; }
+            await RefreshAfterMutationAsync(_details.Id, activate ? $"Đã kích hoạt lại tài khoản {_details.Username}." : $"Đã vô hiệu hóa tài khoản {_details.Username}.");
+        }
+        catch (Exception exception) { HandleException(exception); }
+        finally { IsBusy = false; }
+    }
+
+    private async Task RefreshAfterMutationAsync(int employeeId, string? successMessage)
+    {
+        await LoadAsync(preferredSelectionId: employeeId, allowWhenBusy: true);
+        if (_lastLoadSucceeded)
+        {
+            StatusMessage = string.Empty;
+            if (!string.IsNullOrWhiteSpace(successMessage))
+                ToastRequested?.Invoke(this, new EmployeeOperationToastEventArgs(successMessage));
+        }
+        else
+        {
+            ShowError("Đã lưu thay đổi nhưng chưa thể làm mới danh sách. Hãy bấm Làm mới.");
+        }
     }
 
     private async Task ChangePageAsync(int delta) { PageNumber = Math.Clamp(PageNumber + delta, 1, Math.Max(1, TotalPages)); await LoadAsync(); }
@@ -525,7 +645,7 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
             Username = details.Username ?? string.Empty; SelectedRole = RoleOptions.FirstOrDefault(option => option.Value == details.Role) ?? RoleOptions[2];
         }
         finally { _suppressDirty = false; }
-        IsDirty = false; BuildPermissionGroups(details.EffectivePermissions); OnPropertyChanged(nameof(ShowAccountEditor));
+        IsDirty = false; BuildPermissionGroups(details.EffectivePermissions); OnPropertyChanged(nameof(ShowAccountEditor)); OnPropertyChanged(nameof(ShowBeginCreateAccount));
     }
 
     private void BuildPermissionGroups(IReadOnlyList<SystemCapability> permissions)
@@ -564,17 +684,22 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
     private void NotifyDetailState()
     {
         OnPropertyChanged(nameof(HasSelection)); OnPropertyChanged(nameof(HasAccount)); OnPropertyChanged(nameof(HasDetail)); OnPropertyChanged(nameof(HasDetailContent)); OnPropertyChanged(nameof(AccountStatusText));
-        OnPropertyChanged(nameof(EmployeeStatusText)); OnPropertyChanged(nameof(LastLoginText)); OnPropertyChanged(nameof(FailedLoginText)); OnPropertyChanged(nameof(ForcePasswordChangeText));
-        OnPropertyChanged(nameof(RoleText)); OnPropertyChanged(nameof(UsernameText)); OnPropertyChanged(nameof(PhoneDisplayText)); OnPropertyChanged(nameof(EmailDisplayText)); OnPropertyChanged(nameof(SelectedInitials)); OnPropertyChanged(nameof(EffectivePermissionsText)); OnPropertyChanged(nameof(ToggleActiveText)); OnPropertyChanged(nameof(ToggleLockText));
-        OnPropertyChanged(nameof(ShowAccountEditor)); NotifyCommands();
+        OnPropertyChanged(nameof(EmployeeStatusText)); OnPropertyChanged(nameof(LastLoginText)); OnPropertyChanged(nameof(FailedLoginText)); OnPropertyChanged(nameof(LastFailedLoginText)); OnPropertyChanged(nameof(ForcePasswordChangeText));
+        OnPropertyChanged(nameof(RoleText)); OnPropertyChanged(nameof(UsernameText)); OnPropertyChanged(nameof(ResetPasswordButtonText)); OnPropertyChanged(nameof(PhoneDisplayText)); OnPropertyChanged(nameof(EmailDisplayText)); OnPropertyChanged(nameof(SelectedInitials)); OnPropertyChanged(nameof(EffectivePermissionsText)); OnPropertyChanged(nameof(ToggleActiveText)); OnPropertyChanged(nameof(ToggleLockText)); OnPropertyChanged(nameof(ShowLockAction)); OnPropertyChanged(nameof(ToggleAccountActiveText)); OnPropertyChanged(nameof(ShowAccountActiveAction)); OnPropertyChanged(nameof(CanToggleAccountActive)); OnPropertyChanged(nameof(ShowAccountActiveHint));
+        OnPropertyChanged(nameof(ShowAccountEditor)); OnPropertyChanged(nameof(ShowBeginCreateAccount)); NotifyCommands();
     }
     private void NotifyCommands()
     {
-        foreach (var command in new[] { SearchCommand, RefreshCommand, ClearFiltersCommand, PreviousPageCommand, NextPageCommand, FirstPageCommand, LastPageCommand, NewEmployeeCommand, EditProfileCommand, CancelEditCommand, SaveCommand, BeginCreateAccountCommand, CreateAccountCommand, ResetPasswordCommand, ToggleLockCommand, ToggleActiveCommand, ChangeRoleCommand }) command.NotifyCanExecuteChanged();
+        foreach (var command in new[] { SearchCommand, RefreshCommand, ClearFiltersCommand, PreviousPageCommand, NextPageCommand, FirstPageCommand, LastPageCommand, NewEmployeeCommand, EditProfileCommand, CancelEditCommand, SaveCommand, BeginCreateAccountCommand, CreateAccountCommand, ResetPasswordCommand, ToggleLockCommand, ToggleActiveCommand, ToggleAccountActiveCommand, ChangeRoleCommand }) command.NotifyCanExecuteChanged();
         NotifyListState();
     }
-    private void ShowSuccess(string message) { IsStatusError = false; StatusMessage = message; }
-    private void ShowError(string message) { IsStatusError = true; StatusMessage = message; }
+    private void ShowError(string message, bool notifyUser = false)
+    {
+        IsStatusError = true;
+        StatusMessage = message;
+        if (notifyUser)
+            ErrorNotificationRequested?.Invoke(this, new EmployeeOperationErrorEventArgs("Không thể thực hiện", message));
+    }
     private void HandleException(Exception exception) { PosLog.Error(_logger, exception, "Thao tác quản lý nhân viên thất bại."); ShowError("Thao tác không thể hoàn thành. Vui lòng thử lại."); IsBusy = false; }
     public void Dispose()
     {

@@ -56,6 +56,8 @@ public sealed class User : AuditableEntity
 
     public DateTimeOffset? LastLoginAtUtc { get; private set; }
 
+    public DateTimeOffset? LastFailedLoginAtUtc { get; private set; }
+
     public Employee? Employee { get; private set; }
 
     public bool IsLocked(DateTimeOffset utcNow)
@@ -158,6 +160,8 @@ public sealed class User : AuditableEntity
         }
 
         var normalizedUtc = utcNow.ToUniversalTime();
+
+        LastFailedLoginAtUtc = normalizedUtc;
 
         if (FailedLoginAttempts >=
             BusinessRules.Users.FailedLoginLimit)

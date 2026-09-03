@@ -1,11 +1,14 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Globalization;
 using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.DateTime;
 using POS.Application.Abstractions.Persistence;
 using POS.Application.Common;
 using POS.Application.DTOs.Authentication;
 using POS.Domain.Entities;
+using POS.Domain.Constants;
+using POS.Domain.Enums;
 
 namespace POS.Application.Services;
 
@@ -19,10 +22,6 @@ namespace POS.Application.Services;
 public sealed class AuthService :
     IAuthService
 {
-    private static readonly TimeSpan
-        AccountLockDuration =
-            TimeSpan.FromMinutes(15);
-
     private static readonly TimeSpan
         RememberedLoginDuration =
             TimeSpan.FromDays(30);
@@ -45,6 +44,9 @@ public sealed class AuthService :
     private readonly IRememberedLoginStore
         _rememberedLoginStore;
 
+    private readonly ISecurityAuditRepository?
+        _auditRepository;
+
     /// <summary>
     /// Constructor tương thích với các test cũ.
     ///
@@ -63,7 +65,8 @@ public sealed class AuthService :
             unitOfWork,
             currentUserService,
             clock,
-            NullRememberedLoginStore.Instance)
+            NullRememberedLoginStore.Instance,
+            null)
     {
     }
 
@@ -74,7 +77,8 @@ public sealed class AuthService :
         ICurrentUserService currentUserService,
         IClock clock,
         IRememberedLoginStore
-            rememberedLoginStore)
+            rememberedLoginStore,
+        ISecurityAuditRepository? auditRepository = null)
     {
         _userRepository =
             userRepository ??
@@ -105,6 +109,7 @@ public sealed class AuthService :
             rememberedLoginStore ??
             throw new ArgumentNullException(
                 nameof(rememberedLoginStore));
+        _auditRepository = auditRepository;
     }
 
     public async Task<
@@ -163,12 +168,7 @@ public sealed class AuthService :
 
         if (!user.IsActive)
         {
-            return Failure<
-                AuthenticatedUserDto>(
-                    ErrorCodes.Authentication
-                        .AccountInactive,
-                    "Tài khoản đã ngừng hoạt động. " +
-                    "Vui lòng liên hệ quản trị viên.");
+            return InvalidCredentials();
         }
 
         if (user.IsLocked(
@@ -178,8 +178,8 @@ public sealed class AuthService :
                 AuthenticatedUserDto>(
                     ErrorCodes.Authentication
                         .AccountLocked,
-                    "Tài khoản đang bị khóa tạm thời do " +
-                    "đăng nhập sai nhiều lần.");
+                    "Thông tin đăng nhập không hợp lệ hoặc tài khoản tạm thời " +
+                    "chưa thể sử dụng. Vui lòng thử lại sau.");
         }
 
         var passwordIsValid =
@@ -189,13 +189,24 @@ public sealed class AuthService :
 
         if (!passwordIsValid)
         {
+            var beforeAttempts = user.FailedLoginAttempts;
+            var beforeLocked = user.IsLocked(utcNow);
+            var beforeLockedUntil = user.LockedUntilUtc;
             user.RegisterFailedLogin(
                 utcNow,
-                AccountLockDuration);
+                BusinessRules.Users.FailedLoginLockDuration);
+
+            var changes = new List<SecurityAuditChange>();
+            AddChange(changes, "Sai liên tiếp", beforeAttempts.ToString(CultureInfo.InvariantCulture), user.FailedLoginAttempts.ToString(CultureInfo.InvariantCulture));
+            AddChange(changes, "Trạng thái tài khoản", AccountStateText(user, utcNow, beforeLocked), AccountStateText(user, utcNow));
+            AddChange(changes, "Khóa đến", FormatTimestamp(beforeLockedUntil), FormatTimestamp(user.LockedUntilUtc));
 
             var saveResult =
                 await SaveAuthenticationStateAsync(
-                    cancellationToken);
+                    user,
+                    auditFailure: true,
+                    cancellationToken,
+                    changes);
 
             if (saveResult.IsFailure)
             {
@@ -207,12 +218,12 @@ public sealed class AuthService :
             if (user.IsLocked(
                     utcNow))
             {
-                return Failure<
-                    AuthenticatedUserDto>(
-                        ErrorCodes.Authentication
-                            .AccountLocked,
-                        "Tài khoản đã bị khóa 15 phút do " +
-                        "đăng nhập sai quá nhiều lần.");
+            return Failure<
+                AuthenticatedUserDto>(
+                    ErrorCodes.Authentication
+                        .AccountLocked,
+                    $"Thông tin đăng nhập không hợp lệ hoặc tài khoản tạm thời " +
+                    $"chưa thể sử dụng. Vui lòng thử lại sau {BusinessRules.Users.FailedLoginLockDuration.TotalMinutes:0} phút.");
             }
 
             return InvalidCredentials();
@@ -223,6 +234,8 @@ public sealed class AuthService :
 
         var successfulLoginSaveResult =
             await SaveAuthenticationStateAsync(
+                null,
+                auditFailure: false,
                 cancellationToken);
 
         if (successfulLoginSaveResult.IsFailure)
@@ -234,7 +247,7 @@ public sealed class AuthService :
 
         var rememberedLoginResult =
             ConfigureRememberedLogin(
-                request.RememberLogin,
+                user.ForcePasswordChange ? false : request.RememberLogin,
                 user,
                 utcNow);
 
@@ -305,6 +318,7 @@ public sealed class AuthService :
             !user.IsActive ||
             user.IsLocked(
                 utcNow) ||
+            user.ForcePasswordChange ||
             !PasswordHashFingerprintMatches(
                 user.PasswordHash,
                 credential
@@ -326,6 +340,8 @@ public sealed class AuthService :
 
         var saveResult =
             await SaveAuthenticationStateAsync(
+                null,
+                auditFailure: false,
                 cancellationToken);
 
         if (saveResult.IsFailure)
@@ -427,15 +443,39 @@ public sealed class AuthService :
         return Result.Success();
     }
 
-    private async Task<Result>
-        SaveAuthenticationStateAsync(
-            CancellationToken cancellationToken)
+    private async Task<Result> SaveAuthenticationStateAsync(
+        User? user,
+        bool auditFailure,
+        CancellationToken cancellationToken,
+        IEnumerable<SecurityAuditChange>? changes = null)
     {
         try
         {
-            await _unitOfWork
-                .SaveChangesAsync(
-                    cancellationToken);
+            if (user is not null && auditFailure && _auditRepository is not null)
+            {
+                await using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await _auditRepository.AddAsync(new SecurityAuditEvent(
+                    actorUserId: null,
+                    targetEmployeeId: null,
+                    targetUserId: user.Id,
+                    action: SecurityAuditAction.LoginFailed,
+                    result: "Failed",
+                    operationId: Guid.NewGuid(),
+                    utcNow: _clock.UtcNow,
+                    actorDisplayNameSnapshot: null,
+                    targetDisplayNameSnapshot: user.FullName,
+                    businessArea: "Nhân viên và tài khoản",
+                    targetType: "Tài khoản",
+                    terminalId: "Không xác định",
+                    changes: changes), cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+            }
+            else
+            {
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+            }
 
             return Result.Success();
         }
@@ -474,6 +514,23 @@ public sealed class AuthService :
             forcePasswordChange:
                 user.ForcePasswordChange);
     }
+
+    private static void AddChange(List<SecurityAuditChange> changes, string field, string? before, string? after)
+    {
+        if (!string.Equals(before, after, StringComparison.Ordinal))
+            changes.Add(new SecurityAuditChange(field, before, after));
+    }
+
+    private static string AccountStateText(User user, DateTimeOffset now, bool? wasLocked = null)
+    {
+        if (!user.IsActive) return "Ngừng hoạt động";
+        if (wasLocked ?? user.IsLocked(now)) return "Đang khóa";
+        if (user.ForcePasswordChange) return "Chờ nhân viên đổi mật khẩu lần đầu";
+        return "Đang hoạt động";
+    }
+
+    private static string FormatTimestamp(DateTimeOffset? value) =>
+        value?.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss", CultureInfo.GetCultureInfo("vi-VN")) ?? "—";
 
     private static string
         CreatePasswordHashFingerprint(

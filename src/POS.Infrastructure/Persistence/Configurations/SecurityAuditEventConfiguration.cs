@@ -10,7 +10,7 @@ public sealed class SecurityAuditEventConfiguration : IEntityTypeConfiguration<S
     {
         builder.ToTable("SecurityAuditEvents", table =>
         {
-            table.HasCheckConstraint("CK_SecurityAuditEvents_Action_Valid", "\"Action\" >= 1 AND \"Action\" <= 15");
+            table.HasCheckConstraint("CK_SecurityAuditEvents_Action_Valid", "\"Action\" >= 1 AND \"Action\" <= 16");
             table.HasCheckConstraint("CK_SecurityAuditEvents_Result_Length", "length(\"Result\") >= 1 AND length(\"Result\") <= 100");
         });
 

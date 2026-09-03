@@ -174,6 +174,11 @@ public sealed class AuthServiceIntegrationTests
             persistedUser
                 .FailedLoginAttempts);
 
+        Assert.Equal(
+            LoginAtUtc,
+            persistedUser
+                .LastFailedLoginAtUtc);
+
         Assert.Null(
             persistedUser
                 .LockedUntilUtc);
@@ -319,7 +324,7 @@ public sealed class AuthServiceIntegrationTests
 
         Assert.Equal(
             ErrorCodes.Authentication
-                .AccountInactive,
+                .InvalidCredentials,
             result.AppError.Code);
 
         Assert.False(
@@ -416,9 +421,120 @@ public sealed class AuthServiceIntegrationTests
                 .IsAuthenticated);
     }
 
+    [Fact]
+    public async Task Remembered_login_must_be_rejected_after_password_reset()
+    {
+        await using var database = await AuthTestDatabase.CreateAsync();
+        var oldPassword = EphemeralPassword();
+        var newPassword = EphemeralPassword();
+        var rememberedLoginStore = new InMemoryRememberedLoginStore();
+        var userId = await database.SeedUserAsync("reset.user", oldPassword);
+
+        await using (var context = database.CreateContext())
+        {
+            var fixture = CreateService(context, rememberedLoginStore);
+            var login = await fixture.Service.LoginAsync(new LoginRequest("reset.user", oldPassword, rememberLogin: true));
+            Assert.True(login.IsSuccess);
+            Assert.NotNull(fixture.RememberedLoginStore.Load());
+        }
+
+        await using (var context = database.CreateContext())
+        {
+            var user = await context.Users.SingleAsync(item => item.Id == userId);
+            user.ChangePasswordHash(new TestPasswordHasher().HashPassword(newPassword), LoginAtUtc);
+            await context.SaveChangesAsync();
+        }
+
+        await using var restoreContext = database.CreateContext();
+        var restoreFixture = CreateService(restoreContext, rememberedLoginStore);
+        var restore = await restoreFixture.Service.TryRestoreRememberedLoginAsync();
+        Assert.True(restore.IsSuccess);
+        Assert.False(restore.Value);
+        Assert.Null(rememberedLoginStore.Load());
+    }
+
+    [Fact]
+    public async Task Force_password_login_must_not_create_remembered_credential()
+    {
+        await using var database = await AuthTestDatabase.CreateAsync();
+        var password = EphemeralPassword();
+        var userId = await database.SeedUserAsync("force.user", password);
+
+        await using var context = database.CreateContext();
+        var user = await context.Users.SingleAsync(item => item.Id == userId);
+        user.MarkPasswordChangeRequired(LoginAtUtc);
+        await context.SaveChangesAsync();
+
+        var fixture = CreateService(context);
+        var result = await fixture.Service.LoginAsync(new LoginRequest("force.user", password, rememberLogin: true));
+
+        Assert.True(result.IsSuccess);
+        Assert.True(result.Value.ForcePasswordChange);
+        Assert.Same(result.Value, fixture.CurrentUser.CurrentUser);
+        Assert.Null(fixture.RememberedLoginStore.Load());
+    }
+
+    [Fact]
+    public async Task Remembered_login_must_be_rejected_after_automatic_lockout()
+    {
+        await using var database = await AuthTestDatabase.CreateAsync();
+        var password = EphemeralPassword();
+        var userId = await database.SeedUserAsync("locked.user", password);
+        var rememberedLoginStore = new InMemoryRememberedLoginStore();
+
+        await using (var context = database.CreateContext())
+        {
+            var fixture = CreateService(context, rememberedLoginStore);
+            Assert.True((await fixture.Service.LoginAsync(new LoginRequest("locked.user", password, rememberLogin: true))).IsSuccess);
+        }
+
+        await using (var context = database.CreateContext())
+        {
+            var user = await context.Users.SingleAsync(item => item.Id == userId);
+            for (var attempt = 0; attempt < 5; attempt++)
+                user.RegisterFailedLogin(LoginAtUtc.AddMinutes(attempt - 4), TimeSpan.FromMinutes(15));
+            await context.SaveChangesAsync();
+        }
+
+        await using var restoreContext = database.CreateContext();
+        var restore = await CreateService(restoreContext, rememberedLoginStore).Service.TryRestoreRememberedLoginAsync();
+        Assert.True(restore.IsSuccess);
+        Assert.False(restore.Value);
+        Assert.Null(rememberedLoginStore.Load());
+    }
+
+    [Fact]
+    public async Task Remembered_login_must_be_rejected_after_account_deactivation()
+    {
+        await using var database = await AuthTestDatabase.CreateAsync();
+        var password = EphemeralPassword();
+        var userId = await database.SeedUserAsync("inactive.user", password);
+        var rememberedLoginStore = new InMemoryRememberedLoginStore();
+
+        await using (var context = database.CreateContext())
+        {
+            var fixture = CreateService(context, rememberedLoginStore);
+            Assert.True((await fixture.Service.LoginAsync(new LoginRequest("inactive.user", password, rememberLogin: true))).IsSuccess);
+        }
+
+        await using (var context = database.CreateContext())
+        {
+            var user = await context.Users.SingleAsync(item => item.Id == userId);
+            user.Deactivate(LoginAtUtc);
+            await context.SaveChangesAsync();
+        }
+
+        await using var restoreContext = database.CreateContext();
+        var restore = await CreateService(restoreContext, rememberedLoginStore).Service.TryRestoreRememberedLoginAsync();
+        Assert.True(restore.IsSuccess);
+        Assert.False(restore.Value);
+        Assert.Null(rememberedLoginStore.Load());
+    }
+
     private static AuthServiceFixture
         CreateService(
-            PosDbContext context)
+            PosDbContext context,
+            InMemoryRememberedLoginStore? rememberedLoginStore = null)
     {
         var repository =
             new UserRepository(
@@ -438,22 +554,47 @@ public sealed class AuthServiceIntegrationTests
             new FixedClock(
                 LoginAtUtc);
 
+        rememberedLoginStore ??=
+            new InMemoryRememberedLoginStore();
+
         var service =
             new AuthService(
                 repository,
                 passwordHasher,
                 unitOfWork,
                 currentUser,
-                clock);
+                clock,
+                rememberedLoginStore);
 
         return new AuthServiceFixture(
             service,
-            currentUser);
+            currentUser,
+            rememberedLoginStore);
     }
 
     private sealed record AuthServiceFixture(
         AuthService Service,
-        CurrentUserService CurrentUser);
+        CurrentUserService CurrentUser,
+        InMemoryRememberedLoginStore RememberedLoginStore);
+
+    private sealed class InMemoryRememberedLoginStore : IRememberedLoginStore
+    {
+        private RememberedLoginCredential? _credential;
+
+        public RememberedLoginCredential? Load() => _credential;
+
+        public bool TrySave(RememberedLoginCredential credential)
+        {
+            _credential = credential;
+            return true;
+        }
+
+        public bool TryDelete()
+        {
+            _credential = null;
+            return true;
+        }
+    }
 
     private sealed class TestPasswordHasher :
         IPasswordHasher
@@ -495,6 +636,9 @@ public sealed class AuthServiceIntegrationTests
 
         public DateTimeOffset UtcNow { get; }
     }
+
+    private static string EphemeralPassword() =>
+        "R5" + Guid.NewGuid().ToString("N") + "A1!";
 
     private sealed class AuthTestDatabase :
         IAsyncDisposable

@@ -19,7 +19,7 @@ public sealed class EmployeeManagementUiContractTests
             "EmployeeManagementWindow", "EmployeeSearchBox", "EmployeeStatusFilter", "EmployeeAccountFilter",
             "EmployeeRoleFilter", "EmployeeList", "EmployeeDirtyState", "EmployeeValidationSummary", "EmployeeSaveButton",
             "EmployeeCreateAccountButton", "EmployeeResetPasswordButton", "EmployeeLockToggleButton",
-            "EmployeeActiveToggleButton", "EmployeeChangeRoleButton", "EmployeeEmptyAddButton",
+            "EmployeeActiveToggleButton", "EmployeeAccountActiveToggleButton", "EmployeeToast", "EmployeeToastCloseButton", "EmployeeChangeRoleButton", "EmployeeEmptyAddButton",
             "EmployeeFilteredEmptyAddButton", "EmployeeFilteredEmptyClearButton", "EmployeeCreateCloseButton",
             "EmployeeIdentityHeader", "EmployeeProfileInformationCard", "EmployeeProfileActionStrip"
         })
@@ -60,8 +60,7 @@ public sealed class EmployeeManagementUiContractTests
 
         Assert.Contains("ModernDataGridStyle", view, StringComparison.Ordinal);
         Assert.Contains("EnableRowVirtualization", controls, StringComparison.Ordinal);
-        Assert.Contains("Header=\"Đăng nhập sai\"", view, StringComparison.Ordinal);
-        Assert.DoesNotContain("Header=\"Sai\"", view, StringComparison.Ordinal);
+        Assert.Contains("Header=\"Sai liên tiếp hiện tại\"", view, StringComparison.Ordinal);
         Assert.Contains("HasDetailContent", view, StringComparison.Ordinal);
         Assert.Contains("Chọn một nhân viên", view, StringComparison.Ordinal);
         Assert.Contains("Không tìm thấy nhân viên phù hợp", view, StringComparison.Ordinal);
@@ -76,6 +75,11 @@ public sealed class EmployeeManagementUiContractTests
         Assert.Contains("EmployeeProfileTab", view, StringComparison.Ordinal);
         Assert.Contains("EmployeeAccountTab", view, StringComparison.Ordinal);
         Assert.Contains("EmployeePermissionsTab", view, StringComparison.Ordinal);
+        Assert.Contains("EmployeeAccountActiveToggleButton", view, StringComparison.Ordinal);
+        Assert.Contains("ToggleAccountActiveCommand", viewModel, StringComparison.Ordinal);
+        Assert.Contains("ToastRequested", viewModel, StringComparison.Ordinal);
+        Assert.Contains("EmployeeToast", view, StringComparison.Ordinal);
+        Assert.DoesNotContain("AutomationProperties.AutomationId=\"EmployeeActiveToggleButton\" Click=\"OnToggleActiveClick\"", view[view.IndexOf("EmployeeAccountTab", StringComparison.Ordinal)..], StringComparison.Ordinal);
         Assert.Contains("Text=\"Nhân viên\"", view, StringComparison.Ordinal);
         Assert.Contains("Text=\"Tài khoản\"", view, StringComparison.Ordinal);
         Assert.Contains("ReadOnlyInfoCardStyle", view, StringComparison.Ordinal);
@@ -86,7 +90,7 @@ public sealed class EmployeeManagementUiContractTests
         Assert.DoesNotContain("Text=\"{Binding PageText}\"", view, StringComparison.Ordinal);
         Assert.Contains("EmployeeDataGridStyle", view, StringComparison.Ordinal);
         Assert.Contains("EmployeeFailedLoginHeaderTemplate", view, StringComparison.Ordinal);
-        Assert.Contains("ToolTip=\"Số lần đăng nhập sai liên tiếp\"", view, StringComparison.Ordinal);
+        Assert.Contains("ToolTip=\"Số lần đăng nhập sai liên tiếp kể từ lần đăng nhập thành công gần nhất.", view, StringComparison.Ordinal);
         Assert.Contains("HorizontalScrollBarVisibility\" Value=\"Auto\"", view, StringComparison.Ordinal);
         Assert.Contains("x:Name=\"EmployeeIdentityAvatar\"", view, StringComparison.Ordinal);
         Assert.Contains("ColumnDefinition Width=\"*\" MinWidth=\"0\"", view, StringComparison.Ordinal);
@@ -118,6 +122,22 @@ public sealed class EmployeeManagementUiContractTests
         Assert.Equal("3", row.FailedLoginText);
         Assert.DoesNotContain("password", row.AccountStatusText, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("hash", row.AccountStatusText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Employee_account_actions_use_one_create_cta_and_modal_reset_flow()
+    {
+        var root = RepositoryLocator.GetPath();
+        var view = File.ReadAllText(Path.Combine(root, "src", "POS.Wpf", "Views", "EmployeeManagementWindow.xaml"));
+        var codeBehind = File.ReadAllText(Path.Combine(root, "src", "POS.Wpf", "Views", "EmployeeManagementWindow.xaml.cs"));
+        var resetWindow = File.ReadAllText(Path.Combine(root, "src", "POS.Wpf", "Views", "EmployeePasswordResetWindow.xaml"));
+
+        Assert.Contains("ShowBeginCreateAccount", view, StringComparison.Ordinal);
+        Assert.Contains("ResetPasswordButtonText", view, StringComparison.Ordinal);
+        Assert.Contains("Tạo lại mật khẩu tạm thời…", File.ReadAllText(Path.Combine(root, "src", "POS.Wpf", "ViewModels", "EmployeeManagementViewModel.cs")), StringComparison.Ordinal);
+        Assert.DoesNotContain("x:Name=\"ResetPasswordInput\"", view, StringComparison.Ordinal);
+        Assert.Contains("OnResetPasswordClick", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("EmployeeResetConfirmPassword", resetWindow, StringComparison.Ordinal);
     }
 
     private static int Count(string value, string needle) => value.Split(needle, StringSplitOptions.None).Length - 1;

@@ -81,7 +81,7 @@ public sealed class EmployeeManagementUiHotfixTests
                 Assert.Same(viewModel, window.DataContext);
                 Assert.Equal(1, viewModel.PageNumber);
                 Assert.Equal("Tất cả vai trò", viewModel.SelectedRoleFilter.DisplayName);
-                Assert.Null(viewModel.SelectedEmployeeFilter.Value);
+                Assert.Equal(EmployeeStatus.Active, viewModel.SelectedEmployeeFilter.Value);
                 Assert.Null(viewModel.SelectedAccountFilter.Value);
                 Assert.Equal(4, viewModel.RoleOptions.Count);
                 Assert.True(viewModel.CanManageEmployees);
@@ -127,9 +127,9 @@ public sealed class EmployeeManagementUiHotfixTests
                 var employeeMasterCard = FindVisualAncestor<System.Windows.Controls.Border>(employeeList);
                 Assert.NotNull(employeeMasterCard);
                 Assert.Equal(System.Windows.Controls.ScrollBarVisibility.Auto, System.Windows.Controls.ScrollViewer.GetHorizontalScrollBarVisibility(employeeList));
-                var failedLoginColumn = Assert.IsType<System.Windows.Controls.DataGridTextColumn>(employeeList.Columns.Single(column => Equals(column.Header, "Đăng nhập sai")));
-                Assert.Equal(106, failedLoginColumn.Width.Value);
-                Assert.Equal(104, failedLoginColumn.MinWidth);
+                var failedLoginColumn = Assert.IsType<System.Windows.Controls.DataGridTextColumn>(employeeList.Columns.Single(column => Equals(column.Header, "Sai liên tiếp hiện tại")));
+                Assert.Equal(126, failedLoginColumn.Width.Value);
+                Assert.Equal(118, failedLoginColumn.MinWidth);
                 var identityTexts = FindVisualDescendants<System.Windows.Controls.TextBlock>(identityHeader).Select(textBlock => textBlock.Text).ToArray();
                 Assert.Contains(viewModel.FullName, identityTexts);
                 Assert.Contains(viewModel.EmployeeCode, identityTexts);
@@ -229,14 +229,14 @@ public sealed class EmployeeManagementUiHotfixTests
                     scrollViewer.ScrollToHorizontalOffset(double.MaxValue);
                     window.UpdateLayout();
                     var failedCell = Assert.Single(FindVisualDescendants<System.Windows.Controls.DataGridCell>(row),
-                        cell => cell.Column?.Header?.ToString() == "Đăng nhập sai");
+                        cell => cell.Column?.Header?.ToString() == "Sai liên tiếp hiện tại");
                     var failedText = Assert.Single(FindVisualDescendants<System.Windows.Controls.TextBlock>(failedCell));
                     Assert.Equal(TextAlignment.Center, failedText.TextAlignment);
                     var failedHeader = FindVisualDescendants<System.Windows.Controls.Primitives.DataGridColumnHeader>(employeeList)
-                        .Single(header => header.Content?.ToString() == "Đăng nhập sai");
+                        .Single(header => header.Content?.ToString() == "Sai liên tiếp hiện tại");
                     var failedHeaderText = Assert.Single(FindVisualDescendants<System.Windows.Controls.TextBlock>(failedHeader));
-                    Assert.Equal("Đăng nhập sai", failedHeaderText.Text);
-                    Assert.Equal("Số lần đăng nhập sai liên tiếp", failedHeaderText.ToolTip?.ToString());
+                    Assert.Equal("Sai liên tiếp hiện tại", failedHeaderText.Text);
+                    Assert.StartsWith("Số lần đăng nhập sai liên tiếp kể từ lần đăng nhập thành công gần nhất.", failedHeaderText.ToolTip?.ToString(), StringComparison.Ordinal);
                     Assert.Equal(TextWrapping.Wrap, failedHeaderText.TextWrapping);
                     Assert.Equal(TextTrimming.None, failedHeaderText.TextTrimming);
                     Assert.True(failedHeaderText.ActualWidth > 0 && failedHeaderText.ActualHeight > 0);

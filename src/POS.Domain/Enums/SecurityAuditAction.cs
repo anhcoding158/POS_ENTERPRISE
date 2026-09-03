@@ -16,5 +16,6 @@ public enum SecurityAuditAction
     BulkProductCategoryChanged = 12,
     BulkProductActiveStateChanged = 13,
     BulkProductMinimumStockChanged = 14,
-    BulkProductOperation = 15
+    BulkProductOperation = 15,
+    LoginFailed = 16
 }

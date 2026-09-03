@@ -671,6 +671,37 @@ public partial class App :
                 Environment.GetEnvironmentVariable(
                     DatabaseRuntimeGuard
                         .DatabasePathEnvironmentVariable)));
+
+        LogAssemblyIdentity(
+            logger,
+            typeof(App).Assembly);
+        LogAssemblyIdentity(
+            logger,
+            typeof(POS.Application.Services.CheckoutService).Assembly);
+        LogAssemblyIdentity(
+            logger,
+            typeof(POS.Infrastructure.DependencyInjection).Assembly);
+    }
+
+    private static void LogAssemblyIdentity(
+        ILogger logger,
+        System.Reflection.Assembly assembly)
+    {
+        var informationalVersion =
+            assembly.GetCustomAttributes(
+                    typeof(System.Reflection.AssemblyInformationalVersionAttribute),
+                    inherit: false)
+                .OfType<System.Reflection.AssemblyInformationalVersionAttribute>()
+                .Select(attribute => attribute.InformationalVersion)
+                .FirstOrDefault() ?? "(none)";
+
+        PosLog.Information(
+            logger,
+            "AssemblyIdentity: AssemblyName={AssemblyName}; " +
+            "Mvid={Mvid}; InformationalVersion={InformationalVersion}",
+            assembly.GetName().Name ?? "(none)",
+            assembly.ManifestModule.ModuleVersionId,
+            informationalVersion);
     }
 
     internal static DatabaseRuntimeState
@@ -1329,8 +1360,7 @@ public partial class App :
 
             if (!await EnsurePasswordChangeCompletedAsync(serviceProvider))
             {
-                Shutdown(0);
-                return;
+                serviceProvider.GetRequiredService<ICurrentUserService>().Clear();
             }
         }
         else
@@ -1373,8 +1403,8 @@ public partial class App :
 
             if (!await EnsurePasswordChangeCompletedAsync(serviceProvider))
             {
-                Shutdown(0);
-                return;
+                currentUserService.Clear();
+                continue;
             }
 
             EnsureAuthenticatedSession(

@@ -40,6 +40,10 @@ public interface IEmployeeAccountService
         SetEmployeeActiveRequest request,
         CancellationToken cancellationToken = default);
 
+    Task<Result> SetAccountActiveAsync(
+        SetAccountActiveRequest request,
+        CancellationToken cancellationToken = default);
+
     Task<Result> ChangeRoleAsync(
         ChangeEmployeeRoleRequest request,
         CancellationToken cancellationToken = default);

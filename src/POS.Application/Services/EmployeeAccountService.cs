@@ -1,3 +1,4 @@
+using System.Globalization;
 using POS.Application.Abstractions.Authentication;
 using POS.Application.Abstractions.Authorization;
 using POS.Application.Abstractions.DateTime;
@@ -28,6 +29,7 @@ public sealed class EmployeeAccountService : IEmployeeAccountService
     private readonly IPermissionService _permissionService;
     private readonly IClock _clock;
     private readonly ITerminalIdentityProvider? _terminalIdentityProvider;
+    private readonly IRememberedLoginStore? _rememberedLoginStore;
 
     public EmployeeAccountService(
         IEmployeeRepository employeeRepository,
@@ -38,7 +40,8 @@ public sealed class EmployeeAccountService : IEmployeeAccountService
         ICurrentUserService currentUserService,
         IPermissionService permissionService,
         IClock clock,
-        ITerminalIdentityProvider? terminalIdentityProvider = null)
+        ITerminalIdentityProvider? terminalIdentityProvider = null,
+        IRememberedLoginStore? rememberedLoginStore = null)
     {
         _employeeRepository = employeeRepository ?? throw new ArgumentNullException(nameof(employeeRepository));
         _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
@@ -49,6 +52,7 @@ public sealed class EmployeeAccountService : IEmployeeAccountService
         _permissionService = permissionService ?? throw new ArgumentNullException(nameof(permissionService));
         _clock = clock ?? throw new ArgumentNullException(nameof(clock));
         _terminalIdentityProvider = terminalIdentityProvider;
+        _rememberedLoginStore = rememberedLoginStore;
     }
 
     public async Task<Result<PagedResult<EmployeeListItemDto>>> SearchAsync(
@@ -147,12 +151,21 @@ public sealed class EmployeeAccountService : IEmployeeAccountService
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await _auditRepository.AddAsync(new SecurityAuditEvent(
                 ActorId(), employee.Id, employee.LoginAccount?.Id,
-                SecurityAuditAction.EmployeeCreated, "Success", Guid.NewGuid(), _clock.UtcNow), cancellationToken);
+                SecurityAuditAction.EmployeeCreated, "Success", Guid.NewGuid(), _clock.UtcNow,
+                _currentUserService.FullName, employee.FullName, "Nhân viên và tài khoản", "Nhân viên",
+                _terminalIdentityProvider?.TerminalId ?? "TERM-UNKNOWN",
+                [new SecurityAuditChange("Trạng thái nhân viên", "Chưa tồn tại", EmployeeStateText(employee.IsActive))]), cancellationToken);
             if (account is not null)
             {
                 await _auditRepository.AddAsync(new SecurityAuditEvent(
                     ActorId(), employee.Id, employee.LoginAccount?.Id,
-                    SecurityAuditAction.AccountCreated, "Success", Guid.NewGuid(), _clock.UtcNow), cancellationToken);
+                    SecurityAuditAction.AccountCreated, "Success", Guid.NewGuid(), _clock.UtcNow,
+                    _currentUserService.FullName, employee.FullName, "Nhân viên và tài khoản", "Tài khoản",
+                    _terminalIdentityProvider?.TerminalId ?? "TERM-UNKNOWN",
+                    [
+                        new SecurityAuditChange("Trạng thái tài khoản", "Chưa có tài khoản", AccountStateText(account, _clock.UtcNow)),
+                        new SecurityAuditChange("Vai trò", "—", RolePermissionPolicy.GetRoleDisplayName(account.Role))
+                    ]), cancellationToken);
             }
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
@@ -176,6 +189,7 @@ public sealed class EmployeeAccountService : IEmployeeAccountService
         if (!IsExpectedVersion(employee.UpdatedAtUtc, request.ExpectedUpdatedAtUtc)) return Conflict<EmployeeDetailsDto>();
         var codeError = ValidateEmployeeCode(request.EmployeeCode, employee.Id);
         if (codeError is not null) return Failure<EmployeeDetailsDto>(ErrorCodes.General.Validation, codeError);
+        var before = EmployeeAuditSnapshot.Capture(employee);
 
         try
         {
@@ -189,7 +203,8 @@ public sealed class EmployeeAccountService : IEmployeeAccountService
             return Failure<EmployeeDetailsDto>(ErrorCodes.General.Validation, exception.Message);
         }
 
-        return await SaveMutationAsync(employee, SecurityAuditAction.EmployeeUpdated, "Success", cancellationToken);
+        return await SaveMutationAsync(employee, SecurityAuditAction.EmployeeUpdated, "Success", cancellationToken,
+            BuildEmployeeProfileChanges(before, employee));
     }
 
     public async Task<Result<EmployeeDetailsDto>> CreateAccountAsync(
@@ -209,10 +224,12 @@ public sealed class EmployeeAccountService : IEmployeeAccountService
         if (await _userRepository.NormalizedUsernameExistsAsync(request.Username, cancellationToken: cancellationToken))
             return Failure<EmployeeDetailsDto>(ErrorCodes.General.Conflict, "Tên đăng nhập đã tồn tại.");
 
+        var before = EmployeeAuditSnapshot.Capture(employee);
         var account = new User(request.Username, _passwordHasher.HashPassword(request.TemporaryPassword), employee.FullName, request.Role, _clock.UtcNow);
         account.MarkPasswordChangeRequired(_clock.UtcNow);
         employee.AttachAccount(account, _clock.UtcNow);
-        return await SaveMutationAsync(employee, SecurityAuditAction.AccountCreated, "Success", cancellationToken);
+        return await SaveMutationAsync(employee, SecurityAuditAction.AccountCreated, "Success", cancellationToken,
+            BuildAccountCreatedChanges(before, account, _clock.UtcNow));
     }
 
     public async Task<Result> ResetPasswordAsync(
@@ -228,8 +245,10 @@ public sealed class EmployeeAccountService : IEmployeeAccountService
         var passwordError = ValidatePassword(request.TemporaryPassword, employee.LoginAccount.Username);
         if (passwordError is not null) return Failure(ErrorCodes.General.Validation, passwordError);
 
+        var before = EmployeeAuditSnapshot.Capture(employee);
         employee.LoginAccount.ResetPasswordHash(_passwordHasher.HashPassword(request.TemporaryPassword), _clock.UtcNow);
-        return await SaveMutationResultAsync(employee, SecurityAuditAction.PasswordReset, cancellationToken);
+        return await SaveMutationResultAsync(employee, SecurityAuditAction.PasswordReset, cancellationToken,
+            BuildAccountStateChanges(before, employee, _clock.UtcNow));
     }
 
     public async Task<Result> SetAccountLockAsync(
@@ -242,6 +261,7 @@ public sealed class EmployeeAccountService : IEmployeeAccountService
         var employee = await _employeeRepository.GetByIdWithAccountAsync(request.EmployeeId, cancellationToken);
         if (employee?.LoginAccount is null) return Failure(ErrorCodes.General.NotFound, "Không tìm thấy tài khoản đăng nhập.");
         if (!IsExpectedVersion(employee.UpdatedAtUtc, request.ExpectedUpdatedAtUtc)) return Conflict();
+        var before = EmployeeAuditSnapshot.Capture(employee);
         if (request.Locked)
         {
             var guard = await EnsureNotFinalAdministratorAsync(employee, cancellationToken);
@@ -254,7 +274,8 @@ public sealed class EmployeeAccountService : IEmployeeAccountService
             employee.LoginAccount.ManualUnlock(_clock.UtcNow);
             employee.LoginAccount.Activate(_clock.UtcNow);
         }
-        return await SaveMutationResultAsync(employee, request.Locked ? SecurityAuditAction.AccountLocked : SecurityAuditAction.AccountUnlocked, cancellationToken);
+        return await SaveMutationResultAsync(employee, request.Locked ? SecurityAuditAction.AccountLocked : SecurityAuditAction.AccountUnlocked, cancellationToken,
+            BuildAccountStateChanges(before, employee, _clock.UtcNow));
     }
 
     public async Task<Result> SetEmployeeActiveAsync(
@@ -267,6 +288,7 @@ public sealed class EmployeeAccountService : IEmployeeAccountService
         var employee = await _employeeRepository.GetByIdWithAccountAsync(request.EmployeeId, cancellationToken);
         if (employee is null) return Failure(ErrorCodes.General.NotFound, "Không tìm thấy nhân viên.");
         if (!IsExpectedVersion(employee.UpdatedAtUtc, request.ExpectedUpdatedAtUtc)) return Conflict();
+        var before = EmployeeAuditSnapshot.Capture(employee);
         if (!request.Active)
         {
             var guard = await EnsureNotFinalAdministratorAsync(employee, cancellationToken);
@@ -278,7 +300,41 @@ public sealed class EmployeeAccountService : IEmployeeAccountService
         {
             employee.Activate(_clock.UtcNow);
         }
-        return await SaveMutationResultAsync(employee, request.Active ? SecurityAuditAction.EmployeeReactivated : SecurityAuditAction.EmployeeDeactivated, cancellationToken);
+        return await SaveMutationResultAsync(employee, request.Active ? SecurityAuditAction.EmployeeReactivated : SecurityAuditAction.EmployeeDeactivated, cancellationToken,
+            BuildEmployeeStateChanges(before, employee, _clock.UtcNow), targetType: "Nhân viên");
+    }
+
+    public async Task<Result> SetAccountActiveAsync(
+        SetAccountActiveRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var authorization = _permissionService.Authorize(SystemCapability.ManageAccounts);
+        if (authorization.IsFailure) return authorization;
+        var employee = await _employeeRepository.GetByIdWithAccountAsync(request.EmployeeId, cancellationToken);
+        if (employee?.LoginAccount is null) return Failure(ErrorCodes.General.NotFound, "Không tìm thấy tài khoản đăng nhập.");
+        if (!IsExpectedVersion(employee.UpdatedAtUtc, request.ExpectedUpdatedAtUtc)) return Conflict();
+        if (request.Active && !employee.IsActive)
+            return Failure(ErrorCodes.General.Validation, "Hãy kích hoạt lại nhân viên trước.");
+
+        var before = EmployeeAuditSnapshot.Capture(employee);
+        if (!request.Active)
+        {
+            var guard = await EnsureNotFinalAdministratorAsync(employee, cancellationToken);
+            if (guard.IsFailure) return guard;
+            employee.LoginAccount.Deactivate(_clock.UtcNow);
+        }
+        else
+        {
+            employee.LoginAccount.Activate(_clock.UtcNow);
+        }
+
+        return await SaveMutationResultAsync(
+            employee,
+            request.Active ? SecurityAuditAction.EmployeeReactivated : SecurityAuditAction.EmployeeDeactivated,
+            cancellationToken,
+            BuildAccountStateChanges(before, employee, _clock.UtcNow),
+            targetType: "Tài khoản");
     }
 
     public async Task<Result> ChangeRoleAsync(
@@ -319,11 +375,23 @@ public sealed class EmployeeAccountService : IEmployeeAccountService
         var passwordError = ValidatePassword(request.NewPassword, user.Username);
         if (passwordError is not null) return Failure(ErrorCodes.General.Validation, passwordError);
 
+        var beforeForcePasswordChange = user.ForcePasswordChange;
+        var beforeFailedLoginAttempts = user.FailedLoginAttempts;
         user.ChangePasswordHash(_passwordHasher.HashPassword(request.NewPassword), _clock.UtcNow);
-        await _auditRepository.AddAsync(new SecurityAuditEvent(userId, null, user.Id, SecurityAuditAction.ForcedPasswordChangeCompleted, "Success", Guid.NewGuid(), _clock.UtcNow), cancellationToken);
+        var changes = new List<SecurityAuditChange>();
+        AddChange(changes, "Yêu cầu đổi mật khẩu", beforeForcePasswordChange ? "Có" : "Không", user.ForcePasswordChange ? "Có" : "Không");
+        AddChange(changes, "Sai liên tiếp", beforeFailedLoginAttempts.ToString(CultureInfo.InvariantCulture), user.FailedLoginAttempts.ToString(CultureInfo.InvariantCulture));
+        await _auditRepository.AddAsync(new SecurityAuditEvent(userId, null, user.Id, SecurityAuditAction.ForcedPasswordChangeCompleted, "Success", Guid.NewGuid(), _clock.UtcNow,
+            _currentUserService.FullName, user.FullName, "Nhân viên và tài khoản", "Tài khoản",
+            _terminalIdentityProvider?.TerminalId ?? "TERM-UNKNOWN", changes), cancellationToken);
         try
         {
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+            if (_rememberedLoginStore is not null && !_rememberedLoginStore.TryDelete())
+            {
+                return Failure(ErrorCodes.General.Unexpected,
+                    "Đã đổi mật khẩu nhưng không thể thu hồi phiên đăng nhập đã ghi nhớ trên máy hiện tại.");
+            }
             _currentUserService.SetCurrentUser(new POS.Application.DTOs.Authentication.AuthenticatedUserDto(
                 user.Id,
                 user.Username,
@@ -339,13 +407,13 @@ public sealed class EmployeeAccountService : IEmployeeAccountService
         }
     }
 
-    private async Task<Result<EmployeeDetailsDto>> SaveMutationAsync(Employee employee, SecurityAuditAction action, string result, CancellationToken cancellationToken)
+    private async Task<Result<EmployeeDetailsDto>> SaveMutationAsync(Employee employee, SecurityAuditAction action, string result, CancellationToken cancellationToken, IEnumerable<SecurityAuditChange>? changes = null)
     {
-        var saved = await SaveMutationResultAsync(employee, action, cancellationToken);
+        var saved = await SaveMutationResultAsync(employee, action, cancellationToken, changes, result);
         return saved.IsFailure ? Result.Failure<EmployeeDetailsDto>(saved.AppError) : Result.Success(MapDetails(employee));
     }
 
-    private async Task<Result> SaveMutationResultAsync(Employee employee, SecurityAuditAction action, CancellationToken cancellationToken, IEnumerable<SecurityAuditChange>? changes = null)
+    private async Task<Result> SaveMutationResultAsync(Employee employee, SecurityAuditAction action, CancellationToken cancellationToken, IEnumerable<SecurityAuditChange>? changes = null, string result = "Success", string? targetType = null)
     {
         await using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
         try
@@ -354,11 +422,21 @@ public sealed class EmployeeAccountService : IEmployeeAccountService
             // Save the mutation before constructing the audit event so every target identity is
             // durable and valid, while the surrounding transaction still keeps both writes atomic.
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            await _auditRepository.AddAsync(new SecurityAuditEvent(ActorId(), employee.Id, employee.LoginAccount?.Id, action, "Success", Guid.NewGuid(), _clock.UtcNow,
-                _currentUserService.FullName, employee.FullName, "Nhân viên và tài khoản", employee.LoginAccount is null ? "Nhân viên" : "Tài khoản",
+            await _auditRepository.AddAsync(new SecurityAuditEvent(ActorId(), employee.Id, employee.LoginAccount?.Id, action, result, Guid.NewGuid(), _clock.UtcNow,
+                _currentUserService.FullName, employee.FullName, "Nhân viên và tài khoản", targetType ?? (employee.LoginAccount is null ? "Nhân viên" : "Tài khoản"),
                 _terminalIdentityProvider?.TerminalId ?? "TERM-UNKNOWN", changes), cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
+            if ((action is SecurityAuditAction.PasswordReset or SecurityAuditAction.AccountLocked or SecurityAuditAction.EmployeeDeactivated) &&
+                employee.LoginAccount?.Id == _currentUserService.UserId)
+            {
+                _currentUserService.Clear();
+                if (_rememberedLoginStore is not null && !_rememberedLoginStore.TryDelete())
+                {
+                    return Failure(ErrorCodes.General.Unexpected,
+                        "Thay đổi đã được lưu nhưng không thể thu hồi phiên ghi nhớ trên máy hiện tại.");
+                }
+            }
             return Result.Success();
         }
         catch (PersistenceConflictException exception)
@@ -418,7 +496,7 @@ public sealed class EmployeeAccountService : IEmployeeAccountService
         return new EmployeeListItemDto(employee.Id, employee.EmployeeCode, employee.FullName, employee.PhoneNumber,
             employee.IsActive ? EmployeeStatus.Active : EmployeeStatus.Inactive, employee.UserId,
             user?.Username, GetAccountStatus(employee, _clock.UtcNow), user?.Role,
-            user?.LastLoginAtUtc, user?.FailedLoginAttempts ?? 0, employee.UpdatedAtUtc);
+            user?.LastLoginAtUtc, user?.FailedLoginAttempts ?? 0, employee.UpdatedAtUtc, user?.LastFailedLoginAtUtc);
     }
 
     private EmployeeDetailsDto MapDetails(Employee employee)
@@ -428,7 +506,7 @@ public sealed class EmployeeAccountService : IEmployeeAccountService
             employee.IsActive ? EmployeeStatus.Active : EmployeeStatus.Inactive, employee.UserId, user?.Username,
             GetAccountStatus(employee, _clock.UtcNow), user?.Role, user?.LastLoginAtUtc, user?.FailedLoginAttempts ?? 0,
             user?.IsManuallyLocked ?? false, user?.ForcePasswordChange ?? false, employee.UpdatedAtUtc,
-            user is null ? Array.Empty<SystemCapability>() : RolePermissionPolicy.GetEffectivePermissions(user.Role));
+            user is null ? Array.Empty<SystemCapability>() : RolePermissionPolicy.GetEffectivePermissions(user.Role), user?.LastFailedLoginAtUtc);
     }
 
     private static Result<T> Failure<T>(string code, string message) => Result.Failure<T>(new AppError(code, message));
@@ -436,4 +514,98 @@ public sealed class EmployeeAccountService : IEmployeeAccountService
     private static Result<T> Conflict<T>() => Failure<T>(ErrorCodes.General.Conflict, "Dữ liệu vừa được thay đổi bởi thao tác khác. Vui lòng tải lại và thử lại.");
     private static Result Conflict() => Failure(ErrorCodes.General.Conflict, "Dữ liệu vừa được thay đổi bởi thao tác khác. Vui lòng tải lại và thử lại.");
     private static string ConflictMessage(PersistenceConflictException exception) => exception.Target == PersistenceConflictTargets.EmployeeNormalizedCode ? "Mã nhân viên đã tồn tại." : "Dữ liệu vừa được thay đổi hoặc bị trùng.";
+
+    private static List<SecurityAuditChange> BuildEmployeeProfileChanges(EmployeeAuditSnapshot before, Employee employee)
+    {
+        var changes = new List<SecurityAuditChange>();
+        AddChange(changes, "Mã nhân viên", before.EmployeeCode, employee.EmployeeCode);
+        AddChange(changes, "Họ tên", before.FullName, employee.FullName);
+        AddChange(changes, "Số điện thoại", MaskPhone(before.PhoneNumber), MaskPhone(employee.PhoneNumber));
+        AddChange(changes, "Email", MaskEmail(before.EmailAddress), MaskEmail(employee.EmailAddress));
+        return changes;
+    }
+
+    private static IReadOnlyList<SecurityAuditChange> BuildAccountCreatedChanges(EmployeeAuditSnapshot before, User account, DateTimeOffset now) =>
+    [
+        new SecurityAuditChange("Trạng thái tài khoản", before.HasAccount ? AccountStateText(before, now) : "Chưa có tài khoản", AccountStateText(account, now)),
+        new SecurityAuditChange("Vai trò", "—", RolePermissionPolicy.GetRoleDisplayName(account.Role))
+    ];
+
+    private static List<SecurityAuditChange> BuildAccountStateChanges(EmployeeAuditSnapshot before, Employee employee, DateTimeOffset now)
+    {
+        var changes = new List<SecurityAuditChange>();
+        AddChange(changes, "Trạng thái tài khoản", AccountStateText(before, now), AccountStateText(employee.LoginAccount, now));
+        AddChange(changes, "Sai liên tiếp", before.FailedLoginAttempts?.ToString(CultureInfo.InvariantCulture), employee.LoginAccount is null ? null : employee.LoginAccount.FailedLoginAttempts.ToString(CultureInfo.InvariantCulture));
+        AddChange(changes, "Khóa đến", FormatTimestamp(before.LockedUntilUtc), FormatTimestamp(employee.LoginAccount?.LockedUntilUtc));
+        AddChange(changes, "Yêu cầu đổi mật khẩu", before.ForcePasswordChange is true ? "Có" : "Không", employee.LoginAccount?.ForcePasswordChange is true ? "Có" : "Không");
+        return changes;
+    }
+
+    private static List<SecurityAuditChange> BuildEmployeeStateChanges(EmployeeAuditSnapshot before, Employee employee, DateTimeOffset now)
+    {
+        var changes = new List<SecurityAuditChange>();
+        AddChange(changes, "Trạng thái nhân viên", EmployeeStateText(before.EmployeeActive), EmployeeStateText(employee.IsActive));
+        if (before.AccountActive.HasValue || employee.LoginAccount is not null)
+            AddChange(changes, "Trạng thái tài khoản", AccountStateText(before, now), AccountStateText(employee.LoginAccount, now));
+        return changes;
+    }
+
+    private static void AddChange(List<SecurityAuditChange> changes, string field, string? before, string? after)
+    {
+        if (!string.Equals(before, after, StringComparison.Ordinal))
+            changes.Add(new SecurityAuditChange(field, before, after));
+    }
+
+    private static string EmployeeStateText(bool active) => active ? "Đang làm việc" : "Ngừng hoạt động";
+
+    private static string AccountStateText(EmployeeAuditSnapshot snapshot, DateTimeOffset now) =>
+        !snapshot.HasAccount ? "Chưa có tài khoản" :
+        snapshot.AccountActive is false ? "Đã vô hiệu hóa" :
+        snapshot.IsManuallyLocked is true || snapshot.LockedUntilUtc > now ? "Đang khóa" :
+        snapshot.ForcePasswordChange is true ? "Chờ nhân viên đổi mật khẩu lần đầu" : "Đang hoạt động";
+
+    private static string AccountStateText(User? user, DateTimeOffset now) =>
+        user is null ? "Chưa có tài khoản" :
+        !user.IsActive ? "Đã vô hiệu hóa" :
+        user.IsLocked(now) ? "Đang khóa" :
+        user.ForcePasswordChange ? "Chờ nhân viên đổi mật khẩu lần đầu" : "Đang hoạt động";
+
+    private static string FormatTimestamp(DateTimeOffset? value) =>
+        value?.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss", CultureInfo.GetCultureInfo("vi-VN")) ?? "—";
+
+    private static string MaskPhone(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return "Chưa cập nhật";
+        var normalized = value.Trim();
+        return normalized.Length <= 4 ? new string('•', normalized.Length) : normalized[..2] + new string('•', Math.Max(1, normalized.Length - 6)) + normalized[^4..];
+    }
+
+    private static string MaskEmail(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return "Chưa cập nhật";
+        var normalized = value.Trim();
+        var at = normalized.IndexOf('@');
+        if (at <= 0) return "••••";
+        return normalized[0] + new string('•', Math.Max(2, at - 1)) + normalized[at..];
+    }
+
+    private sealed record EmployeeAuditSnapshot(
+        string EmployeeCode,
+        string FullName,
+        string? PhoneNumber,
+        string? EmailAddress,
+        bool EmployeeActive,
+        bool HasAccount,
+        bool? AccountActive,
+        bool? IsManuallyLocked,
+        bool? ForcePasswordChange,
+        int? FailedLoginAttempts,
+        DateTimeOffset? LockedUntilUtc)
+    {
+        public static EmployeeAuditSnapshot Capture(Employee employee) =>
+            new(employee.EmployeeCode, employee.FullName, employee.PhoneNumber, employee.EmailAddress,
+                employee.IsActive, employee.LoginAccount is not null, employee.LoginAccount?.IsActive,
+                employee.LoginAccount?.IsManuallyLocked, employee.LoginAccount?.ForcePasswordChange,
+                employee.LoginAccount?.FailedLoginAttempts, employee.LoginAccount?.LockedUntilUtc);
+    }
 }

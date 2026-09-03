@@ -15,7 +15,8 @@ public sealed record EmployeeListItemDto(
     Role? Role,
     DateTimeOffset? LastSuccessfulLoginUtc,
     int FailedLoginAttempts,
-    DateTimeOffset UpdatedAtUtc);
+    DateTimeOffset UpdatedAtUtc,
+    DateTimeOffset? LastFailedLoginUtc = null);
 
 public sealed record EmployeeSummaryDto(
     int TotalEmployees,
@@ -38,4 +39,5 @@ public sealed record EmployeeDetailsDto(
     bool IsManuallyLocked,
     bool ForcePasswordChange,
     DateTimeOffset UpdatedAtUtc,
-    IReadOnlyList<SystemCapability> EffectivePermissions);
+    IReadOnlyList<SystemCapability> EffectivePermissions,
+    DateTimeOffset? LastFailedLoginUtc = null);

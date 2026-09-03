@@ -399,7 +399,8 @@ public sealed class ReceiptSnapshotPersistenceTests
         var category = new Category(
             $"Danh mục {Guid.NewGuid():N}", 1, UtcNow);
         int userId;
-        if (await HasColumnAsync(context, "Users", "ForcePasswordChange"))
+        if (await HasColumnAsync(context, "Users", "ForcePasswordChange") &&
+            await HasColumnAsync(context, "Users", "LastFailedLoginAtUtc"))
         {
             var user = new User(
                 $"receipt.{Guid.NewGuid():N}",

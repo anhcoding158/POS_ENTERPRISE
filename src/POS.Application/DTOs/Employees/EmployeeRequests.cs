@@ -64,6 +64,13 @@ public sealed class SetEmployeeActiveRequest
     public bool Active { get; init; }
 }
 
+public sealed class SetAccountActiveRequest
+{
+    public int EmployeeId { get; init; }
+    public DateTimeOffset ExpectedUpdatedAtUtc { get; init; }
+    public bool Active { get; init; }
+}
+
 public sealed class ChangeEmployeeRoleRequest
 {
     public int EmployeeId { get; init; }
