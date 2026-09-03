@@ -413,6 +413,7 @@
                     Style="{StaticResource SecondaryButtonStyle}"
                     AutomationProperties.AutomationId="StoreSetupCancel" />
                 <Button
+                    x:Name="StoreSetupSave"
                     Content="Lưu thay đổi"
                     Command="{Binding SaveCommand}"
                     Style="{StaticResource PrimaryButtonStyle}"

@@ -1,0 +1,63 @@
+<UserControl x:Class="POS.Wpf.Views.SuccessDialogContent"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="28">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Orientation="Horizontal">
+            <Border Width="30" Height="30" CornerRadius="15"
+                    Background="{StaticResource SuccessSoftBrush}"
+                    VerticalAlignment="Center"
+                    AutomationProperties.Name="Thành công">
+                <TextBlock Text="✓"
+                           Foreground="{StaticResource SuccessBrush}"
+                           FontSize="18"
+                           FontWeight="Bold"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center" />
+            </Border>
+            <TextBlock Text="{Binding Title}"
+                       FontSize="21"
+                       FontWeight="SemiBold"
+                       TextWrapping="Wrap"
+                       VerticalAlignment="Center"
+                       Margin="10,0,0,0" />
+        </StackPanel>
+
+        <TextBlock Grid.Row="1"
+                   Text="{Binding Message}"
+                   TextWrapping="Wrap"
+                   FontSize="15"
+                   FontWeight="SemiBold"
+                   Margin="0,22,0,0" />
+
+        <ItemsControl Grid.Row="2"
+                      ItemsSource="{Binding Details}"
+                      Margin="0,14,0,0">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Text}"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,6" />
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <Button Grid.Row="3"
+                Content="Đã hiểu"
+                IsDefault="True"
+                IsCancel="True"
+                Style="{StaticResource PrimaryButtonStyle}"
+                MinWidth="96"
+                HorizontalAlignment="Right"
+                Margin="0,18,0,0"
+                Click="OnAcknowledgeClick"
+                AutomationProperties.Name="Đã hiểu"
+                AutomationProperties.AutomationId="{Binding AcknowledgeAutomationId}" />
+    </Grid>
+</UserControl>

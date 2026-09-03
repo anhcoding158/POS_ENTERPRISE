@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows.Media.Imaging;
+using Microsoft.Extensions.Logging;
+using POS.Application.Common;
 using POS.Application.Abstractions.Printing;
 using POS.Application.Abstractions.StoreSetup;
 using POS.Application.DTOs.Printing;
@@ -9,6 +11,11 @@ using POS.Wpf.Commands;
 using POS.Wpf.Services;
 
 namespace POS.Wpf.ViewModels;
+
+public sealed class StoreSettingsSaveSucceededEventArgs(bool restartRequired) : EventArgs
+{
+    public bool RestartRequired { get; } = restartRequired;
+}
 
 public sealed class StoreSettingsViewModel : ViewModelBase
 {
@@ -22,6 +29,8 @@ public sealed class StoreSettingsViewModel : ViewModelBase
     private readonly IStoreSettingsQrPreviewService _qr;
     private readonly IStoreSettingsFilePicker _picker;
     private readonly IReceiptService? _receiptService;
+    private readonly IReceiptStoreSnapshotProvider? _receiptStoreSnapshotProvider;
+    private readonly ILogger<StoreSettingsViewModel>? _logger;
 
     private StoreSettingsSnapshot _original;
     private bool _busy;
@@ -65,7 +74,9 @@ public sealed class StoreSettingsViewModel : ViewModelBase
         IPrinterTestService printers,
         IStoreSettingsQrPreviewService qr,
         IStoreSettingsFilePicker picker,
-        IReceiptService? receiptService = null)
+        IReceiptService? receiptService = null,
+        IReceiptStoreSnapshotProvider? receiptStoreSnapshotProvider = null,
+        ILogger<StoreSettingsViewModel>? logger = null)
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _validator = validator ?? throw new ArgumentNullException(nameof(validator));
@@ -75,10 +86,16 @@ public sealed class StoreSettingsViewModel : ViewModelBase
         _qr = qr ?? throw new ArgumentNullException(nameof(qr));
         _picker = picker ?? throw new ArgumentNullException(nameof(picker));
         _receiptService = receiptService;
+        _receiptStoreSnapshotProvider = receiptStoreSnapshotProvider;
+        _logger = logger;
         ScannerTest = new ScannerTestViewModel();
 
         _original = store.Current;
         Apply(_original);
+        LogStoreLogoState(
+            "StoreSettings.Load",
+            logoSaveCommitted: false,
+            _original.LogoAssetName is not null);
 
         SaveCommand = new AsyncRelayCommand(
             SaveAsync,
@@ -124,6 +141,8 @@ public sealed class StoreSettingsViewModel : ViewModelBase
     public AsyncRelayCommand ReplaceLogoCommand { get; }
     public AsyncRelayCommand RemoveLogoCommand { get; }
     public AsyncRelayCommand RefreshPrintersCommand { get; }
+
+    public event EventHandler<StoreSettingsSaveSucceededEventArgs>? SaveSucceeded;
 
     public ObservableCollection<PrinterInfo> Printers { get; } = [];
     public IReadOnlyList<int> PrintCopyOptions { get; } = [1, 2, 3, 4, 5];
@@ -287,6 +306,7 @@ public sealed class StoreSettingsViewModel : ViewModelBase
 
             OnPropertyChanged(nameof(LogoPath));
             RemoveLogoCommand?.NotifyCanExecuteChanged();
+            RefreshValidation();
         }
     }
 
@@ -327,6 +347,7 @@ public sealed class StoreSettingsViewModel : ViewModelBase
 
     public bool CanSave =>
         !_busy &&
+        IsDirty &&
         _issues.All(x => x.Severity != StoreSettingsIssueSeverity.Error);
 
     public bool CanPrintTest =>
@@ -355,7 +376,7 @@ public sealed class StoreSettingsViewModel : ViewModelBase
         IsDirty ? "Có thay đổi chưa lưu" : "Đã lưu";
 
     public string SaveStateText =>
-        _saving ? "Đang lưu…" : DirtyStateText;
+        _saving ? "Đang lưu…" : IsDirty ? "Có thay đổi chưa lưu" : string.Empty;
 
     public bool IsBusy => _busy;
     public bool IsSaving => _saving;
@@ -468,6 +489,10 @@ public sealed class StoreSettingsViewModel : ViewModelBase
             var result = await _store.SaveAsync(draft, _original.Version);
             if (!result.IsSuccess || result.Settings is null)
             {
+                LogStoreLogoState(
+                    "StoreSettings.Save",
+                    logoSaveCommitted: false,
+                    draft.LogoAssetName is not null);
                 StatusMessage = result.Status == StoreSettingsSaveStatus.Conflict
                     ? "Cài đặt đã thay đổi ở nơi khác; hãy tải lại trước khi ghi."
                     : "Không thể lưu cài đặt cửa hàng.";
@@ -479,15 +504,19 @@ public sealed class StoreSettingsViewModel : ViewModelBase
             _logoToRemove = null;
             Apply(_original);
 
+            LogStoreLogoState(
+                "StoreSettings.Save",
+                logoSaveCommitted: true,
+                _original.LogoAssetName is not null);
+
             if (oldLogo is not null &&
                 !string.Equals(oldLogo, _original.LogoAssetName, StringComparison.Ordinal))
             {
                 await _logos.RemoveAsync(oldLogo);
             }
 
-            StatusMessage = restartRequired
-                ? "Đã lưu cài đặt cửa hàng. Một số thay đổi có hiệu lực sau khi mở lại ứng dụng."
-                : "Đã lưu cài đặt cửa hàng.";
+            StatusMessage = string.Empty;
+            SaveSucceeded?.Invoke(this, new StoreSettingsSaveSucceededEventArgs(restartRequired));
         }
         finally
         {
@@ -496,12 +525,90 @@ public sealed class StoreSettingsViewModel : ViewModelBase
         }
     }
 
-    private Task ResetAsync()
+    private void LogStoreLogoState(
+        string stage,
+        bool logoSaveCommitted,
+        bool configuredLogoAssetNamePresent)
     {
+        if (_logger is null)
+        {
+            return;
+        }
+
+        var managedLogoResolvedAfterSave = false;
+        var embeddedLogoByteCount = 0;
+
+        try
+        {
+            var snapshot =
+                _receiptStoreSnapshotProvider?.GetCurrentSnapshot();
+
+            managedLogoResolvedAfterSave = snapshot?.HasLogo == true;
+            embeddedLogoByteCount =
+                snapshot?.LogoBytes?.Count ?? 0;
+        }
+        catch (Exception exception) when (
+            exception is IOException or
+            UnauthorizedAccessException or
+            InvalidOperationException or
+            ArgumentException)
+        {
+            PosLog.Warning(
+                _logger,
+                exception,
+                "StoreSettings.LogoDiagnosticFailed at {Stage}",
+                stage);
+        }
+
+        PosLog.Information(
+            _logger,
+            "{Stage}: " +
+            "ConfiguredLogoAssetNamePresent={ConfiguredLogoAssetNamePresent}; " +
+            "LogoSaveCommitted={LogoSaveCommitted}; " +
+            "ManagedLogoResolvedAfterSave={ManagedLogoResolvedAfterSave}; " +
+            "EmbeddedLogoByteCount={EmbeddedLogoByteCount}",
+            stage,
+            configuredLogoAssetNamePresent,
+            logoSaveCommitted,
+            managedLogoResolvedAfterSave,
+            embeddedLogoByteCount);
+    }
+
+    private async Task ResetAsync()
+    {
+        var currentLogo = LogoAssetName;
+        var deferredLogo = _logoToRemove;
+
+        var discardLogos = new HashSet<string>(
+            StringComparer.Ordinal);
+
+        if (currentLogo is not null &&
+            !string.Equals(
+                currentLogo,
+                _original.LogoAssetName,
+                StringComparison.Ordinal))
+        {
+            discardLogos.Add(currentLogo);
+        }
+
+        if (deferredLogo is not null &&
+            !string.Equals(
+                deferredLogo,
+                _original.LogoAssetName,
+                StringComparison.Ordinal))
+        {
+            discardLogos.Add(deferredLogo);
+        }
+
         _logoToRemove = null;
         Apply(_original);
+
+        foreach (var assetName in discardLogos)
+        {
+            await _logos.RemoveAsync(assetName);
+        }
+
         StatusMessage = "Đã bỏ các thay đổi chưa lưu.";
-        return Task.CompletedTask;
     }
 
     private async Task TestPrinterAsync()
@@ -544,11 +651,12 @@ public sealed class StoreSettingsViewModel : ViewModelBase
         try
         {
             var settings = _store.Current;
-            var store = new ReceiptStoreSnapshotDto(
-                settings.StoreName,
-                settings.Address,
-                settings.Hotline,
-                settings.TaxCode);
+            var store = _receiptStoreSnapshotProvider?.GetCurrentSnapshot()
+                ?? new ReceiptStoreSnapshotDto(
+                    settings.StoreName,
+                    settings.Address,
+                    settings.Hotline,
+                    settings.TaxCode);
             var line = new ReceiptLineDto(
                 1,
                 1,
@@ -663,11 +771,31 @@ public sealed class StoreSettingsViewModel : ViewModelBase
             return;
 
         var old = LogoAssetName;
+
+        if (old is not null &&
+            await _logos.IsSameContentAsync(source, old))
+        {
+            StatusMessage =
+                "Logo này đang được sử dụng. Không có thay đổi cần lưu.";
+            return;
+        }
+
         var imported = await _logos.ImportAsync(source);
+
         if (old is not null &&
             !string.Equals(old, imported, StringComparison.Ordinal))
         {
-            _logoToRemove = old;
+            if (string.Equals(
+                    old,
+                    _original.LogoAssetName,
+                    StringComparison.Ordinal))
+            {
+                _logoToRemove = old;
+            }
+            else
+            {
+                await _logos.RemoveAsync(old);
+            }
         }
 
         LogoAssetName = imported;

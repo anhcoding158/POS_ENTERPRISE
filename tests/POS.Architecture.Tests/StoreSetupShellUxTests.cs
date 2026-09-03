@@ -70,14 +70,14 @@ public sealed class StoreSetupShellUxTests
             CashDrawer = CashDrawerMode.PrinterPulse
         });
         var receipt = new FakeReceiptService();
-        var viewModel = CreateViewModel(store.Current, new FakePrinters(new PrinterInfo("Receipt printer", true)), receipt);
+        var viewModel = CreateViewModel(store, new FakePrinters(new PrinterInfo("Receipt printer", true)), receipt);
 
         viewModel.StoreName = "Cua hang da cap nhat";
         viewModel.SaveCommand.Execute(null);
         await WaitForCommandAsync(viewModel.SaveCommand);
 
         Assert.False(viewModel.IsDirty);
-        Assert.Contains("Đã lưu cài đặt cửa hàng", viewModel.StatusMessage, StringComparison.Ordinal);
+        Assert.Empty(viewModel.StatusMessage);
         Assert.True(store.Current.VietQrEnabled);
         Assert.Equal("970415", store.Current.BankBin);
         Assert.Equal(CashDrawerMode.PrinterPulse, store.Current.CashDrawer);
@@ -87,6 +87,264 @@ public sealed class StoreSetupShellUxTests
         Assert.NotNull(receipt.Request);
         Assert.Contains(receipt.Request!.Lines, line => line.ProductName == "Phiếu thử máy in");
         Assert.Contains("Đã gửi phiếu thử K80", viewModel.StatusMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Print_test_receipt_uses_the_current_snapshot_logo_provider()
+    {
+        var receipt = new FakeReceiptService();
+        var viewModel = CreateViewModel(
+            new FakeStore(new StoreSettingsSnapshot
+            {
+                StoreName = "MiniMart",
+                DefaultPrinter = "Receipt printer"
+            }),
+            receipt: receipt,
+            receiptStoreSnapshotProvider: new FakeReceiptStoreSnapshotProvider(
+                new ReceiptStoreSnapshotDto(
+                    "MiniMart",
+                    logoBytes: Convert.FromBase64String(
+                        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="),
+                    logoMimeType: "image/png")));
+
+
+        viewModel.PrintTestReceiptCommand.Execute(null);
+        await WaitForCommandAsync(viewModel.PrintTestReceiptCommand);
+
+        Assert.NotNull(receipt.Request);
+        Assert.True(receipt.Request!.Store.HasLogo);
+    }
+
+    [Fact]
+    public async Task Successful_save_raises_one_success_request_and_removes_inline_success_feedback()
+    {
+        var store = new FakeStore(new StoreSettingsSnapshot { StoreName = "Cua hang mau" });
+        var viewModel = CreateViewModel(store);
+        var successCount = 0;
+        viewModel.SaveSucceeded += (_, _) => successCount++;
+        viewModel.StoreName = "Cua hang da cap nhat";
+
+        viewModel.SaveCommand.Execute(null);
+        viewModel.SaveCommand.Execute(null);
+        await WaitForCommandAsync(viewModel.SaveCommand);
+
+        Assert.Equal(1, store.SaveCallCount);
+        Assert.Equal(1, successCount);
+        Assert.False(viewModel.IsDirty);
+        Assert.False(viewModel.CanSave);
+        Assert.Empty(viewModel.StatusMessage);
+        Assert.Empty(viewModel.SaveStateText);
+        Assert.Equal("Đã lưu", viewModel.DirtyStateText);
+    }
+
+    [Fact]
+    public async Task Save_without_changes_is_not_executed_and_does_not_raise_success()
+    {
+        var store = new FakeStore(new StoreSettingsSnapshot { StoreName = "Cua hang mau" });
+        var viewModel = CreateViewModel(store);
+        var successCount = 0;
+        viewModel.SaveSucceeded += (_, _) => successCount++;
+
+        Assert.False(viewModel.SaveCommand.CanExecute(null));
+        viewModel.SaveCommand.Execute(null);
+        await Task.Delay(20);
+
+        Assert.Equal(0, store.SaveCallCount);
+        Assert.Equal(0, successCount);
+        Assert.False(viewModel.IsDirty);
+    }
+
+    [Fact]
+    public async Task Validation_failure_does_not_raise_success_and_keeps_draft_dirty()
+    {
+        var store = new FakeStore(new StoreSettingsSnapshot { StoreName = "Cua hang mau" });
+        var viewModel = CreateViewModel(store, readiness: new FakeReadiness(false));
+        var successCount = 0;
+        viewModel.SaveSucceeded += (_, _) => successCount++;
+        viewModel.StoreName = "Cua hang dang sua";
+
+        viewModel.SaveCommand.Execute(null);
+        await WaitForCommandAsync(viewModel.SaveCommand);
+
+        Assert.Equal(0, store.SaveCallCount);
+        Assert.Equal(0, successCount);
+        Assert.True(viewModel.IsDirty);
+        Assert.Contains("Kiểm tra lại", viewModel.StatusMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Selecting_new_logo_makes_draft_dirty_and_enables_save()
+    {
+        var store = new FakeStore(new StoreSettingsSnapshot
+        {
+            StoreName = "Cua hang mau"
+        });
+        var logos = new FakeLogos { ImportedAssetName = "logo-mini.png" };
+        var picker = new FakePicker { NextLogoPath = "C:\\fixture\\mini.png" };
+        var viewModel = CreateViewModel(store, logos: logos, picker: picker);
+
+        viewModel.ReplaceLogoCommand.Execute(null);
+        await WaitForCommandAsync(viewModel.ReplaceLogoCommand);
+
+        Assert.Equal("logo-mini.png", viewModel.LogoAssetName);
+        Assert.True(viewModel.IsDirty);
+        Assert.True(viewModel.SaveCommand.CanExecute(null));
+        Assert.Contains("Bấm", viewModel.StatusMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Saving_pending_logo_persists_it_and_resets_dirty_state()
+    {
+        var store = new FakeStore(new StoreSettingsSnapshot
+        {
+            StoreName = "Cua hang mau"
+        });
+        var logos = new FakeLogos { ImportedAssetName = "logo-mini.png" };
+        var picker = new FakePicker { NextLogoPath = "C:\\fixture\\mini.png" };
+        var viewModel = CreateViewModel(store, logos: logos, picker: picker);
+
+        viewModel.ReplaceLogoCommand.Execute(null);
+        await WaitForCommandAsync(viewModel.ReplaceLogoCommand);
+        viewModel.SaveCommand.Execute(null);
+        await WaitForCommandAsync(viewModel.SaveCommand);
+
+        Assert.Equal("logo-mini.png", store.Current.LogoAssetName);
+        Assert.False(viewModel.IsDirty);
+        Assert.False(viewModel.SaveCommand.CanExecute(null));
+        Assert.Equal(1, store.SaveCallCount);
+    }
+
+    [Fact]
+    public async Task Selecting_same_logo_content_is_a_truthful_no_op()
+    {
+        var store = new FakeStore(new StoreSettingsSnapshot
+        {
+            StoreName = "Cua hang mau",
+            LogoAssetName = "logo-a.png"
+        });
+        var logos = new FakeLogos { SameContent = true };
+        var picker = new FakePicker { NextLogoPath = "C:\\fixture\\logo-a.png" };
+        var viewModel = CreateViewModel(store, logos: logos, picker: picker);
+
+        viewModel.ReplaceLogoCommand.Execute(null);
+        await WaitForCommandAsync(viewModel.ReplaceLogoCommand);
+
+        Assert.False(viewModel.IsDirty);
+        Assert.False(viewModel.SaveCommand.CanExecute(null));
+        Assert.Equal(
+            "Logo này đang được sử dụng. Không có thay đổi cần lưu.",
+            viewModel.StatusMessage);
+        Assert.Equal(0, logos.ImportCallCount);
+    }
+
+    [Fact]
+    public async Task Different_logo_content_is_dirty_even_when_source_name_is_similar()
+    {
+        var store = new FakeStore(new StoreSettingsSnapshot
+        {
+            StoreName = "Cua hang mau",
+            LogoAssetName = "logo-a.png"
+        });
+        var logos = new FakeLogos { ImportedAssetName = "logo-b.png" };
+        var picker = new FakePicker { NextLogoPath = "C:\\fixture\\logo-a.png" };
+        var viewModel = CreateViewModel(store, logos: logos, picker: picker);
+
+        viewModel.ReplaceLogoCommand.Execute(null);
+        await WaitForCommandAsync(viewModel.ReplaceLogoCommand);
+
+        Assert.Equal("logo-b.png", viewModel.LogoAssetName);
+        Assert.True(viewModel.IsDirty);
+        Assert.True(viewModel.SaveCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task Removing_logo_enables_save_and_reset_restores_baseline_without_removing_it()
+    {
+        var store = new FakeStore(new StoreSettingsSnapshot
+        {
+            StoreName = "Cua hang mau",
+            LogoAssetName = "logo-a.png"
+        });
+        var logos = new FakeLogos();
+        var viewModel = CreateViewModel(store, logos: logos);
+
+        viewModel.RemoveLogoCommand.Execute(null);
+        await WaitForCommandAsync(viewModel.RemoveLogoCommand);
+
+        Assert.Null(viewModel.LogoAssetName);
+        Assert.True(viewModel.IsDirty);
+        Assert.True(viewModel.SaveCommand.CanExecute(null));
+
+        viewModel.ResetCommand.Execute(null);
+        await WaitForCommandAsync(viewModel.ResetCommand);
+
+        Assert.Equal("logo-a.png", viewModel.LogoAssetName);
+        Assert.False(viewModel.IsDirty);
+        Assert.DoesNotContain("logo-a.png", logos.RemovedAssets);
+    }
+
+    [Fact]
+    public async Task Reset_removes_pending_replacement_but_keeps_saved_logo()
+    {
+        var store = new FakeStore(new StoreSettingsSnapshot
+        {
+            StoreName = "Cua hang mau",
+            LogoAssetName = "logo-a.png"
+        });
+        var logos = new FakeLogos { ImportedAssetName = "logo-b.png" };
+        var picker = new FakePicker { NextLogoPath = "C:\\fixture\\logo-b.png" };
+        var viewModel = CreateViewModel(store, logos: logos, picker: picker);
+
+        viewModel.ReplaceLogoCommand.Execute(null);
+        await WaitForCommandAsync(viewModel.ReplaceLogoCommand);
+        viewModel.ResetCommand.Execute(null);
+        await WaitForCommandAsync(viewModel.ResetCommand);
+
+        Assert.Equal("logo-a.png", viewModel.LogoAssetName);
+        Assert.Contains("logo-b.png", logos.RemovedAssets);
+        Assert.DoesNotContain("logo-a.png", logos.RemovedAssets);
+    }
+
+    [Fact]
+    public async Task Save_failure_does_not_raise_success_and_keeps_error_feedback()
+    {
+        var store = new FakeStore(new StoreSettingsSnapshot { StoreName = "Cua hang mau" })
+        {
+            SaveStatus = StoreSettingsSaveStatus.Failed
+        };
+        var viewModel = CreateViewModel(store);
+        var successCount = 0;
+        viewModel.SaveSucceeded += (_, _) => successCount++;
+        viewModel.StoreName = "Cua hang dang sua";
+
+        viewModel.SaveCommand.Execute(null);
+        await WaitForCommandAsync(viewModel.SaveCommand);
+
+        Assert.Equal(1, store.SaveCallCount);
+        Assert.Equal(0, successCount);
+        Assert.True(viewModel.IsDirty);
+        Assert.Equal("Không thể lưu cài đặt cửa hàng.", viewModel.StatusMessage);
+    }
+
+    [Fact]
+    public async Task Save_exception_does_not_raise_success_and_keeps_draft_dirty()
+    {
+        var store = new FakeStore(new StoreSettingsSnapshot { StoreName = "Cua hang mau" })
+        {
+            ThrowOnSave = true
+        };
+        var viewModel = CreateViewModel(store);
+        var successCount = 0;
+        viewModel.SaveSucceeded += (_, _) => successCount++;
+        viewModel.StoreName = "Cua hang dang sua";
+
+        viewModel.SaveCommand.Execute(null);
+        await WaitForCommandAsync(viewModel.SaveCommand);
+
+        Assert.Equal(1, store.SaveCallCount);
+        Assert.Equal(0, successCount);
+        Assert.True(viewModel.IsDirty);
+        Assert.Equal("Không thể hoàn tất thao tác. Hãy thử lại.", viewModel.StatusMessage);
     }
 
     [Fact]
@@ -165,18 +423,35 @@ public sealed class StoreSetupShellUxTests
     private static StoreSettingsViewModel CreateViewModel(
         StoreSettingsSnapshot settings,
         FakePrinters? printers = null,
-        IReceiptService? receipt = null)
+        IReceiptService? receipt = null,
+        IReceiptStoreSnapshotProvider? receiptStoreSnapshotProvider = null)
     {
-        var fakeStore = new FakeStore(settings);
+        return CreateViewModel(
+            new FakeStore(settings),
+            printers,
+            receipt,
+            receiptStoreSnapshotProvider: receiptStoreSnapshotProvider);
+    }
+
+    private static StoreSettingsViewModel CreateViewModel(
+        FakeStore store,
+        FakePrinters? printers = null,
+        IReceiptService? receipt = null,
+        FakeReadiness? readiness = null,
+        FakeLogos? logos = null,
+        FakePicker? picker = null,
+        IReceiptStoreSnapshotProvider? receiptStoreSnapshotProvider = null)
+    {
         return new StoreSettingsViewModel(
-            fakeStore,
+            store,
             new FakeValidator(),
-            new FakeReadiness(),
-            new FakeLogos(),
+            readiness ?? new FakeReadiness(),
+            logos ?? new FakeLogos(),
             printers ?? new FakePrinters(new PrinterInfo("Receipt printer", true)),
             new FakeQr(),
-            new FakePicker(),
-            receipt);
+            picker ?? new FakePicker(),
+            receipt,
+            receiptStoreSnapshotProvider);
     }
 
     private static async Task WaitForCommandAsync(POS.Wpf.Commands.AsyncRelayCommand command)
@@ -210,10 +485,20 @@ public sealed class StoreSetupShellUxTests
     private sealed class FakeStore(StoreSettingsSnapshot initial) : IStoreSettingsStore
     {
         public StoreSettingsSnapshot Current { get; private set; } = initial;
+        public int SaveCallCount { get; private set; }
+        public StoreSettingsSaveStatus SaveStatus { get; set; } = StoreSettingsSaveStatus.Success;
+        public bool ThrowOnSave { get; set; }
         public Task<StoreSettingsLoadResult> LoadAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult(new StoreSettingsLoadResult(Current, [], false));
         public Task<StoreSettingsSaveResult> SaveAsync(StoreSettingsSnapshot settings, long expectedVersion, CancellationToken cancellationToken = default)
         {
+            SaveCallCount++;
+            if (ThrowOnSave)
+                throw new InvalidOperationException("test save failure");
+
+            if (SaveStatus != StoreSettingsSaveStatus.Success)
+                return Task.FromResult(new StoreSettingsSaveResult(SaveStatus));
+
             Current = settings with { Version = expectedVersion + 1 };
             return Task.FromResult(new StoreSettingsSaveResult(StoreSettingsSaveStatus.Success, Current));
         }
@@ -225,16 +510,31 @@ public sealed class StoreSetupShellUxTests
             new([]);
     }
 
-    private sealed class FakeReadiness : IStoreSettingsReadinessEvaluator
+    private sealed class FakeReadiness(bool isReady = true) : IStoreSettingsReadinessEvaluator
     {
+        public bool IsReady { get; set; } = isReady;
         public Task<StoreSettingsReadiness> EvaluateAsync(StoreSettingsSnapshot settings, CancellationToken cancellationToken = default) =>
-            Task.FromResult(new StoreSettingsReadiness([], true));
+            Task.FromResult(new StoreSettingsReadiness([], IsReady));
     }
 
     private sealed class FakeLogos : IStoreSettingsLogoService
     {
-        public Task<string> ImportAsync(string sourcePath, CancellationToken cancellationToken = default) => Task.FromResult("logo.png");
-        public Task RemoveAsync(string? assetName, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public string ImportedAssetName { get; set; } = "logo.png";
+        public bool SameContent { get; set; }
+        public int ImportCallCount { get; private set; }
+        public List<string> RemovedAssets { get; } = [];
+        public Task<string> ImportAsync(string sourcePath, CancellationToken cancellationToken = default)
+        {
+            ImportCallCount++;
+            return Task.FromResult(ImportedAssetName);
+        }
+        public Task<bool> IsSameContentAsync(string sourcePath, string? assetName, CancellationToken cancellationToken = default) => Task.FromResult(SameContent);
+        public Task RemoveAsync(string? assetName, CancellationToken cancellationToken = default)
+        {
+            if (assetName is not null)
+                RemovedAssets.Add(assetName);
+            return Task.CompletedTask;
+        }
         public string? GetManagedPath(string? assetName) => assetName;
     }
 
@@ -254,7 +554,8 @@ public sealed class StoreSetupShellUxTests
 
     private sealed class FakePicker : IStoreSettingsFilePicker
     {
-        public string? PickLogo() => null;
+        public string? NextLogoPath { get; set; }
+        public string? PickLogo() => NextLogoPath;
     }
 
     private sealed class FakeReceiptService : IReceiptService
@@ -266,6 +567,12 @@ public sealed class StoreSetupShellUxTests
             Request = request;
             return Task.FromResult(Result.Success());
         }
+    }
+
+    private sealed class FakeReceiptStoreSnapshotProvider(
+        ReceiptStoreSnapshotDto snapshot) : IReceiptStoreSnapshotProvider
+    {
+        public ReceiptStoreSnapshotDto GetCurrentSnapshot() => snapshot;
     }
 }
 

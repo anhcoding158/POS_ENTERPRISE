@@ -5,6 +5,7 @@ namespace POS.Wpf.Views;
 public partial class StoreSettingsWindow : global::System.Windows.Window
 {
     private readonly StoreSettingsViewModel _viewModel;
+    private bool _isShowingSaveSuccess;
     public StoreSettingsWindow(StoreSettingsViewModel viewModel)
     {
         _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
@@ -12,6 +13,7 @@ public partial class StoreSettingsWindow : global::System.Windows.Window
         DataContext = viewModel;
         Closing += OnClosing;
         _viewModel.ScannerTest.FocusRequested += OnScannerFocusRequested;
+        _viewModel.SaveSucceeded += OnSaveSucceeded;
     }
 
     private async void OnWindowLoaded(
@@ -48,8 +50,31 @@ public partial class StoreSettingsWindow : global::System.Windows.Window
     protected override void OnClosed(EventArgs e)
     {
         _viewModel.ScannerTest.FocusRequested -= OnScannerFocusRequested;
+        _viewModel.SaveSucceeded -= OnSaveSucceeded;
         _viewModel.ScannerTest.Dispose();
         base.OnClosed(e);
+    }
+
+    private void OnSaveSucceeded(object? sender, StoreSettingsSaveSucceededEventArgs e)
+    {
+        if (_isShowingSaveSuccess)
+            return;
+
+        _isShowingSaveSuccess = true;
+        try
+        {
+            var dialog = new SuccessDialogWindow(SuccessDialogRequest.StoreSettingsSaved())
+            {
+                Owner = this,
+                WindowStartupLocation = global::System.Windows.WindowStartupLocation.CenterOwner
+            };
+            dialog.ShowDialog();
+            StoreSetupSave.Focus();
+        }
+        finally
+        {
+            _isShowingSaveSuccess = false;
+        }
     }
     private void OnCancelClick(object sender, global::System.Windows.RoutedEventArgs e)
     {

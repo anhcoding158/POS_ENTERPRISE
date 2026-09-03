@@ -12,6 +12,8 @@ public sealed class StoreSettingsUiContractTests
         var root = FindRepositoryRoot();
         var shell = File.ReadAllText(Path.Combine(root, "src", "POS.Wpf", "Views", "ShellWindow.xaml"));
         var view = File.ReadAllText(Path.Combine(root, "src", "POS.Wpf", "Views", "StoreSettingsWindow.xaml"));
+        var viewModel = File.ReadAllText(Path.Combine(root, "src", "POS.Wpf", "ViewModels", "StoreSettingsViewModel.cs"));
+        var codeBehind = File.ReadAllText(Path.Combine(root, "src", "POS.Wpf", "Views", "StoreSettingsWindow.xaml.cs"));
         Assert.Equal(1, Count(shell, "x:Name=\"StoreSettingsNavigationButton\""));
         foreach (var id in new[]
         {
@@ -24,6 +26,12 @@ public sealed class StoreSettingsUiContractTests
             "StoreSetupScannerCancel", "StoreSetupSave", "StoreSetupCancel"
         })
             Assert.Contains(id, view, StringComparison.Ordinal);
+        Assert.Contains("StoreSetupSaveState", view, StringComparison.Ordinal);
+        Assert.Contains("SaveSucceeded", viewModel, StringComparison.Ordinal);
+        Assert.Contains("new SuccessDialogWindow", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("dialog.ShowDialog()", codeBehind, StringComparison.Ordinal);
+        Assert.Contains("StoreSettingsSuccessAcknowledgeButton", File.ReadAllText(Path.Combine(root, "src", "POS.Wpf", "Views", "SuccessDialogRequest.cs")), StringComparison.Ordinal);
+        Assert.DoesNotContain("Đã lưu cài đặt cửa hàng.", viewModel, StringComparison.Ordinal);
         Assert.Contains("Thông tin cửa hàng", view, StringComparison.Ordinal);
         Assert.Contains("Hóa đơn và in ấn", view, StringComparison.Ordinal);
         Assert.Contains("Thiết bị bán hàng", view, StringComparison.Ordinal);
