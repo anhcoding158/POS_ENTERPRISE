@@ -3,9 +3,10 @@
 ## C0 Employee Account & Security verification boundary — CLOSED — 2026-09-03
 
 - Employee Account automated and manual acceptance A–I is PASS. Final-administrator rejection preserves state and presents the owned modal plus inline error banner without a success toast.
-- Windows full Quality Gate and explicit Release tests are both `1561/1561 PASS`, with EF pending-model, vulnerability and whitespace checks PASS. The official script currently builds/tests Debug by default; explicit Release evidence is recorded separately.
+- Before R1.4, the official script used Debug defaults for build/test even though the normal-profile full and explicit Release runs both reported `1561/1561 PASS`. This historical distinction is retained; it is no longer the live script behavior.
+- R1.4 corrected `scripts/Test-QualityGate.ps1` to use Release for build, no-build/no-restore tests and EF pending-model checking. The post-change normal-profile official Quality Gate passed `1561/1561`, `0 failed`, `0 skipped`, with vulnerability, EF and Git checks PASS.
 - Sandbox full Release remains `1555 PASS / 6 FAIL / 0 SKIP / 1561`. The six failures are environment-specific DPAPI/VietQR/Remembered Login limitations. They are not business failures and must not be “fixed” by weakening secure storage.
-- Process debt: make `scripts/Test-QualityGate.ps1` run Release by default in the separate `R1.4 — Quality Gate Release Correctness` checkpoint. This debt is intentionally not mixed into the Employee closeout.
+- The R1.4 implementation and verification are included in the closeout commit; no product work is mixed into this process correction.
 - Receipt PDF/reprint/K80, scanner/label-printer and broader physical hardware/DPI evidence remain pending. Migration `20260902074505_EmployeeSecurityAuditHardening` has isolated SQLite upgrade evidence and was not applied manually to a real database.
 
 ## Bulk UX V2 + Numeric Entry checkpoint — 2026-09-02

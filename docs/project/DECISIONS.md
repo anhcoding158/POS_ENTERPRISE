@@ -1,5 +1,12 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-059 — Official Quality Gate is Release-only
+
+- **Status:** Implemented, verified and included in the R1.4 closeout commit on `2026-09-03`.
+- **Decision:** `scripts/Test-QualityGate.ps1` must select `Release` explicitly for the solution build, the `--no-build --no-restore` automated test run and EF pending-model checking. Restore, vulnerability, Git checks and fail-fast behavior remain part of the same gate.
+- **Evidence:** The post-change normal-profile run printed absolute repository/solution paths and `Configuration: Release`, then passed `1561/1561` tests with `0` failed and `0` skipped, vulnerability PASS, EF pending-model PASS, Git checks PASS and exit `0`. The sandbox run proved the failure contract with `1555/1561`, six known environment failures and no final PASS message.
+- **Scope boundary:** No product source, migration, database, secure-storage flow or R6 module changed. The Release correctness change is committed before the next product module.
+
 ## DEC-058 — Close Employee worktree before the next product module
 
 - **Status:** Accepted and pushed on `2026-09-03`.

@@ -10,6 +10,14 @@
 - Windows Quality Gate evidence is `1561/1561 PASS`, `0 failed`, `0 skipped`, with EF pending-model, vulnerability and whitespace checks PASS. Explicit Release tests are also `1561/1561 PASS`. The sandbox baseline remains `1555 PASS / 6 FAIL / 0 SKIP`; all six are environment-specific DPAPI/VietQR/Remembered Login failures and are not business defects.
 - The closeout work is committed and pushed. R6 has not started; receipt PDF/reprint/K80 and other physical hardware evidence remain pending.
 
+## R1.4 Quality Gate Release Correctness — IMPLEMENTED / VERIFIED — 2026-09-03
+
+- Root cause: the official script omitted `--configuration`, so `dotnet build` and `dotnet test` used their Debug defaults. EF pending-model checking also did not select a configuration.
+- `scripts/Test-QualityGate.ps1` now fixes `Configuration: Release`, passes `--configuration Release` to build and to `--no-build --no-restore` tests, and passes `--configuration Release` to `dotnet ef` (supported by the installed tool). Repository and solution are printed as absolute paths.
+- User-profile run outside the restricted sandbox after the patch: official Quality Gate exit `0`, Release build `0 warning / 0 error`, Release tests `1561/1561 PASS`, `0 failed`, `0 skipped`, vulnerability PASS, local tools restore PASS, EF pending-model PASS and Git checks PASS. The final `QUALITY GATE PASSED` message was reached only after all steps passed.
+- Sandbox run after the patch: Release build succeeded; Release tests reported `1555 PASS / 6 FAIL / 0 SKIP / 1561` and the script stopped at step 3 with exit `1`, without printing `QUALITY GATE PASSED`. The six failures remain environment-specific DPAPI/VietQR/Remembered Login limitations.
+- PowerShell parser validation and Release apphost build passed. This R1.4 change is included in the closeout commit; R6 has not started.
+
 ## Bulk UX V2 + Numeric Entry checkpoint — ACCEPTED / QUALITY GATE PASS / 2026-09-02
 
 - User physical acceptance confirmed the Bulk V2 layout and numeric entry behavior: grouped VND/count input remains editable through separators, Product Editor and Bulk price fields format consistently, profit preview remains correct, and Bulk preview/request values remain numeric and exact.

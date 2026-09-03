@@ -21,6 +21,9 @@ $solutionPath =
         $repositoryRoot `
         "POS.Enterprise.slnx"
 
+$configuration =
+    "Release"
+
 $infrastructureProjectPath =
     Join-Path `
         $repositoryRoot `
@@ -81,6 +84,10 @@ Write-Host `
     "Solution: $solutionPath" `
     -ForegroundColor DarkGray
 
+Write-Host `
+    "Configuration: $configuration" `
+    -ForegroundColor DarkGray
+
 Invoke-DotNetStep `
     -Title "1. Restore solution" `
     -Arguments @(
@@ -96,6 +103,8 @@ Invoke-DotNetStep `
     -Arguments @(
         "build",
         $solutionPath,
+        "--configuration",
+        $configuration,
         "--no-restore",
         "-m:1",
         "-nr:false",
@@ -107,6 +116,8 @@ Invoke-DotNetStep `
     -Arguments @(
         "test",
         $solutionPath,
+        "--configuration",
+        $configuration,
         "--no-build",
         "--no-restore",
         "-m:1",
@@ -173,6 +184,8 @@ if (-not $SkipEfCheck)
             "ef",
             "migrations",
             "has-pending-model-changes",
+            "--configuration",
+            $configuration,
             "--project",
             $infrastructureProjectPath,
             "--startup-project",

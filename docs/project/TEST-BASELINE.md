@@ -1,11 +1,20 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R1.4 Quality Gate Release Correctness — 2026-09-03
+
+- Root cause confirmed: before R1.4, `scripts/Test-QualityGate.ps1` omitted `--configuration` for build and test, so those commands ran their Debug defaults. The previous normal-profile `1561/1561 PASS` is retained as historical Debug-based official evidence; the separate explicit Release run also passed `1561/1561`.
+- After R1.4, the official script prints absolute Repository/Solution paths and `Configuration: Release`; build uses Release, tests use Release with `--no-build --no-restore`, and EF pending-model uses `--configuration Release`.
+- Official Quality Gate outside the restricted sandbox: exit `0`; Release build `0 warning / 0 error`; automated tests `1561/1561 PASS`, `0 failed`, `0 skipped`; vulnerability PASS; local tools restore PASS; EF pending-model PASS; Git whitespace/status PASS; final `QUALITY GATE PASSED` printed only after all stages succeeded.
+- Sandbox rerun of the same official script: Release build succeeded, then tests reported `1555 PASS / 6 FAIL / 0 SKIP / 1561` and exited `1` at the test stage. The six failures are the known environment-specific DPAPI/VietQR/Remembered Login limitation and are not business failures.
+- PowerShell parser check: PASS. Explicit Release apphost build with `UseAppHost=true`: PASS, `0 warning / 0 error`; apphost is `src/POS.Wpf/bin/Release/net10.0-windows/POS.Enterprise.exe`.
+- R1.4 is verified and included in the closeout commit. No product source, migration or database was changed.
+
 ## C0 Employee Account & Security closeout — 2026-09-03
 
 - Focused Employee/Auth/UI/Audit/Store Settings/Product Import compatibility selection: `89/89 PASS`, `0 failed`, `0 skipped`.
 - Windows full Quality Gate: `1561/1561 PASS`, `0 failed`, `0 skipped`; vulnerability scan, EF pending-model and Git whitespace checks PASS.
 - Explicit Release build: `0 warning / 0 error`; explicit Release full tests: `1561/1561 PASS`, `0 failed`, `0 skipped`.
-- Official `scripts/Test-QualityGate.ps1` also passed on the normal Windows profile with `1561/1561 PASS`. The script currently builds/tests Debug by default; explicit Release evidence above is recorded separately and is authoritative for Release correctness.
+- Before R1.4, the official script also passed on the normal Windows profile with `1561/1561 PASS`, but its build/test commands used the Debug defaults. Explicit Release evidence was recorded separately. The R1.4 section above records the corrected Release-only official gate.
 - Sandbox baseline is `1555 PASS / 6 FAIL / 0 SKIP` out of `1561`. The six failures are the known environment-specific DPAPI/VietQR/Remembered Login test-host limitation, not business or secure-storage defects.
 - Employee Account manual acceptance A–I is PASS, including final-administrator UX rejection. Receipt PDF/reprint/K80 and physical device evidence remain pending. Migration `20260902074505_EmployeeSecurityAuditHardening` was tested with isolated SQLite but not applied manually to a real database.
 

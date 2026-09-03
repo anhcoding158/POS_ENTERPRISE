@@ -7,7 +7,7 @@ This section supersedes older status/order statements below; historical entries 
 | Stage | Current status |
 | --- | --- |
 | R0 VietQR Closeout | Main implementation complete; acceptance evidence retained separately |
-| R1 CI/Repository | Main implementation complete; `R1.4` Release-correctness process debt is next |
+| R1 CI/Repository | Main implementation complete; `R1.4` Release correctness implemented, verified and committed |
 | R2 Platform Hardening | Complete |
 | R3 Backup/Restore | Core and tests complete |
 | R4.1 Store Setup | Core complete |
@@ -40,9 +40,15 @@ R12B License + Commercial Release
 R13B Retail V1 1.0.0
 ```
 
-Current evidence: focused compatibility tests `89/89 PASS`; Windows full and explicit Release tests `1561/1561 PASS`; sandbox `1555 PASS / 6 FAIL / 0 SKIP / 1561` with environment-specific DPAPI/VietQR/Remembered Login failures; EF pending-model and vulnerability PASS. Employee manual A–I is PASS. R6 implementation has not started.
+Current evidence: focused compatibility tests `89/89 PASS`; post-R1.4 normal-profile official Release Quality Gate `1561/1561 PASS`; sandbox `1555 PASS / 6 FAIL / 0 SKIP / 1561` with environment-specific DPAPI/VietQR/Remembered Login failures; EF pending-model and vulnerability PASS. Employee manual A–I is PASS. R1.4 is verified and committed; R6 implementation has not started.
 
-The first new code checkpoint after the closeout worktree is clean is `R6.1 — Supplier Master`. Do not start R6 in this closeout.
+R1.4 is the current process closeout. After the worktree is clean, the first new code checkpoint remains `R6.1 — Supplier Master`; do not start R6 in this checkpoint.
+
+### R1.4 — Quality Gate Release Correctness
+
+- Implemented and verified on `2026-09-03`; official build, tests and EF pending-model all select Release, with fail-fast preserved and no final PASS after a failed step.
+- The pre-R1.4 Debug-based official result and the separate Release result remain historical evidence; the post-change normal-profile official result is `1561/1561 PASS`.
+- No R6 implementation has started. Push verification is handled by the closeout procedure.
 
 ## Historical snapshot — Employee Account & Security — 2026-09-02
 
