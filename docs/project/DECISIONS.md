@@ -1,5 +1,22 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-058 — Close Employee worktree before the next product module
+
+- **Status:** Accepted and pushed on `2026-09-03`.
+- **Decision:** Close the current Employee/Audit/Product Import/Store Settings worktree as controlled atomic commits after Windows acceptance, then keep the repository clean before starting new module code.
+- **Evidence:** Employee manual A–I PASS; focused compatibility tests `89/89 PASS`; Windows full and explicit Release tests `1561/1561 PASS`; EF pending-model, vulnerability and whitespace checks PASS. Sandbox six DPAPI/VietQR/Remembered Login failures remain environment-specific.
+- **Execution order:** `R1.4 — Quality Gate Release Correctness` is the next process checkpoint. After that, perform `R5.5/R11.0` physical acceptance when hardware is available; the first new code checkpoint after the worktree is clean is `R6.1 — Supplier Master`.
+- **Scope boundary:** R6 implementation, Receipt PDF/reprint/K80 acceptance and script changes are not included in this closeout.
+
+## DEC-057 — Employee security state and failed-login evidence remain append-only
+
+- **Status:** Historical implementation decision recorded on `2026-09-02`; C0 acceptance and the Windows Gate are now closed under DEC-058.
+- **Decision:** Keep employee lifecycle (`active/inactive`) separate from account lifecycle (`no account/force password change/active/locked/disabled`). Account removal is not exposed; deactivation disables login and preserves business/audit history.
+- **Security:** Use the existing application authorization, transaction and audit boundaries. Failed authentication for a known account persists a consecutive counter, `LastFailedLoginAtUtc` and `LoginFailed` audit event; successful authentication resets only the consecutive counter. Unknown/inactive login responses remain generic.
+- **Credential flow:** Temporary credentials are handled through PasswordBox/modal boundaries, cleared after use, never audited, and cannot be remembered until mandatory first-login password change completes. Canceling the forced-change dialog clears the provisional session and returns to Login.
+- **Schema:** Forward-only migration `20260902074505_EmployeeSecurityAuditHardening` adds the timestamp and extends the audit action check to 16. No database update was executed in this worktree.
+- **Scope:** No Activity Log redesign, Bulk/Numeric/Label Printing change, DPAPI change or R6 work is included.
+
 ## DEC-056 — Bulk/Numeric Entry uses a digit edit model with explicit Vietnamese display culture
 
 - **Status:** Accepted and committed locally for the 2026-09-02 Bulk UX V2 + Numeric Entry checkpoint; not pushed.

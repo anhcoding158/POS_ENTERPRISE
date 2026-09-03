@@ -1,5 +1,15 @@
 # CURRENT STATE — POS ENTERPRISE
 
+## C0 Employee Account & Security — CLOSED / COMMITTED / PUSHED — 2026-09-03
+
+- Employee/account lifecycle now exposes `NoAccount`, `ForcePasswordChange`, `Active`, `Locked` and `Disabled` distinctly. The management UI has one create-account CTA per state, modal temporary-password reset, safe credential clearing, selected-row preservation and final-administrator UX feedback.
+- Failed-login attempts are persisted transactionally with `LastFailedLoginAtUtc`; five consecutive failures lock for 15 minutes. Known-user failures append `LoginFailed` audit events without credential material, while unknown and inactive users receive the generic invalid-credentials response.
+- Forced password change remains outside the Shell until success; cancel clears the provisional session and returns to Login. Remembered login is not created/restored for mandatory first-login change. Password reset, lock, disable and employee deactivation revoke the current session/remembered credential according to the existing terminal-local contract.
+- Forward-only migration `20260902074505_EmployeeSecurityAuditHardening` adds the failure timestamp and permits `LoginFailed`. It was not applied manually; application startup/EF migration flow remains responsible under the existing contract. No hard-delete path was added.
+- Employee final-administrator guard and UX rejection are accepted manually: state remains unchanged, the owned `Không thể thực hiện` modal and inline error banner are visible, and no success toast is emitted. Employee Account manual acceptance A–I is PASS.
+- Windows Quality Gate evidence is `1561/1561 PASS`, `0 failed`, `0 skipped`, with EF pending-model, vulnerability and whitespace checks PASS. Explicit Release tests are also `1561/1561 PASS`. The sandbox baseline remains `1555 PASS / 6 FAIL / 0 SKIP`; all six are environment-specific DPAPI/VietQR/Remembered Login failures and are not business defects.
+- The closeout work is committed and pushed. R6 has not started; receipt PDF/reprint/K80 and other physical hardware evidence remain pending.
+
 ## Bulk UX V2 + Numeric Entry checkpoint — ACCEPTED / QUALITY GATE PASS / 2026-09-02
 
 - User physical acceptance confirmed the Bulk V2 layout and numeric entry behavior: grouped VND/count input remains editable through separators, Product Editor and Bulk price fields format consistently, profit preview remains correct, and Bulk preview/request values remain numeric and exact.

@@ -1,5 +1,64 @@
 # MASTER ROADMAP — POS ENTERPRISE RETAIL V1
 
+## MASTER ROADMAP V2 — CURRENT EXECUTION POSITION — 2026-09-03
+
+This section supersedes older status/order statements below; historical entries remain preserved as history.
+
+| Stage | Current status |
+| --- | --- |
+| R0 VietQR Closeout | Main implementation complete; acceptance evidence retained separately |
+| R1 CI/Repository | Main implementation complete; `R1.4` Release-correctness process debt is next |
+| R2 Platform Hardening | Complete |
+| R3 Backup/Restore | Core and tests complete |
+| R4.1 Store Setup | Core complete |
+| R4.2 Employee Account | Automated and manual A–I PASS; committed/pushed |
+| R4.3 Role/Permission | Core complete |
+| R4.4 Audit Log | Core complete |
+| R5.1/R5.2 Import/Export | Core complete |
+| R5.3 Bulk Operations | Complete |
+| R5.4 Barcode/Label | Code/test complete; hardware evidence pending |
+| Receipt logo | Commit `cf22086`; preview manual PASS; PDF/reprint/K80 pending |
+| R6–R13 | Not started as new implementation; follow the V2 order below |
+
+### V2 execution order
+
+```text
+C0 close Employee/worktree
+R1.4 Quality Gate Release Correctness
+R5.5/R11.0 Receipt/Label/Scanner/DPI acceptance
+R6A Supplier + Purchase + Goods Receipt
+R6B Batch/Expiry if pilot requires it
+R9A Cash Session + Cashbook + Daily Close
+R10A Pilot reports
+R11 Hardware/UI/Performance
+R12A Installer/Support/Pilot build
+R13A Core Pilot 0.9.0
+R7 Customer + Loyalty
+R8 Coupon + Voucher + Promotion
+R10B Full reports
+R12B License + Commercial Release
+R13B Retail V1 1.0.0
+```
+
+Current evidence: focused compatibility tests `89/89 PASS`; Windows full and explicit Release tests `1561/1561 PASS`; sandbox `1555 PASS / 6 FAIL / 0 SKIP / 1561` with environment-specific DPAPI/VietQR/Remembered Login failures; EF pending-model and vulnerability PASS. Employee manual A–I is PASS. R6 implementation has not started.
+
+The first new code checkpoint after the closeout worktree is clean is `R6.1 — Supplier Master`. Do not start R6 in this closeout.
+
+## Historical snapshot — Employee Account & Security — 2026-09-02
+
+The following dated snapshot is retained for history and is superseded by the C0 closeout and Roadmap V2 position above.
+
+- Implemented account state separation, one create CTA, modal temporary-password reset, first-login mandatory change return-to-Login behavior, persisted consecutive failed-login tracking, 5-attempt/15-minute lockout, admin lifecycle guards, ID-based selection restoration, feedback and no-hard-delete lifecycle.
+- Added forward-only `20260902074505_EmployeeSecurityAuditHardening` for `LastFailedLoginAtUtc` and `LoginFailed`; no migration was applied to the manual database.
+- Focused verification is `22/22 PASS`; full sandbox Release is `1510 PASS / 6 FAIL / 0 SKIP`, with the six known DPAPI environmental failures separated. A fresh normal-profile Quality Gate and user physical acceptance are still required; the earlier `1514/1514` evidence is not inherited.
+- Next checkpoint: user acceptance and normal-profile Gate for Employee Account, then Employee hardening follow-up. R6+ remains `HOLD`.
+
+## Receipt logo rendering — IMPLEMENTED / MANUAL PRINT FOLLOW-UP — 2026-09-02
+
+- New receipts capture the persisted managed logo as bounded self-contained PNG content; preview, print and reprint consume the same immutable receipt snapshot, while legacy/no-logo/corrupt snapshots retain the `PE` fallback.
+- User accepted the latest Release preview alignment. Focused receipt verification is `55/55 PASS`, dedicated logo tests are `10/10 PASS`; full sandbox is `1541 PASS / 6 FAIL / 0 SKIP` with the six known secure-storage profile failures separated. A fresh normal-profile Gate and final PDF/physical-printer/reprint acceptance remain pending.
+- This is a separate logical closeout from Store Settings success feedback and Employee/Audit work; no migration or historical receipt rewrite was introduced.
+
 ## Bulk UX V2 + Numeric Entry closeout — 2026-09-02
 
 - Bulk UX V2 and Numeric Entry are `ACCEPTED / COMMITTED LOCALLY` after user physical acceptance and the user-run normal interactive Quality Gate: `1514/1514 PASS`, `0 failed`, `0 skipped`, exit code `0`.

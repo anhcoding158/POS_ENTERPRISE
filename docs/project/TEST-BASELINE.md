@@ -1,5 +1,14 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## C0 Employee Account & Security closeout — 2026-09-03
+
+- Focused Employee/Auth/UI/Audit/Store Settings/Product Import compatibility selection: `89/89 PASS`, `0 failed`, `0 skipped`.
+- Windows full Quality Gate: `1561/1561 PASS`, `0 failed`, `0 skipped`; vulnerability scan, EF pending-model and Git whitespace checks PASS.
+- Explicit Release build: `0 warning / 0 error`; explicit Release full tests: `1561/1561 PASS`, `0 failed`, `0 skipped`.
+- Official `scripts/Test-QualityGate.ps1` also passed on the normal Windows profile with `1561/1561 PASS`. The script currently builds/tests Debug by default; explicit Release evidence above is recorded separately and is authoritative for Release correctness.
+- Sandbox baseline is `1555 PASS / 6 FAIL / 0 SKIP` out of `1561`. The six failures are the known environment-specific DPAPI/VietQR/Remembered Login test-host limitation, not business or secure-storage defects.
+- Employee Account manual acceptance A–I is PASS, including final-administrator UX rejection. Receipt PDF/reprint/K80 and physical device evidence remain pending. Migration `20260902074505_EmployeeSecurityAuditHardening` was tested with isolated SQLite but not applied manually to a real database.
+
 ## Bulk UX V2 + Numeric Entry accepted baseline — 2026-09-02
 
 - Evidence source: user-run official `scripts/Test-QualityGate.ps1` on a normal interactive Windows profile, without `-SkipEfCheck`.
