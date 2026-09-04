@@ -657,11 +657,12 @@ Mọi thay đổi kiến trúc hoặc roadmap sau khi register này tồn tại 
 
 | Status | Count |
 |---|---:|
-| Observed and Accepted | 15 |
+| Observed and Accepted | 16 |
 | Policy | 7 |
 | Deferred | 1 |
+| Awaiting review | 0 |
 | Superseded | 0 |
-| **Total** | **23** |
+| **Total** | **24** |
 - 2026-08-30 — R5.2 Export decisions
 
 - Export uses BCL ZIP/XML and text APIs already present in the solution; no package, migration or parallel report model was needed. XLSX uses typed text/numeric cells, freezes the header row and contains no formulas, macros or external links.
@@ -679,3 +680,12 @@ Mọi thay đổi kiến trúc hoặc roadmap sau khi register này tồn tại 
 - **Fallback:** Legacy, missing or undecodable logo payloads render the existing `PE` monogram. Invalid logo content must not fail checkout.
 - **Evidence:** `ReceiptStoreSnapshotProvider`, `ManagedLogoService`, `ReceiptSnapshotJsonSerializer`, `ReceiptDocumentBuilder`, production composition tests and user Release preview evidence on 2026-09-02. No migration, manual database access or historical backfill was used.
 - **Scope:** Separate logical change `Receipt logo rendering`; Employee/Audit/Store Settings changes remain separate working-tree scope.
+
+## DEC-060 — R6.2A Purchase Order is a non-posting commercial aggregate
+
+- **Status:** Closed, committed and pushed on `2026-09-04`.
+- **Decision:** Model Purchase Order independently from Goods Receipt. Draft/Ordered/Cancelled are the only R6.2A lifecycle states; receiving progress and posting belong to the later Goods Receipt checkpoint.
+- **Contract:** Marking or amending a Purchase Order never changes Product stock/cost and never creates an InventoryMovement. `ReceivedQuantity` is persisted at zero only as forward preparation for R6.2C.
+- **Snapshot:** Draft snapshots support display; Mark Ordered reloads active Supplier/Product masters and finalizes the identity snapshots. Later master edits do not alter ordered history.
+- **Authorization/audit:** Administrator and Manager have View/Manage Purchase Order capabilities; InventoryStaff has View only; Cashier has neither. Four explicit audit actions 21–24 record sanitized document-level summaries in the same transaction as the mutation.
+- **Evidence/boundary:** Product Owner normal-Windows Release tests are `1608/1608 PASS`, `0 failed`, `0 skipped`; EF pending-model and `git diff --check` passed; the Quality Gate script printed `QUALITY GATE PASSED`. Release build had three `NU1900` warnings because NuGet advisory retrieval failed, so vulnerability status is `INCONCLUSIVE`, not PASS. No R6.2A dependency change exists; R6.1 is the last known successful vulnerability scan. No real database, R6.2B/C UI/receiving work or secure-storage change is included. The Gate script's ability to print PASS despite `NU1900` remains a known hardening item and the script was not changed.

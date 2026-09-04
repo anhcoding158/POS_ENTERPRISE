@@ -1,5 +1,13 @@
 # TEST BASELINE — POS ENTERPRISE RETAIL V1
 
+## R6.2A Purchase Order foundation closeout — 2026-09-04
+
+- Product Owner normal-Windows Release tests: `1608/1608 PASS`, `0 FAIL`, `0 SKIP`. EF pending-model: PASS. `git diff --check`: PASS. The Quality Gate script printed `QUALITY GATE PASSED`.
+- Release build succeeded with three `NU1900` warnings caused by failure to load the NuGet vulnerability service index. The build is not recorded as zero-warning.
+- Vulnerability command enumerated five projects and reported no vulnerable package in the available result, but advisory retrieval was unavailable; this scan is `INCONCLUSIVE`, not PASS. Last known successful vulnerability scan: R6.1 baseline.
+- No dependency file changed in R6.2A: no `.csproj`, `Directory.Packages.props`, `NuGet.config`, `packages.lock.json` or `dotnet-tools.json`. `scripts/Test-QualityGate.ps1` was not modified; handling `NU1900` remains a known release-gate hardening item.
+- Focused local Purchase Order Release verification was `25/25 PASS`; no real database was accessed or updated, and no secure-storage tests were changed, filtered or weakened.
+
 ## R6.1 Supplier Master final closeout — 2026-09-04
 
 - Initial manual R6.1 UI result is `FAIL/BLOCKED` at the first step: Administrator could not open Supplier and the Shell reported `Cannot find resource named 'ModernComboBoxStyle'`.
@@ -832,3 +840,10 @@ R0.5D did not run restore, build, tests, Quality Gate, EF commands, migration, d
 - Focused Release receipt/store/checkout/preview regression: `55/55 PASS`; fresh Release apphost build: `0 warning / 0 error`.
 - Latest full Release sandbox verification: `1541 PASS / 6 FAIL / 0 SKIP / 1547`; the six failures are the known DPAPI/VietQR/Remembered Login test-host limitation, not a receipt failure. Vulnerability scan had no vulnerable package result; EF pending-model and `git diff --check` passed.
 - User manual evidence confirms the latest Release preview shows the configured logo in the new receipt. PDF, physical printer and reprint remain explicitly pending until the user completes them. The prior normal-profile `1514/1514` Gate is not inherited for this receipt source.
+
+## R6.2A Purchase Order foundation implementation evidence — 2026-09-04
+
+- Focused Release Purchase Order plus existing Supplier/Product/Inventory/Checkout/Audit/Permission regression: `503/503 PASS`, `0 FAIL`, `0 SKIP`.
+- Product Owner normal-Windows release tests are `1608 PASS / 0 FAIL / 0 SKIP`; EF pending-model and `git diff --check` passed, and the Quality Gate script printed `QUALITY GATE PASSED`.
+- Release build succeeded with three `NU1900` warnings because NuGet vulnerability data was unreachable; no zero-warning claim is made. Release win-x64 apphost publish succeeded.
+- The vulnerability command enumerated five projects with no vulnerable package in the available result, but advisory retrieval failed; the scan is `INCONCLUSIVE`, not PASS. The last known successful vulnerability scan is the R6.1 baseline. No dependency file changed and no secure-storage test was skipped, filtered or weakened.

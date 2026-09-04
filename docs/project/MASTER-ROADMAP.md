@@ -589,3 +589,10 @@ Release 1.0 chỉ được thực hiện sau khi toàn bộ exit criteria R13 đ
 
 - R5.3 non-printing product operations are implemented for an explicit, bounded selection on the current Product page: preview then confirmation for prices, category, status and minimum-stock threshold. The service rechecks ManageProducts, optimistic timestamps, domain invariants and transaction consistency; no stock movement is created for these operations. Focused UI/service verification is `6/6 PASS` in Debug and Release; final normal-host full verification is `1426/1426 PASS`.
 - Bulk label printing remains a real dependency, not a placeholder: source tracing found receipt printing but no label renderer/printer/settings pipeline to reuse. R5.3 therefore remains open; R5.4 is not started and no fake print action was added. Final manual WPF and hardware acceptance are pending.
+
+## Latest checkpoint position — 2026-09-04 (R6.2A — Purchase Order foundation — closed / committed / pushed)
+
+- R6.2A implements the Purchase Order domain/application/persistence foundation, numbering, permissions, audit actions and forward-only EF migration. It intentionally contains no Purchase Order WPF UI, Goods Receipt, stock/cost mutation or real-database migration application.
+- Product Owner normal-Windows release evidence is `1608/1608 PASS`, `0 failed`, `0 skipped`; EF pending-model and `git diff --check` passed, and the Quality Gate script printed `QUALITY GATE PASSED`. Release build succeeded with three `NU1900` environmental warnings, so it is not recorded as zero-warning.
+- Vulnerability advisory retrieval was unavailable due to NuGet/network access. The command enumerated five projects without a vulnerable package in the available result, but this scan is `INCONCLUSIVE`, not PASS; the last known successful vulnerability scan is the R6.1 baseline. No package/configuration/lock-file change was made, and the Gate script was not changed; its `NU1900`/PASS behavior remains a known hardening item.
+- R6.2B Purchase Order management/editor UI and R6.2C Goods Receipt posting remain not started. R6.2D history/audit/print/manual acceptance remains deferred.

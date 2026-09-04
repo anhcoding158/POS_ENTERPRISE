@@ -536,6 +536,16 @@ Current R0 closeout evidence confirms the Presented transition is persisted befo
 | Migration/startup/backup | 3 | 2 | 0 | 1 | 0 | `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\DatabaseInitializerSafetyTests.cs`; `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\PaymentIntentMigrationTests.cs` | R1/R3 |
 | Authentication/RBAC/security | 5 | 3 | 1 | 1 | 0 | `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\AuthServiceIntegrationTests.cs`; `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\PermissionServiceTests.cs`; `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\ReceiptSnapshotPersistenceTests.cs` | R2/R4/R0.5F |
 | Supplier master | 5 | 4 | 0 | 1 | 0 | `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\SupplierDomainTests.cs`; `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\SupplierPersistenceIntegrationTests.cs`; `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\SupplierAuthorizationTests.cs` | R6.2 |
-| **Total** | **35** | **30** | **2** | **3** | **0** | Direct test source nêu trên | Theo từng group |
+| Purchase Order foundation | 4 | 4 | 0 | 0 | 0 | `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\PurchaseOrderDomainTests.cs`; `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\PurchaseOrderPersistenceIntegrationTests.cs`; `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\PurchaseOrderAuthorizationTests.cs` | R6.2B/R6.2C |
+| **Total** | **39** | **34** | **2** | **3** | **0** | Direct test source nêu trên | Theo từng group |
 
-Các con số được đếm từ 35 ID trong chính file này. Status không phải kết quả test vừa chạy.
+Các con số được đếm từ 39 ID trong chính file này. Status không phải kết quả test vừa chạy.
+
+## R6.2A Purchase Order invariants — 2026-09-04
+
+- Purchase Order is a first-class aggregate with explicit append-only status values Draft, Ordered and Cancelled. Draft requires at least one unique Product line before ordering; Cancelled is read-only and no application Delete operation exists.
+- Ordered identity snapshots (SupplierId/code/name/tax and ProductId/code/name/unit) are finalized from fresh active live masters at Mark Ordered and are not refreshed by later master edits. Supplier/Product inactive before ordering rejects the operation; no stock or cost operation is implied by any R6.2A mutation.
+- Persisted `ReceivedQuantity` starts at zero and has no R6.2A application mutation path. Ordered quantity, received quantity and non-negative VND integer unit cost are bounded by domain and relational checks; line and grand totals use checked arithmetic.
+- Expected delivery cannot precede order date. Ordered amendments preserve supplier/product identity, cannot reduce ordered quantity below persisted received quantity, and cancellation does not remove movement history (R6.2A creates no movement history).
+
+- R6.2A closeout evidence is Product Owner normal-Windows Release `1608/1608 PASS`, EF pending-model PASS and `git diff --check` PASS. The build emitted three `NU1900` environmental warnings; vulnerability advisory retrieval is `INCONCLUSIVE`, not PASS, with R6.1 as the last known successful scan. No dependency, secure-storage or real-database change is part of this checkpoint.

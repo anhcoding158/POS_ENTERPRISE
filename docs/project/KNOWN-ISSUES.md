@@ -1,5 +1,12 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## R6.2A Purchase Order foundation closeout — CLOSED / 2026-09-04
+
+- Normal-Windows Product Owner evidence is `1608/1608 PASS`, `0 failed`, `0 skipped`; EF pending-model and `git diff --check` passed, and the Quality Gate script printed `QUALITY GATE PASSED`.
+- Release build succeeded with three `NU1900` environmental warnings because NuGet vulnerability advisory data could not be retrieved. The vulnerability command enumerated five projects with no vulnerable package in the available result, but advisory retrieval is `INCONCLUSIVE`, not PASS. The last known successful vulnerability scan is the R6.1 baseline.
+- No R6.2A package reference, project file, package-management configuration or lock file changed. The Quality Gate script was not modified; its ability to print PASS despite `NU1900` is a known release-gate hardening item.
+- No real database was accessed or updated. R6.2A has no Goods Receipt, stock/cost/movement mutation, secure-storage change or Purchase Order WPF UI; R6.2B has not started.
+
 ## R6.1 Supplier Master verification boundary — CLOSED / PO ACCEPTED — 2026-09-04
 
 - Initial manual acceptance is explicitly `FAIL/BLOCKED` at step 1 on a normal Windows profile: opening “Nhà cung cấp” left the Shell on “Sản phẩm và tồn kho” and reported missing `ModernComboBoxStyle`.
@@ -839,3 +846,9 @@ The counts above were recounted directly from these 16 stable IDs: `POS-OPS-001`
 - The configured logo now appears in the user-accepted Release receipt preview and replaces the `PE` fallback. Automated coverage proves snapshot capture, bounded PNG normalization, JSON round-trip, renderer fallback and production composition; PDF/physical printer and reprint still require the user’s final manual check.
 - The six sandbox failures are unchanged DPAPI/VietQR/Remembered Login profile limitations. They were not fixed or bypassed in the receipt work; the normal interactive profile must run the official Quality Gate again.
 - No manual database was accessed and no historical receipt was backfilled or rewritten.
+
+## R6.2A historical sandbox verification — 2026-09-04
+
+- This is historical sandbox evidence for the R6.2A Purchase Order foundation. No WPF Purchase Order UI, Goods Receipt, inventory/cost mutation or real-database operation was included.
+- The Release sandbox full run recorded `1602 PASS / 6 FAIL / 0 SKIP` across 1608 tests. The six failures are exactly the existing secure-storage host failures: three `VietQrRecipientMetadataStoreTests`, one `StoredVietQrPipelineTests` and two `RememberedLoginStoreTests`. They were not changed, filtered or weakened.
+- The sandbox Quality Gate attempt therefore exited 1 at tests and did not print `QUALITY GATE PASSED`. NuGet vulnerability data was unavailable because `api.nuget.org` could not be reached; this is not a clean vulnerability PASS. EF pending-model check passed. The authoritative normal-Windows closeout evidence is recorded at the top of this file.

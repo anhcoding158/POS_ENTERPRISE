@@ -550,3 +550,11 @@ Code-behind chủ yếu binding, focus, keyboard/window/presentation. Một số
 - Automatic SQLite busy/locked UX, support bundle, restore wizard, hardware/load acceptance, installer/license/update/pilot thuộc R2–R13.
 - Controlled Discount, Return và receipt printing hiện hữu chỉ là partial product capability; R8, R9 và R11 vẫn Not Started.
 - Future roadmap gaps là deferred scope, không phải confirmed runtime bugs.
+
+## R6.2A Purchase Order foundation — 2026-09-04
+
+- Domain: `PurchaseOrder` owns its private `PurchaseOrderLine` collection and exposes invariant-preserving methods only. It has no Application, EF, Infrastructure or WPF dependency.
+- Application: `IPurchaseOrderService` exposes search/detail, draft create/update, mark ordered, ordered amendment and cancel; `AuthorizedPurchaseOrderService` enforces View/Manage capabilities per method. No Delete or Goods Receipt contract exists.
+- Infrastructure: `PurchaseOrderRepository`, `PurchaseOrderNumberGenerator`, EF configurations and `AddPurchaseOrdersFoundation` are wired through the production composition roots. The generator uses UTC timestamp plus cryptographically random uppercase hexadecimal suffix and the database unique key is the final collision guard.
+- Persistence: PurchaseOrders/PurchaseOrderLines use restricted Supplier/Product/user references, aggregate-internal cascade for lines, unique normalized number and `(PurchaseOrderId, ProductId)`, lifecycle/quantity/money checks, indexes and concurrency token. Existing migrations were not edited.
+- R6.2A deliberately does not add WPF navigation/UI, GoodsReceipt, InventoryMovementType, Product.SupplierId, inventory/cost writes or real-database access. Closeout evidence is normal-Windows Release `1608/1608 PASS`, EF pending-model PASS and `git diff --check` PASS; the Release build emitted three `NU1900` warnings, and vulnerability advisory retrieval is `INCONCLUSIVE` rather than PASS. No dependency file changed and `scripts/Test-QualityGate.ps1` was not modified.
