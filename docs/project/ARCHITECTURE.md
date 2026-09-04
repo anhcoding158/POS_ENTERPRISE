@@ -1,5 +1,20 @@
 # ARCHITECTURE — POS ENTERPRISE RETAIL V1
 
+## R6.1 WPF shared-resource scope follow-up — 2026-09-04
+
+- `ModernComboBoxStyle`, `DetailLabelStyle` and `DetailValueStyle` are shared presentation styles, so they live in `src/POS.Wpf/Themes/Controls.xaml`, not inside an individual Window resource scope.
+- `src/POS.Wpf/App.xaml` merges `Colors.xaml`, `Typography.xaml`, then `Controls.xaml`; the shared styles therefore resolve their brush/typography dependencies in the existing production order.
+- Supplier management/editor runtime smoke coverage materializes the real XAML on STA with `App.InitializeComponent()` and production DI. No DynamicResource fallback, exception suppression or duplicate long style copy was introduced.
+
+## R6.1 Supplier Master vertical slice — 2026-09-03
+
+- The Supplier slice follows `POS.Domain → POS.Application → POS.Infrastructure → POS.Wpf`: `Supplier` and BusinessRules stay in Domain; DTOs/contracts/services and authorization stay in Application; EF configuration/repository/migration stay in Infrastructure; WPF uses ViewModels and owner-modal dialog services.
+- `SupplierService` is the non-authorized business/persistence implementation and `AuthorizedSupplierService` is the production `ISupplierService` decorator. Read operations require `ViewSuppliers`; mutations require `ManageSuppliers`. The composition root registers the inner service as scoped and resolves the authorized implementation through the interface.
+- Supplier search executes in the database with escaped LIKE predicates, status filtering, stable ordering and bounded paging. Read-only queries use `AsNoTracking`; mutation scopes are short-lived and do not leak `DbContext` into WPF windows.
+- Supplier mutation and successful audit are saved under the existing Application transaction boundary. Audit snapshots are limited to code/name and update metadata lists changed fields without contact values. Migration `20260903161131_AddSupplierMaster` is forward-only and opens the audit action range to 20.
+- Supplier WPF navigation is permission-bound and the owner-modal management window prevents duplicate windows. UI state exposes loading/error/empty/detail/paging/dirty guards; shared Supplier presentation resources live in App-merged `Themes/Controls.xaml`, while initials/count/metadata and inactive state remain ViewModel-derived. No Purchase Receipt/history tab, stock mutation, Product.SupplierId or R6.2+ boundary is introduced.
+- Supplier Master establishes the R6+ administration visual baseline: compact header/primary action, card search-filter toolbar, responsive approximately 64/36 master-detail, light selected-row DataGrid, compact semantic badge, detail cards, fixed contextual footer and explicit no-selection/empty/loading/error states. Future screens should reuse the design system and hierarchy according to their business context rather than copy the layout rigidly; DPI and keyboard/accessibility behavior are part of acceptance.
+
 ## R5.4 UX closeout boundary — 2026-09-01
 
 - `LabelPrintWindow` keeps one preview source of truth but schedules input changes through `DispatcherLabelPreviewDebounceScheduler` at 300 ms. Each replacement cancels the prior registration and increments a revision; only the latest dispatcher callback can rebuild the snapshot/paginator.

@@ -1,5 +1,15 @@
 # ARCHITECTURE DECISIONS — POS ENTERPRISE RETAIL V1
 
+## DEC-060 — R6.1 Supplier Master opens after R1.4 and remains a bounded master
+
+- **Status:** Implemented, runtime-verified and manually accepted by Product Owner on `2026-09-04`; initial opening evidence was `FAIL/BLOCKED`, remediation and final visual retest are complete; closeout commit/push is this checkpoint.
+- **Decision:** Use one internal `Supplier` entity and one Application service contract. Supplier identity is trim/uppercase normalized by code and guarded by a database unique index; lifecycle is activate/deactivate only with optimistic concurrency and no hard delete.
+- **Authorization:** Add `ViewSuppliers` and `ManageSuppliers` as separate capabilities. Administrator/Manager receive both, InventoryStaff receives read-only ViewSuppliers, and Cashier receives neither. The production `ISupplierService` binding is the authorization decorator.
+- **Audit/schema:** Add actions 17–20 with safe code/name snapshots and no contact payload; keep mutation and successful audit in one transaction boundary. Add forward-only `20260903161131_AddSupplierMaster` for `Suppliers` and the audit action range `1..20`; preserve action 16 and all prior migrations.
+- **UI/scope:** Supplier navigation and owner-modal windows use short-lived scopes and preserve selection/dirty/error/loading states. The approved master-detail UI uses shared App resources for badge/DataGrid/danger actions; initials, count and metadata are ViewModel-derived. R6.2 Purchase Receipt, R6.3 Batch/Lot, expiry, stock-in, supplier debt/payment and Product.SupplierId remain outside this decision.
+- **Visual baseline:** Supplier Master is the visual reference for later R6+ administration screens: compact header with primary action at right, card toolbar, approximately 64/36 master-detail, light selected-accent DataGrid, compact semantic status badge, detail cards, fixed contextual action footer, and explicit empty/loading/error/no-selection states. This is a reusable design-system and hierarchy baseline, not a requirement that every module be identical; 100/125/150% DPI and keyboard/accessibility remain acceptance criteria.
+- **Evidence:** Initial manual opening failure was traced to Window-only resource scope. Runtime STA smoke passes; Supplier focused Release is `22/22 PASS`, combined Supplier/RBAC/UI is `40/40 PASS`; normal-Windows Official Quality Gate is `1583/1583 PASS`, `0 failed/0 skipped`, with Release build, vulnerability, EF and Git checks PASS. Product Owner manual evidence covers management/editor opening, normal/maximized layout, five-column balance, status header/badge alignment, compact badge and refresh button. DPI 125/150, physical UI, InventoryStaff/Cashier click-through and physical audit/hardware remain without direct manual evidence; R6.2+ remain NOT STARTED/HOLD.
+
 ## DEC-059 — Official Quality Gate is Release-only
 
 - **Status:** Implemented, verified and included in the R1.4 closeout commit on `2026-09-03`.

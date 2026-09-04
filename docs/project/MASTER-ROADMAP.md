@@ -40,9 +40,18 @@ R12B License + Commercial Release
 R13B Retail V1 1.0.0
 ```
 
-Current evidence: focused compatibility tests `89/89 PASS`; post-R1.4 normal-profile official Release Quality Gate `1561/1561 PASS`; sandbox `1555 PASS / 6 FAIL / 0 SKIP / 1561` with environment-specific DPAPI/VietQR/Remembered Login failures; EF pending-model and vulnerability PASS. Employee manual A–I is PASS. R1.4 is verified and committed; R6 implementation has not started.
+## R6.1 — Supplier Master — CLOSED / RUNTIME VERIFIED / PO ACCEPTED — 2026-09-04
 
-R1.4 is the current process closeout. After the worktree is clean, the first new code checkpoint remains `R6.1 — Supplier Master`; do not start R6 in this checkpoint.
+- Supplier identity, validation, database-side search/paging, lifecycle, optimistic concurrency, authorization, audit and forward-only migration `20260903161131_AddSupplierMaster` are implemented.
+- Initial manual Supplier acceptance is `FAIL/BLOCKED` at the opening step because `SupplierManagementWindow` could not load `ModernComboBoxStyle`; runtime discovery also found the same Window-only scope problem for the detail styles.
+- The three existing shared styles now live in App-merged `Themes/Controls.xaml`; the approved master-detail UI adds shared status/DataGrid/danger-action resources, ViewModel-derived initials/count/metadata, no-selection and inactive states. A real STA runtime smoke constructs the management window and opens the editor through the production dialog service. Supplier focused Release is `22/22 PASS`; combined Supplier/RBAC/UI is `40/40 PASS`.
+- Final UI hotfix constrains the semantic status badge to its compact centered chip geometry and makes the refresh toolbar column/content auto-sized with balanced padding; the STA layout regression covers normal, compact-supported and maximized-width arrangements (`1180x760`, `1080x640`, `1920x1000`).
+- Full sandbox Release is `1577 PASS / 6 FAIL / 0 SKIP / 1583`; only the six known DPAPI/VietQR/Remembered Login environment failures remain. Release build/apphost, EF pending-model, outside-sandbox vulnerability scan and diff-check passed; official Gate is NOT PASS because it stops at those tests.
+- Product Owner manual retest passed management/editor opening, normal/windowed and maximized layout, five-column balance, status header/badge alignment, compact badge and unclipped refresh. No manual PASS is claimed for DPI 125/150, physical UI, InventoryStaff/Cashier click-through or physical audit/hardware. R6.2 Purchase Receipt, R6.3 Batch/Lot, R6.4 Expiry and R6.5 Lot Stocktake remain NOT STARTED/HOLD.
+
+Current evidence: initial manual R6.1 opening step `FAIL/BLOCKED`; runtime STA smoke PASS; Supplier focused Release `22/22 PASS`; combined Supplier/RBAC/UI `40/40 PASS`; normal-Windows Official Quality Gate `1583/1583 PASS`, `0 failed/0 skipped`, with Release build, vulnerability, EF pending-model and Git checks PASS; sandbox historical result `1577 PASS / 6 FAIL / 0 SKIP / 1583` remains separately classified. Product Owner manual visual retest PASS covers the listed normal/maximized Supplier checks; deferred manual evidence boundaries are recorded above.
+
+R6.1 is the closed product checkpoint after manual acceptance and closeout commit/push. Do not start R6.2+ in this checkpoint.
 
 ### R1.4 — Quality Gate Release Correctness
 
@@ -440,7 +449,7 @@ R4.2 closeout record:
 
 ## R5 — PRODUCT DATA OPERATIONS
 
-- **Status:** Not Started.
+- **Status:** R6.1 implemented / automated verified / manual UI pending; R6.2–R6.5 Not Started/HOLD.
 - **Objective:** nhập, xuất, bulk-update và in barcode/price label đáng tin cậy.
 - **Scope/checkpoints:** R5.1 CSV/Excel Product Import; R5.2 Export; R5.3 Bulk Operations; R5.4 Barcode and Price Label Printing. Có mapping, validation, preview, lỗi từng dòng, duplicate policy, transaction/rollback theo batch, template, bulk price/category/status/minimum stock và kích thước tem theo mm.
 - **Out of scope:** supplier, purchase, batch và expiry R6.

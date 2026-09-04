@@ -1,5 +1,17 @@
 # KNOWN ISSUES — POS ENTERPRISE RETAIL V1
 
+## R6.1 Supplier Master verification boundary — CLOSED / PO ACCEPTED — 2026-09-04
+
+- Initial manual acceptance is explicitly `FAIL/BLOCKED` at step 1 on a normal Windows profile: opening “Nhà cung cấp” left the Shell on “Sản phẩm và tồn kho” and reported missing `ModernComboBoxStyle`.
+- Source discovery found the failing reference at `src/POS.Wpf/Views/SupplierManagementWindow.xaml:16`; the key was scoped only to `EmployeeManagementWindow.Resources`. Runtime then exposed the same production-scope defect for `DetailLabelStyle`/`DetailValueStyle`, which Supplier management/editor also referenced.
+- Remediation moved those three existing styles to the App-merged `src/POS.Wpf/Themes/Controls.xaml` and removed local duplicates. The approved master-detail UI is now implemented with shared status/DataGrid/action resources, ViewModel-derived initials/count/metadata, no-selection and inactive states. Runtime STA coverage constructs both Supplier windows and opens the editor through the production dialog service; Supplier focused Release is `22/22 PASS`, combined Supplier/RBAC/UI is `40/40 PASS`.
+- Final visual root causes were confirmed and corrected: status badge had no explicit vertical alignment and inherited a padded/stretching cell context; refresh was in a fixed `116` column with `12` left margin and inherited `16` horizontal button padding. Regression layout now measures normal/compact/large supported sizes, active/inactive badges and refresh content sizing on STA.
+- Maximized follow-up root cause was the four star-sized Supplier columns (`1.55*`, `1.1*`, `1.05*`, `1.18*`) sharing surplus width, with the status header left-aligned while its badge was centered. The responsive fix makes only Supplier Name the primary star column, bounds Contact/Phone/Status, uses a Supplier-scoped centered status header style, and keeps minimum supported layout within the grid without horizontal overflow.
+- Product Owner manual retest of the Release binary passed: management/editor opening, normal/windowed layout, maximized layout, five-column balance, Status header/badge alignment, compact badge and unclipped refresh button. Overall Supplier Master UI is accepted; no new functional or business defect is known.
+- No direct manual PASS is recorded here for DPI 125/150, physical UI, InventoryStaff click-through, Cashier click-through, physical audit review or hardware/printing; these remain deferred evidence boundaries while automated coverage remains recorded separately.
+- Normal-Windows Official Quality Gate passed Release restore/build, `1583/1583` tests with `0 failed/0 skipped`, vulnerability scan, EF pending-model and Git checks, and printed `QUALITY GATE PASSED`. The separate sandbox result `1577 PASS / 6 FAIL / 0 SKIP / 1583` remains six known DPAPI/VietQR/Remembered Login environment failures; tests were not weakened or filtered.
+- R6.2 Purchase Receipt, R6.3 Batch/Lot, Expiry, stock-in and supplier debt/payment remain deferred and are not known defects of R6.1.
+
 ## C0 Employee Account & Security verification boundary — CLOSED — 2026-09-03
 
 - Employee Account automated and manual acceptance A–I is PASS. Final-administrator rejection preserves state and presents the owned modal plus inline error banner without a success toast.

@@ -1,5 +1,30 @@
 # BUSINESS INVARIANTS — POS ENTERPRISE RETAIL V1
 
+## INV-SUPPLIER-001 — Supplier identity is normalized, unique and retained
+
+- **Statement:** Supplier code is required, trimmed and normalized uppercase; `NormalizedCode` is unique through the database index. Supplier has no hard-delete path; inactive records remain available for future history.
+- **Enforcement:** `Supplier`, `BusinessRules.Suppliers`, `SupplierConfiguration`, `SupplierService` and Supplier domain/persistence tests.
+
+## INV-SUPPLIER-002 — Supplier profile validation is bounded and privacy-safe
+
+- **Statement:** Name is required, optional whitespace becomes `null`, control characters are rejected, limits are centralized in BusinessRules and reused by EF; name/phone/email are not unique. Audit never stores phone, email, address or notes.
+- **Enforcement:** Supplier domain tests, EF configuration and audit privacy tests.
+
+## INV-SUPPLIER-003 — Supplier mutations require authorization and atomic audit
+
+- **Statement:** Search/GetById require `ViewSuppliers`; create/update/activate/deactivate require `ManageSuppliers`. A successful Supplier mutation and its audit are committed together; a rollback cannot leave a success audit, and no-op state changes do not create fake audit events.
+- **Enforcement:** `AuthorizedSupplierService`, `SupplierService`, `EfUnitOfWork` and authorization/persistence integration tests.
+
+## INV-SUPPLIER-004 — Supplier concurrency requires explicit reload
+
+- **Statement:** Profile and active-state mutations require `ExpectedUpdatedAtUtc` and the existing auditable concurrency token. A stale request fails with a friendly reload-required error and never reports success.
+- **Enforcement:** `SupplierService`, EF concurrency mapping and Supplier persistence tests.
+
+## INV-SUPPLIER-005 — Future purchase history owns immutable supplier snapshots
+
+- **Statement:** Future Purchase Receipt documents must snapshot the supplier identity/profile required by the document; later Supplier master changes must not rewrite historical receipt snapshots. Inactive suppliers will be rejected for new purchase documents when R6.2 is authorized, while history remains readable.
+- **Enforcement:** Policy boundary for R6.2; not implemented in R6.1.
+
 ## INV-LABEL-001 — Label jobs are immutable, exact and non-mutating
 
 - **Statement:** A label job snapshots the selected Product ID, ProductCode, name, sale price, original Barcode, active state, quantity and one print date. Duplicate Product IDs are removed; multi-select uses only checked IDs; preview/test/real print preserve the same stable product/label order. Printing never changes Product, price, Barcode, status, stock, InventoryMovement or archive state.
@@ -510,6 +535,7 @@ Current R0 closeout evidence confirms the Presented transition is persisted befo
 | VietQR/PaymentIntent | 3 | 3 | 0 | 0 | 0 | `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\PaymentIntentApplicationTests.cs`; `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\PaymentIntentCheckoutTests.cs`; `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\PaymentIntentConcurrencyTests.cs` | R13 |
 | Migration/startup/backup | 3 | 2 | 0 | 1 | 0 | `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\DatabaseInitializerSafetyTests.cs`; `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\PaymentIntentMigrationTests.cs` | R1/R3 |
 | Authentication/RBAC/security | 5 | 3 | 1 | 1 | 0 | `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\AuthServiceIntegrationTests.cs`; `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\PermissionServiceTests.cs`; `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\ReceiptSnapshotPersistenceTests.cs` | R2/R4/R0.5F |
-| **Total** | **30** | **26** | **2** | **2** | **0** | Direct test source nêu trên | Theo từng group |
+| Supplier master | 5 | 4 | 0 | 1 | 0 | `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\SupplierDomainTests.cs`; `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\SupplierPersistenceIntegrationTests.cs`; `D:\Projects_1\POS_Enterprise_DotNet\tests\POS.Architecture.Tests\SupplierAuthorizationTests.cs` | R6.2 |
+| **Total** | **35** | **30** | **2** | **3** | **0** | Direct test source nêu trên | Theo từng group |
 
-Các con số được đếm từ 30 ID trong chính file này. Status không phải kết quả test vừa chạy.
+Các con số được đếm từ 35 ID trong chính file này. Status không phải kết quả test vừa chạy.
