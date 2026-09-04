@@ -1,8 +1,8 @@
 # CURRENT STATE — POS ENTERPRISE
 
-## R6.1 Supplier Master — IMPLEMENTED / VERIFIED / PO ACCEPTED / CLOSEOUT READY — 2026-09-04
+## R6.1 Supplier Master — CLOSED / COMMITTED / PUSHED / PO ACCEPTED — 2026-09-04
 
-- Product Owner đã mở R6.1 sau R1.4; baseline trước implementation là `main` tại `1a4530bdeb18c7ba4616bda3bd4e455dd3125aa9`. R5.5/R11.0 physical acceptance vẫn pending và không chặn checkpoint này; worktree hiện có các thay đổi R6.1 chưa stage/commit.
+- Product Owner đã mở R6.1 sau R1.4; baseline trước implementation là `main` tại `1a4530bdeb18c7ba4616bda3bd4e455dd3125aa9`. R5.5/R11.0 physical acceptance vẫn pending và không chặn checkpoint này; R6.1 đã được commit/push trong closeout, worktree hiện sạch.
 - Supplier master dùng một entity/contract `Supplier` duy nhất: code trim/uppercase và unique qua `NormalizedCode`, name bắt buộc, optional whitespace thành `null`, active mặc định, optimistic concurrency bằng `ExpectedUpdatedAtUtc`, chỉ activate/deactivate và không hard-delete. Không thêm SupplierId vào Product, không mutate stock/order/inventory và không triển khai Purchase/Receipt/Batch/Expiry/debt/payment.
 - Application có `ISupplierRepository`, `ISupplierService`, DTO/request/search models, `SupplierService` và `AuthorizedSupplierService`; Infrastructure có repository, EF configuration, `Suppliers` DbSet và migration forward-only `20260903161131_AddSupplierMaster`. Search lọc code/name/tax/contact/phone, status Active/Inactive/All, database-side LIKE escaped, stable paging và AsNoTracking.
 - RBAC thêm đúng hai capability `ViewSuppliers` và `ManageSuppliers`: Administrator/Manager có cả hai, InventoryStaff chỉ ViewSuppliers, Cashier không có. Production `ISupplierService` resolve thành `AuthorizedSupplierService`; WPF Supplier navigation/dialog dùng owner-modal, short scopes và không truy cập database trực tiếp.
