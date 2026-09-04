@@ -982,6 +982,12 @@ public partial class App :
                             .GetRequiredService<
                                 IPermissionService>()));
 
+        services.AddScoped<SupplierService>();
+        services.AddScoped<ISupplierService>(serviceProvider =>
+            new AuthorizedSupplierService(
+                serviceProvider.GetRequiredService<SupplierService>(),
+                serviceProvider.GetRequiredService<IPermissionService>()));
+
         /*
          * Inventory service.
          */
@@ -1091,6 +1097,9 @@ public partial class App :
         services.AddSingleton<
             ICategoryManagementDialogService,
             CategoryManagementDialogService>();
+
+        services.AddSingleton<ISupplierManagementDialogService, SupplierManagementDialogService>();
+        services.AddSingleton<ISupplierDialogService, SupplierDialogService>();
 
         services.AddSingleton<
             IInventoryDialogService,
@@ -1261,6 +1270,9 @@ public partial class App :
 
         services.AddTransient<
             CategoryManagementViewModel>();
+
+        services.AddTransient<SupplierEditorViewModel>();
+        services.AddTransient<SupplierManagementViewModel>();
 
         services.AddTransient<
             InventoryAdjustmentViewModel>();

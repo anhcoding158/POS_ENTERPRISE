@@ -60,10 +60,12 @@ public sealed class PermissionServiceTests
                 SystemCapability.ViewInventoryHistory,
                 SystemCapability.AdjustInventory,
                 SystemCapability.UseCheckout,
-            SystemCapability.ViewReports,
-            SystemCapability.ProcessReturns,
-            SystemCapability.ApplySalesDiscount
-            };
+                 SystemCapability.ViewReports,
+                 SystemCapability.ProcessReturns,
+                 SystemCapability.ApplySalesDiscount,
+                 SystemCapability.ViewSuppliers,
+                 SystemCapability.ManageSuppliers
+             };
 
         AssertPermissionSet(
             service,
@@ -99,10 +101,11 @@ public sealed class PermissionServiceTests
         var expected =
             new HashSet<SystemCapability>
             {
-                SystemCapability.ViewProductCatalog,
-                SystemCapability.ViewInventoryHistory,
-                SystemCapability.AdjustInventory
-            };
+                 SystemCapability.ViewProductCatalog,
+                 SystemCapability.ViewInventoryHistory,
+                 SystemCapability.AdjustInventory,
+                 SystemCapability.ViewSuppliers
+             };
 
         AssertPermissionSet(
             service,

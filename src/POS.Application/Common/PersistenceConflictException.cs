@@ -41,6 +41,9 @@ public static class PersistenceConflictTargets
     public const string EmployeeNormalizedCode =
         "employee.normalized_code";
 
+    public const string SupplierNormalizedCode =
+        "supplier.normalized_code";
+
     public const string OrderCode =
         "order.code";
 }

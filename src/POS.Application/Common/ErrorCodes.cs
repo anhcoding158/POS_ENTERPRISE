@@ -137,6 +137,14 @@ public static class ErrorCodes
             "CUSTOMER.PHONE_ALREADY_EXISTS";
     }
 
+    public static class Suppliers
+    {
+        public const string NotFound = "SUPPLIER.NOT_FOUND";
+        public const string CodeAlreadyExists = "SUPPLIER.CODE_ALREADY_EXISTS";
+        public const string ConcurrencyConflict = "SUPPLIER.CONCURRENCY_CONFLICT";
+        public const string PersistenceConflict = "SUPPLIER.PERSISTENCE_CONFLICT";
+    }
+
     public static class Discounts
     {
         public const string NotFound =

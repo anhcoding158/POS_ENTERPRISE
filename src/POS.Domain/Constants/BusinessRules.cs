@@ -31,6 +31,20 @@ public static class BusinessRules
         public const int EmailAddressMaxLength = 254;
     }
 
+    public static class Suppliers
+    {
+        public const int CodeMinLength = 2;
+        public const int CodeMaxLength = 30;
+        public const int NameMaxLength = 150;
+        public const int TaxCodeMaxLength = 50;
+        public const int ContactNameMaxLength = 150;
+        public const int PhoneNumberMaxLength = 30;
+        public const int EmailAddressMaxLength = 254;
+        public const int AddressMaxLength = 500;
+        public const int NotesMaxLength = 1_000;
+        public const int MaximumSearchPageSize = 100;
+    }
+
     public static class Customers
     {
         public const int CodeMaxLength = 30;

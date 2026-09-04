@@ -213,6 +213,14 @@ public sealed class EfUnitOfWork :
         }
 
         if (message.Contains(
+                "Suppliers.NormalizedCode",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            target = PersistenceConflictTargets.SupplierNormalizedCode;
+            return true;
+        }
+
+        if (message.Contains(
                 "Orders.OrderCode",
                 StringComparison.OrdinalIgnoreCase))
         {

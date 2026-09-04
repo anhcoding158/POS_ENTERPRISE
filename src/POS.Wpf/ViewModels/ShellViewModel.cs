@@ -27,7 +27,8 @@ public enum ShellRoute
 {
     Overview,
     Products,
-    Categories
+    Categories,
+    Suppliers
 }
 
 /// <summary>
@@ -68,6 +69,9 @@ public sealed class ShellViewModel :
 
     private readonly ICategoryManagementDialogService
         _categoryManagementDialogService;
+
+    private readonly ISupplierManagementDialogService?
+        _supplierManagementDialogService;
 
     private readonly IInventoryDialogService
         _inventoryDialogService;
@@ -139,7 +143,8 @@ public sealed class ShellViewModel :
         IProductImportDialogService? productImportDialogService = null,
         IProductExportDialogService? productExportDialogService = null,
         IBulkProductDialogService? bulkProductDialogService = null,
-        ILabelPrintDialogService? labelPrintDialogService = null)
+        ILabelPrintDialogService? labelPrintDialogService = null,
+        ISupplierManagementDialogService? supplierManagementDialogService = null)
     {
         _scopeFactory =
             scopeFactory ??
@@ -167,6 +172,9 @@ public sealed class ShellViewModel :
             categoryManagementDialogService ??
             throw new ArgumentNullException(
                 nameof(categoryManagementDialogService));
+
+        _supplierManagementDialogService =
+            supplierManagementDialogService;
 
         _inventoryDialogService =
             inventoryDialogService ??
@@ -311,6 +319,12 @@ public sealed class ShellViewModel :
                 CanLoadProducts,
                 HandleCommandException);
 
+        OpenSupplierManagementCommand =
+            new AsyncRelayCommand(
+                OpenSupplierManagementAsync,
+                () => CanViewSuppliers,
+                HandleCommandException);
+
         NavigateToOverviewCommand =
             new AsyncRelayCommand(
                 NavigateToOverviewAsync);
@@ -421,6 +435,10 @@ public sealed class ShellViewModel :
 
     public AsyncRelayCommand
         OpenCategoryManagementCommand
+    { get; }
+
+    public AsyncRelayCommand
+        OpenSupplierManagementCommand
     { get; }
 
     public AsyncRelayCommand NavigateToOverviewCommand
@@ -884,6 +902,11 @@ public sealed class ShellViewModel :
         _permissionService.HasPermission(
             SystemCapability.ManageCategories);
 
+    public bool CanViewSuppliers =>
+        _supplierManagementDialogService is not null &&
+        _permissionService.HasPermission(
+            SystemCapability.ViewSuppliers);
+
     public bool CanUseCheckout =>
         _permissionService.HasPermission(
             SystemCapability.UseCheckout);
@@ -924,6 +947,8 @@ public sealed class ShellViewModel :
                 nameof(IsProductsRouteActive));
             OnPropertyChanged(
                 nameof(IsCategoriesRouteActive));
+            OnPropertyChanged(
+                nameof(IsSuppliersRouteActive));
         }
     }
 
@@ -935,6 +960,9 @@ public sealed class ShellViewModel :
 
     public bool IsCategoriesRouteActive =>
         ActiveRoute == ShellRoute.Categories;
+
+    public bool IsSuppliersRouteActive =>
+        ActiveRoute == ShellRoute.Suppliers;
 
     public bool IsSidebarCompact =>
         _isSidebarCompact;
@@ -1374,6 +1402,21 @@ public sealed class ShellViewModel :
             StatusMessage =
                 "Danh mục đã được đồng bộ với danh sách sản phẩm.";
         }
+    }
+
+    private Task OpenSupplierManagementAsync()
+    {
+        if (_supplierManagementDialogService is null ||
+            !CanViewSuppliers)
+        {
+            return Task.CompletedTask;
+        }
+
+        IsInventoryExpanded = true;
+        ActiveRoute = ShellRoute.Suppliers;
+        _supplierManagementDialogService.Show(
+            global::System.Windows.Application.Current?.MainWindow!);
+        return Task.CompletedTask;
     }
 
     private void SetExpandedGroup(
@@ -2077,6 +2120,9 @@ public sealed class ShellViewModel :
             .NotifyCanExecuteChanged();
 
         OpenCategoryManagementCommand
+            .NotifyCanExecuteChanged();
+
+        OpenSupplierManagementCommand
             .NotifyCanExecuteChanged();
 
         NavigateToProductsCommand

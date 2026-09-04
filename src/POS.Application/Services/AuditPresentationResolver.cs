@@ -35,6 +35,10 @@ public static class AuditPresentationResolver
         SecurityAuditAction.BulkProductActiveStateChanged => "Đổi trạng thái bán hàng loạt",
         SecurityAuditAction.BulkProductMinimumStockChanged => "Đặt tồn tối thiểu hàng loạt",
         SecurityAuditAction.BulkProductOperation => "Thao tác sản phẩm hàng loạt",
+        SecurityAuditAction.SupplierCreated => "Tạo nhà cung cấp",
+        SecurityAuditAction.SupplierUpdated => "Cập nhật nhà cung cấp",
+        SecurityAuditAction.SupplierDeactivated => "Ngừng hoạt động nhà cung cấp",
+        SecurityAuditAction.SupplierReactivated => "Kích hoạt lại nhà cung cấp",
         _ => "Hoạt động không xác định"
     };
 

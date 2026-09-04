@@ -44,5 +44,9 @@ public enum SystemCapability
 
     ViewSecurityStatus = 18,
 
-    ViewAuditLog = 19
+    ViewAuditLog = 19,
+
+    ViewSuppliers = 20,
+
+    ManageSuppliers = 21
 }

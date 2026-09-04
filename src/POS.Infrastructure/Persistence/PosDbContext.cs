@@ -31,6 +31,9 @@ public sealed class PosDbContext :
     public DbSet<Employee> Employees =>
         Set<Employee>();
 
+    public DbSet<Supplier> Suppliers =>
+        Set<Supplier>();
+
     public DbSet<SecurityAuditEvent> SecurityAuditEvents =>
         Set<SecurityAuditEvent>();
 

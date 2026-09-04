@@ -44,7 +44,9 @@ public static class PermissionCatalog
         new(SystemCapability.ViewSecurityStatus, "Xem trạng thái bảo mật", "Xem trạng thái đăng nhập và bảo mật tài khoản.", "Nhân viên và tài khoản", PermissionRisk.Elevated, false, false),
         new(SystemCapability.ManageStoreSetup, "Quản lý cài đặt cửa hàng", "Quản lý thông tin và thiết bị cửa hàng.", "Cấu hình cửa hàng", PermissionRisk.Dangerous, false, true),
         new(SystemCapability.ViewAuditLog, "Xem nhật ký hoạt động", "Tra cứu các thay đổi quản trị đã được ghi audit.", "Dữ liệu & hỗ trợ", PermissionRisk.Elevated, false, false),
-        new(SystemCapability.ApplySalesDiscount, "Áp dụng giảm giá", "Áp dụng giảm giá theo policy bán hàng.", "Bán hàng", PermissionRisk.Elevated, false, true)
+        new(SystemCapability.ApplySalesDiscount, "Áp dụng giảm giá", "Áp dụng giảm giá theo policy bán hàng.", "Bán hàng", PermissionRisk.Elevated, false, true),
+        new(SystemCapability.ViewSuppliers, "Xem nhà cung cấp", "Tra cứu hồ sơ nhà cung cấp.", "Hàng hóa", PermissionRisk.Standard, false, false),
+        new(SystemCapability.ManageSuppliers, "Quản lý nhà cung cấp", "Tạo, sửa và thay đổi trạng thái nhà cung cấp.", "Hàng hóa", PermissionRisk.Elevated, false, true)
     ];
 
     public static IReadOnlyList<PermissionDefinition> All => Definitions;

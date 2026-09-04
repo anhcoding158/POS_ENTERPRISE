@@ -654,7 +654,7 @@ public sealed class EmployeeManagementViewModel : ViewModelBase, IDisposable
         var groups = new (string Name, SystemCapability[] Capabilities)[]
         {
             ("Bán hàng", [SystemCapability.UseCheckout, SystemCapability.ApplySalesDiscount, SystemCapability.ProcessReturns]),
-            ("Hàng hóa", [SystemCapability.ViewProductCatalog, SystemCapability.ManageProducts, SystemCapability.ManageCategories, SystemCapability.ViewInventoryHistory, SystemCapability.AdjustInventory]),
+            ("Hàng hóa", [SystemCapability.ViewProductCatalog, SystemCapability.ManageProducts, SystemCapability.ManageCategories, SystemCapability.ViewInventoryHistory, SystemCapability.AdjustInventory, SystemCapability.ViewSuppliers, SystemCapability.ManageSuppliers]),
             ("Đơn hàng", [SystemCapability.ViewReports]),
             ("Nhân viên và tài khoản", [SystemCapability.ViewEmployees, SystemCapability.ManageEmployees, SystemCapability.ManageAccounts, SystemCapability.ResetPasswords, SystemCapability.LockUnlockAccounts, SystemCapability.AssignRolesPermissions, SystemCapability.ViewSecurityStatus]),
             ("Cấu hình cửa hàng", [SystemCapability.ManageStoreSetup]), ("Sao lưu và khôi phục", [])

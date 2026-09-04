@@ -39,6 +39,8 @@ public sealed class ShellPermissionStateTests
         Assert.True(state.CanUseCheckout);
         Assert.True(state.CanViewReports);
         Assert.True(state.CanManageUsers);
+        Assert.True(state.CanViewSuppliers);
+        Assert.True(state.CanManageSuppliers);
     }
 
     [Fact]
@@ -56,6 +58,8 @@ public sealed class ShellPermissionStateTests
         Assert.True(state.CanUseCheckout);
         Assert.True(state.CanViewReports);
         Assert.False(state.CanManageUsers);
+        Assert.True(state.CanViewSuppliers);
+        Assert.True(state.CanManageSuppliers);
     }
 
     [Fact]
@@ -74,6 +78,8 @@ public sealed class ShellPermissionStateTests
         Assert.False(state.CanViewInventoryHistory);
         Assert.False(state.CanViewReports);
         Assert.False(state.CanManageUsers);
+        Assert.False(state.CanViewSuppliers);
+        Assert.False(state.CanManageSuppliers);
     }
 
     [Fact]
@@ -92,6 +98,8 @@ public sealed class ShellPermissionStateTests
         Assert.False(state.CanUseCheckout);
         Assert.False(state.CanViewReports);
         Assert.False(state.CanManageUsers);
+        Assert.True(state.CanViewSuppliers);
+        Assert.False(state.CanManageSuppliers);
     }
 
     private static ShellPermissionState CreateState(

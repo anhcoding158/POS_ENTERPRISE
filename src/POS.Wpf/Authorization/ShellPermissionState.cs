@@ -20,6 +20,8 @@ public sealed record ShellPermissionState(
     bool CanViewReports,
     bool CanManageUsers)
 {
+    public bool CanViewSuppliers { get; init; }
+    public bool CanManageSuppliers { get; init; }
     public static ShellPermissionState Create(
         IPermissionService permissionService)
     {
@@ -57,6 +59,14 @@ public sealed record ShellPermissionState(
 
             CanManageUsers:
                 permissionService.HasPermission(
-                    SystemCapability.ManageUsers));
+                    SystemCapability.ManageUsers))
+        {
+            CanViewSuppliers =
+                permissionService.HasPermission(
+                    SystemCapability.ViewSuppliers),
+            CanManageSuppliers =
+                permissionService.HasPermission(
+                    SystemCapability.ManageSuppliers)
+        };
     }
 }

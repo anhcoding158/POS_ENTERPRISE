@@ -4,7 +4,7 @@ using POS.Domain.Enums;
 namespace POS.Domain.Entities;
 
 /// <summary>
-/// Audit append-only cho các thay đổi nhân viên/tài khoản.
+/// Audit append-only cho các thay đổi quản trị trong các master và tài khoản.
 /// Không chứa mật khẩu, hash hoặc reset secret.
 /// </summary>
 public sealed class SecurityAuditEvent : AuditableEntity

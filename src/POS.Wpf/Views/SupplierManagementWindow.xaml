@@ -1,0 +1,196 @@
+<Window x:Class="POS.Wpf.Views.SupplierManagementWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Nhà cung cấp"
+        Width="1200"
+        Height="760"
+        MinWidth="1080"
+        MinHeight="640"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        ShowInTaskbar="False"
+        Background="{StaticResource AppBackgroundBrush}"
+        FontFamily="Segoe UI"
+        FontSize="13"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        AutomationProperties.AutomationId="SupplierManagementWindow">
+    <Grid Margin="30,26,30,28">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="0,0,0,20">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="Nhà cung cấp" Style="{StaticResource PageTitleTextStyle}" FontSize="28" />
+                <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                    <TextBlock Text="Quản lý đối tác cung ứng của cửa hàng" Style="{StaticResource SecondaryTextStyle}" />
+                    <Border Width="1" Height="18" Background="{StaticResource BorderStrongBrush}" Margin="16,0" />
+                    <TextBlock Style="{StaticResource SecondaryTextStyle}" Foreground="{StaticResource TextMutedBrush}">
+                        <Run Text="{Binding TotalCountText, Mode=OneWay}" />
+                        <Run Text=" nhà cung cấp" />
+                    </TextBlock>
+                </StackPanel>
+            </StackPanel>
+            <Button Grid.Column="1"
+                    Width="190"
+                    Height="44"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Command="{Binding AddCommand}"
+                    Visibility="{Binding CanManageSuppliers, Converter={StaticResource BooleanToVisibilityConverter}}"
+                    Style="{StaticResource PrimaryButtonStyle}"
+                    AutomationProperties.AutomationId="SupplierAddButton"
+                    AutomationProperties.Name="Thêm nhà cung cấp">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="17" VerticalAlignment="Center" />
+                    <TextBlock Text="Thêm nhà cung cấp" Margin="9,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <Border Grid.Row="1" Style="{StaticResource CardStyle}" Padding="14" Margin="0,0,0,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="240" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Grid Height="42" VerticalAlignment="Center">
+                    <TextBox Text="{Binding SearchTerm, UpdateSourceTrigger=PropertyChanged}"
+                             KeyDown="OnSearchKeyDown"
+                             Style="{StaticResource SearchBoxWithIconStyle}"
+                             AutomationProperties.AutomationId="SupplierSearchField"
+                             AutomationProperties.Name="Tìm kiếm nhà cung cấp"
+                             ToolTip="Tìm theo mã, tên, mã số thuế hoặc số điện thoại">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Enter" Command="{Binding SearchCommand}" />
+                        </TextBox.InputBindings>
+                    </TextBox>
+                    <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="17" Foreground="{StaticResource TextMutedBrush}" Margin="14,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False" />
+                    <TextBlock Text="Tìm theo mã, tên, mã số thuế hoặc số điện thoại…" Foreground="{StaticResource TextMutedBrush}" Margin="42,0,10,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" IsHitTestVisible="False">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SearchTerm}" Value=""><Setter Property="Visibility" Value="Visible" /></DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
+                <ComboBox Grid.Column="1" ItemsSource="{Binding StatusFilters}" SelectedItem="{Binding SelectedStatusFilter, Mode=TwoWay}" DisplayMemberPath="DisplayName" SelectionChanged="OnFilterChanged" Margin="12,0,0,0" Style="{StaticResource ModernComboBoxStyle}" AutomationProperties.AutomationId="SupplierStatusFilter" AutomationProperties.Name="Lọc trạng thái nhà cung cấp" />
+                <Button x:Name="SupplierRefreshButton" Grid.Column="2" Command="{Binding RefreshCommand}" Style="{StaticResource SecondaryButtonStyle}" MinWidth="112" Padding="14,0" Margin="12,0,0,0" AutomationProperties.AutomationId="SupplierRefreshButton" AutomationProperties.Name="Làm mới danh sách nhà cung cấp">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="16" Width="17" TextAlignment="Center" VerticalAlignment="Center" />
+                        <TextBlock Text="Làm mới" Margin="8,0,0,0" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.78*" />
+                <ColumnDefinition Width="14" />
+                <ColumnDefinition Width="1*" MinWidth="420" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Style="{StaticResource CardStyle}" Padding="0">
+                <Grid>
+                    <Grid.RowDefinitions><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                    <DataGrid Grid.Row="0" ItemsSource="{Binding Suppliers}" SelectedItem="{Binding SelectedSupplier, Mode=TwoWay}" Style="{StaticResource SupplierDataGridStyle}" ColumnWidth="*" AutomationProperties.AutomationId="SupplierGrid" AutomationProperties.Name="Danh sách nhà cung cấp" SelectionMode="Single" SelectionUnit="FullRow">
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="Mã" Width="110" MinWidth="110" MaxWidth="140">
+                                <DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding Code}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding Code}" /></DataTemplate></DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Tên nhà cung cấp" Width="*" MinWidth="90">
+                                <DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}" /></DataTemplate></DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Liên hệ" Width="*" MinWidth="90" MaxWidth="200">
+                                <DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding ContactName, TargetNullValue=—}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding ContactName}" /></DataTemplate></DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Điện thoại" Width="125" MinWidth="125" MaxWidth="155">
+                                <DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding PhoneNumber, TargetNullValue=—}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding PhoneNumber}" /></DataTemplate></DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Trạng thái" Width="150" MinWidth="150" MaxWidth="170" HeaderStyle="{StaticResource SupplierCenteredDataGridColumnHeaderStyle}" CellStyle="{StaticResource SupplierDataGridStatusCellStyle}">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource SupplierStatusBadgeStyle}" HorizontalAlignment="Center" VerticalAlignment="Center" AutomationProperties.AutomationId="SupplierStatusBadge" AutomationProperties.Name="{Binding StatusText}">
+                                            <StackPanel Orientation="Horizontal"><TextBlock Text="●" FontSize="10" Margin="0,0,6,0" VerticalAlignment="Center" /><TextBlock Text="{Binding StatusText}" TextWrapping="NoWrap" VerticalAlignment="Center" /></StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}" Panel.ZIndex="2">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"><ProgressBar Width="220" IsIndeterminate="True" /><TextBlock Text="Đang tải dữ liệu…" Margin="0,10,0,0" HorizontalAlignment="Center" Style="{StaticResource SecondaryTextStyle}" /></StackPanel>
+                    </Border>
+                    <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" Visibility="{Binding IsError, Converter={StaticResource BooleanToVisibilityConverter}}" Panel.ZIndex="3">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="320"><TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" TextAlignment="Center" Foreground="{StaticResource DangerBrush}" /><Button Content="Làm mới" Command="{Binding RefreshCommand}" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Center" Margin="0,12,0,0" /></StackPanel>
+                    </Border>
+                    <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" Visibility="{Binding HasSelectedDetails, Converter={StaticResource InverseBooleanToVisibilityConverter}}" Panel.ZIndex="1">
+                        <TextBlock Text="Chưa có nhà cung cấp phù hợp" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource SecondaryTextStyle}" />
+                    </Border>
+                    <Grid Grid.Row="1" Margin="18,0,18,14">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding TotalCountText, Mode=OneWay, StringFormat={}{0} nhà cung cấp}" VerticalAlignment="Center" Style="{StaticResource SecondaryTextStyle}" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Command="{Binding PreviousPageCommand}" Style="{StaticResource SecondaryButtonStyle}" Width="48" Padding="0" AutomationProperties.AutomationId="SupplierPreviousPage" AutomationProperties.Name="Trang trước"><TextBlock Text="&#xE76B;" FontFamily="Segoe MDL2 Assets" FontSize="15" HorizontalAlignment="Center" /></Button>
+                            <TextBlock Text="{Binding PageText}" VerticalAlignment="Center" Margin="14,0" Style="{StaticResource SecondaryTextStyle}" />
+                            <Button Command="{Binding NextPageCommand}" Style="{StaticResource SecondaryButtonStyle}" Width="48" Padding="0" AutomationProperties.AutomationId="SupplierNextPage" AutomationProperties.Name="Trang sau"><TextBlock Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="15" HorizontalAlignment="Center" /></Button>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource CardStyle}" Padding="14">
+                <Grid>
+                    <Grid.RowDefinitions><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                    <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <Grid>
+                            <Border Visibility="{Binding HasSelectedDetails, Converter={StaticResource InverseBooleanToVisibilityConverter}}" AutomationProperties.AutomationId="SupplierNoSelection" AutomationProperties.Name="Chọn một nhà cung cấp để xem chi tiết.">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20,70"><TextBlock Text="&#xE8A5;" FontFamily="Segoe MDL2 Assets" FontSize="36" Foreground="{StaticResource BorderStrongBrush}" HorizontalAlignment="Center" /><TextBlock Text="Chọn một nhà cung cấp để xem chi tiết." Style="{StaticResource SecondaryTextStyle}" TextAlignment="Center" TextWrapping="Wrap" Margin="0,14,0,0" /></StackPanel>
+                            </Border>
+                            <StackPanel Visibility="{Binding HasSelectedDetails, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <Grid Margin="2,2,2,16">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="64" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                    <Border Width="64" Height="64" CornerRadius="32" Background="{StaticResource AccentBrush}" VerticalAlignment="Top"><TextBlock Text="{Binding SelectedInitials}" Foreground="White" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+                                    <StackPanel Grid.Column="1" Margin="14,2,0,0" MinWidth="0">
+                                        <TextBlock Text="{Binding SelectedDetails.Name}" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding SelectedDetails.Name}" />
+                                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                            <TextBlock Text="{Binding SelectedDetails.Code}" Style="{StaticResource SecondaryTextStyle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding SelectedDetails.Code}" />
+                                            <Border Style="{StaticResource SupplierDetailStatusBadgeStyle}" Margin="10,0,0,0" AutomationProperties.AutomationId="SupplierDetailStatusBadge" AutomationProperties.Name="{Binding SelectedStatusText}"><StackPanel Orientation="Horizontal"><TextBlock Text="●" FontSize="11" Margin="0,0,5,0" VerticalAlignment="Center" /><TextBlock Text="{Binding SelectedStatusText}" VerticalAlignment="Center" /></StackPanel></Border>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                                <Border Visibility="{Binding IsSelectedInactive, Converter={StaticResource BooleanToVisibilityConverter}}" Background="{StaticResource WarningSoftBrush}" BorderBrush="{StaticResource GoldBorderBrush}" BorderThickness="1" CornerRadius="9" Padding="11,9" Margin="0,0,0,12" AutomationProperties.AutomationId="SupplierInactiveBanner"><TextBlock Text="Nhà cung cấp đang ngừng hoạt động và không dùng cho chứng từ mua mới." Foreground="{StaticResource WarningBrush}" FontWeight="SemiBold" TextWrapping="Wrap" /></Border>
+
+                                <Border Style="{StaticResource CardStyle}" Padding="14" Margin="0,0,0,10">
+                                    <StackPanel><StackPanel Orientation="Horizontal"><TextBlock Text="⚖" FontSize="19" Foreground="{StaticResource GoldBrush}" VerticalAlignment="Center" /><TextBlock Text="Thông tin pháp lý" FontSize="15" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center" /></StackPanel><Grid Margin="0,14,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="118" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><TextBlock Text="Mã số thuế" Style="{StaticResource DetailLabelStyle}" Margin="0,0,12,0" /><TextBlock Grid.Column="1" Text="{Binding SelectedDetails.TaxCode, TargetNullValue=—}" Style="{StaticResource DetailValueStyle}" TextTrimming="CharacterEllipsis" ToolTip="{Binding SelectedDetails.TaxCode}" /></Grid></StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource CardStyle}" Padding="14" Margin="0,0,0,10">
+                                    <StackPanel><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE77B;" FontFamily="Segoe MDL2 Assets" FontSize="19" Foreground="{StaticResource GoldBrush}" VerticalAlignment="Center" /><TextBlock Text="Thông tin liên hệ" FontSize="15" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center" /></StackPanel><Grid Margin="0,14,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="118" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions><TextBlock Grid.Row="0" Text="Người liên hệ" Style="{StaticResource DetailLabelStyle}" Margin="0,0,12,10" /><TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding SelectedDetails.ContactName, TargetNullValue=—}" Style="{StaticResource DetailValueStyle}" TextTrimming="CharacterEllipsis" ToolTip="{Binding SelectedDetails.ContactName}" Margin="0,0,0,10" /><TextBlock Grid.Row="1" Text="Điện thoại" Style="{StaticResource DetailLabelStyle}" Margin="0,0,12,10" /><TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedDetails.PhoneNumber, TargetNullValue=—}" Style="{StaticResource DetailValueStyle}" TextTrimming="CharacterEllipsis" ToolTip="{Binding SelectedDetails.PhoneNumber}" Margin="0,0,0,10" /><TextBlock Grid.Row="2" Text="Email" Style="{StaticResource DetailLabelStyle}" Margin="0,0,12,0" /><TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedDetails.EmailAddress, TargetNullValue=—}" Style="{StaticResource DetailValueStyle}" TextWrapping="Wrap" ToolTip="{Binding SelectedDetails.EmailAddress}" /></Grid></StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource CardStyle}" Padding="14" Margin="0,0,0,12">
+                                    <StackPanel><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE707;" FontFamily="Segoe MDL2 Assets" FontSize="19" Foreground="{StaticResource GoldBrush}" VerticalAlignment="Center" /><TextBlock Text="Địa chỉ &amp; ghi chú" FontSize="15" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center" /></StackPanel><Grid Margin="0,14,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="118" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions><TextBlock Grid.Row="0" Text="Địa chỉ" Style="{StaticResource DetailLabelStyle}" Margin="0,0,12,10" /><TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding SelectedDetails.Address, TargetNullValue=—}" Style="{StaticResource DetailValueStyle}" TextWrapping="Wrap" ToolTip="{Binding SelectedDetails.Address}" Margin="0,0,0,10" /><TextBlock Grid.Row="1" Text="Ghi chú" Style="{StaticResource DetailLabelStyle}" Margin="0,0,12,0" /><TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedDetails.Notes, TargetNullValue=—}" Style="{StaticResource DetailValueStyle}" TextWrapping="Wrap" ToolTip="{Binding SelectedDetails.Notes}" /></Grid></StackPanel>
+                                </Border>
+                                <StackPanel Orientation="Horizontal" Margin="2,0,0,6"><TextBlock Text="&#xE823;" FontFamily="Segoe MDL2 Assets" FontSize="15" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" /><TextBlock Text="{Binding SelectedUpdatedAtText}" Style="{StaticResource SecondaryTextStyle}" Foreground="{StaticResource TextMutedBrush}" Margin="8,0,0,0" VerticalAlignment="Center" /></StackPanel>
+                            </StackPanel>
+                        </Grid>
+                    </ScrollViewer>
+                    <Border Grid.Row="1" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="0,14,0,0" Margin="0,14,0,0" Visibility="{Binding CanManageSuppliers, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="10" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <Button Grid.Column="0" Command="{Binding EditCommand}" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Stretch" AutomationProperties.AutomationId="SupplierEditButton" AutomationProperties.Name="Chỉnh sửa nhà cung cấp"><StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center"><TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="16" VerticalAlignment="Center" /><TextBlock Text="Chỉnh sửa" Margin="8,0,0,0" VerticalAlignment="Center" /></StackPanel></Button>
+                            <Button Grid.Column="2" Click="OnToggleActiveClick" Style="{StaticResource DangerOutlineButtonStyle}" HorizontalAlignment="Stretch" AutomationProperties.AutomationId="SupplierToggleActiveButton" AutomationProperties.Name="{Binding ToggleActiveText}"><StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center"><TextBlock FontFamily="Segoe MDL2 Assets" FontSize="16" VerticalAlignment="Center"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="&#xE711;" /><Style.Triggers><DataTrigger Binding="{Binding SelectedDetails.IsActive}" Value="False"><Setter Property="Text" Value="&#xE72C;" /></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock><TextBlock Text="{Binding ToggleActiveText}" Margin="8,0,0,0" VerticalAlignment="Center" /></StackPanel></Button>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

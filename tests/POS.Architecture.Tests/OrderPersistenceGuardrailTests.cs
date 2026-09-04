@@ -473,6 +473,7 @@ public sealed class
                 typeof(PaymentIntentManualResolution),
                 typeof(Product),
                 typeof(SecurityAuditEvent),
+                typeof(Supplier),
                 typeof(User)
             }
             .OrderBy(

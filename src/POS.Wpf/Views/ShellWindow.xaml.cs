@@ -53,6 +53,7 @@ public partial class ShellWindow :
     private readonly IEmployeeManagementDialogService? _employeeManagementDialogService;
     private readonly IRolePermissionManagementDialogService? _rolePermissionManagementDialogService;
     private readonly IAuditLogDialogService? _auditLogDialogService;
+    private readonly ISupplierManagementDialogService? _supplierManagementDialogService;
 
     private global::System.Windows.Controls.Button?
         _logoutButton;
@@ -77,7 +78,8 @@ public partial class ShellWindow :
         IStoreSettingsDialogService? storeSettingsDialogService = null,
         IEmployeeManagementDialogService? employeeManagementDialogService = null,
         IRolePermissionManagementDialogService? rolePermissionManagementDialogService = null,
-        IAuditLogDialogService? auditLogDialogService = null)
+        IAuditLogDialogService? auditLogDialogService = null,
+        ISupplierManagementDialogService? supplierManagementDialogService = null)
     {
         _viewModel =
             viewModel ??
@@ -119,6 +121,7 @@ public partial class ShellWindow :
         _employeeManagementDialogService = employeeManagementDialogService;
         _rolePermissionManagementDialogService = rolePermissionManagementDialogService;
         _auditLogDialogService = auditLogDialogService;
+        _supplierManagementDialogService = supplierManagementDialogService;
 
         if (!_currentUserService.IsAuthenticated)
         {
@@ -340,6 +343,11 @@ public partial class ShellWindow :
             _viewModel.OpenCategoryManagementCommand,
             permissionState.CanManageCategories,
             SystemCapability.ManageCategories);
+
+        ApplyCommandPermission(
+            _viewModel.OpenSupplierManagementCommand,
+            permissionState.CanViewSuppliers,
+            SystemCapability.ViewSuppliers);
 
         ApplyCommandPermission(
             _viewModel.AdjustInventoryCommand,

@@ -498,6 +498,19 @@
                                         </StackPanel>
                                     </Button>
                                     <Button
+                                        x:Name="ShellSuppliersNavigationButton"
+                                        Command="{Binding OpenSupplierManagementCommand}"
+                                        IsEnabled="{Binding CanViewSuppliers}"
+                                        Visibility="{Binding CanViewSuppliers, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                        Style="{StaticResource ShellNavigationChildButtonStyle}"
+                                        ToolTip="Nhà cung cấp"
+                                        AutomationProperties.AutomationId="ShellSuppliersNavigationButton">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE8D4;" FontFamily="Segoe MDL2 Assets" FontSize="13" Width="24" VerticalAlignment="Center" />
+                                            <TextBlock Text="Nhà cung cấp" VerticalAlignment="Center" Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button
                                         x:Name="ShellInventoryHistoryNavigationButton"
                                         Command="{Binding ViewInventoryHistoryCommand}"
                                         Style="{StaticResource ShellNavigationChildButtonStyle}"
@@ -761,6 +774,18 @@
                                 <TextBlock
                                     Text="Danh mục"
                                     VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button
+                            Command="{Binding OpenSupplierManagementCommand}"
+                            Visibility="{Binding CanViewSuppliers, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            Style="{StaticResource NavigationButtonStyle}"
+                            ToolTip="Quản lý nhà cung cấp"
+                            AutomationProperties.AutomationId="LegacySupplierManagementNavigationButton">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE8D4;" FontFamily="Segoe MDL2 Assets" FontSize="17" Width="32" VerticalAlignment="Center" />
+                                <TextBlock Text="Nhà cung cấp" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
 
