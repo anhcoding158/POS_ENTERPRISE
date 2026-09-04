@@ -12,6 +12,7 @@ using POS.Application.Abstractions.Orders;
 using POS.Application.Abstractions.Payments;
 using POS.Application.Abstractions.Persistence;
 using POS.Application.Abstractions.Printing;
+using POS.Application.Abstractions.Purchasing;
 using POS.Application.Abstractions.Services;
 using POS.Application.Abstractions.StoreSetup;
 using POS.Application.Services;
@@ -24,6 +25,7 @@ using POS.Infrastructure.Payments;
 using POS.Infrastructure.Persistence;
 using POS.Infrastructure.Persistence.Repositories;
 using POS.Infrastructure.Printing;
+using POS.Infrastructure.Purchasing;
 using POS.Infrastructure.Support;
 using POS.Infrastructure.Storage;
 using POS.Infrastructure.StoreSetup;
@@ -266,6 +268,10 @@ public static class DependencyInjection
             OrderCodeGenerator>();
 
         services.AddSingleton<
+            IPurchaseOrderNumberGenerator,
+            PurchaseOrderNumberGenerator>();
+
+        services.AddSingleton<
             IPasswordHasher,
             BCryptPasswordHasher>();
 
@@ -391,6 +397,7 @@ public static class DependencyInjection
 
         services.AddScoped<IEmployeeRepository, EmployeeRepository>();
         services.AddScoped<ISupplierRepository, SupplierRepository>();
+        services.AddScoped<IPurchaseOrderRepository, PurchaseOrderRepository>();
         services.AddScoped<ISecurityAuditRepository, SecurityAuditRepository>();
         services.AddScoped<ISecurityAuditQueryRepository, SecurityAuditQueryRepository>();
         services.AddSingleton<POS.Application.Abstractions.Security.ITerminalIdentityProvider, POS.Infrastructure.Security.TerminalIdentityProvider>();

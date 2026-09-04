@@ -988,6 +988,12 @@ public partial class App :
                 serviceProvider.GetRequiredService<SupplierService>(),
                 serviceProvider.GetRequiredService<IPermissionService>()));
 
+        services.AddScoped<PurchaseOrderService>();
+        services.AddScoped<IPurchaseOrderService>(serviceProvider =>
+            new AuthorizedPurchaseOrderService(
+                serviceProvider.GetRequiredService<PurchaseOrderService>(),
+                serviceProvider.GetRequiredService<IPermissionService>()));
+
         /*
          * Inventory service.
          */

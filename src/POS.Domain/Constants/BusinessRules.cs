@@ -150,6 +150,17 @@ public static class BusinessRules
         public const long MaximumOrderAmount = 999_999_999_999;
     }
 
+    public static class PurchaseOrders
+    {
+        public const int CodeMaxLength = Orders.CodeMaxLength;
+        public const int NotesMaxLength = Orders.NotesMaxLength;
+        public const int CancellationReasonMaxLength = Orders.CancelReasonMaxLength;
+        public const int MaximumLineQuantity = Orders.MaximumLineQuantity;
+        public const int MaximumLines = Orders.MaximumLinesPerOrder;
+        public const long MaximumOrderAmount = Orders.MaximumOrderAmount;
+        public const int MaximumSearchPageSize = 200;
+    }
+
     public static class HeldSales
     {
         public const int DisplayCodeMaxLength = 50;

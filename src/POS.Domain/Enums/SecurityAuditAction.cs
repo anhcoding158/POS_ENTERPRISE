@@ -21,5 +21,9 @@ public enum SecurityAuditAction
     SupplierCreated = 17,
     SupplierUpdated = 18,
     SupplierDeactivated = 19,
-    SupplierReactivated = 20
+    SupplierReactivated = 20,
+    PurchaseOrderCreated = 21,
+    PurchaseOrderUpdated = 22,
+    PurchaseOrderOrdered = 23,
+    PurchaseOrderCancelled = 24
 }

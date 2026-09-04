@@ -88,7 +88,7 @@ public sealed class SupplierPersistenceIntegrationTests
         await using var database = await TestDatabase.CreateLatestAsync();
         Assert.Throws<DomainException>(() =>
             database.Context.SecurityAuditEvents.Add(
-                new SecurityAuditEvent(null, null, null, (SecurityAuditAction)21, "Success", Guid.NewGuid(), Now)));
+                new SecurityAuditEvent(null, null, null, (SecurityAuditAction)25, "Success", Guid.NewGuid(), Now)));
     }
 
     [Fact]

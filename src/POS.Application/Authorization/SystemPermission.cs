@@ -48,5 +48,9 @@ public enum SystemCapability
 
     ViewSuppliers = 20,
 
-    ManageSuppliers = 21
+    ManageSuppliers = 21,
+
+    ViewPurchaseOrders = 22,
+
+    ManagePurchaseOrders = 23
 }

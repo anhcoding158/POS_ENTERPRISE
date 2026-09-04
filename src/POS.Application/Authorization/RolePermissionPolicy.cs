@@ -37,7 +37,9 @@ public static class RolePermissionPolicy
                     SystemCapability.ProcessReturns or
                     SystemCapability.ApplySalesDiscount or
                     SystemCapability.ViewSuppliers or
-                    SystemCapability.ManageSuppliers,
+                    SystemCapability.ManageSuppliers or
+                    SystemCapability.ViewPurchaseOrders or
+                    SystemCapability.ManagePurchaseOrders,
 
             Role.Cashier =>
                 permission is
@@ -49,7 +51,8 @@ public static class RolePermissionPolicy
                     SystemCapability.ViewProductCatalog or
                     SystemCapability.ViewInventoryHistory or
                     SystemCapability.AdjustInventory or
-                    SystemCapability.ViewSuppliers,
+                    SystemCapability.ViewSuppliers or
+                    SystemCapability.ViewPurchaseOrders,
 
             _ =>
                 false
@@ -126,6 +129,12 @@ public static class RolePermissionPolicy
 
             SystemCapability.ManageSuppliers =>
                 "quản lý nhà cung cấp",
+
+            SystemCapability.ViewPurchaseOrders =>
+                "xem Purchase Order",
+
+            SystemCapability.ManagePurchaseOrders =>
+                "quản lý Purchase Order",
 
             _ =>
                 throw new ArgumentOutOfRangeException(

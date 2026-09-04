@@ -46,6 +46,9 @@ public static class PersistenceConflictTargets
 
     public const string OrderCode =
         "order.code";
+
+    public const string PurchaseOrderNumber =
+        "purchase_order.number";
 }
 
 /// <summary>

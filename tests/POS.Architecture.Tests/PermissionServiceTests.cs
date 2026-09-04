@@ -64,7 +64,9 @@ public sealed class PermissionServiceTests
                  SystemCapability.ProcessReturns,
                  SystemCapability.ApplySalesDiscount,
                  SystemCapability.ViewSuppliers,
-                 SystemCapability.ManageSuppliers
+                 SystemCapability.ManageSuppliers,
+                 SystemCapability.ViewPurchaseOrders,
+                 SystemCapability.ManagePurchaseOrders
              };
 
         AssertPermissionSet(
@@ -104,7 +106,8 @@ public sealed class PermissionServiceTests
                  SystemCapability.ViewProductCatalog,
                  SystemCapability.ViewInventoryHistory,
                  SystemCapability.AdjustInventory,
-                 SystemCapability.ViewSuppliers
+                 SystemCapability.ViewSuppliers,
+                 SystemCapability.ViewPurchaseOrders
              };
 
         AssertPermissionSet(

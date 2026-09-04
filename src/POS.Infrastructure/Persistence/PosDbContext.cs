@@ -34,6 +34,12 @@ public sealed class PosDbContext :
     public DbSet<Supplier> Suppliers =>
         Set<Supplier>();
 
+    public DbSet<PurchaseOrder> PurchaseOrders =>
+        Set<PurchaseOrder>();
+
+    public DbSet<PurchaseOrderLine> PurchaseOrderLines =>
+        Set<PurchaseOrderLine>();
+
     public DbSet<SecurityAuditEvent> SecurityAuditEvents =>
         Set<SecurityAuditEvent>();
 

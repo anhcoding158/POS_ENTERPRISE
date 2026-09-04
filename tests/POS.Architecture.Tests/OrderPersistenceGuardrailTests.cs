@@ -19,7 +19,7 @@ namespace POS.Architecture.Tests;
 /// - restrict dữ liệu tham chiếu;
 /// - optimistic concurrency;
 /// - ánh xạ unique OrderCode;
-/// - whitelist entity của model 8A.
+/// - whitelist entity của model hiện hành.
 /// </summary>
 public sealed class
     OrderPersistenceGuardrailTests
@@ -443,7 +443,7 @@ public sealed class
 
     [Fact]
     public async Task
-        Current_8A_model_must_only_contain_approved_entities()
+        Current_model_must_only_contain_approved_entities()
     {
         await using var database =
             await OrderTestDatabase
@@ -472,6 +472,8 @@ public sealed class
                 typeof(PaymentIntent),
                 typeof(PaymentIntentManualResolution),
                 typeof(Product),
+                typeof(PurchaseOrder),
+                typeof(PurchaseOrderLine),
                 typeof(SecurityAuditEvent),
                 typeof(Supplier),
                 typeof(User)

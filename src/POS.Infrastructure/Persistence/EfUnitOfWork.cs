@@ -231,6 +231,17 @@ public sealed class EfUnitOfWork :
             return true;
         }
 
+        if (message.Contains(
+                "PurchaseOrders.NormalizedOrderNumber",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            target =
+                PersistenceConflictTargets
+                    .PurchaseOrderNumber;
+
+            return true;
+        }
+
         /*
          * Đây vẫn là unique constraint nhưng Infrastructure
          * chưa xác định được trường nghiệp vụ cụ thể.

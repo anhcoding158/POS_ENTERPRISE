@@ -39,6 +39,10 @@ public static class AuditPresentationResolver
         SecurityAuditAction.SupplierUpdated => "Cập nhật nhà cung cấp",
         SecurityAuditAction.SupplierDeactivated => "Ngừng hoạt động nhà cung cấp",
         SecurityAuditAction.SupplierReactivated => "Kích hoạt lại nhà cung cấp",
+        SecurityAuditAction.PurchaseOrderCreated => "Tạo Purchase Order",
+        SecurityAuditAction.PurchaseOrderUpdated => "Cập nhật Purchase Order",
+        SecurityAuditAction.PurchaseOrderOrdered => "Đặt Purchase Order",
+        SecurityAuditAction.PurchaseOrderCancelled => "Hủy Purchase Order",
         _ => "Hoạt động không xác định"
     };
 

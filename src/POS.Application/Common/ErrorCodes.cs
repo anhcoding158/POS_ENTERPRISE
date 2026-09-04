@@ -241,6 +241,20 @@ public static class ErrorCodes
             "ORDER.RECEIPT_SNAPSHOT_INVALID";
     }
 
+    public static class PurchaseOrders
+    {
+        public const string NotFound = "PURCHASE_ORDER.NOT_FOUND";
+        public const string NumberAlreadyExists = "PURCHASE_ORDER.NUMBER_ALREADY_EXISTS";
+        public const string ConcurrencyConflict = "PURCHASE_ORDER.CONCURRENCY_CONFLICT";
+        public const string PersistenceConflict = "PURCHASE_ORDER.PERSISTENCE_CONFLICT";
+        public const string SupplierInactive = "PURCHASE_ORDER.SUPPLIER_INACTIVE";
+        public const string ProductInactive = "PURCHASE_ORDER.PRODUCT_INACTIVE";
+        public const string ProductArchived = "PURCHASE_ORDER.PRODUCT_ARCHIVED";
+        public const string ProductNotTracked = "PURCHASE_ORDER.PRODUCT_NOT_TRACKED";
+        public const string OrderedIdentityImmutable = "PURCHASE_ORDER.IDENTITY_IMMUTABLE";
+        public const string InvalidAmendment = "PURCHASE_ORDER.INVALID_AMENDMENT";
+    }
+
     public static class Persistence
     {
         public const string ConcurrencyConflict =
